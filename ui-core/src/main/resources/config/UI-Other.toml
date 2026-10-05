@@ -535,8 +535,8 @@ enabled = true
 # Default: 10
 max_distance = 10
 # Interval in ticks (20 ticks = 1 second).
-# Default: 2
-pull_back_interval = 2
+# Default: 40
+pull_back_interval = 40
 # Default: true
 prevent_break = true
 # Default: true

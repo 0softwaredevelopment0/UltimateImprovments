@@ -218,6 +218,12 @@ public class EnchantmentListener implements Listener {
 
     /** Tracks the fall and applies the accumulated damage on landing (called from the drain tick). */
     private static void tickFallDamage() {
+        // Zero-cost idle: nobody has charm flight and nobody is mid-fall.
+        // The task stays on the 1-tick schedule on purpose — the fall
+        // accumulator samples velocity every tick and the damage must land
+        // exactly on the landing tick; a coarser period would undercount the
+        // fall distance and delay the damage.
+        if (GRANTED_FLIGHT.isEmpty() && FALL_DISTANCE.isEmpty()) return;
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
                 UUID uuid = player.getUniqueId();

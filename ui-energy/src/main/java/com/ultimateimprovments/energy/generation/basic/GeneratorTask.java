@@ -28,9 +28,16 @@ import java.util.Set;
 
 public class GeneratorTask extends BukkitRunnable {
 
+    /**
+     * The task runs every 40 ticks (2s). All burn/energy math below is
+     * scaled by this period, so the per-second fuel burn and energy output
+     * stay exactly the same as with the old per-tick schedule.
+     */
+    private static final int TICKS_PER_RUN = 40;
+
     // =========================
     // BURN TRACKING (per furnace location)
-    // fuelTimer: how many ticks the current fuel has left to burn (decrements every tick)
+    // fuelTimer: how many ticks the current fuel has left to burn (decrements every run, by up to TICKS_PER_RUN)
     // energyAccumulator: accumulated fractional energy (>= 1 → added to the battery)
     // Generator works independently of furnace smelting state.
     // =========================
@@ -116,16 +123,17 @@ public class GeneratorTask extends BukkitRunnable {
             int timer = fuelTimer.getOrDefault(furnaceLoc, 0);
 
             // =========================
-            // CASE 1: BURNING — generate energy continuously each tick
+            // CASE 1: BURNING — generate energy continuously each run
             // =========================
             if (timer > 0) {
-                // Accumulate fractional energy each tick
+                int burnedNow = Math.min(TICKS_PER_RUN, timer);
+                // Accumulate fractional energy for the ticks burned this run
                 double energyPerTickDouble = (double) totalEnergyPerFuel / effectiveBurn;
-                double acc = energyAccumulator.getOrDefault(furnaceLoc, 0.0) + energyPerTickDouble;
+                double acc = energyAccumulator.getOrDefault(furnaceLoc, 0.0) + energyPerTickDouble * burnedNow;
 
                 // On the last burn tick we round, so no energy is lost due to double-precision
                 int toAdd;
-                if (timer == 1) {
+                if (burnedNow >= timer) {
                     toAdd = (int) Math.round(acc);
                     acc = 0.0;
                 } else {
@@ -142,7 +150,7 @@ public class GeneratorTask extends BukkitRunnable {
                 }
                 energyAccumulator.put(furnaceLoc, acc);
 
-                fuelTimer.put(furnaceLoc, timer - 1);
+                fuelTimer.put(furnaceLoc, timer - burnedNow);
 
                 if (!data.isLit()) {
                     data.setLit(true);
@@ -153,7 +161,7 @@ public class GeneratorTask extends BukkitRunnable {
                     ConsoleLogger.info(
                             "[GENERATOR] +" + toAdd +
                                     " energy from " + furnaceLoc +
-                                    " (remaining timer: " + (timer - 1) + " ticks)"
+                                    " (remaining timer: " + (timer - burnedNow) + " ticks)"
                     );
                 }
                 continue;
@@ -174,14 +182,16 @@ public class GeneratorTask extends BukkitRunnable {
                         furnace.getInventory().setFuel(newFuel);
                     }
 
-                    // Reset timer and accumulator
-                    fuelTimer.put(furnaceLoc, burnDuration - 1);
+                    // Reset timer and accumulator (the first run burns up to TICKS_PER_RUN ticks)
+                    int firstBurn = Math.min(TICKS_PER_RUN, burnDuration);
+                    fuelTimer.put(furnaceLoc, burnDuration - firstBurn);
                     energyAccumulator.put(furnaceLoc, 0.0);
 
-                    // First tick energy
+                    // First-run energy
                     double energyPerTickDouble = (double) totalEnergyPerFuel / effectiveBurn;
-                    int firstAdd = (int) Math.floor(energyPerTickDouble);
-                    double rem = energyPerTickDouble - firstAdd;
+                    double firstEnergy = energyPerTickDouble * firstBurn;
+                    int firstAdd = (int) Math.floor(firstEnergy);
+                    double rem = firstEnergy - firstAdd;
                     if (firstAdd > 0) {
                         addEnergyToBatteryNetwork(nodeLoc, firstAdd);
                         // Track transfer on the connected cable node
