@@ -204,6 +204,7 @@ public class SunburnManager implements Listener {
         } else {
             short maxDur = helmet.getType().getMaxDurability();
             if (maxDur <= 0) return; // No durability — passive protection
+            if (ItemDurabilityUtil.isUnbreakable(helmet)) return; // minecraft:unbreakable — no wear
 
             // Plugin-side wear still rolls the vanilla Unbreaking chance
             int loss = ItemDurabilityUtil.applyUnbreaking(helmet, 1);
