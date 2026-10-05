@@ -12,6 +12,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -35,11 +36,11 @@ import java.util.List;
  *   <li><b>Custom wear</b> — extra vanilla damage points from custom
  *       enchantments (aoe, veinminer, treecapitator, flight, degradation) and
  *       the sunburn mechanic, applied as one vanilla durability point per use
- *       unless a caller passes a bigger cost. When
- *       {@code features.integrity.unbreaking.enabled} is true, custom wear
- *       also passes through the vanilla (level + 1) Unbreaking chance roll;
- *       when disabled (default), Unbreaking applies only to vanilla damage —
- *       exactly like vanilla.</li>
+ *       unless a caller passes a bigger cost. Custom wear always passes
+ *       through the vanilla Unbreaking chance roll (one roll per point, with
+ *       the vanilla chance tables — see {@link #applyUnbreaking}); the
+ *       {@code features.integrity.unbreaking.enabled} toggle (default on)
+ *       can turn the roll off if a server wants raw plugin wear.</li>
  *   <li><b>Piercing</b> — {@code features.integrity.piercing.enabled}:
  *       hits with a PIERCING weapon deal extra vanilla damage to the target's
  *       armor (PiercingListener).</li>
@@ -62,7 +63,7 @@ public final class ItemDurabilityUtil {
 
     // ===== SETTINGS (loaded from config.yml, features.integrity.*) =====
     private static boolean enabled = true;
-    private static boolean unbreakingEnabled = false;
+    private static boolean unbreakingEnabled = true;
     private static boolean piercingEnabled = true;
     private static double piercingExtraCost = 0.5;
     private static boolean onBreakPlaySound = true;
@@ -87,7 +88,7 @@ public final class ItemDurabilityUtil {
         if (cfg == null) return;
 
         enabled = cfg.getBoolean("enabled", true);
-        unbreakingEnabled = cfg.getBoolean("unbreaking.enabled", false);
+        unbreakingEnabled = cfg.getBoolean("unbreaking.enabled", true);
         piercingEnabled = cfg.getBoolean("piercing.enabled", true);
         piercingExtraCost = cfg.getDouble("piercing.extra_integrity_cost", 0.5);
         onBreakPlaySound = cfg.getBoolean("on_break.play_sound", true);
@@ -185,6 +186,56 @@ public final class ItemDurabilityUtil {
     }
 
     // =========================
+    // UNBREAKING ROLL (vanilla chance tables)
+    // =========================
+
+    /**
+     * True if the item is an armor piece. Armor uses a different vanilla
+     * Unbreaking chance table than tools, so the roll must know the category.
+     */
+    public static boolean isArmorPiece(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        if (item.getItemMeta() instanceof ArmorMeta) return true;
+        String name = item.getType().name();
+        return name.endsWith("_HELMET") || name.endsWith("_CHESTPLATE")
+                || name.endsWith("_LEGGINGS") || name.endsWith("_BOOTS");
+    }
+
+    /**
+     * Vanilla probability (Minecraft Wiki) that one durability point is
+     * consumed at the given Unbreaking level:
+     * <ul>
+     *   <li>tools/weapons: {@code 1 / (level + 1)} — L1: 50%, L2: 33%, L3: 25%</li>
+     *   <li>armor: {@code 0.6 + 0.4 / (level + 1)} — L1: 80%, L2: 73%, L3: 70%</li>
+     * </ul>
+     */
+    private static double unbreakingConsumeChance(int level, boolean armor) {
+        if (level <= 0) return 1.0;
+        return armor ? 0.6 + 0.4 / (level + 1.0) : 1.0 / (level + 1.0);
+    }
+
+    /**
+     * Rolls vanilla Unbreaking for {@code points} durability points — one
+     * roll per point, exactly like vanilla does for normal use. Returns the
+     * number of points actually consumed (0..points). The
+     * {@code features.integrity.unbreaking} toggle only governs the plugin's
+     * own wear; vanilla damage is always rolled by vanilla itself.
+     */
+    public static int applyUnbreaking(ItemStack item, int points) {
+        if (item == null || points <= 0) return 0;
+        if (!unbreakingEnabled) return points;
+        int level = item.getEnchantmentLevel(Enchantment.UNBREAKING);
+        if (level <= 0) return points;
+        boolean armor = isArmorPiece(item);
+        double consume = unbreakingConsumeChance(level, armor);
+        int consumed = 0;
+        for (int i = 0; i < points; i++) {
+            if (Math.random() < consume) consumed++;
+        }
+        return consumed;
+    }
+
+    // =========================
     // WRITE
     // =========================
 
@@ -209,13 +260,19 @@ public final class ItemDurabilityUtil {
 
     /**
      * Applies {@code iterations} points of vanilla damage to the item.
+     * Every point is rolled through the vanilla Unbreaking chance table first
+     * (tools: consumed with probability {@code 1/(level+1)}, armor: with
+     * probability {@code 0.6 + 0.4/(level+1)}), so an item with Unbreaking
+     * keeps its vanilla durability-save chance on plugin wear too.
      * Returns the actual integrity % after the deduction.
      */
     public static double decreaseItemIntegrity(ItemStack item, int iterations, Player owner) {
         if (item == null || iterations <= 0) return getItemIntegrityPercent(item);
         int max = getMaxDurability(item);
         if (max <= 0) return getItemIntegrityPercent(item);
-        return decreaseItemIntegrityPercent(item, 100.0 * iterations / max, owner);
+        int effective = applyUnbreaking(item, iterations);
+        if (effective <= 0) return getItemIntegrityPercent(item);
+        return wearPercent(item, 100.0 * effective / max, owner);
     }
 
     /**
@@ -240,19 +297,29 @@ public final class ItemDurabilityUtil {
         return getItemIntegrityPercent(item);
     }
 
-    /** Decreases integrity by exactly X% (double). At 0 the item breaks as usual. */
+    /**
+     * Decreases integrity by exactly X% (double). At 0 the item breaks as usual.
+     * The whole wear event is rolled through the vanilla Unbreaking chance
+     * table once (the % API has no per-point granularity). Returns the actual
+     * integrity % after the deduction.
+     */
     public static double decreaseItemIntegrityPercent(ItemStack item, double percent, Player owner) {
         int max = getMaxDurability(item);
         if (max <= 0 || percent <= 0) return getItemIntegrityPercent(item);
 
-        // Optional Unbreaking gate for CUSTOM wear (vanilla damage from normal
-        // play is already covered by the vanilla Unbreaking roll).
-        if (unbreakingEnabled && owner != null) {
+        if (unbreakingEnabled) {
             int level = item.getEnchantmentLevel(Enchantment.UNBREAKING);
-            if (level > 0 && Math.random() > 1.0 / (level + 1.0)) {
+            if (level > 0 && Math.random() >= unbreakingConsumeChance(level, isArmorPiece(item))) {
                 return getItemIntegrityPercent(item);
             }
         }
+        return wearPercent(item, percent, owner);
+    }
+
+    /** The actual wear write path — no Unbreaking logic, callers roll first. */
+    private static double wearPercent(ItemStack item, double percent, Player owner) {
+        int max = getMaxDurability(item);
+        if (max <= 0 || percent <= 0) return getItemIntegrityPercent(item);
 
         int add = (int) Math.floor(max * percent / 100.0);
         if (add <= 0) return getItemIntegrityPercent(item);

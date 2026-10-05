@@ -478,9 +478,11 @@ thresholds = [75, 50, 25, 10, 5]
 
 # unbreaking section.
 [features.integrity.unbreaking]
-# Master switch (true = feature on).
-# Default: false
-enabled = false
+# Master switch (true = feature on). When on, plugin wear (custom enchantments,
+# piercing, sunburn) rolls the vanilla Unbreaking chance per damage point:
+# tools 1/(level+1), armor 0.6+0.4/(level+1).
+# Default: true
+enabled = true
 
 # piercing section.
 [features.integrity.piercing]

@@ -205,13 +205,17 @@ public class SunburnManager implements Listener {
             short maxDur = helmet.getType().getMaxDurability();
             if (maxDur <= 0) return; // No durability — passive protection
 
+            // Plugin-side wear still rolls the vanilla Unbreaking chance
+            int loss = ItemDurabilityUtil.applyUnbreaking(helmet, 1);
+            if (loss <= 0) return;
+
             ItemMeta meta = helmet.getItemMeta();
             int currentDmg = (meta instanceof Damageable dmg) ? dmg.getDamage() : 0;
 
             if (currentDmg >= maxDur) {
                 player.getInventory().setHelmet(null);
             } else {
-                helmet.editMeta(Damageable.class, dmg -> dmg.setDamage(currentDmg + 1));
+                helmet.editMeta(Damageable.class, dmg -> dmg.setDamage(currentDmg + loss));
             }
         }
     }
