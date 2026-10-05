@@ -26,6 +26,13 @@ in this file.
   Piercing, sunburn). All plugin wear paths now respect the tag, including
   the sunburn fallback path.
 
+### Removed
+- **Legacy integrity-system migration code** — the one-time migration of old
+  PDC integrity counters, the `INTEGRITY_*` PDC keys and the
+  "Integrity: N%" lore sweep (including the item-event cleanup listener) are
+  gone; every deployed item has long since been converted to the vanilla
+  `damage` component.
+
 ### Notes
 - Existing servers with a deployed config keep their explicit
   `enabled = false` — flip it to `true` (or delete the

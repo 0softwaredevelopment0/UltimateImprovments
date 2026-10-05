@@ -1,12 +1,9 @@
 package com.ultimateimprovments.mechanics.features.integrity;
 
-import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
@@ -16,22 +13,13 @@ import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
 /**
  * 🛡 ItemDurabilityUtil — minimal durability helper built directly on top of
- * <b>vanilla Minecraft durability</b>.
+ * <b>vanilla Minecraft durability</b>. All item state lives in the vanilla
+ * {@code damage} data component — anvil, grindstone and Mending behave
+ * exactly like vanilla, with no possible bypass or desync.
  * <p>
- * The old custom integrity system (PDC counters + % lore + anvil/mending/
- * grindstone interception) was removed entirely: it fought the vanilla repair
- * economy and produced desync bugs (e.g. anvil repairs bypassing the XP cost).
- * All item state now lives in the vanilla {@code damage} data component —
- * anvil, grindstone and Mending behave exactly like vanilla, with no possible
- * bypass or desync, and items can no longer break "twice".
- * <p>
- * What remains (all optional, config-gated):
+ * Features (all optional, config-gated):
  * <ul>
  *   <li><b>Custom wear</b> — extra vanilla damage points from custom
  *       enchantments (aoe, veinminer, treecapitator, flight, degradation) and
@@ -63,7 +51,8 @@ public final class ItemDurabilityUtil {
 
     private ItemDurabilityUtil() {}
 
-    // ===== SETTINGS (loaded from config.yml, features.integrity.*) =====
+    // ===== SETTINGS (features.integrity.* — modular TOML configs, routed
+    // into the main config by AddonsCatalog) =====
     private static boolean enabled = true;
     private static boolean unbreakingEnabled = true;
     private static boolean piercingEnabled = true;
@@ -73,14 +62,10 @@ public final class ItemDurabilityUtil {
     private static double onBreakSoundPitch = 1.0;
     private static java.util.List<Integer> warnThresholds = new java.util.ArrayList<>();
 
-    /** Marker of items migrated from the old integrity system (PDC data already removed). */
-    private static NamespacedKey MIGRATED_TAG;
-
     // =========================
     // INIT / CONFIG
     // =========================
-    public static void init(Main plugin) {
-        MIGRATED_TAG = new NamespacedKey(plugin, "integrity_migrated");
+    public static void init() {
         reloadConfig();
     }
 
@@ -149,47 +134,6 @@ public final class ItemDurabilityUtil {
         int max = getMaxDurability(item);
         if (max <= 0) return 100.0;
         return Math.max(0.0, Math.min(100.0, 100.0 * (1.0 - (double) getVanillaDamage(item) / max)));
-    }
-
-    /** Max integrity is always 100% (kept for API compatibility with old call sites). */
-    public static double getItemMaxIntegrityPercent(ItemStack item) {
-        return getMaxDurability(item) > 0 ? 100.0 : -1;
-    }
-
-    /** One-time legacy migration — drops the old PDC integrity data and lore if present. */
-    public static void initializeItemIntegrity(ItemStack item) {
-        migrateLegacyItem(item);
-        stripLegacyIntegrityLore(item);
-    }
-
-    // =========================
-    // LEGACY MIGRATION
-    // =========================
-
-    /**
-     * One-time conversion of items that lived in the old custom integrity
-     * system: the PDC counters are removed and the integrity lore line is
-     * stripped. The vanilla damage component already mirrors the old value
-     * (the old system synced it), so no other conversion is needed.
-     */
-    private static void migrateLegacyItem(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-        var pdc = meta.getPersistentDataContainer();
-        if (pdc.has(Keys.INTEGRITY_TAG, org.bukkit.persistence.PersistentDataType.BYTE)
-                && !pdc.has(MIGRATED_TAG, org.bukkit.persistence.PersistentDataType.BYTE)) {
-            pdc.remove(Keys.INTEGRITY_TAG);
-            pdc.remove(Keys.INTEGRITY_MAX);
-            pdc.remove(Keys.INTEGRITY_CURRENT);
-            pdc.remove(Keys.INTEGRITY_LAST_SEEN);
-            pdc.remove(Keys.INTEGRITY_WARN_FLAGS);
-            pdc.remove(Keys.INTEGRITY_VERSION);
-            pdc.remove(Keys.INTEGRITY_UNBREAKABLE);
-            pdc.set(MIGRATED_TAG, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
-            removeIntegrityLore(meta);
-            item.setItemMeta(meta);
-        }
     }
 
     // =========================
@@ -383,7 +327,7 @@ public final class ItemDurabilityUtil {
     }
 
     // =========================
-    // LOW DURABILITY WARNING (threshold crossing, migrated from the old IIS)
+    // LOW DURABILITY WARNING (threshold crossing)
     // =========================
 
     /**
@@ -433,8 +377,7 @@ public final class ItemDurabilityUtil {
     // =========================
 
     /**
-     * Breaks the item the way the old integrity system (and every consumer of
-     * this API) expects: the stack is destroyed via {@code setAmount(0)} so
+     * Breaks the item: the stack is destroyed via {@code setAmount(0)} so
      * enchantment sweeps (aoe/veinminer/treecapitator/degradation) that poll
      * {@code getAmount() <= 0} actually stop, and the break sound plays at the
      * owner's location (not world spawn).
@@ -459,47 +402,5 @@ public final class ItemDurabilityUtil {
                 ConsoleLogger.warn("[Durability] break sound error: " + e.getMessage());
             }
         }
-    }
-
-    /**
-     * Removes the old "Integrity: N%" lore line wherever the item shows up
-     * (pickup, craft, hotbar swap, click in an open inventory — see
-     * {@link IntegrityLoreCleanupListener}).
-     */
-    private static void removeIntegrityLore(ItemMeta meta) {
-        if (!meta.hasLore() || meta.lore() == null) return;
-        List<net.kyori.adventure.text.Component> lore = new ArrayList<>(meta.lore());
-        lore.removeIf(line -> net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
-                .plainText().serialize(line).toLowerCase().contains("integrity:"));
-        if (lore.isEmpty()) {
-            meta.lore(null);
-        } else {
-            meta.lore(lore);
-        }
-    }
-
-    // =========================
-    // INTEGRITY LORE MIGRATION
-    // =========================
-
-    /**
-     * Strips the legacy integrity lore line from the item if present.
-     * Returns true if the meta was changed (caller must write it back).
-     * Runs for every item passing through the cleanup listener — even items
-     * without vanilla durability can carry the old lore (e.g. renamed books).
-     */
-    public static boolean stripLegacyIntegrityLore(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) return false;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return false;
-        if (!meta.hasLore()) return false;
-        int before = meta.lore() != null ? meta.lore().size() : 0;
-        removeIntegrityLore(meta);
-        int after = meta.lore() != null ? meta.lore().size() : 0;
-        if (after != before) {
-            item.setItemMeta(meta);
-            return true;
-        }
-        return false;
     }
 }
