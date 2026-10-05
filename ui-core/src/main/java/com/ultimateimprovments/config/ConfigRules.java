@@ -516,6 +516,7 @@ final class ConfigRules {
             // messages/messages_en.server_lockdown, routed by message group),
             // so it is intentionally NOT a ConfigRules settings key here.
 
+            bool("command_policy.enabled"),
             stringList("command_policy.disabled_commands"),
 
             // Stress test / server benchmarks (/ui stresstest)
