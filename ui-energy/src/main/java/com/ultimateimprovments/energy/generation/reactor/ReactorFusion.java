@@ -167,6 +167,17 @@ public class ReactorFusion {
         return true;
     }
 
+    /** Fill % of the floor barrel by occupied item slots (0..100). */
+    public int floorBarrelFillPct(Location base) {
+        Barrel barrel = floorBarrel(base);
+        if (barrel == null) return 100;
+        int used = 0;
+        for (ItemStack item : barrel.getInventory().getContents()) {
+            if (item != null && item.getAmount() > 0) used++;
+        }
+        return used * 100 / 27;
+    }
+
     /** Deposits one ancient debris into the floor barrel. False when there is no space. */
     private boolean depositDebris(Location base) {
         Barrel barrel = floorBarrel(base);

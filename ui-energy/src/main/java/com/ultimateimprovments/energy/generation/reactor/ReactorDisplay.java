@@ -12,9 +12,9 @@ import org.bukkit.block.data.type.CopperBulb;
  * Manages the reactor's visual effects, sounds and sign updates for the
  * Dark Fusion Reactor (DFC, 10×11×9).
  * <p>
- * The stats wall (front glass, x=−5 relative to the anchor) holds 7 signs:
+ * The stats wall (front glass, x=−5 relative to the anchor) holds 8 signs:
  * Power Stats, Shield Stats, Fuel Stats, Fusion Stats (row y=−8),
- * Shield Stress, Core Stats, Case Stats (row y=−7).
+ * Content Absorber, Shield Stress, Core Stats, Case Stats (row y=−7).
  * The plugin rewrites their value lines every second; titles come from the
  * config ({@code structures.signs.*}, RU/EN tabs).
  */
@@ -29,6 +29,7 @@ public class ReactorDisplay {
     private static final int[] SIGN_SHIELD = { -5, -8, -1 };
     private static final int[] SIGN_FUEL   = { -5, -8,  0 };
     private static final int[] SIGN_FUSION = { -5, -8,  1 };
+    private static final int[] SIGN_ABSORBER = { -5, -7, -2 };
     private static final int[] SIGN_STRESS = { -5, -7, -1 };
     private static final int[] SIGN_CORE   = { -5, -7,  0 };
     private static final int[] SIGN_CASE   = { -5, -7,  1 };
@@ -57,7 +58,7 @@ public class ReactorDisplay {
     private int soundTick;
 
     // Cached sign text — signs are only rewritten when the content changes
-    private final String[][] signCache = new String[16][4];
+    private final String[][] signCache = new String[17][4];
 
     public ReactorDisplay(ReactorManager reactor) {
         this.reactor = reactor;
@@ -233,7 +234,7 @@ public class ReactorDisplay {
                 int sec = reactor.getSelfdestructSecondsLeft();
                 String dots = "<red>........................................";
                 int[][] all = { SIGN_POWER, SIGN_SHIELD, SIGN_FUEL, SIGN_FUSION,
-                        SIGN_STRESS, SIGN_CORE, SIGN_CASE };
+                        SIGN_ABSORBER, SIGN_STRESS, SIGN_CORE, SIGN_CASE };
                 for (int i = 0; i < all.length; i++) {
                     setSignLine(base, all[i], 0, "<red>Self-destruct", i);
                     setSignLine(base, all[i], 1, "<red>protocol:", i);
@@ -248,7 +249,7 @@ public class ReactorDisplay {
 
             String dots = "<red>........................................";
             int[][] all = { SIGN_POWER, SIGN_SHIELD, SIGN_FUEL, SIGN_FUSION,
-                    SIGN_STRESS, SIGN_CORE, SIGN_CASE };
+                    SIGN_ABSORBER, SIGN_STRESS, SIGN_CORE, SIGN_CASE };
             for (int i = 0; i < all.length; i++) {
                 setSignLine(base, all[i], 0, dots, i);
                 setSignLine(base, all[i], 1, "<red>No signal", i);
@@ -365,6 +366,26 @@ public class ReactorDisplay {
                 .replace("%p%", fusionP), 5);
         setSign(base, SIGN_FUSION, 3, color + msg("signs.fusion_stats_speed", "S: %s%%")
                 .replace("%s%", fusionS), 5);
+
+        // =========================
+        // CONTENT ABSORBER — valve power (P), collection progress
+        // R: collected/needed particles, F: result barrel fill by items.
+        // Value lines are white; a line turns red when things go wrong:
+        // P = valve closed (nothing is collected), R/F = barrel full.
+        // =========================
+        int absorberValve = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_ABSORBER));
+        boolean absorbBarrelFull = fusion.isFloorBarrelFull(base);
+        setSign(base, SIGN_ABSORBER, 0, "<black>" + msg("signs.absorber_title", "Content Absorber"), 16);
+        setSign(base, SIGN_ABSORBER, 1, (absorberValve > 0 ? "<white>" : "<red>")
+                + msg("signs.absorber_p", "P: %p%%")
+                .replace("%p%", String.valueOf(absorberValve)), 16);
+        setSign(base, SIGN_ABSORBER, 2, (absorbBarrelFull ? "<red>" : "<white>")
+                + msg("signs.absorber_r", "R: %r%/%n%")
+                .replace("%r%", String.valueOf((int) fusion.getCollected()))
+                .replace("%n%", String.valueOf(ReactorConfig.getInstance().getFusionDebrisPer())), 16);
+        setSign(base, SIGN_ABSORBER, 3, (absorbBarrelFull ? "<red>" : "<white>")
+                + msg("signs.absorber_f", "F: %f%%")
+                .replace("%f%", String.valueOf(fusion.floorBarrelFillPct(base))), 16);
 
         // =========================
         // SHIELD STRESS — heat %, pressure %, spin % (live from the shield)

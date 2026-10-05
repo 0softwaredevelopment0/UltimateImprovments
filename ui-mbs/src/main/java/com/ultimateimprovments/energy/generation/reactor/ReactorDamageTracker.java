@@ -17,7 +17,7 @@ import java.util.Map;
  * is indexed into a damage category:
  * <ul>
  *   <li>{@link Category#GLASS} — case glass (98 cells),</li>
- *   <li>{@link Category#SIGN} — sign panels (16 cells),</li>
+ *   <li>{@link Category#SIGN} — sign panels (17 cells),</li>
  *   <li>{@link Category#BULB} — copper control bulbs (12 cells),</li>
  *   <li>{@link Category#STRUCTURE} — everything else (copper, stairs, rods, barrels…).</li>
  * </ul>
