@@ -19,6 +19,13 @@ in this file.
 - **INFO hint at startup** when the Unbreaking roll is disabled, so servers
   can immediately see why item durability ignores the enchantment.
 
+### Fixed
+- **Plugin wear ignored the `minecraft:unbreakable` tag** — items with the
+  vanilla unbreakable component still lost durability from plugin wear (aoe,
+  veinminer, treecapitator, degradation, levitation, flight, item stealing,
+  Piercing, sunburn). All plugin wear paths now respect the tag, including
+  the sunburn fallback path.
+
 ### Notes
 - Existing servers with a deployed config keep their explicit
   `enabled = false` — flip it to `true` (or delete the

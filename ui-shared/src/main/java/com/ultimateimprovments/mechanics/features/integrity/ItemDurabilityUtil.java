@@ -36,11 +36,13 @@ import java.util.List;
  *   <li><b>Custom wear</b> — extra vanilla damage points from custom
  *       enchantments (aoe, veinminer, treecapitator, flight, degradation) and
  *       the sunburn mechanic, applied as one vanilla durability point per use
- *       unless a caller passes a bigger cost. Custom wear always passes
- *       through the vanilla Unbreaking chance roll (one roll per point, with
- *       the vanilla chance tables — see {@link #applyUnbreaking}); the
- *       {@code features.integrity.unbreaking.enabled} toggle (default on)
- *       can turn the roll off if a server wants raw plugin wear.</li>
+ *       unless a caller passes a bigger cost. Vanilla-unbreakable items
+ *       ({@code minecraft:unbreakable}) never lose durability. Custom wear
+ *       always passes through the vanilla Unbreaking chance roll (one roll
+ *       per point, with the vanilla chance tables — see
+ *       {@link #applyUnbreaking}); the {@code features.integrity.unbreaking}
+ *       toggle (default on) can turn the roll off if a server wants raw
+ *       plugin wear.</li>
  *   <li><b>Piercing</b> — {@code features.integrity.piercing.enabled}:
  *       hits with a PIERCING weapon deal extra vanilla damage to the target's
  *       armor (PiercingListener).</li>
@@ -265,14 +267,16 @@ public final class ItemDurabilityUtil {
 
     /**
      * Applies {@code iterations} points of vanilla damage to the item.
-     * Every point is rolled through the vanilla Unbreaking chance table first
-     * (tools: consumed with probability {@code 1/(level+1)}, armor: with
-     * probability {@code 0.6 + 0.4/(level+1)}), so an item with Unbreaking
-     * keeps its vanilla durability-save chance on plugin wear too.
+     * Vanilla-unbreakable items ({@code minecraft:unbreakable}) never lose
+     * durability. Every point is rolled through the vanilla Unbreaking chance
+     * table first (tools: consumed with probability {@code 1/(level+1)},
+     * armor: with probability {@code 0.6 + 0.4/(level+1)}), so an item with
+     * Unbreaking keeps its vanilla durability-save chance on plugin wear too.
      * Returns the actual integrity % after the deduction.
      */
     public static double decreaseItemIntegrity(ItemStack item, int iterations, Player owner) {
         if (item == null || iterations <= 0) return getItemIntegrityPercent(item);
+        if (isUnbreakable(item)) return getItemIntegrityPercent(item);
         int max = getMaxDurability(item);
         if (max <= 0) return getItemIntegrityPercent(item);
         int effective = applyUnbreaking(item, iterations);
@@ -304,13 +308,15 @@ public final class ItemDurabilityUtil {
 
     /**
      * Decreases integrity by exactly X% (double). At 0 the item breaks as usual.
-     * The whole wear event is rolled through the vanilla Unbreaking chance
-     * table once (the % API has no per-point granularity). Returns the actual
-     * integrity % after the deduction.
+     * Vanilla-unbreakable items ({@code minecraft:unbreakable}) never lose
+     * durability. The whole wear event is rolled through the vanilla
+     * Unbreaking chance table once (the % API has no per-point granularity).
+     * Returns the actual integrity % after the deduction.
      */
     public static double decreaseItemIntegrityPercent(ItemStack item, double percent, Player owner) {
         int max = getMaxDurability(item);
         if (max <= 0 || percent <= 0) return getItemIntegrityPercent(item);
+        if (isUnbreakable(item)) return getItemIntegrityPercent(item);
 
         if (unbreakingEnabled) {
             int level = item.getEnchantmentLevel(Enchantment.UNBREAKING);
