@@ -127,13 +127,16 @@ enabled = true
 # Default: ""
 permission = ""
 # Message text (MiniMessage).
-# Default: ["<white>[<gold>Server</gold>] Made <aqua>%player%</aqua> a server operator</white>", "<green>✔ You are now a server operator!</green>"]
-messages = ["<white>[<gold>Server</gold>] Made <aqua>%player%</aqua> a server operator</white>", "<green>✔ You are now a server operator!</green>"]
-# Default: "<gold>⚡ You are now OP!</gold>"
-actionbar = "<gold>⚡ You are now OP!</gold>"
-# Sound name (minecraft:...).
-# Default: "ENTITY_EXPERIENCE_ORB_PICKUP"
-sound = "ENTITY_EXPERIENCE_ORB_PICKUP"
+# Realistic default: exact vanilla feedback for /op (plain white text, no colors,
+# no emoji, no sound — that is what a player sees when they are really opped).
+# Default: ["Made %player% a server operator"]
+messages = ["Made %player% a server operator"]
+# Optional action bar line. Empty = disabled (vanilla never shows one on op).
+# Default: ""
+actionbar = ""
+# Sound name (minecraft:...). Empty = no sound (vanilla grants op silently).
+# Default: ""
+sound = ""
 # Default: true
 log_to_console = true
 
@@ -146,17 +149,20 @@ enabled = true
 # Default: ""
 permission = ""
 # Message text (MiniMessage).
-# Default: ["<dark_red><bold>⚠ SERVER ERROR</bold></dark_red>", "<gray>java.lang.OutOfMemoryError: Java heap space</gray>", "<gray>    at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:932)</gray>", "<dark_gray>[<red>Server closed</red>]</dark_gray>"]
-messages = ["<dark_red><bold>⚠ SERVER ERROR</bold></dark_red>", "<gray>java.lang.OutOfMemoryError: Java heap space</gray>", "<gray>    at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:932)</gray>", "<dark_gray>[<red>Server closed</red>]</dark_gray>"]
+# Realistic default: nothing in chat — a real hard crash never prints stack
+# traces to players; chat just freezes and then everyone gets disconnected.
+# Default: []
+messages = []
 # Delay.
 # Default: 2
 delay_seconds = 2
-# Message text (MiniMessage).
+# Message text (MiniMessage). "Server closed" is the authentic vanilla
+# disconnect reason shown when a server actually stops.
 # Default: "Server closed"
 kick_message = "Server closed"
-# Sound name (minecraft:...).
-# Default: "ENTITY_GENERIC_EXPLODE"
-sound = "ENTITY_GENERIC_EXPLODE"
+# Sound name (minecraft:...). Empty = no sound (a real crash is silent for players).
+# Default: ""
+sound = ""
 # Default: true
 log_to_console = true
 
