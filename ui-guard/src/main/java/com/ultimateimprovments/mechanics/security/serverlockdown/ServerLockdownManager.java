@@ -151,7 +151,7 @@ public final class ServerLockdownManager implements Listener {
             for (String key : sec.getKeys(false)) {
                 int threshold;
                 try {
-                    threshold = Integer.parseInt(key);
+                    threshold = Integer.parseInt(stripQuotes(key));
                 } catch (NumberFormatException e) {
                     ConsoleLogger.warn("[ServerLockdown] Ignoring alert threshold '" + key
                             + "' — not a number.");
@@ -169,6 +169,18 @@ public final class ServerLockdownManager implements Listener {
                     new AlertThreshold(1000, DEFAULT_ALERT_1000));
         }
         alertThresholds = out;
+    }
+
+    /**
+     * Strips surrounding double quotes from a config key. Old template versions
+     * wrote the thresholds as quoted TOML keys ({@code "10" = ...}), which the
+     * bundle parser reads literally with the quotes included.
+     */
+    private static String stripQuotes(String key) {
+        if (key.length() >= 2 && key.charAt(0) == '"' && key.charAt(key.length() - 1) == '"') {
+            return key.substring(1, key.length() - 1);
+        }
+        return key;
     }
 
     /** Configured alert thresholds in config-file order (status numbering). */
