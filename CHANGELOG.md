@@ -3,6 +3,27 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.5] — since 1.8.3-beta.4 (2026-10-05)
+
+### Changed
+- **Unbreaking now applies to all plugin durability wear** — the Unbreaking
+  roll used to be opt-in and off by default
+  (`features.integrity.unbreaking.enabled = false`), so plugin wear (aoe,
+  veinminer, treecapitator, degradation, levitation, flight, item stealing,
+  Piercing, sunburn) ignored the enchantment entirely. The roll is now on by
+  default and follows the vanilla chance tables, one roll per damage point:
+  tools `1/(level+1)`, armor `0.6+0.4/(level+1)` (armor pieces detected via
+  ArmorMeta). New public helper `ItemDurabilityUtil.applyUnbreaking`; the
+  sunburn fallback path (integrity feature disabled) rolls as well. The
+  config toggle is kept — vanilla wear is always rolled by vanilla itself.
+- **INFO hint at startup** when the Unbreaking roll is disabled, so servers
+  can immediately see why item durability ignores the enchantment.
+
+### Notes
+- Existing servers with a deployed config keep their explicit
+  `enabled = false` — flip it to `true` (or delete the
+  `[features.integrity.unbreaking]` section) to get the new default.
+
 ## [1.8.3-beta.4] — since 1.8.3-alpha.7 (2026-10-04)
 
 > **Beta channel**: feature-complete; the enchantment rework was verified by
@@ -315,3 +336,4 @@ in this file.
 [1.8.3-alpha.6]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.5...1.8.3-alpha.6
 [1.8.3-alpha.7]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.6...1.8.3-alpha.7
 [1.8.3-beta.4]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.7...1.8.3-beta.4
+[1.8.3-beta.5]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-beta.4...1.8.3-beta.5
