@@ -89,6 +89,11 @@ public final class ItemDurabilityUtil {
 
         enabled = cfg.getBoolean("enabled", true);
         unbreakingEnabled = cfg.getBoolean("unbreaking.enabled", true);
+        if (!unbreakingEnabled) {
+            ConsoleLogger.info("[Durability] Unbreaking roll is DISABLED "
+                    + "(features.integrity.unbreaking.enabled = false): "
+                    + "plugin durability wear ignores the Unbreaking enchantment.");
+        }
         piercingEnabled = cfg.getBoolean("piercing.enabled", true);
         piercingExtraCost = cfg.getDouble("piercing.extra_integrity_cost", 0.5);
         onBreakPlaySound = cfg.getBoolean("on_break.play_sound", true);
