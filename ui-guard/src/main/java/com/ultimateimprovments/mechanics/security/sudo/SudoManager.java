@@ -147,11 +147,13 @@ public class SudoManager {
 
     /**
      * Checks whether a command is disabled by the command policy
-     * ({@code command_policy.disabled_commands}, default: op/deop/stop/restart —
+     * ({@code command_policy.enabled}, default true +
+     * {@code command_policy.disabled_commands}, default: op/deop/stop/restart —
      * vanilla commands superseded by /ui equivalents). Same prefix matching as
      * {@link #isDangerous(String)}. Independent of the sudo feature toggle.
      */
     public static boolean isCommandDisabled(String message) {
+        if (!cfg().getBoolean("command_policy.enabled", true)) return false;
         List<String> disabled = cfg().getStringList("command_policy.disabled_commands");
         String normalized = normalize(message);
         for (String prefix : disabled) {

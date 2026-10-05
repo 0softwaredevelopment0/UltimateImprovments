@@ -35,12 +35,13 @@ public class SudoCommandInterceptor implements Listener {
 
     /**
      * Command policy: vanilla commands superseded by /ui equivalents
-     * ({@code command_policy.disabled_commands}, default: op/deop/stop/restart)
+     * ({@code command_policy.enabled}, default true; the list:
+     * {@code command_policy.disabled_commands}, default: op/deop/stop/restart)
      * are answered with error 011 ("command disabled on this server").
      * Blocked for PLAYERS and the CONSOLE/RCON alike — they are unsafe and
      * have /ui replacements (/ui op|deop, /ui power off|reboot) that also work
      * from the console. Independent of the sudo feature toggle — active
-     * whenever ui-guard is.
+     * whenever ui-guard is and the policy toggle is on.
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDisabledCommand(PlayerCommandPreprocessEvent event) {

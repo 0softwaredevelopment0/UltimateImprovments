@@ -186,6 +186,10 @@ dangerous_commands = ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "u
 # Typing them reports error 011 ("command disabled on this server").
 
 [command_policy]
+# Master switch for the policy: true = the vanilla commands listed in
+# disabled_commands are blocked (error 011) so their /ui equivalents are used.
+# Default: true
+enabled = true
 # Vanilla commands disabled on this server — use the /ui equivalents instead
 # (/ui op|deop, /ui power off|reboot). Blocked for players AND the
 # console/RCON alike (the /ui replacements work from the console too).
