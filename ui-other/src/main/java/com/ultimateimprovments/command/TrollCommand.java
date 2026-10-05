@@ -25,9 +25,12 @@ import java.util.List;
  * <ul>
  *   <li><b>/forceop</b> — sends the player fake messages as if the server
  *       granted them OP. Real OP is NOT granted (setOp is never called).</li>
- *   <li><b>/crash</b> — sends the player fake server-crash messages
- *       and after {@code troll.crash.delay_seconds} kicks them with the
- *       {@code troll.crash.kick_message} text (default "Server closed").</li>
+ *   <li><b>/crash</b> — freezes the player's client with a NaN-teleport packet
+ *       ({@code troll.crash.freeze_client}, server side untouched), optionally sends
+ *       fake server-crash messages, and after {@code troll.crash.delay_seconds} kicks
+ *       them with the {@code troll.crash.kick_message} text (default "Server closed").
+ *       The frozen client never reads the kick and stays frozen until restarted —
+ *       like after a real server crash.</li>
  * </ul>
  * All settings (enable, messages, sounds, delay, permissions) are in config.yml
  * under the {@code troll:} section. Works only for players.
@@ -86,13 +89,22 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
     }
 
     // =========================
-    // /crash — fake server crash + kick
+    // /crash — fake server crash + client freeze + kick
     // =========================
     private boolean handleCrash(Player player) {
         FileConfiguration cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("troll.crash.enabled", true)) return true;
 
         if (!checkPermission(player, cfg.getString("troll.crash.permission", ""))) return true;
+
+        // Freeze the troller's client FIRST: one bogus NaN teleport is sent only to
+        // their client (the server-side position is untouched) — the client poisons
+        // itself and hard-freezes like during a real crash. A frozen client cannot
+        // render chat or play sounds, so the fakes below are just a fallback for
+        // clients that survive the NaN (config-tunable).
+        if (cfg.getBoolean("troll.crash.freeze_client", true)) {
+            TrollFreeze.sendNaNPosition(player);
+        }
 
         // Fake server-crash messages
         for (String msg : getMessageList(cfg, "troll.crash.messages")) {
@@ -110,10 +122,13 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
 
         if (cfg.getBoolean("troll.crash.log_to_console", true)) {
             ConsoleLogger.info("[Troll] " + player.getName()
-                    + " used /crash (fake crash — kicking in " + delaySeconds + "s).");
+                    + " used /crash (fake crash" + (cfg.getBoolean("troll.crash.freeze_client", true) ? ", client frozen" : "")
+                    + " — kicking in " + delaySeconds + "s).");
         }
 
-        // Kick the player after delay seconds with the "Server closed" text
+        // Kick the player after delay seconds as a fallback — a properly frozen
+        // client never reads it and stays frozen until restarted (like a real crash);
+        // one that survived the NaN gets the authentic "Server closed" disconnect.
         new BukkitRunnable() {
             @Override
             public void run() {
