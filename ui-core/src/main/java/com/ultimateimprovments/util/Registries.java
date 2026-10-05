@@ -1,24 +1,15 @@
 package com.ultimateimprovments.util;
 
-import com.ultimateimprovments.util.Registries;
-
-import com.ultimateimprovments.util.Registries;
 import io.papermc.paper.registry.RegistryAccess;
-import com.ultimateimprovments.util.Registries;
 import io.papermc.paper.registry.RegistryKey;
-import com.ultimateimprovments.util.Registries;
 import org.bukkit.JukeboxSong;
-import com.ultimateimprovments.util.Registries;
 import org.bukkit.MusicInstrument;
-import com.ultimateimprovments.util.Registries;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import com.ultimateimprovments.util.Registries;
 import org.bukkit.block.banner.PatternType;
-import com.ultimateimprovments.util.Registries;
+import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.enchantments.Enchantment;
-import com.ultimateimprovments.util.Registries;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
-import com.ultimateimprovments.util.Registries;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 
 /**
@@ -30,6 +21,52 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 public final class Registries {
 
     private Registries() {
+    }
+
+    /**
+     * Looks up an enchantment by key with a DATA-PACK fallback.
+     * <p>
+     * The Bukkit registry view does not reliably resolve data-driven enchantments
+     * loaded from datapacks (all {@code ui:*} custom enchantments are of this
+     * kind): a miss there returns a stale/dummy wrapper whose holder never
+     * matches the real one stored on items. This method first tries the API
+     * registry and then resolves the key through the SERVER registry
+     * ({@code CraftRegistry.getMinecraftRegistry()}) — the same access
+     * {@code CraftMetaItem} uses to unpack item enchantments, so the returned
+     * wrapper is holder-identical and {@code item.getEnchantmentLevel()} works.
+     */
+    public static Enchantment enchantmentByKey(NamespacedKey key) {
+        try {
+            Enchantment viaApi = enchantment().get(key);
+            if (viaApi != null && itemLevelResolves(viaApi)) return viaApi;
+        } catch (Exception ignored) {
+            // Fall through to the server-registry lookup.
+        }
+        try {
+            var registry = org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry()
+                    .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+            var resourceKey = net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.ENCHANTMENT,
+                    net.minecraft.resources.Identifier.parse(key.toString()));
+            var holder = registry.get(resourceKey);
+            return holder.map(CraftEnchantment::minecraftHolderToBukkit).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Sanity probe for the API-registry result: a stale/dummy wrapper (see
+     * {@code CraftRegistry#loadBukkit}) reports a non-positive max level and
+     * would never match real item holders. Server-registered enchantments
+     * always have maxLevel &gt;= 1.
+     */
+    private static boolean itemLevelResolves(Enchantment enchantment) {
+        try {
+            return enchantment.getMaxLevel() >= 1;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /** Modern access to the enchantment registry. */
