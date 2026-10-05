@@ -41,7 +41,9 @@ import org.bukkit.inventory.meta.ItemMeta;
  *   <li>{@code setItemIntegrity} — sets an exact integrity % (0.0–100.0)</li>
  *   <li>{@code decreaseItemIntegrity} — applies N points of vanilla damage</li>
  *   <li>{@code decreaseItemIntegrityPercent / increaseItemIntegrityPercent} —
- *       changes by exactly X%</li>
+ *       changes by exactly X% (fractional percents allowed)</li>
+ *   <li>{@code multiplyItemIntegrity / divideItemIntegrity} — scales the
+ *       remaining durability by / to a fractional factor</li>
  * </ul>
  * All write methods return the <b>actual</b> integrity % (0.0–100.0)
  * <i>after</i> the operation. No lore is written — the vanilla durability bar
@@ -295,17 +297,77 @@ public final class ItemDurabilityUtil {
         return getItemIntegrityPercent(item);
     }
 
-    /** Increases integrity by exactly X%. Returns the actual % after repair. */
+    /**
+     * Increases integrity by exactly X% (double). Fractional percents are
+     * accepted; the point amount is rounded to the nearest whole vanilla
+     * point (the damage component is an integer — fractions below half a
+     * point round to nothing). Returns the actual % after repair.
+     */
     public static double increaseItemIntegrityPercent(ItemStack item, double percent) {
         int max = getMaxDurability(item);
         if (max <= 0 || percent <= 0) return getItemIntegrityPercent(item);
 
+        int points = (int) Math.round(max * percent / 100.0);
+        if (points <= 0) return getItemIntegrityPercent(item);
+
         ItemMeta meta = item.getItemMeta();
         if (!(meta instanceof Damageable dmg)) return getItemIntegrityPercent(item);
         int before = dmg.hasDamage() ? dmg.getDamage() : 0;
-        int after = Math.max(0, before - (int) Math.floor(max * percent / 100.0));
+        int after = Math.max(0, before - Math.min(points, before));
+        if (after == before) return getItemIntegrityPercent(item);
         dmg.setDamage(after);
         item.setItemMeta(meta);
+        return getItemIntegrityPercent(item);
+    }
+
+    /**
+     * Multiplies the item's remaining durability by {@code factor} —
+     * fractional factors allowed (0.5 halves, 1.5 adds 50%, 0 breaks).
+     * The result is rounded to whole vanilla points and clamped to
+     * [0, max]. Negative/NaN/Infinite factors are rejected with -1
+     * (no change). This is an editor operation: it bypasses the
+     * unbreakable tag and the Unbreaking roll on purpose.
+     * Returns the actual integrity % after the operation, or -1 if the item
+     * has no durability or the factor is invalid.
+     */
+    public static double multiplyItemIntegrity(ItemStack item, double factor) {
+        if (Double.isNaN(factor) || Double.isInfinite(factor) || factor < 0) return -1;
+        return scaleRemaining(item, factor);
+    }
+
+    /**
+     * Divides the item's remaining durability by {@code divisor} —
+     * fractional divisors allowed (2 halves, 1.5 cuts a third). Equivalent
+     * to multiplying by {@code 1 / divisor}. Non-positive/NaN/Infinite
+     * divisors are rejected with -1 (no change). Editor operation —
+     * bypasses the unbreakable tag and the Unbreaking roll on purpose.
+     * Returns the actual integrity % after the operation, or -1 if the item
+     * has no durability or the divisor is invalid.
+     */
+    public static double divideItemIntegrity(ItemStack item, double divisor) {
+        if (Double.isNaN(divisor) || Double.isInfinite(divisor) || divisor <= 0) return -1;
+        return scaleRemaining(item, 1.0 / divisor);
+    }
+
+    /** Shared write path for multiply/divide: remaining durability × factor. */
+    private static double scaleRemaining(ItemStack item, double factor) {
+        int max = getMaxDurability(item);
+        if (max <= 0) return -1;
+
+        ItemMeta meta = item.getItemMeta();
+        if (!(meta instanceof Damageable dmg)) return -1;
+        int before = dmg.hasDamage() ? dmg.getDamage() : 0;
+        int newRemaining = Math.max(0, Math.min(max,
+                (int) Math.round((max - before) * factor)));
+        int after = max - newRemaining;
+        if (after == before) return getItemIntegrityPercent(item);
+        dmg.setDamage(after);
+        item.setItemMeta(meta);
+
+        if (newRemaining <= 0) {
+            breakItem(item, null);
+            return 0.0;
+        }
         return getItemIntegrityPercent(item);
     }
 
