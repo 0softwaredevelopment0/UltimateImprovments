@@ -67,7 +67,7 @@ public final class DatapackModules {
                     "TreeCapitatorEnchantment", "FlightEnchantment", "MagnetEnchantment",
                     "IgnitingEnchantment", "LevitationEnchantment", "SelfDestructEnchantment",
                     "DegradationEnchantment", "AttackAoeEnchantment", "ItemStealingEnchantment",
-                    "RepairingEnchantment", "ContainerStealingEnchantment"),
+                    "RepairingEnchantment", "ContainerStealingEnchantment", "LavaWalkerEnchantment"),
             ADVANCEMENTS, List.of(
                     "BeyondSpace", "BedrockBreak", "Kaboom", "EarthCore", "ServerOverload",
                     "WoodcutterChallenge", "EnderPearlChallenge", "NetheriteKing",

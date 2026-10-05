@@ -74,7 +74,7 @@ public final class Enchantment {
      */
     public static @Nullable org.bukkit.enchantments.Enchantment getRegisteredEnchantment() {
         try {
-            return Registries.enchantment().get(ENCHANTMENT_KEY);
+            return Registries.enchantmentByKey(ENCHANTMENT_KEY);
         } catch (Exception e) {
             return null;
         }

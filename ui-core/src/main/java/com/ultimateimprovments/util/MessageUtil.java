@@ -22,7 +22,7 @@ public class MessageUtil {
     private static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
 
     /** Default plugin prefix (MiniMessage): "[UI] ". */
-    public static final String DEFAULT_PREFIX = "<white>[<green>UI<white>] <reset>";
+    public static final String DEFAULT_PREFIX = "<dark_gray>[<green>UI<dark_gray>] <reset>";
 
     /**
      * Current plugin prefix used in all plugin messages.
