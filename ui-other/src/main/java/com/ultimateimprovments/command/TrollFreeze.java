@@ -1,52 +1,96 @@
 package com.ultimateimprovments.command;
 
-import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
+import io.netty.util.ReferenceCountUtil;
+import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
-import java.util.Set;
+import java.lang.reflect.Field;
 
 /**
- * Freezes the target's client for the {@code /crash} troll command.
+ * Freezes the target's client for the {@code /crash} troll command by cutting the
+ * server → client packet flow.
  * <p>
- * Sends a single bogus position (teleport) packet with NaN coordinates DIRECTLY
- * to the target's connection — the server-side position is never touched, so the
- * server stays fully safe and unaware. The client applies the NaN to its local
- * player: position/camera math breaks and the game hard-freezes — exactly like
- * during a real server crash. No floods, no memory pressure: one packet, and a
- * frozen client also stops sending any packets (movement, chat, interactions),
- * which is precisely how a dead server looks from the cheater's side.
+ * {@link #startBlackout(Player)} inserts a discarding outbound handler at the head
+ * of the target's netty pipeline: EVERY packet the server tries to send to that
+ * client (movement of other players, time, block changes, keepalives — everything)
+ * is silently dropped. The client itself stays untouched — no poisoned packets, no
+ * camera tricks — yet the world around the player simply stops updating, which is
+ * indistinguishable from a real server crash. The client keeps its connection open
+ * and keeps sending packets, so nothing times out on our side either.
+ * <p>
+ * {@link #stopBlackout(Player)} removes the handler — it MUST be called right
+ * before the kick so the disconnect packet actually reaches the client.
+ * The server-side player state is never modified.
  */
 final class TrollFreeze {
+
+    /** Unique pipeline handler name (idempotent installs / removals). */
+    private static final String HANDLER_NAME = "ui_crash_blackout";
+
+    /** {@code Connection#channel} — private in NMS, resolved once (Mojang mappings). */
+    private static final Field CHANNEL_FIELD;
+    static {
+        try {
+            CHANNEL_FIELD = Connection.class.getDeclaredField("channel");
+            CHANNEL_FIELD.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     private TrollFreeze() {
         // Utility class — no instances
     }
 
     /**
-     * Sends the NaN-poisoned teleport packet to the target's client only.
-     * Safe: if the player left or the connection is closed — silently skip.
+     * Starts the blackout: all server → client packets for the target are dropped.
+     * Idempotent: calling twice keeps a single handler.
      */
-    static void sendNaNPosition(Player target) {
-        if (target == null || !target.isOnline()) return;
+    static void startBlackout(Player target) {
+        Channel channel = nmsChannel(target);
+        if (channel == null) return;
+        channel.eventLoop().execute(() -> {
+            if (channel.pipeline().get(HANDLER_NAME) != null) return;
+            channel.pipeline().addFirst(HANDLER_NAME, new ChannelOutboundHandlerAdapter() {
+                @Override
+                public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+                    ReferenceCountUtil.release(msg);
+                    promise.trySuccess();
+                }
+            });
+        });
+    }
+
+    /**
+     * Lifts the blackout so real packets (the disconnect) reach the client again.
+     * Safe to call even if no blackout was installed or the player already left.
+     */
+    static void stopBlackout(Player target) {
+        Channel channel = nmsChannel(target);
+        if (channel == null) return;
+        channel.eventLoop().execute(() -> {
+            if (channel.pipeline().get(HANDLER_NAME) != null) {
+                channel.pipeline().remove(HANDLER_NAME);
+            }
+        });
+    }
+
+    /** The target's netty channel (via NMS {@code Connection#channel}), or null if offline/broken. */
+    private static Channel nmsChannel(Player target) {
+        if (target == null || !target.isOnline()) return null;
         try {
             ServerPlayer serverPlayer = ((CraftPlayer) target).getHandle();
-            if (serverPlayer.connection == null) return;
-            serverPlayer.connection.send(new ClientboundPlayerPositionPacket(
-                    0, // bogus teleport id; the confirm echo mismatches and is ignored
-                    new PositionMoveRotation(
-                            new Vec3(Double.NaN, Double.NaN, Double.NaN), // poisoned position
-                            Vec3.ZERO,
-                            Float.NaN, // poisoned yaw — camera breaks too
-                            Float.NaN  // poisoned pitch
-                    ),
-                    Set.of() // absolute teleport — no relative axes
-            ));
+            if (serverPlayer.connection == null || serverPlayer.connection.connection == null) return null;
+            return (Channel) CHANNEL_FIELD.get(serverPlayer.connection.connection);
         } catch (Exception ignored) {
-            // The player left / the connection broke mid-send — not critical.
+            // The player left / the connection broke — not critical.
+            return null;
         }
     }
 }

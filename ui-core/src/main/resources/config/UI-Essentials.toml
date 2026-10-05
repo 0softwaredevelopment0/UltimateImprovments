@@ -148,11 +148,11 @@ enabled = true
 # Permission node.
 # Default: ""
 permission = ""
-# Freeze the troller's client with a single NaN-teleport packet sent only to their
-# client (the server-side position is never touched). The client poisons its own
-# camera with NaN and hard-freezes like during a real server crash; a frozen client
-# also stops sending any packets. Surviving clients fall through to the fake
-# messages below + the kick.
+# Blackout the troller's client: the server stops sending ANY packets to them
+# (a discarding handler in their netty pipeline), so everything on their screen
+# freezes exactly like during a real server crash. No packets are modified or
+# poisoned, the player state is untouched. Surviving setups fall through to the
+# fake messages below + the kick.
 # Default: true
 freeze_client = true
 # Message text (MiniMessage).
@@ -160,9 +160,9 @@ freeze_client = true
 # traces to players; chat just freezes and then everyone gets disconnected.
 # Default: []
 messages = []
-# Delay.
-# Default: 2
-delay_seconds = 2
+# Delay before the kick (seconds). Real crashes disconnect a few seconds later.
+# Default: 3
+delay_seconds = 3
 # Message text (MiniMessage). "Server closed" is the authentic vanilla
 # disconnect reason shown when a server actually stops.
 # Default: "Server closed"
