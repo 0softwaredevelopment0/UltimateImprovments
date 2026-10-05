@@ -542,6 +542,7 @@ public class ReactorManager {
             this.reactorLocation = null;
             this.valid = false;
             this.reactorId = null;
+            ReactorDamageTracker.resetAudit();
             resetAll();
         }
     }
@@ -1192,13 +1193,17 @@ public class ReactorManager {
 
     /**
      * Block-level damage report from the listener: one cell of the given
-     * category was broken inside the structure.
+     * category was broken inside the structure. The cell is marked missing in
+     * the audit cache immediately (O(1)) — the counts in the report are exact.
      */
-    public void addDamage(ReactorDamageTracker.Category cat) {
-        if (reactorLocation == null) return;
+    public void addDamage(int dx, int dy, int dz, ReactorDamageTracker.Category cat) {
+        ReactorDamageTracker.noteCellBroken(dx, dy, dz);
+        reportDamage(cat);
+    }
 
-        ReactorDamageTracker.Snapshot snap = ReactorDamageTracker.scan(reactorLocation);
-        if (snap == null) return;
+    /** Broadcasts the damage message for a category using the audit cache. */
+    private void reportDamage(ReactorDamageTracker.Category cat) {
+        if (reactorLocation == null || !ReactorDamageTracker.isTracked()) return;
 
         // Only "everything else" (core copper, stairs, rods, barrels…) puts the
         // reactor into uncontrolled mode. Broken bulbs/signs physically stop
@@ -1213,7 +1218,7 @@ public class ReactorManager {
         }
 
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
-        int[] c = ReactorDamageTracker.count(reactorLocation, cat);
+        int[] c = ReactorDamageTracker.cachedCount(cat);
         boolean fullyGone = c[0] <= 0;
         String key = fullyGone ? "failure_report" : "damage_report";
         String body = StructuresMessages.get(key,
@@ -1232,11 +1237,14 @@ public class ReactorManager {
      * was restored. When every tracked template cell matches the world again,
      * the structure counts as repaired.
      */
-    public void addRepair(ReactorDamageTracker.Category cat) {
-        if (reactorLocation == null) return;
+    public void addRepair(int dx, int dy, int dz, ReactorDamageTracker.Category cat) {
+        ReactorDamageTracker.noteCellRepaired(dx, dy, dz);
+        reportRepair(cat);
+    }
 
-        ReactorDamageTracker.Snapshot snap = ReactorDamageTracker.scan(reactorLocation);
-        if (snap == null) return;
+    /** Broadcasts the repair message for a category using the audit cache. */
+    private void reportRepair(ReactorDamageTracker.Category cat) {
+        if (reactorLocation == null || !ReactorDamageTracker.isTracked()) return;
 
         // Case auto-repair: player restored glass into a broken case
         if (cat == ReactorDamageTracker.Category.GLASS && caseSys.isBroken()) {
@@ -1244,7 +1252,7 @@ public class ReactorManager {
         }
 
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
-        int[] c = ReactorDamageTracker.count(reactorLocation, cat);
+        int[] c = ReactorDamageTracker.cachedCount(cat);
         String body = StructuresMessages.get("repair_report",
                 "<gold>Attention! <white>%cat% repair detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>")
                 .replace("%cat%", catName(cat))
@@ -1257,13 +1265,15 @@ public class ReactorManager {
             display.resetSignCache();
         }
 
-        if (snap.allPresent() && structureDamaged) {
+        if (ReactorDamageTracker.cachedAllPresent() && structureDamaged) {
             structureDamaged = false;
             damageWarnTick = 0;
             broadcast(StructuresMessages.get("structure_repaired",
                     "<green>✔ <white>Reactor structure fully restored — control returned."));
         } else if (cat == ReactorDamageTracker.Category.STRUCTURE
-                && snap.structPresent() >= snap.structTotal() && structureDamaged) {
+                && ReactorDamageTracker.cachedCount(ReactorDamageTracker.Category.STRUCTURE)[0]
+                        >= ReactorDamageTracker.totalOf(ReactorDamageTracker.Category.STRUCTURE)
+                && structureDamaged) {
             // All "control" cells are back — control returns even if some
             // glass/signs are still missing (those are cosmetic/physical only).
             structureDamaged = false;
@@ -1272,5 +1282,21 @@ public class ReactorManager {
                     "<green>✔ <white>Reactor structure fully restored — control returned."));
         }
         saveToDb();
+    }
+
+    // =========================
+    // ROTATING STRUCTURE AUDIT (every tick, ~50 cells — full pass in ~1s)
+    // Catches event-blind block changes (explosions, pistons, plugin
+    // block.setType()) and reports them like listener damage/repair.
+    // =========================
+    public void tickStructureAudit() {
+        if (reactorLocation == null || !valid) return;
+        ReactorDamageTracker.AuditResult res = ReactorDamageTracker.auditTick(reactorLocation);
+        for (ReactorDamageTracker.Category cat : res.damaged()) {
+            reportDamage(cat);
+        }
+        for (ReactorDamageTracker.Category cat : res.repaired()) {
+            reportRepair(cat);
+        }
     }
 }

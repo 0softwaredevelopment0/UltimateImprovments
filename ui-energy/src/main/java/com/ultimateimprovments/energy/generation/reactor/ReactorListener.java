@@ -183,7 +183,7 @@ public class ReactorListener implements Listener {
             // Not a template cell (air space, lever, decoration) — not our block
             return;
         }
-        reactor.addDamage(cat);
+        reactor.addDamage(dx, dy, dz, cat);
     }
 
     // =========================
@@ -222,7 +222,7 @@ public class ReactorListener implements Listener {
             if (cat == null) {
                 return; // not a tracked structure cell — ignore silently
             }
-            reactor.addRepair(cat);
+            reactor.addRepair(dx, dy, dz, cat);
             return;
         }
 

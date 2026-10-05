@@ -21,28 +21,25 @@ import java.util.Map;
  *   <li>{@link Category#BULB} — copper control bulbs (12 cells),</li>
  *   <li>{@link Category#STRUCTURE} — everything else (copper, stairs, rods, barrels…).</li>
  * </ul>
- * {@link #scan(Location)} compares the world against the template cell-by-cell and
- * returns present/total per category — the reactor broadcasts localized
- * "Attention!" damage/repair reports from these numbers and keeps running
- * (uncontrolled) instead of tearing down when blocks are broken.
+ * Cell state is tracked through two paths:
+ * <ul>
+ *   <li><b>Events</b> — {@code noteCellBroken/noteCellRepaired} update the cached
+ *       present-counts in O(1) right from the break/place listener;</li>
+ *   <li><b>Rotating audit</b> — {@link #auditTick} checks
+ *       {@value #AUDIT_CELLS_PER_TICK} cells per call (full pass over the
+ *       ~1000-cell template in ~20 ticks) and catches event-blind block changes
+ *       (explosions, pistons, plugin {@code block.setType()} — none of these fire
+ *       BlockBreak/PlaceEvent). Transitions are reported by the manager through
+ *       the normal damage/repair messages.</li>
+ * </ul>
+ * The reactor broadcasts localized "Attention!" damage/repair reports from the
+ * cached counts and keeps running (uncontrolled) instead of tearing down when
+ * blocks are broken.
  */
 public final class ReactorDamageTracker {
 
     /** Damage categories reported by the Attention! messages. */
     public enum Category { GLASS, SIGN, BULB, STRUCTURE }
-
-    /** Cell-by-cell scan result: present template cells per category. */
-    public record Snapshot(int glassPresent, int glassTotal,
-                           int signPresent, int signTotal,
-                           int bulbPresent, int bulbTotal,
-                           int structPresent, int structTotal) {
-
-        /** True when every tracked template cell matches the world. */
-        public boolean allPresent() {
-            return glassPresent >= glassTotal && signPresent >= signTotal
-                    && bulbPresent >= bulbTotal && structPresent >= structTotal;
-        }
-    }
 
     /** "dx,dy,dz" → category (anchor-relative, from the NBT template). */
     private static Map<String, Category> index;
@@ -137,55 +134,135 @@ public final class ReactorDamageTracker {
         };
     }
 
-    /** Full cell-by-cell scan vs the NBT template; {@code null} when the template is unavailable. */
-    public static Snapshot scan(Location base) {
+    // =========================
+    // ROTATING AUDIT — live cell-state cache
+    // =========================
+    /** Cells checked per {@link #auditTick} call (full pass ≈ index/50 ticks). */
+    public static final int AUDIT_CELLS_PER_TICK = 50;
+
+    /** Audit outcome: categories that gained (damaged) or lost (repaired) missing cells this call. */
+    public record AuditResult(java.util.List<Category> damaged, java.util.List<Category> repaired) {}
+
+    private static final Category[] CATEGORIES = Category.values();
+    /** Cached number of present (matching) cells per category. */
+    private static final int[] auditPresent = new int[CATEGORIES.length];
+    /** Keys of tracked cells currently missing in the world. */
+    private static final java.util.Set<String> missingCells = new java.util.HashSet<>();
+    /** Rotating key ring over the index (null until the first audit tick). */
+    private static String[] auditKeys;
+    private static int auditCursor;
+    /** Reactor base the audit state belongs to (re-bind resets the cache). */
+    private static Location auditBase;
+
+    /** True when the template index is loaded and has tracked cells. */
+    public static boolean isTracked() {
         init();
-        if (index.isEmpty() || base == null || base.getWorld() == null) return null;
-
-        World world = base.getWorld();
-        int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
-
-        int gp = 0, sp = 0, bp = 0, rp = 0;
-        for (Map.Entry<String, Category> e : index.entrySet()) {
-            String[] p = e.getKey().split(",");
-            int dx = Integer.parseInt(p[0]);
-            int dy = Integer.parseInt(p[1]);
-            int dz = Integer.parseInt(p[2]);
-            Material actual = world.getBlockAt(bx + dx, by + dy, bz + dz).getType();
-            if (matches(dx, dy, dz, e.getValue(), actual)) {
-                switch (e.getValue()) {
-                    case GLASS -> gp++;
-                    case SIGN -> sp++;
-                    case BULB -> bp++;
-                    case STRUCTURE -> rp++;
-                }
-            }
-        }
-        return new Snapshot(gp, glassTotal, sp, signTotal, bp, bulbTotal, rp, structTotal);
+        return !index.isEmpty();
     }
 
-    /** {@code {present, total}} for one category — the (left/total) message placeholders. */
-    public static int[] count(Location base, Category cat) {
+    /**
+     * Advances the rotating audit by {@value #AUDIT_CELLS_PER_TICK} cells.
+     * The first call (and every re-bind to another reactor base) runs one full
+     * pass so the cached counts start correct. Unloaded chunks are skipped
+     * without state changes (blocks there cannot be verified — and reading
+     * them would sync-load the chunk).
+     */
+    public static synchronized AuditResult auditTick(Location base) {
         init();
-        int total = totalOf(cat);
-        if (index.isEmpty() || total == 0 || base == null || base.getWorld() == null) {
-            return new int[]{ total, total };
+        if (index.isEmpty() || base == null || base.getWorld() == null) {
+            return new AuditResult(java.util.List.of(), java.util.List.of());
+        }
+        if (auditKeys == null || !base.equals(auditBase)) {
+            resetAudit();
+            auditBase = base.clone();
+            auditKeys = index.keySet().toArray(new String[0]);
+            fullAuditPass(base);
         }
 
+        java.util.List<Category> damaged = new java.util.ArrayList<>();
+        java.util.List<Category> repaired = new java.util.ArrayList<>();
         World world = base.getWorld();
         int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
+        int steps = Math.min(AUDIT_CELLS_PER_TICK, auditKeys.length);
+        for (int i = 0; i < steps; i++) {
+            auditCursor = (auditCursor + 1) % auditKeys.length;
+            String key = auditKeys[auditCursor];
+            String[] p = key.split(",");
+            int dx = Integer.parseInt(p[0]);
+            int dy = Integer.parseInt(p[1]);
+            int dz = Integer.parseInt(p[2]);
+            if (!world.isChunkLoaded((bx + dx) >> 4, (bz + dz) >> 4)) continue;
 
-        int present = 0;
+            Category cat = index.get(key);
+            boolean present = matches(dx, dy, dz, cat, world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
+            boolean knownMissing = missingCells.contains(key);
+            if (!present && !knownMissing) {
+                missingCells.add(key);
+                auditPresent[cat.ordinal()]--;
+                if (!damaged.contains(cat)) damaged.add(cat);
+            } else if (present && knownMissing) {
+                missingCells.remove(key);
+                auditPresent[cat.ordinal()]++;
+                if (!repaired.contains(cat)) repaired.add(cat);
+            }
+        }
+        return new AuditResult(damaged, repaired);
+    }
+
+    /** One-time (per bind) full pass: seeds the cached counts from the world. */
+    private static void fullAuditPass(Location base) {
+        missingCells.clear();
+        java.util.Arrays.fill(auditPresent, 0);
+        World world = base.getWorld();
+        int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
         for (Map.Entry<String, Category> e : index.entrySet()) {
-            if (e.getValue() != cat) continue;
             String[] p = e.getKey().split(",");
             int dx = Integer.parseInt(p[0]);
             int dy = Integer.parseInt(p[1]);
             int dz = Integer.parseInt(p[2]);
-            Material actual = world.getBlockAt(bx + dx, by + dy, bz + dz).getType();
-            if (matches(dx, dy, dz, cat, actual)) present++;
+            boolean present = matches(dx, dy, dz, e.getValue(), world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
+            if (present) auditPresent[e.getValue().ordinal()]++;
+            else missingCells.add(e.getKey());
         }
-        return new int[]{ present, total };
+    }
+
+    /**
+     * O(1) cache update from the break listener: one tracked cell disappeared.
+     * No-op when the audit was not initialized yet (the first full pass will
+     * pick the real state up).
+     */
+    public static synchronized void noteCellBroken(int dx, int dy, int dz) {
+        if (auditKeys == null) return;
+        String key = dx + "," + dy + "," + dz;
+        Category cat = index.get(key);
+        if (cat != null && missingCells.add(key)) auditPresent[cat.ordinal()]--;
+    }
+
+    /** O(1) cache update from the place listener: one tracked cell is back. */
+    public static synchronized void noteCellRepaired(int dx, int dy, int dz) {
+        if (auditKeys == null) return;
+        String key = dx + "," + dy + "," + dz;
+        Category cat = index.get(key);
+        if (cat != null && missingCells.remove(key)) auditPresent[cat.ordinal()]++;
+    }
+
+    /** Cached {@code {present, total}} for one category — the (left/total) message placeholders. */
+    public static synchronized int[] cachedCount(Category cat) {
+        return new int[]{ auditPresent[cat.ordinal()], totalOf(cat) };
+    }
+
+    /** True when no tracked cell is currently missing. */
+    public static synchronized boolean cachedAllPresent() {
+        return missingCells.isEmpty();
+    }
+
+    /** Drops the audit cache (teardown/reassembly — the next tick re-seeds it). */
+    public static synchronized void resetAudit() {
+        auditKeys = null;
+        auditCursor = 0;
+        auditBase = null;
+        missingCells.clear();
+        java.util.Arrays.fill(auditPresent, 0);
     }
 
     // =========================
