@@ -44,6 +44,13 @@ in this file.
 > build + unit tests, in-game verification on the test server is the next step.
 
 ### Added
+- **Durability scaling API** — `ItemDurabilityUtil.multiplyItemIntegrity(item, factor)`
+  and `divideItemIntegrity(item, divisor)` scale the item's remaining
+  durability by any fractional number (rounded to whole vanilla points,
+  clamped; editor ops — bypass the unbreakable tag and the Unbreaking roll
+  on purpose). `increaseItemIntegrityPercent` now accepts fractional percents
+  properly (point amount rounded instead of floored, so e.g. +0.4% on a
+  100-max item no longer silently repairs nothing).
 - **Custom enchantments in random loot** — all 18 `ui:*` enchantments joined
   the `minecraft:enchantment/on_random_loot` tag (it previously contained only
   wind_burst/mending), so loot rolls (`enchant_randomly`, e.g. end village
