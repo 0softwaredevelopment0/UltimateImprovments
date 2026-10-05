@@ -28,8 +28,10 @@ import java.util.Random;
  * </ul>
  * Broken glass is replaced with air; repairing (right-click a broken glass
  * position with glass in hand, or the repair command) restores the blocks and
- * resets the integrity to 100%. While broken, the temperature jitters around
- * ~10 000 and the pressure jitters around ~0.
+ * resets the integrity to 100%. The shatter vents heat and pressure TOGETHER:
+ * the case temperature resets to the ambient −273 C* and jitters around it
+ * while broken, the pressure jitters around ~0 — so the freshly repaired
+ * glass starts cold and cannot re-break on its own.
  */
 public class ReactorCase {
 
@@ -111,8 +113,8 @@ public class ReactorCase {
                 temp = Math.min(cfg.getCaseTempMax(), temp + whole);
             }
         } else {
-            // Broken: temperature jitters around ~10 000
-            temp = cfg.getCaseTempMax() - 40 + random.nextInt(80);
+            // Broken: the vented case stays at ambient — small jitter around −273
+            temp = -273 + random.nextInt(80);
         }
 
         // =========================
@@ -185,6 +187,11 @@ public class ReactorCase {
     private void shatterGlass(Location base, ReactorConfig cfg, String reason) {
         state = State.BROKEN;
         integrity = 0;
+        // The vent releases heat AND pressure together: the case cools back to
+        // the ambient −273 C*, so repairing a hot case can no longer re-break
+        // it (the old code kept temp at ~10 000, which sat above the decay
+        // threshold and melted the fresh glass again).
+        temp = -273;
         press = 0;
         jitterPress = 0;
 

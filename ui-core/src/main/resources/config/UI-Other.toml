@@ -1126,6 +1126,15 @@ power_stats_stab = "Stab: %stab%%"
 # Power.
 # Default: C: %cool%%
 power_stats_cool = "C: %cool%%"
+# Content Absorber panel.
+# Default: Content Absorber
+absorber_title = "Content Absorber"
+# Default: P: %p%%
+absorber_p = "P: %p%%"
+# Default: R: %r%/%n%
+absorber_r = "R: %r%/%n%"
+# Default: F: %f%%
+absorber_f = "F: %f%%"
 # Title text (MiniMessage).
 # Default: =| Статы Топлива |=
 fuel_stats_title = "=| Статы Топлива |="
@@ -1377,6 +1386,15 @@ power_stats_stab = "Stab: %stab%%"
 # Power.
 # Default: C: %cool%%
 power_stats_cool = "C: %cool%%"
+# Content Absorber panel.
+# Default: Content Absorber
+absorber_title = "Content Absorber"
+# Default: P: %p%%
+absorber_p = "P: %p%%"
+# Default: R: %r%/%n%
+absorber_r = "R: %r%/%n%"
+# Default: F: %f%%
+absorber_f = "F: %f%%"
 # Title text (MiniMessage).
 # Default: =| Fuel Stats |=
 fuel_stats_title = "=| Fuel Stats |="

@@ -36,10 +36,11 @@ class DarkFusionReactorTemplateTest {
 
         // Every cell except the levers must be part of the check. The 9 lever
         // cells are dropped by the parser (interaction devices — ignored
-        // everywhere), so: 455 solid − 9 levers = 446 blocks + 535 air = 981.
+        // everywhere), so: 455 solid − 9 levers = 446 blocks, plus the Content
+        // Absorber sign cell converted from air → 447 blocks + 534 air = 981.
         assertEquals(981, t.totalCells());
-        assertEquals(446, t.getBlocks().size());
-        assertEquals(535, t.getAirBlocks().size());
+        assertEquals(447, t.getBlocks().size());
+        assertEquals(534, t.getAirBlocks().size());
 
         // Anchor: the item frame stands 0.5 above the central top bulb —
         // the bulb itself must sit directly below the template origin.
