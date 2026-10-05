@@ -127,10 +127,10 @@ enabled = true
 # Default: ""
 permission = ""
 # Message text (MiniMessage).
-# Realistic default: exact vanilla feedback for /op (plain white text, no colors,
-# no emoji, no sound — that is what a player sees when they are really opped).
-# Default: ["Made %player% a server operator"]
-messages = ["Made %player% a server operator"]
+# Realistic default: the exact vanilla op broadcast that online operators see
+# when the console grants OP (dark gray, bracketed, no trailing period).
+# Default: ["<dark_gray>[Server: Made %player% a server operator]</dark_gray>"]
+messages = ["<dark_gray>[Server: Made %player% a server operator]</dark_gray>"]
 # Optional action bar line. Empty = disabled (vanilla never shows one on op).
 # Default: ""
 actionbar = ""
