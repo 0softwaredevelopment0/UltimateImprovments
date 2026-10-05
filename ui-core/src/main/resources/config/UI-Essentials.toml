@@ -148,6 +148,13 @@ enabled = true
 # Permission node.
 # Default: ""
 permission = ""
+# Freeze the troller's client with a single NaN-teleport packet sent only to their
+# client (the server-side position is never touched). The client poisons its own
+# camera with NaN and hard-freezes like during a real server crash; a frozen client
+# also stops sending any packets. Surviving clients fall through to the fake
+# messages below + the kick.
+# Default: true
+freeze_client = true
 # Message text (MiniMessage).
 # Realistic default: nothing in chat — a real hard crash never prints stack
 # traces to players; chat just freezes and then everyone gets disconnected.

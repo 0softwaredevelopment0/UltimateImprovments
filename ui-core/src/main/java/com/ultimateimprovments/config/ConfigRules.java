@@ -545,6 +545,7 @@ final class ConfigRules {
             bool("troll.forceop.log_to_console"),
             bool("troll.crash.enabled"),
             string("troll.crash.permission", false, 128),
+            bool("troll.crash.freeze_client"),
             stringList("troll.crash.messages"),
             integer("troll.crash.delay_seconds", 0, 3600),
             notBlank("troll.crash.kick_message", 128),
