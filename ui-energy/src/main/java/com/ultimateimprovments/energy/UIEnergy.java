@@ -67,7 +67,9 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
         CableNetwork.init();
 
         GeneratorManager.init();
-        generatorTask = new GeneratorTask().runTaskTimer(main, 0L, 1L);
+        // Every 40 ticks (2s): the per-second energy rates inside are scaled
+        // by the period, so generators produce exactly as much as before.
+        generatorTask = new GeneratorTask().runTaskTimer(main, 0L, 40L);
 
         ReactorManager.init();
         reactorListener = new ReactorListener();
@@ -76,13 +78,15 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
 
         ElectricFurnaceManager.init();
 
-        batteryTask = new BatteryDrainTask().runTaskTimer(main, 0L, 1L);
+        // Every 40 ticks (2s): drain/balancer amounts are scaled by the period,
+        // so the per-second energy rates stay identical — just chunkier steps.
+        batteryTask = new BatteryDrainTask().runTaskTimer(main, 0L, 40L);
         BatteryManager.init();
         batteryMultiTickTask = Bukkit.getScheduler().runTaskTimer(main, BatteryManager::tick, 0L, 1L);
 
         cableLossTask = new CableLossTask().runTaskTimer(main, 0L, 100L);
-        balancerTask = new EnergyBalancerTask().runTaskTimer(main, 0L, 1L);
-        cableVisualTask = new CableVisualTask().runTaskTimer(main, 0L, 2L);
+        balancerTask = new EnergyBalancerTask().runTaskTimer(main, 0L, 40L);
+        cableVisualTask = new CableVisualTask().runTaskTimer(main, 0L, 40L);
 
         LightManager.init();
         lightTask = Bukkit.getScheduler().runTaskTimer(main, LightManager::tick, 0L, 1L);

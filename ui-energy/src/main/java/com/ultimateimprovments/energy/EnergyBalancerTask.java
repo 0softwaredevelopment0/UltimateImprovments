@@ -14,12 +14,15 @@ import java.util.*;
 
 public class EnergyBalancerTask extends BukkitRunnable {
 
+    /** The task runs every 40 ticks — the transfer cap is scaled by this, so the per-second balancing rate is unchanged. */
+    private static final int TICKS_PER_RUN = 40;
+
     @Override
     public void run() {
         FileConfiguration cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("energy.balancer.enabled", true)) return;
 
-        int maxTransfer = cfg.getInt("energy.balancer.max_transfer", 25);
+        int maxTransfer = cfg.getInt("energy.balancer.max_transfer", 25) * TICKS_PER_RUN;
         boolean log = cfg.getBoolean("energy.balancer.log", false);
 
         // Collect only BATTERY nodes, avoiding double copying

@@ -81,7 +81,7 @@ public class LeashManager implements Listener {
 
     private static boolean enabled = true;
     private static int maxLeashDistance = 10;   // blocks
-    private static int pullBackInterval = 2;    // ticks (2 = almost instant)
+    private static int pullBackInterval = 40;   // ticks (40 = every 2 seconds)
     private static boolean preventBreak = true;
     private static boolean hardStop = true;     // hard teleport instead of pulling
 
@@ -191,12 +191,12 @@ public class LeashManager implements Listener {
             enabled = cfg.getBoolean("enabled", true);
             maxLeashDistance = cfg.getInt("max_distance", 10);
             if (maxLeashDistance < 1) maxLeashDistance = 1;
-            pullBackInterval = cfg.getInt("pull_back_interval", 2);
+            pullBackInterval = cfg.getInt("pull_back_interval", 40);
             if (pullBackInterval < 1) pullBackInterval = 1;
             preventBreak = cfg.getBoolean("prevent_break", true);
             hardStop = cfg.getBoolean("hard_stop", true);
         } else {
-            enabled = true; maxLeashDistance = 10; pullBackInterval = 2;
+            enabled = true; maxLeashDistance = 10; pullBackInterval = 40;
             preventBreak = true; hardStop = true;
         }
     }

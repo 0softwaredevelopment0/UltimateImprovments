@@ -82,6 +82,13 @@ public class MinecartSpeedManager implements Listener {
     private static double collisionMinSpeed;
     private static int intervalTicks;
 
+    /** Cosmetic smoke is spawned only for carts with a viewer nearby; the viewer flag is refreshed every VIEWER_CHECK_INTERVAL ticks. */
+    private static final int VIEWER_CHECK_INTERVAL = 40;
+    private static final double VIEWER_RADIUS_SQ = 64 * 64;
+    private static int viewerCheckTick;
+    /** Per-cart cached "a player is within render distance" flag. */
+    private static final Map<UUID, Boolean> particleViewers = new ConcurrentHashMap<>();
+
     private static Main plugin;
     private static BukkitRunnable speedTask;
     private static BukkitRunnable displayTask;
@@ -146,26 +153,45 @@ public class MinecartSpeedManager implements Listener {
         };
         speedTask.runTaskTimer(plugin, 0L, intervalTicks);
 
-        // Particle task — spawns CAMPFIRE_SIGNAL_SMOKE at every minecart (~ ~ ~), always every 1 tick
-        // Also handles hopper minecart smelting at high speed
+        // Particle task — spawns CAMPFIRE_SIGNAL_SMOKE at every minecart (~ ~ ~),
+        // but only for carts with a player nearby (viewer flag refreshed every
+        // VIEWER_CHECK_INTERVAL ticks — no smoke for empty chunks of track).
+        // The hopper-minecart smelting is gameplay and runs regardless of viewers.
         particleTask = new BukkitRunnable() {
             @Override
             public void run() {
+                boolean refreshViewers = (viewerCheckTick++ % VIEWER_CHECK_INTERVAL) == 0;
+                if (refreshViewers) particleViewers.clear();
+
                 for (World world : Bukkit.getWorlds()) {
                     for (Minecart cart : world.getEntitiesByClass(Minecart.class)) {
                         if (!cart.isValid()) continue;
                         // CAMPFIRE_SIGNAL_SMOKE particle at the minecart position, normal render, 1 particle, 0 delta
                         Location loc = cart.getLocation();
-                        cart.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE,
-                                loc.getX(), loc.getY(), loc.getZ(),
-                                1, 0, 0, 0, 0);
+
+                        Boolean viewers = particleViewers.get(cart.getUniqueId());
+                        if (viewers == null) {
+                            viewers = false;
+                            for (Player p : world.getPlayers()) {
+                                if (p.getLocation().distanceSquared(loc) <= VIEWER_RADIUS_SQ) {
+                                    viewers = true;
+                                    break;
+                                }
+                            }
+                            particleViewers.put(cart.getUniqueId(), viewers);
+                        }
+                        if (viewers) {
+                            cart.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE,
+                                    loc.getX(), loc.getY(), loc.getZ(),
+                                    1, 0, 0, 0, 0);
+                        }
 
                         // Hopper minecart smelting at high speed (1 item/sec rate-limited)
                         if (hopperSmeltEnabled && cart instanceof HopperMinecart hopper) {
                             double speed = cartSpeeds.getOrDefault(cart.getUniqueId(), baseMaxSpeed);
                             if (speed >= hopperSmeltMinSpeed) {
-                                // Continuous smoke particles while items are being smelted
-                                if (hasSmeltableItems(hopper)) {
+                                // Continuous smoke particles while items are being smelted (cosmetic — viewer-gated)
+                                if (viewers && hasSmeltableItems(hopper)) {
                                     world.spawnParticle(Particle.SMOKE,
                                             loc.getX(), loc.getY() + 0.8, loc.getZ(),
                                             2, 0.15, 0.05, 0.15, 0.02);

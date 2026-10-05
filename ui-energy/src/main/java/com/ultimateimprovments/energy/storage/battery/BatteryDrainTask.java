@@ -14,13 +14,16 @@ import java.util.*;
 
 public class BatteryDrainTask extends BukkitRunnable {
 
+    /** The task runs every 40 ticks — discharge amounts are scaled by this, so the per-second drain rate is unchanged. */
+    private static final int TICKS_PER_RUN = 40;
+
     @Override
     public void run() {
         FileConfiguration cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("energy.battery_drain.enabled", true)) return;
 
         int maxBatteryEnergy = cfg.getInt("energy.battery.max_energy", 100000);
-        int dischargeAmount = cfg.getInt("energy.battery.discharge_per_tick", 10);
+        int dischargeAmount = cfg.getInt("energy.battery.discharge_per_tick", 10) * TICKS_PER_RUN;
 
         boolean smoothEnabled = cfg.getBoolean("energy.battery.smooth_charge.enabled", true);
         double dischargeMultiplier = cfg.getDouble("energy.battery.smooth_charge.discharge_multiplier", 0.5);

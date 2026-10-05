@@ -9,6 +9,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
+import com.ultimateimprovments.util.StructuresMessages;
 
 /**
  * DFC fusion system — ancient debris forms inside the core.
@@ -47,6 +48,8 @@ public class ReactorFusion {
     private double coolRemainder;
     /** Fractional radiation accumulator (rad per tick from the open valve). */
     private double radAccumulator;
+    /** One-shot latch: the deposit is failing (floor barrel missing or full). */
+    private boolean depositStalled;
 
     public ReactorFusion(ReactorManager reactor) {
         this.reactor = reactor;
@@ -88,7 +91,18 @@ public class ReactorFusion {
             // 4. Every N collected particles → 1 ancient debris into the floor barrel
             int perDebris = Math.max(1, cfg.getFusionDebrisPer());
             while (collected >= perDebris) {
-                if (!depositDebris(base)) break; // barrel full — hold the counter
+                if (!depositDebris(base)) {
+                    // Barrel missing or full — hold the counter, but SAY so once
+                    // per stall episode instead of silently freezing at N/N.
+                    if (!depositStalled) {
+                        depositStalled = true;
+                        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+                                "fusion_deposit_stalled",
+                                "<dark_gray>│ <dark_red>D.F.C <dark_gray>» <gold>⚠ <white>Fusion output stalled: <red>floor barrel is missing or full<white> — the debris counter is holding."));
+                    }
+                    break;
+                }
+                depositStalled = false;
                 collected -= perDebris;
                 reactor.onFusionDebrisCrafted();
             }
@@ -199,6 +213,7 @@ public class ReactorFusion {
         collected = 0;
         coolRemainder = 0;
         radAccumulator = 0;
+        depositStalled = false;
     }
 
     // =========================
