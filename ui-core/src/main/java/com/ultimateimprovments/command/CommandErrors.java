@@ -189,9 +189,10 @@ public final class CommandErrors {
         sender.sendMessage(MessageUtil.parse(header(code) + body));
     }
 
-    /** Uniform code prefix: "<dark_red>❌ <red>Error <gray>002<reset> ". */
+    /** Uniform code prefix: "<dark_red>❌ <red>Error <gray>002<dark_gray>:</dark_gray> ". */
     private static String header(int code) {
-        return "<dark_red>❌ <red>Error <gray>" + String.format(Locale.ROOT, "%03d", code) + "<reset> ";
+        return "<dark_red>❌ <red>Error <gray>" + String.format(Locale.ROOT, "%03d", code)
+                + "<dark_gray>:</dark_gray> ";
     }
 
     /**
