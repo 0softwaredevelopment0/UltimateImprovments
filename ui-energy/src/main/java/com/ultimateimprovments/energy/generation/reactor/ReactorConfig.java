@@ -168,7 +168,7 @@ public class ReactorConfig {
         fusionTempEnd = cfg.getInt("reactor.fusion_temp_end", 25000000);
         fusionParticlesPerSec = cfg.getInt("reactor.fusion_particles_per_sec", 20);
         fusionAbsorbRate = cfg.getDouble("reactor.fusion_absorb_rate", 21.0);
-        fusionDebrisPer = cfg.getInt("reactor.fusion_debris_per", 2000);
+        fusionDebrisPer = cfg.getInt("reactor.fusion_debris_per", 4000);
         caseHeatRate = cfg.getInt("reactor.case_heat_rate", 15);
         caseTempMax = cfg.getInt("reactor.case_temp_max", 10000);
         caseTempMin = cfg.getInt("reactor.case_temp_min", -273);
