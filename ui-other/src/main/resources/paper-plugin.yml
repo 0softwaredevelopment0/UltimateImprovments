@@ -59,7 +59,3 @@ dependencies:
     Vault:
       required: false
       join-classpath: true
-permissions:
-  ui.enchant.itemstealing.steal:
-    description: Allows stealing an item from another player with the Item Stealing enchantment
-    default: false
