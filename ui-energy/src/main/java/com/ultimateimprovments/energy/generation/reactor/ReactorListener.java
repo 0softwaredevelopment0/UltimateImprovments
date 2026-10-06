@@ -536,20 +536,25 @@ public class ReactorListener implements Listener {
 
         // The data readout only works with a multimeter in hand
         if (!holdsMultimeter(player)) {
-            player.sendMessage(MessageUtil.parse(msg("sign_multimeter_required",
-                    "<dark_gray>[<red>D.F.C<dark_gray>] <red>A multimeter is required to read the data!")));
+            player.sendMessage(MessageUtil.parse(dfcPrefix() + msg("sign_multimeter_required",
+                    "<red>A multimeter is required to read the data!")));
             return;
         }
 
         // Sensors are down: the meter receives no data at all
         if (reactor.isSensorsDead()) {
-            player.sendMessage(MessageUtil.parse(msg("sensor_no_signal",
+            player.sendMessage(MessageUtil.parse(dfcPrefix() + msg("sensor_no_signal",
                     "<red>Cannot receive any data from sensors: <gray>No signal")));
             return;
         }
 
         // Open reactor stats
         ReactorStatsDisplay.sendStats(player);
+    }
+
+    /** Same [UI][DFC] prefix the reactor broadcasts use. */
+    private static String dfcPrefix() {
+        return MessageUtil.PREFIX + "<dark_gray>[<yellow>DFC<dark_gray>] ";
     }
 
     // =========================
