@@ -3,6 +3,17 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [Unreleased] — alpha.8 in-game testing fixes
+
+### Fixed
+- **Chat filter word patterns failed to compile** — the wildcard-to-regex
+  converter built an invalid Unicode property escape (`\p%L%` instead of
+  `\p{L}`) for word boundaries, so every word pattern with a single `*`
+  (e.g. the default `*нах`) was rejected at startup with
+  "Unknown character property name {%}" and silently dropped from the
+  filter. Word boundaries now use the correct `\p{L}` letter property;
+  fully-wildcarded words (`*word*`) were unaffected.
+
 ## [1.8.3-alpha.8] — since 1.8.3-beta.4 (2026-10-06)
 
 > **Alpha channel**: a large consolidated release (the interim beta.5–beta.11
