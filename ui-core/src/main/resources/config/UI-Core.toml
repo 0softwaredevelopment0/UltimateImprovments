@@ -12,8 +12,8 @@
 # Default: "<dark_gray>[<green>UI<dark_gray>] <reset>"
 prefix = "<dark_gray>[<green>UI<dark_gray>] <reset>"
 # Internal marker, do not edit.
-# Default: "1.8.3-beta.7"
-plugin_version = "1.8.3-beta.7"
+# Default: "1.8.3-beta.8"
+plugin_version = "1.8.3-beta.8"
 
 # Master switch for the /ui config commands (e.g. /ui config regen).
 # Disabled by default so a stray permission grant cannot wipe config edits.

@@ -3,6 +3,17 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.8] — since 1.8.3-beta.7 (2026-10-06)
+
+### Changed
+- **Stall shutdown pacing and shield ramp** — after the absorber valve
+  "Success." the procedure now waits 3s before announcing "Shutting down
+  reactor shield..."; the shield then shuts down in the SHUTDOWN state
+  losing integrity at a fixed 10%/sec (~10s from 100% to 0, was the forming
+  rate 5%/sec); after the shield "Success." it waits another 3s before the
+  "Core marked as offline, awaiting for startup." message. Messages no
+  longer fire back-to-back at the end of the sequence.
+
 ## [1.8.3-beta.7] — since 1.8.3-beta.6 (2026-10-06)
 
 ### Added

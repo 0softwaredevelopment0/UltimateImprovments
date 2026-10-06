@@ -131,11 +131,11 @@ public class ReactorShield {
             }
 
             case SHUTDOWN -> {
-                // Controlled shutdown (stall procedure): the integrity ramps
-                // down smoothly at the forming rate (reversed) — no stress, no
-                // degradation, no failure countdown. At 0% the shield is simply
-                // offline again and the reactor finishes its shutdown.
-                double v = integrity - cfg.getShieldBuildRate() / 20.0 + shutdownRemainder;
+                // Controlled shutdown (stall procedure): the integrity drops
+                // at a fixed 10%/sec (100% → 0 in ~10s) — no stress, no
+                // degradation, no failure countdown. At 0% the shield is
+                // simply offline again and the reactor finishes its shutdown.
+                double v = integrity - STALL_SHUTDOWN_RATE / 20.0 + shutdownRemainder;
                 int whole = (int) Math.floor(v);
                 shutdownRemainder = v - whole;
                 if (whole > 0) {
@@ -196,10 +196,12 @@ public class ReactorShield {
     }
 
     // =========================
-    // CONTROLLED SHUTDOWN — stall procedure: the shield ramps down smoothly
-    // (forming rate, reversed) and ends back OFFLINE. Fractional parts
-    // accumulate so odd per-tick rates still add up exactly.
+    // CONTROLLED SHUTDOWN — stall procedure: the shield ramps down at a fixed
+    // 10%/sec and ends back OFFLINE. Fractional parts accumulate so odd
+    // per-tick rates still add up exactly.
     // =========================
+    /** Shield integrity loss during the controlled shutdown, %/sec. */
+    private static final double STALL_SHUTDOWN_RATE = 10.0;
     private double shutdownRemainder;
 
     /** Enters the smooth controlled shutdown (stall procedure). */
