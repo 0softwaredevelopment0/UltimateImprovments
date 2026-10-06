@@ -31,11 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * ⚡ Multiblock battery (WAXED_COPPER_GRATE)
  * <p>
- * Storage — Marker entities (not SQLite). Each block gets a Marker with PDC:
- *   structure_type="battery", structure_id=UUID
+ * Storage — SQLite structure registry ({@code structure_markers}, type "battery"):
+ * every block gets a row with its cluster UUID, written immediately on place.
  * <p>
- * When any block is destroyed — the whole cluster is disassembled, all Markers removed.
- * On chunk load — Markers are scanned and the cache is rebuilt.
+ * When any block is destroyed — the whole cluster is disassembled, all rows removed.
+ * On startup / chunk load — the cache is rebuilt from the registry.
  */
 public class BatteryManager implements Listener {
 
@@ -154,7 +154,7 @@ public class BatteryManager implements Listener {
         instance = new BatteryManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
 
-        // Rebuild clusters from Markers in loaded chunks
+        // Rebuild clusters from registry entries in loaded chunks
         rebuildFromMarkers();
 
         ConsoleLogger.info("[BatteryMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
@@ -309,7 +309,7 @@ public class BatteryManager implements Listener {
 
         for (long bk : connected) {
             locationToCluster.put(bk, cluster);
-            // Create a Marker entity on each block
+            // Register each block in the structure registry
             Location blockLoc = new Location(cluster.world, getX(bk), getY(bk), getZ(bk));
             StructureMarker.place(blockLoc, "battery", uuid);
             // Create a CableNode with BATTERY type
@@ -576,9 +576,9 @@ public class BatteryManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // SAVE / LOAD — no longer needed (Markers persist on their own)
+    // SAVE / LOAD — no longer needed (rows persist in structure_markers immediately)
     // ════════════════════════════════════════
-    public static void saveAll() { /* no-op: Marker entities persist in world files */ }
+    public static void saveAll() { /* no-op */ }
 
     // ════════════════════════════════════════
     // INTERNAL

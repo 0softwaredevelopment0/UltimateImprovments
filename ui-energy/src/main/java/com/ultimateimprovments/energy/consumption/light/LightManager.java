@@ -28,8 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 💡 Multiblock lamp (REDSTONE_LAMP)
  * <p>
- * Storage — Marker entities (not SQLite).
- * Every block gets a Marker with PDC: structure_type="light", structure_id=UUID.
+ * Storage — SQLite structure registry ({@code structure_markers}, type "light").
+ * Every block gets a row with its cluster UUID, written immediately on place.
  * When any block is destroyed — the whole cluster is dismantled.
  */
 public class LightManager {
@@ -156,7 +156,7 @@ public class LightManager {
     public static void init() {
         instance = new LightManager();
 
-        // Rebuild clusters from Markers
+        // Rebuild clusters from registry entries
         rebuildFromMarkers();
 
         ConsoleLogger.info("[LightMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");

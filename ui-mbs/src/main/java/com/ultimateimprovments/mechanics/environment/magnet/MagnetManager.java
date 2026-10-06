@@ -135,7 +135,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // INIT — rebuild from Marker entities (no SQLite)
+    // INIT — rebuild from the structure registry (SQLite)
     // =========================
     public static void init(org.bukkit.plugin.java.JavaPlugin plugin) {
         instance = new MagnetManager();
@@ -947,7 +947,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // 💾 SAVE — no-op: Marker entities persist in world files
+    // 💾 SAVE — no-op: rows persist in the structure_markers table (saved immediately)
     // =========================
     public static void saveAll() { /* no-op */ }
 }
