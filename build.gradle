@@ -4,7 +4,7 @@ plugins {
 
 // Root build.gradle — shared config for all subprojects
 group = 'com.ultimateimprovments'
-version = '1.8.3-alpha.8'
+version = '1.8.3-release.1'
 
 subprojects {
     apply plugin: 'java-library'
