@@ -1018,6 +1018,9 @@ core_restart_after_shutdown = "<green>✔ <white>Ядро перезапущен
 structure_repaired = "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."
 # Default: <red>Не удаётся получить данные с датчиков: <gray>No signal
 sensor_no_signal = "<red>Не удаётся получить данные с датчиков: <gray>No signal"
+# Sign click without a multimeter.
+# Default: <dark_gray>[<red>D.F.C<dark_gray>] <red>Для считывания данных нужен мультиметр!
+sign_multimeter_required = "<dark_gray>[<red>D.F.C<dark_gray>] <red>Для считывания данных нужен мультиметр!"
 # Default: <dark_red>☠ <red>Протокол самоуничтожения активирован! Взрыв через T-1:00.
 selfdestruct_protocol = "<dark_red>☠ <red>Протокол самоуничтожения активирован! Взрыв через T-1:00."
 # Default: <dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-%sec%s, удачи.
@@ -1278,6 +1281,9 @@ core_restart_after_shutdown = "<green>✔ <white>Core restarted after the emerge
 structure_repaired = "<green>✔ <white>Reactor structure fully restored — control returned."
 # Default: <red>Cannot receive any data from sensors: <gray>No signal
 sensor_no_signal = "<red>Cannot receive any data from sensors: <gray>No signal"
+# Sign click without a multimeter.
+# Default: <dark_gray>[<red>D.F.C<dark_gray>] <red>A multimeter is required to read the data!
+sign_multimeter_required = "<dark_gray>[<red>D.F.C<dark_gray>] <red>A multimeter is required to read the data!"
 # Default: <dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00.
 selfdestruct_protocol = "<dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00."
 # Default: <dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-%sec%s, good luck.
