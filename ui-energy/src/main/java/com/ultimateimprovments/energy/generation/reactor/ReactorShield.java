@@ -226,12 +226,13 @@ public class ReactorShield {
         }
 
         // =========================
-        // DUST inside the core — 16 particles, color follows the temperature:
-        // black (0) → red → orange → yellow → white (10M working point)
+        // DUST inside the core — dense cloud, color follows the temperature:
+        // black (0) → red → orange → yellow → white (10M working point).
+        // Offsets ±0.2 — a compact (half-radius) cloud; count is unchanged.
         // =========================
         Particle.DustOptions dust = new Particle.DustOptions(dustColor(reactor.getCoreTemp()), 1.25f);
         base.getWorld().spawnParticle(Particle.DUST, core,
-                cfg.getShieldParticleDustCount(), 0.4, 0.4, 0.4, 0, dust);
+                cfg.getShieldParticleDustCount(), 0.2, 0.2, 0.2, 0, dust);
     }
 
     /**
