@@ -27,11 +27,13 @@ import java.util.Locale;
  * <p>
  * <b>all:</b> Phase 1 (async, here) saves data; Phase 2 (sync,
  * {@link PluginReloadCoordinator} in ui-core): core subsystems restart in
- * place, then every addon gets a REAL hot-reload via
- * {@code HotReloadEngine}: onDisable → unload → fresh load from the JAR
- * (new classloader) → onEnable. Plain disable+enable is never used: on Paper
- * {@code disablePlugin} closes the JAR and {@code enablePlugin} does not
- * reopen it ("zip file closed" zombies).
+ * place, then every addon gets a soft hot-reload via
+ * {@code HotReloadEngine}: onDisable → reloadConfig → onEnable on the SAME
+ * instance (classloader kept open). A fresh load from the JAR is impossible
+ * on Paper/Purpur 26.3: runtime registration is hard-blocked for
+ * paper-plugins ("Cannot register paper plugins during runtime!"), and plain
+ * {@code disablePlugin} closes the classloader there ("zip file closed"
+ * zombies on re-enable).
  * <p>
  * <b>&lt;addon&gt;:</b> that single addon is hot-reloaded the same way. A
  * targeted reload of UI-Core itself re-runs the core startup path
@@ -162,10 +164,10 @@ public final class ReloadSubcommand {
             public void run() {
                 long start = System.currentTimeMillis();
                 try {
-                    // REAL hot-reload: onDisable → unload → fresh load from the
-                    // JAR (new classloader) → onEnable. NEVER plain disable+
-                    // enable: on Paper disabling closes the JAR and re-enabling
-                    // does not reopen it ("zip file closed" zombie).
+                    // Soft hot-reload: onDisable → reloadConfig → onEnable on
+                    // the SAME instance (classloader kept open). A fresh load
+                    // from the JAR is hard-blocked on Paper/Purpur 26.3 for
+                    // paper-plugins, and plain disablePlugin closes the JAR.
                     ConsoleLogger.info("[Reload] [" + name + "] Hot-reloading...");
                     Plugin fresh = com.ultimateimprovments.core.HotReloadEngine.hotReload(targetPlugin, name);
 

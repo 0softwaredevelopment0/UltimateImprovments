@@ -361,24 +361,32 @@ public class AddonSubcommand implements SubCommand {
                                 "<yellow>⚠</yellow> <white>Addon </white><yellow>%addon%</yellow> <white>is already enabled.</white>",
                                 "%addon%", plugin.getName()));
                     } else {
-                        // Fresh load from disk: re-enabling the old disabled instance
-                        // would run onEnable against its closed JAR ("zip file closed").
+                        // Soft enable path: re-enable the SAME instance (the
+                        // classloader stays open). A fresh load from disk is
+                        // hard-blocked on Paper/Purpur 26.3 for paper-plugins.
                         HotReloadEngine.hotReload(plugin, "addon enable");
                         reportPostEnable(sender, Bukkit.getPluginManager().getPlugin(p.addon()), entry, "enabled");
                     }
                 }
                 case "disable" -> {
-                    Bukkit.getPluginManager().disablePlugin(plugin);
+                    // Soft disable: real onDisable WITHOUT the classloader
+                    // close — a vanilla disablePlugin would close the JAR and
+                    // a later enable would hit a "zip file closed" zombie.
+                    if (plugin instanceof org.bukkit.plugin.java.JavaPlugin jp) {
+                        com.ultimateimprovments.core.HotReloadEngine.softDisable(jp, "addon disable");
+                    } else {
+                        Bukkit.getPluginManager().disablePlugin(plugin);
+                    }
                     if (entry != null) entry.setManuallyDisabled(true);
                     sender.sendMessage(msg("addon.action_done",
                             "<green>✔</green> <white>Addon </white><yellow>%addon%</yellow> <white>disabled.</white>",
                             "%addon%", plugin.getName()));
                 }
                 case "restart" -> {
-                    // REAL hot-reload: onDisable → unload → fresh load from the JAR
-                    // (new classloader) → onEnable. Plain disable+enable is never
-                    // used: on Paper disabling closes the JAR and re-enabling does
-                    // not reopen it ("zip file closed" zombie).
+                    // Soft hot-reload: onDisable → reloadConfig → onEnable on
+                    // the SAME instance (classloader kept open). A fresh load
+                    // from the JAR is hard-blocked on Paper/Purpur 26.3 for
+                    // paper-plugins; plain disablePlugin closes the JAR.
                     HotReloadEngine.hotReload(plugin, "addon restart");
                     reportPostEnable(sender, Bukkit.getPluginManager().getPlugin(p.addon()),
                             entry, "restarted");

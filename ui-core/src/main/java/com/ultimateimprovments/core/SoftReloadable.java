@@ -3,9 +3,9 @@ package com.ultimateimprovments.core;
 /**
  * Optional in-place restart hook for UI-* addon main classes.
  *
- * @deprecated {@code /ui reload} now performs a REAL hot-reload via
- * {@link HotReloadEngine}: onDisable → unload → fresh load from the JAR →
- * onEnable. This interface is no longer dispatched by any command; addon main
+ * @deprecated {@code /ui reload} now performs a soft hot-reload via
+ * {@link HotReloadEngine}: onDisable → reloadConfig → onEnable on the same
+ * instance. This interface is no longer dispatched by any command; addon main
  * classes keep implementing it only as a no-cost marker.
  */
 @Deprecated

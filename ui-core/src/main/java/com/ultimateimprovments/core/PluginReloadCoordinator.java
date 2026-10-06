@@ -13,20 +13,20 @@ import java.util.List;
 /**
  * Executes the synchronous phase of {@code /ui reload} from the CORE plugin's classloader.
  * <p>
- * <b>Full hot-reload with real lifecycle events:</b> every addon goes through a
- * real {@code onDisable}, is unloaded from the PluginManager registries, is
- * loaded FRESH from its JAR (brand-new classloader — mandatory, because on
- * Paper {@code disablePlugin} closes the JAR and {@code enablePlugin} does not
- * reopen it, so re-enabling the same instance leaves a
- * {@code zip file closed} zombie) and gets a real {@code onEnable}. See
- * {@link HotReloadEngine}.
+ * <b>Soft hot-reload with real lifecycle events:</b> every addon goes through a
+ * real {@code onDisable} and a real {@code onEnable} on the SAME instance —
+ * {@code PluginManager.loadPlugin()} is hard-blocked for paper-plugins on
+ * Paper/Purpur 26.3 ("Cannot register paper plugins during runtime!") and
+ * {@code disablePlugin} closes the classloader there, so the coordinator uses
+ * the soft lifecycle of {@link HotReloadEngine} (disable without the close,
+ * config re-read, enable).
  * <p>
- * UI-Core itself is never unloaded (the engine lives in its classloader and
+ * UI-Core itself is never reloaded (the engine lives in its classloader and
  * every addon joins it) — its subsystems restart in place via
  * {@link PluginShutdown}/{@link PluginStartup}.
  * <p>
  * Sequence: core shutdown → config reload → core startup → addons
- * unload-all (reverse order) → addons load-all (load order).
+ * soft-disable (reverse order) → addons config + enable (load order).
  */
 public final class PluginReloadCoordinator {
 
