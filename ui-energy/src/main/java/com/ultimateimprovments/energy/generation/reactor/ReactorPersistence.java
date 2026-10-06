@@ -38,19 +38,21 @@ public class ReactorPersistence {
                  shield_state, shield_integrity, shield_fail_countdown,
                  selfdestruct_phase, selfdestruct_ticks, selfdestruct_done,
                  core_emergency_stopped,
-                 stall_phase, stall_ticks, core_offline)
-                VALUES (?, ?, ?, ?, ?,
-                        ?, ?, ?,
-                        ?, ?, ?,
-                        ?,
-                        ?, ?, ?, ?, ?,
-                        ?, ?,
-                        ?, ?, ?, ?,
-                        ?,
-                        ?, ?, ?,
-                        ?, ?, ?,
-                        ?,
-                        ?, ?, ?)
+                 stall_phase, stall_ticks, core_offline,
+                 startup_phase, startup_ticks)
+                 VALUES (?, ?, ?, ?, ?,
+                         ?, ?, ?,
+                         ?, ?, ?,
+                         ?,
+                         ?, ?, ?, ?, ?,
+                         ?, ?,
+                         ?, ?, ?, ?,
+                         ?,
+                         ?, ?, ?,
+                         ?, ?, ?,
+                         ?,
+                         ?, ?, ?,
+                         ?, ?)
             """)) {
 
             ps.setString(1, id);
@@ -88,6 +90,8 @@ public class ReactorPersistence {
             ps.setString(32, state.getStallPhase());
             ps.setInt(33, state.getStallTicks());
             ps.setInt(34, state.isCoreOffline() ? 1 : 0);
+            ps.setString(35, state.getStartupPhase());
+            ps.setInt(36, state.getStartupTicks());
 
             ps.executeUpdate();
 
@@ -209,6 +213,12 @@ public class ReactorPersistence {
                     state.setCoreOffline(rs.getInt("core_offline") == 1);
                 } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load stall state: " + e.getMessage());
+                }
+                try {
+                    state.setStartupPhase(rs.getString("startup_phase"));
+                    state.setStartupTicks(rs.getInt("startup_ticks"));
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load startup state: " + e.getMessage());
                 }
                 try {
                     state.setLaserPowers(new double[] {

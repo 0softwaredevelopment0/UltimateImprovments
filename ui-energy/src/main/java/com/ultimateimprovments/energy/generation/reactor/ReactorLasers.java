@@ -1,7 +1,5 @@
 package com.ultimateimprovments.energy.generation.reactor;
 
-import com.ultimateimprovments.util.StructuresMessages;
-
 import org.bukkit.Location;
 
 /**
@@ -93,9 +91,7 @@ public class ReactorLasers {
         boolean startupPowered = isLampPowered(base, LAMP_STARTUP);
         if (startupPowered && !prevStartupPowered && !started) {
             started = true;
-            ReactorManager.getInstance().broadcastRaw(msg("reactor_startup",
-                    "<gold>⚡ <yellow>Forming the shield... Lasers activate after."));
-            // Shield first: integrity builds up (Creating → Working), lasers become operational then
+            // Cinematic startup sequence begins (announcement inside)
             ReactorManager.getInstance().onStartupPulse();
         } else if (startupPowered && !prevStartupPowered && started) {
             reactor.tryManualShutdownTrigger();
@@ -110,12 +106,14 @@ public class ReactorLasers {
         // =========================
         // POWER RAMP — always responsive: the ±5/−5 lamps ramp their laser
         // power (signs show it) even before the startup pulse. Self-destruct:
-        // the control bulbs are locked (dead) — no ramp.
+        // the control bulbs are locked (dead) — no ramp. Startup sequence:
+        // the control is inert until the "Igniting reactor core..." step.
         // =========================
         double rampPerTick = cfg.getLaserRampRate() / 20.0;
         double[] max = { 100, 100, 200, 100 };
+        boolean rampAllowed = !controlLocked && !reactor.isStartupSequenceActive();
         for (int i = 0; i < 4; i++) {
-            if (controlLocked || controlDisabled[i]) continue;
+            if (!rampAllowed || controlDisabled[i]) continue;
             if (isLampPowered(base, LAMP_PLUS[i])) {
                 power[i] = Math.min(max[i], power[i] + rampPerTick);
             }
@@ -215,10 +213,6 @@ public class ReactorLasers {
     // =========================
     private boolean isLampPowered(Location base, int[] off) {
         return ReactorManager.getInstance().isBulbPoweredAt(base, off[0], off[1], off[2]);
-    }
-
-    private static String msg(String key, String def) {
-        return StructuresMessages.get(key, def);
     }
 
     /** Resets the laser system (disassemble / meltdown / fresh install). */

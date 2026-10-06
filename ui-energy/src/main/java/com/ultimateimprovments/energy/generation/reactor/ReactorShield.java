@@ -82,13 +82,10 @@ public class ReactorShield {
             case OFFLINE -> { /* nothing until startup */ }
 
             case CREATING -> {
-                // Smooth build-up to 100%
-                integrity = Math.min(100, integrity + cfg.getShieldBuildRate() / 20.0);
-                if (integrity >= 100) {
-                    state = State.WORKING;
-                    ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                            "shield_working", "<green>✔ <yellow>Shield formed! The core ignites, lasers activate."));
-                }
+                // Build-up to 100% at a fixed 10%/sec; the core ignites later,
+                // at the "Igniting reactor core..." step of the startup
+                // sequence — not automatically at 100%.
+                integrity = Math.min(100, integrity + STARTUP_BUILD_RATE / 20.0);
             }
 
             case WORKING -> {
@@ -164,14 +161,28 @@ public class ReactorShield {
     public boolean isFailed() { return state == State.FAILED; }
 
     // =========================
-    // STARTUP — called by the laser system on the startup pulse
+    // STARTUP — called by the startup sequence at the "Forming reactor
+    // shield..." step. The integrity builds at a fixed rate; ignition happens
+    // later via {@link #ignite()}.
     // =========================
+    /** Shield integrity build-up during the startup sequence, %/sec. */
+    private static final double STARTUP_BUILD_RATE = 10.0;
+
     public void start() {
         if (state != State.OFFLINE) return;
         state = State.CREATING;
         integrity = Math.max(integrity, 1);
-        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                "shield_creating", "<gold>⚡ <yellow>Forming the shield..."));
+    }
+
+    /**
+     * Ignites the core (startup sequence, "Igniting reactor core..." step):
+     * the fully formed shield becomes operational — particles appear and the
+     * laser/absorber control takes effect.
+     */
+    public void ignite() {
+        if (state != State.CREATING) return;
+        integrity = 100;
+        state = State.WORKING;
     }
 
     // =========================
