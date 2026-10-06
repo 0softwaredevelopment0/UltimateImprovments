@@ -166,8 +166,173 @@ public class ReactorManager {
         }
     }
 
+    // =========================
+    // STALL WARNINGS — one message per downward threshold crossing while the
+    // reaction is running (the exact moment of heat loss, not "any time below").
+    // =========================
+    /** Below this core temperature the fusion reaction stops (1M C* default). */
+    private static final int STALL_WARN_CRITICAL = 10_000;
+
+    private void checkStallWarnings(int prevTemp) {
+        if (isStallShutdownActive() || structureDamaged
+                || !lasers.isStarted() || isSelfdestructActive()
+                || shield.getState() != ReactorShield.State.WORKING) return;
+
+        int fusionMin = ReactorConfig.getInstance().getFusionTempMin();
+        if (prevTemp > fusionMin && coreTemp <= fusionMin) {
+            broadcast(StructuresMessages.get("stall_warn_low",
+                    "<white>Core temperatures are too low to continue fusion reaction, please active all power lasers."));
+        }
+        if (prevTemp > STALL_WARN_CRITICAL && coreTemp <= STALL_WARN_CRITICAL) {
+            broadcast(StructuresMessages.get("stall_warn_critical",
+                    "<aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!"));
+        }
+        if (prevTemp > 0 && coreTemp <= 0) {
+            broadcast(StructuresMessages.get("stall_warn_failure",
+                    "<aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!"));
+        }
+    }
+
+    /**
+     * Starts the stall shutdown when the core reaches absolute zero (−273 C*)
+     * — crossing into it, so a reactor restarted cold does not instantly
+     * re-stall: it must first gain heat and lose it again.
+     */
+    private void tryTriggerStallShutdown(int prevTemp) {
+        if (stallPhase != StallPhase.NONE) return;
+        if (structureDamaged || !lasers.isStarted() || isSelfdestructActive()) return;
+        if (shield.getState() != ReactorShield.State.WORKING) return;
+        if (prevTemp <= TEMP_MIN || coreTemp > TEMP_MIN) return;
+
+        stallPhase = StallPhase.WAIT_POWER;
+        stallTicks = 0;
+        broadcast(StructuresMessages.get("stall_shutdown_initiated",
+                "<white>Core shutdown initained due to reaction failue, please wait."));
+        saveToDb();
+    }
+
+    /** Stall shutdown phase machine (every tick). */
+    private void tickStallShutdown() {
+        switch (stallPhase) {
+            case NONE, SHIELD_RAMP -> { /* SHIELD_RAMP completes via onStallShieldDown() */ }
+
+            case WAIT_POWER -> {
+                if (++stallTicks >= 20 * 5) {
+                    broadcast(StructuresMessages.get("stall_power_lasers",
+                            "<white>Shutting down power lasers..."));
+                    lasers.shutDownLaser(ReactorLasers.LASER_P1);
+                    stallPhase = StallPhase.WAIT_P2;
+                    stallTicks = 0;
+                }
+            }
+            case WAIT_P2 -> {
+                if (++stallTicks >= 20 * 3) {
+                    lasers.shutDownLaser(ReactorLasers.LASER_P2);
+                    broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    stallPhase = StallPhase.WAIT_STAB_MSG;
+                    stallTicks = 0;
+                }
+            }
+            case WAIT_STAB_MSG -> {
+                if (++stallTicks >= 20 * 2) {
+                    broadcast(StructuresMessages.get("stall_stab_lasers",
+                            "<white>Shutting down stabilization lasers..."));
+                    stallPhase = StallPhase.WAIT_STAB_OFF;
+                    stallTicks = 0;
+                }
+            }
+            case WAIT_STAB_OFF -> {
+                if (++stallTicks >= 20 * 2) {
+                    lasers.shutDownLaser(ReactorLasers.LASER_STAB);
+                    broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    stallPhase = StallPhase.WAIT_ABS_MSG;
+                    stallTicks = 0;
+                }
+            }
+            case WAIT_ABS_MSG -> {
+                if (++stallTicks >= 20 * 2) {
+                    broadcast(StructuresMessages.get("stall_absorber",
+                            "<white>Closing content absorber valve..."));
+                    stallPhase = StallPhase.WAIT_ABS_OFF;
+                    stallTicks = 0;
+                }
+            }
+            case WAIT_ABS_OFF -> {
+                if (++stallTicks >= 20 * 3) {
+                    lasers.shutDownLaser(ReactorLasers.LASER_ABSORBER);
+                    broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    broadcast(StructuresMessages.get("stall_shield",
+                            "<white>Shutting down reactor shield..."));
+                    shield.beginShutdown();
+                    stallPhase = StallPhase.SHIELD_RAMP;
+                    stallTicks = 0;
+                }
+            }
+        }
+    }
+
+    /**
+     * The shield finished its smooth shutdown ramp (stall procedure) — the
+     * core is marked offline and awaits a new startup pulse.
+     */
+    public void onStallShieldDown() {
+        if (stallPhase != StallPhase.SHIELD_RAMP) return;
+        broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+        broadcast(StructuresMessages.get("stall_offline",
+                "<white>Core marked as offline, awating for startup."));
+        lasers.setStarted(false);
+        coreOfflineMarked = true;
+        stallPhase = StallPhase.NONE;
+        stallTicks = 0;
+        saveToDb();
+    }
+
     /** Emergency core shutdown latch (shield integrity fell below the critical threshold). */
     private boolean coreEmergencyStopped = false;
+
+    // =========================
+    // STALL SHUTDOWN PROTOCOL: the reaction lost its heat. While the core is
+    // running, threshold crossings broadcast one warning each (below 1M C* —
+    // fusion stops, below 10k C* — critical, below 0 C* — reaction failure).
+    // Reaching absolute zero (−273 C*) starts the full automatic shutdown:
+    // power lasers off one by one (their ±5% control detached), stab laser,
+    // absorber valve, then the shield ramps down smoothly (Shutting down) and
+    // the core is marked offline, awaiting a new startup pulse. Control is
+    // never blocked while the reactor is offline/starting/stopping — the
+    // lasers simply have no effect and no particles are emitted.
+    // =========================
+    public enum StallPhase {
+        NONE,          // idle
+        WAIT_POWER,    // 5s after the stall announcement → power lasers step
+        WAIT_P2,       // P1 off → 3s → P2 off
+        WAIT_STAB_MSG, // 2s → "Shutting down stabilization lasers..."
+        WAIT_STAB_OFF, // 2s → stab off
+        WAIT_ABS_MSG,  // 2s → "Closing content absorber valve..."
+        WAIT_ABS_OFF,  // 3s → valve closed, shield shutdown begins
+        SHIELD_RAMP    // shield ramps down (ReactorShield) → onStallShieldDown()
+    }
+
+    private StallPhase stallPhase = StallPhase.NONE;
+    private int stallTicks;
+    /** Set once the stall shutdown completes — the startup sign shows Offline. */
+    private boolean coreOfflineMarked = false;
+
+    public boolean isStallShutdownActive() { return stallPhase != StallPhase.NONE; }
+    public StallPhase getStallPhase() { return stallPhase; }
+    /** Whether the core finished its shutdown and is awaiting a new startup pulse. */
+    public boolean isCoreOfflineMarked() { return coreOfflineMarked; }
+
+    /**
+     * The core is actually running: started, shield formed and no shutdown in
+     * progress. Gates particles and heat/cool effects — while the reactor is
+     * offline / forming / shutting down nothing is emitted.
+     */
+    public boolean isCoreActive() {
+        return lasers.isStarted()
+                && shield.getState() == ReactorShield.State.WORKING
+                && !isStallShutdownActive();
+    }
+
     public static ReactorManager getInstance() {
         // Kept for compatibility: the first (or only) reactor.
         return (reactors == null || reactors.isEmpty()) ? instance : reactors.get(0);
@@ -401,6 +566,9 @@ public class ReactorManager {
         s.setSelfdestructTicks(r.selfdestructTicks);
         s.setSelfdestructDone(r.selfdestructDone);
         s.setCoreEmergencyStopped(r.coreEmergencyStopped);
+        s.setStallPhase(r.stallPhase.name());
+        s.setStallTicks(r.stallTicks);
+        s.setCoreOffline(r.coreOfflineMarked);
         s.setLaserPowers(new double[] {
                 r.lasers.getPower(ReactorLasers.LASER_P1),
                 r.lasers.getPower(ReactorLasers.LASER_P2),
@@ -455,6 +623,9 @@ public class ReactorManager {
         selfdestructDone = state.isSelfdestructDone();
         selfdestructPhase = parseSelfdestructPhase(state.getSelfdestructPhase());
         selfdestructTicks = state.getSelfdestructTicks();
+        stallPhase = parseStallPhase(state.getStallPhase());
+        stallTicks = state.getStallTicks();
+        coreOfflineMarked = state.isCoreOffline();
 
         // Shield: restore the exact phase + integrity + detonation countdown
         try {
@@ -476,6 +647,28 @@ public class ReactorManager {
         } else if (selfdestructPhase == SelfdestructPhase.TIMED) {
             lasers.setControlLocked(true);
         }
+
+        // Stall procedure: a persisted SHUTDOWN shield (restart mid-ramp)
+        // resumes its ramp; a SHUTDOWN shield without the stall phase (should
+        // not happen) completes the shutdown instantly; a SHIELD_RAMP phase
+        // without a SHUTDOWN shield re-arms the ramp.
+        if (shield.getState() == ReactorShield.State.SHUTDOWN && stallPhase != StallPhase.SHIELD_RAMP) {
+            if (stallPhase == StallPhase.NONE) {
+                shield.setState(ReactorShield.State.OFFLINE);
+                shield.setIntegrity(0);
+                lasers.setStarted(false);
+                coreOfflineMarked = true;
+            } else {
+                shield.setState(ReactorShield.State.WORKING);
+            }
+        } else if (stallPhase == StallPhase.SHIELD_RAMP
+                && shield.getState() != ReactorShield.State.SHUTDOWN) {
+            if (shield.getState() == ReactorShield.State.OFFLINE) {
+                onStallShieldDown();
+            } else {
+                shield.beginShutdown();
+            }
+        }
         double[] lp = state.getLaserPowers();
         if (lp != null && lp.length >= 4) {
             lasers.setPower(ReactorLasers.LASER_P1, lp[0]);
@@ -496,6 +689,16 @@ public class ReactorManager {
             return SelfdestructPhase.valueOf(name);
         } catch (IllegalArgumentException e) {
             return SelfdestructPhase.NONE;
+        }
+    }
+
+    /** Parses a persisted stall-shutdown phase name, NONE on any mismatch. */
+    private static StallPhase parseStallPhase(String name) {
+        if (name == null) return StallPhase.NONE;
+        try {
+            return StallPhase.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return StallPhase.NONE;
         }
     }
 
@@ -572,6 +775,7 @@ public class ReactorManager {
         if (!enabled || !valid || reactorLocation == null) return;
 
         Location base = reactorLocation;
+        int prevTemp = coreTemp;
 
         // West tower bulb = heater, east tower bulb = cooler (DFC 10×11×9 geometry)
         // =========================
@@ -655,8 +859,10 @@ public class ReactorManager {
             // shield (no startup yet, integrity 0) is its normal state and
             // must not spam "Shield integrity compromised!"
             var shieldState = shield.getState();
-            boolean shieldActive = shieldState == ReactorShield.State.CREATING
-                    || shieldState == ReactorShield.State.WORKING;
+            // Warn only while the shield is actually operating (WORKING) —
+            // CREATING (forming) and SHUTDOWN (planned shutdown) legitimately
+            // run below 100% and must not raise false alarms.
+            boolean shieldActive = shieldState == ReactorShield.State.WORKING;
             if (shieldActive && shield.getIntegrity() < 100) broadcast("<dark_red>⚠ <red>Shield integrity compromised!");
             if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Case glass is broken!");
         }
@@ -722,6 +928,14 @@ public class ReactorManager {
         if (coreTemp > coreTempMin) {
             coreTemp = Math.max(coreTempMin, coreTemp - 1);
         }
+
+        // =========================
+        // STALL — reaction lost its heat: threshold warnings (1M / 10k / 0 C*)
+        // and the automatic shutdown once the core reaches −273 C*
+        // =========================
+        checkStallWarnings(prevTemp);
+        tryTriggerStallShutdown(prevTemp);
+        tickStallShutdown();
 
         // =========================
         // SHIELD INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%) — via the
@@ -907,6 +1121,9 @@ public class ReactorManager {
         selfdestructTicks = 0;
         selfdestructDone = false;
         selfdestructWarnTicks = -1;
+        stallPhase = StallPhase.NONE;
+        stallTicks = 0;
+        coreOfflineMarked = false;
 
         display.resetDisplay();
 
@@ -1011,6 +1228,9 @@ public class ReactorManager {
         selfdestructTicks = 0;
         selfdestructDone = false;
         selfdestructWarnTicks = -1;
+        stallPhase = StallPhase.NONE;
+        stallTicks = 0;
+        coreOfflineMarked = false;
         energyGenerated = 0;
         energyRemainder = 0;
         prevShInt = 100;
@@ -1145,6 +1365,9 @@ public class ReactorManager {
             broadcast(StructuresMessages.get("core_restart_after_shutdown",
                     "<green>✔ <white>Core restarted after the emergency shutdown."));
         }
+        // New run: the offline mark goes away and the ±5% control lamps work again
+        coreOfflineMarked = false;
+        lasers.clearControlDisable();
         shield.start();
         rollSelfdestruct();
     }

@@ -1031,6 +1031,27 @@ selfdestruct_finale = "<dark_red>☠ <red>Финал самоуничтожен�
 selfdestruct_complete = "<dark_red>☠ <red>Протокол самоуничтожения выполнен — ядро не спасти."
 # Default: <dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-10s, удачи.
 shield_failure = "<dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-10s, удачи."
+# Stall — реакция потеряла тепло: предупреждения по порогам и автопоцедура шатдауна при -273 C*.
+# Default: <white>Температура ядра слишком низкая для продолжения реакции синтеза, включите все силовые лазеры.
+stall_warn_low = "<white>Температура ядра слишком низкая для продолжения реакции синтеза, включите все силовые лазеры."
+# Default: <aqua>Температура ядра критически низкая, немедленно включите все силовые лазеры, чтобы избежать остановки реакции!
+stall_warn_critical = "<aqua>Температура ядра критически низкая, немедленно включите все силовые лазеры, чтобы избежать остановки реакции!"
+# Default: <aqua>Сбой реакции ядра из-за критически низкой температуры, неизбежна остановка реакции!
+stall_warn_failure = "<aqua>Сбой реакции ядра из-за критически низкой температуры, неизбежна остановка реакции!"
+# Default: <white>Отключение ядра из-за сбоя реакции, пожалуйста, подождите.
+stall_shutdown_initiated = "<white>Отключение ядра из-за сбоя реакции, пожалуйста, подождите."
+# Default: <white>Отключение силовых лазеров...
+stall_power_lasers = "<white>Отключение силовых лазеров..."
+# Default: <green>Выполнено.
+stall_success = "<green>Выполнено."
+# Default: <white>Отключение стабилизирующих лазеров...
+stall_stab_lasers = "<white>Отключение стабилизирующих лазеров..."
+# Default: <white>Закрытие клапана сборщика содержимого...
+stall_absorber = "<white>Закрытие клапана сборщика содержимого..."
+# Default: <white>Отключение щита реактора...
+stall_shield = "<white>Отключение щита реактора..."
+# Default: <white>Ядро помечено как отключённое, ожидается стартап.
+stall_offline = "<white>Ядро помечено как отключённое, ожидается стартап."
 # Default: <red>Сначала нажмите SHIFT+ПКМ по рамке реактора!
 pending_frame_reactor = "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"
 # Default: <red>Сначала нажмите SHIFT+ПКМ по рамке на магните!
@@ -1200,6 +1221,8 @@ status_running = "Работает"
 status_done = "Готово"
 # Default: Нет стартапа
 status_no_startup = "Нет стартапа"
+# Default: Отключение
+status_shutting_down = "Отключение"
 # Default: Ожидание
 status_standby = "Ожидание"
 
@@ -1294,6 +1317,27 @@ selfdestruct_finale = "<dark_red>☠ <red>Self-destruct finale: the Power Lasers
 selfdestruct_complete = "<dark_red>☠ <red>Self-destruct sequence complete — the core is beyond saving."
 # Default: <dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck.
 shield_failure = "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."
+# Stall — the reaction lost its heat: threshold warnings and the automatic shutdown at -273 C*.
+# Default: <white>Core temperatures are too low to continue fusion reaction, please active all power lasers.
+stall_warn_low = "<white>Core temperatures are too low to continue fusion reaction, please active all power lasers."
+# Default: <aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!
+stall_warn_critical = "<aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!"
+# Default: <aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!
+stall_warn_failure = "<aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!"
+# Default: <white>Core shutdown initained due to reaction failue, please wait.
+stall_shutdown_initiated = "<white>Core shutdown initained due to reaction failue, please wait."
+# Default: <white>Shutting down power lasers...
+stall_power_lasers = "<white>Shutting down power lasers..."
+# Default: <green>Success.
+stall_success = "<green>Success."
+# Default: <white>Shutting down stabilization lasers...
+stall_stab_lasers = "<white>Shutting down stabilization lasers..."
+# Default: <white>Closing content absorber valve...
+stall_absorber = "<white>Closing content absorber valve..."
+# Default: <white>Shutting down reactor shield...
+stall_shield = "<white>Shutting down reactor shield..."
+# Default: <white>Core marked as offline, awating for startup.
+stall_offline = "<white>Core marked as offline, awating for startup."
 # Default: <red>First press SHIFT+RMB on the reactor frame!
 pending_frame_reactor = "<red>First press SHIFT+RMB on the reactor frame!"
 # Default: <red>First press SHIFT+RMB on the magnet frame!
@@ -1463,6 +1507,8 @@ status_running = "Running"
 status_done = "Done"
 # Default: No startup
 status_no_startup = "No startup"
+# Default: Shutting down
+status_shutting_down = "Shutting down"
 # Default: Standby
 status_standby = "Standby"
 

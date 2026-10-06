@@ -13,6 +13,9 @@ import org.bukkit.util.Vector;
  * States: {@code OFFLINE} → (startup pulse) → {@code CREATING} (integrity
  * builds smoothly) → {@code WORKING} (core ignited, lasers operational) →
  * on integrity 0 → 10s countdown → primed creeper detonation.
+ * A controlled shutdown (stall procedure) moves WORKING → {@code SHUTDOWN}:
+ * the integrity ramps down smoothly at the forming rate and the shield ends
+ * back in OFFLINE — a planned shutdown can never detonate.
  * <p>
  * Stress sources (each contributes its own %, they simply add up):
  * <ul>
@@ -36,7 +39,7 @@ import org.bukkit.util.Vector;
  */
 public class ReactorShield {
 
-    public enum State { OFFLINE, CREATING, WORKING, FAILED }
+    public enum State { OFFLINE, CREATING, WORKING, FAILED, SHUTDOWN }
 
     private final ReactorManager reactor;
 
@@ -126,6 +129,24 @@ public class ReactorShield {
                     detonate(base, cfg);
                 }
             }
+
+            case SHUTDOWN -> {
+                // Controlled shutdown (stall procedure): the integrity ramps
+                // down smoothly at the forming rate (reversed) — no stress, no
+                // degradation, no failure countdown. At 0% the shield is simply
+                // offline again and the reactor finishes its shutdown.
+                double v = integrity - cfg.getShieldBuildRate() / 20.0 + shutdownRemainder;
+                int whole = (int) Math.floor(v);
+                shutdownRemainder = v - whole;
+                if (whole > 0) {
+                    integrity -= whole;
+                    if (integrity <= 0) {
+                        integrity = 0;
+                        state = State.OFFLINE;
+                        reactor.onStallShieldDown();
+                    }
+                }
+            }
         }
 
         if (state != State.OFFLINE) {
@@ -175,6 +196,20 @@ public class ReactorShield {
     }
 
     // =========================
+    // CONTROLLED SHUTDOWN — stall procedure: the shield ramps down smoothly
+    // (forming rate, reversed) and ends back OFFLINE. Fractional parts
+    // accumulate so odd per-tick rates still add up exactly.
+    // =========================
+    private double shutdownRemainder;
+
+    /** Enters the smooth controlled shutdown (stall procedure). */
+    public void beginShutdown() {
+        if (state == State.OFFLINE || state == State.FAILED) return;
+        state = State.SHUTDOWN;
+        decayRemainder = 0;
+    }
+
+    // =========================
     // STRESS MODEL
     // =========================
     private void updateStress() {
@@ -204,7 +239,8 @@ public class ReactorShield {
         double stab = lasers.getPower(ReactorLasers.LASER_STAB);
         double valve = lasers.getPower(ReactorLasers.LASER_ABSORBER);
         boolean anyLaser = p1 > 0 || p2 > 0 || stab > 0;
-        if (state != State.WORKING || (!anyLaser && valve <= 0)) return;
+        // Stall shutdown: the reactor is powering down — all laser effects off
+        if (state != State.WORKING || reactor.isStallShutdownActive() || (!anyLaser && valve <= 0)) return;
 
         ReactorConfig cfg = ReactorConfig.getInstance();
 
@@ -348,6 +384,7 @@ public class ReactorShield {
         stressSpin = 0;
         decayRemainder = 0;
         overpowerRemainder = 0;
+        shutdownRemainder = 0;
         recoveryTick = 0;
         failCountdown = 0;
     }
@@ -371,6 +408,7 @@ public class ReactorShield {
             case CREATING -> StructuresMessages.get("signs.status_creating", "Creating");
             case WORKING -> StructuresMessages.get("signs.status_working", "Working");
             case FAILED -> StructuresMessages.get("signs.status_failed", "Failed");
+            case SHUTDOWN -> StructuresMessages.get("signs.status_shutting_down", "Shutting down");
             case OFFLINE -> StructuresMessages.get("signs.status_offline", "Offline");
         };
     }
