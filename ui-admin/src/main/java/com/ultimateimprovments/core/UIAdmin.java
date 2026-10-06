@@ -3,7 +3,6 @@ package com.ultimateimprovments.core;
 import com.ultimateimprovments.command.SubCommandRegistry;
 import com.ultimateimprovments.command.subcommands.EconomySubcommand;
 import com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter;
-import com.ultimateimprovments.command.subcommands.UpdateSubcommand;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
@@ -17,7 +16,7 @@ import java.util.Set;
  */
 public class UIAdmin extends JavaPlugin implements SoftReloadable {
 
-    private static final Set<String> OWNED_MODULES = Set.of("Economy", "UpdateChecker");
+    private static final Set<String> OWNED_MODULES = Set.of("Economy");
 
     private static UIAdmin instance;
 
@@ -80,7 +79,7 @@ public class UIAdmin extends JavaPlugin implements SoftReloadable {
         registerCommands();
         reportModuleStats(mm);
 
-        ConsoleLogger.success("[UI-Admin] Economy / OP / updater enabled!");
+        ConsoleLogger.success("[UI-Admin] Economy / OP enabled!");
     }
 
     /** Registers the addon's {@code /ui} subcommands (static utilities). */
@@ -89,10 +88,6 @@ public class UIAdmin extends JavaPlugin implements SoftReloadable {
         try {
             reg.register(LegacySubCommandAdapter.of("money", EconomySubcommand::execute,
                     (s, a) -> EconomySubcommand.tabComplete(a)));
-            reg.register(LegacySubCommandAdapter.of("checkver",
-                    (s, a) -> { UpdateSubcommand.checkOnly(s); return true; }));
-            reg.register(LegacySubCommandAdapter.of("updatejar",
-                    (s, a) -> { UpdateSubcommand.downloadAndReplace(s); return true; }));
             reg.register(LegacySubCommandAdapter.of("op",
                     com.ultimateimprovments.op.OpSubcommand::execute,
                     (s, a) -> com.ultimateimprovments.op.OpSubcommand.tabComplete(a)));

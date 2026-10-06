@@ -6,7 +6,6 @@ import com.ultimateimprovments.economy.VaultIntegration;
 import com.ultimateimprovments.economy.listeners.IncomeListener;
 import com.ultimateimprovments.economy.listeners.PlayerJoinListener;
 import com.ultimateimprovments.hook.PluginHook;
-import com.ultimateimprovments.mechanics.features.updater.UpdateChecker;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.SimpleModule;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -14,7 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * AdminModules — registration of the admin addon's modules (economy + updater).
+ * AdminModules — registration of the admin addon's modules (economy).
  * Moved out of ui-other's SimpleModules.
  */
 public final class AdminModules {
@@ -44,14 +43,6 @@ public final class AdminModules {
                 } catch (NoClassDefFoundError | Exception e) {
                     ConsoleLogger.info("[Economy] PlaceholderAPI not found — placeholders disabled.");
                 }
-            }
-        });
-
-        // UpdateChecker
-        mm.register(new SimpleModule("UpdateChecker", "updatechecker", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                UpdateChecker.checkAsync();
             }
         });
     }

@@ -478,7 +478,6 @@ public final class SimpleModules {
             }
         });
 
-        // UpdateChecker is registered by the UI-Admin addon (AdminModules).
         // AutoBroadcast
         mm.register(new PluginModule("AutoBroadcast", "infrastructure/auto_broadcast", false) {
             @Override
