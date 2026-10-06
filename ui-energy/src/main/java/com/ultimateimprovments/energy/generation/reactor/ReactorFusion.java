@@ -192,15 +192,19 @@ public class ReactorFusion {
         return used * 100 / 27;
     }
 
-    /** Deposits one ancient debris into the floor barrel. False when there is no space. */
+    /**
+     * Deposits one ancient debris into the floor barrel. False when there is no space.
+     * <p>
+     * Note: {@code Barrel.getInventory()} on a block state is the LIVE inventory —
+     * items are applied immediately. Calling {@code update()} here would write back
+     * the stale snapshot taken before the addition and silently destroy the item.
+     */
     private boolean depositDebris(Location base) {
         Barrel barrel = floorBarrel(base);
         if (barrel == null) return false;
         java.util.HashMap<Integer, ItemStack> leftover =
                 barrel.getInventory().addItem(new ItemStack(Material.ANCIENT_DEBRIS, 1));
-        if (!leftover.isEmpty()) return false;
-        barrel.update();
-        return true;
+        return leftover.isEmpty();
     }
 
     // =========================
