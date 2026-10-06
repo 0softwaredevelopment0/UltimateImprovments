@@ -86,7 +86,9 @@ public class ReactorLasers {
         ReactorConfig cfg = ReactorConfig.getInstance();
 
         // =========================
-        // CORE STARTUP — pulse on the startup lamp (rising redstone edge)
+        // CORE STARTUP — pulse on the startup lamp (rising redstone edge).
+        // The same lamp pulsed while the core is already running = the manual
+        // shutdown trigger (silently ignored above 10% shield stress).
         // =========================
         boolean startupPowered = isLampPowered(base, LAMP_STARTUP);
         if (startupPowered && !prevStartupPowered && !started) {
@@ -95,6 +97,8 @@ public class ReactorLasers {
                     "<gold>⚡ <yellow>Forming the shield... Lasers activate after."));
             // Shield first: integrity builds up (Creating → Working), lasers become operational then
             ReactorManager.getInstance().onStartupPulse();
+        } else if (startupPowered && !prevStartupPowered && started) {
+            reactor.tryManualShutdownTrigger();
         }
         prevStartupPowered = startupPowered;
 

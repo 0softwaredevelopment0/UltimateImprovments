@@ -3,6 +3,23 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.7] — since 1.8.3-beta.6 (2026-10-06)
+
+### Added
+- **Manual reactor shutdown (D.F.C)** — pulsing the startup lamp while the
+  core is already running starts the shutdown with "Core shutdown initiated
+  due to manual trigger, please wait." followed by the normal stall
+  procedure. Two differences from the automatic stall: the trigger is
+  silently ignored while the shield stress is above 10% (nothing happens),
+  and after the "Shutting down power lasers..." step the core dumps all its
+  heat to −273 C* at 10%/sec of the temperature it had at the shutdown
+  start — the next shutdown step does not proceed until −273 is reached.
+
+### Fixed
+- **Typos in the stall messages** — "initained" → "initiated",
+  "failue" → "failure", "awating" → "awaiting", "please active" →
+  "please activate" (code fallbacks + EN config section).
+
 ## [1.8.3-beta.6] — since 1.8.3-beta.5 (2026-10-06)
 
 ### Added

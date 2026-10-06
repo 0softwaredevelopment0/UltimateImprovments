@@ -181,7 +181,7 @@ public class ReactorManager {
         int fusionMin = ReactorConfig.getInstance().getFusionTempMin();
         if (prevTemp > fusionMin && coreTemp <= fusionMin) {
             broadcast(StructuresMessages.get("stall_warn_low",
-                    "<white>Core temperatures are too low to continue fusion reaction, please active all power lasers."));
+                    "<white>Core temperatures are too low to continue fusion reaction, please activate all power lasers."));
         }
         if (prevTemp > STALL_WARN_CRITICAL && coreTemp <= STALL_WARN_CRITICAL) {
             broadcast(StructuresMessages.get("stall_warn_critical",
@@ -207,7 +207,30 @@ public class ReactorManager {
         stallPhase = StallPhase.WAIT_POWER;
         stallTicks = 0;
         broadcast(StructuresMessages.get("stall_shutdown_initiated",
-                "<white>Core shutdown initained due to reaction failue, please wait."));
+                "<white>Core shutdown initiated due to reaction failure, please wait."));
+        saveToDb();
+    }
+
+    /**
+     * Manual shutdown: the startup lamp pulsed while the core is already
+     * running. Silently ignored while the shield stress is above 10% (nothing
+     * happens); otherwise the stall procedure runs with the manual trigger
+     * announcement, and after the power lasers step the core dumps all its
+     * heat to −273 C* at 10%/sec of the temperature it had at the shutdown
+     * start — the next shutdown step waits until −273 is reached.
+     */
+    public void tryManualShutdownTrigger() {
+        if (stallPhase != StallPhase.NONE) return;
+        if (structureDamaged || isSelfdestructActive()) return;
+        if (shield.getState() != ReactorShield.State.WORKING) return;
+        if (shield.getTotalStress() > MANUAL_TRIGGER_MAX_STRESS) return;
+
+        stallManual = true;
+        stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
+        stallPhase = StallPhase.WAIT_POWER;
+        stallTicks = 0;
+        broadcast(StructuresMessages.get("stall_shutdown_manual",
+                "<white>Core shutdown initiated due to manual trigger, please wait."));
         saveToDb();
     }
 
@@ -221,6 +244,23 @@ public class ReactorManager {
                     broadcast(StructuresMessages.get("stall_power_lasers",
                             "<white>Shutting down power lasers..."));
                     lasers.shutDownLaser(ReactorLasers.LASER_P1);
+                    // Manual shutdown: dump the heat to -273 C* before the next step
+                    stallPhase = stallManual ? StallPhase.HEAT_DUMP : StallPhase.WAIT_P2;
+                    stallTicks = 0;
+                }
+            }
+            case HEAT_DUMP -> {
+                // Manual shutdown heat dump: the core loses 10%/sec (of the
+                // temperature it had at the shutdown start) until absolute
+                // zero — the next shutdown step does not proceed before that.
+                // (Lasers are already inert — stall gates the heat/cool path.)
+                double v = stallCoolPerTick + stallCoolRemainder;
+                int whole = (int) v;
+                stallCoolRemainder = v - whole;
+                if (whole > 0) {
+                    coreTemp = Math.max(TEMP_MIN, coreTemp - whole);
+                }
+                if (coreTemp <= TEMP_MIN) {
                     stallPhase = StallPhase.WAIT_P2;
                     stallTicks = 0;
                 }
@@ -279,11 +319,14 @@ public class ReactorManager {
         if (stallPhase != StallPhase.SHIELD_RAMP) return;
         broadcast(StructuresMessages.get("stall_success", "<green>Success."));
         broadcast(StructuresMessages.get("stall_offline",
-                "<white>Core marked as offline, awating for startup."));
+                "<white>Core marked as offline, awaiting for startup."));
         lasers.setStarted(false);
         coreOfflineMarked = true;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
+        stallManual = false;
+        stallCoolPerTick = 0;
+        stallCoolRemainder = 0;
         saveToDb();
     }
 
@@ -303,7 +346,8 @@ public class ReactorManager {
     // =========================
     public enum StallPhase {
         NONE,          // idle
-        WAIT_POWER,    // 5s after the stall announcement → power lasers step
+        WAIT_POWER,    // 5s after the announcement → power lasers step
+        HEAT_DUMP,     // manual only: cool to -273 C* at 10%/sec of the shutdown-start temp
         WAIT_P2,       // P1 off → 3s → P2 off
         WAIT_STAB_MSG, // 2s → "Shutting down stabilization lasers..."
         WAIT_STAB_OFF, // 2s → stab off
@@ -312,8 +356,16 @@ public class ReactorManager {
         SHIELD_RAMP    // shield ramps down (ReactorShield) → onStallShieldDown()
     }
 
+    /** Manual shutdown (startup lamp re-trigger) is silently ignored above this shield stress %. */
+    private static final double MANUAL_TRIGGER_MAX_STRESS = 10.0;
+
     private StallPhase stallPhase = StallPhase.NONE;
     private int stallTicks;
+    /** Manual trigger (startup lamp pulse while running) vs automatic stall (-273 C*). */
+    private boolean stallManual;
+    /** HEAT_DUMP cooling rate, C* per tick: 10%/sec of the temp at the shutdown start. */
+    private double stallCoolPerTick;
+    private double stallCoolRemainder;
     /** Set once the stall shutdown completes — the startup sign shows Offline. */
     private boolean coreOfflineMarked = false;
 
@@ -626,6 +678,11 @@ public class ReactorManager {
         stallPhase = parseStallPhase(state.getStallPhase());
         stallTicks = state.getStallTicks();
         coreOfflineMarked = state.isCoreOffline();
+        // HEAT_DUMP exists only in manual shutdowns; the dump rate is re-derived
+        // from the current temperature (the persisted phase survives the restart)
+        stallManual = stallPhase == StallPhase.HEAT_DUMP;
+        stallCoolPerTick = stallManual ? Math.max(1.0, coreTemp * 0.10 / 20.0) : 0;
+        stallCoolRemainder = 0;
 
         // Shield: restore the exact phase + integrity + detonation countdown
         try {
@@ -1123,6 +1180,9 @@ public class ReactorManager {
         selfdestructWarnTicks = -1;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
+        stallManual = false;
+        stallCoolPerTick = 0;
+        stallCoolRemainder = 0;
         coreOfflineMarked = false;
 
         display.resetDisplay();
@@ -1230,6 +1290,9 @@ public class ReactorManager {
         selfdestructWarnTicks = -1;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
+        stallManual = false;
+        stallCoolPerTick = 0;
+        stallCoolRemainder = 0;
         coreOfflineMarked = false;
         energyGenerated = 0;
         energyRemainder = 0;
