@@ -27,10 +27,12 @@ import org.bukkit.util.Vector;
  * While the stress is within limits the shield passively self-repairs at
  * 1% every {@code shield_recovery_every_sec} seconds (5s default).
  * <p>
- * While the lasers fire, vector END_ROD particles travel from each lightning
- * rod of the core column into the core; DUST particles inside the core follow
- * the black → red → orange → yellow → white gradient as the temperature rises
- * from 0 to the 10M working point.
+ * While the lasers fire, vector END_ROD particles travel from the lightning
+ * rods of the core column into the core — side beams follow Power Laser #1/#2,
+ * the upper ring follows the Stabilizer; the Content Absorber sucks ELECTRIC_SPARK
+ * particles from the core into the floor barrel, scaled by the valve opening.
+ * DUST particles inside the core follow the black → red → orange → yellow →
+ * white gradient as the temperature rises from 0 to the 10M working point.
  */
 public class ReactorShield {
 
@@ -48,14 +50,20 @@ public class ReactorShield {
     private int failCountdown;         // ticks until detonation (0 = none)
 
     // =========================
-    // ROD OFFSETS (relative to the anchor) — the waxed lightning rods of the
-    // core column; laser beams travel from these into the core.
-    // Parsed from darkfusionreactor.nbt: (5,2,4) (3,4,4) (7,4,4) (4,6,4) (5,6,3) (5,6,5) (6,6,4)
+    // BEAM ROD OFFSETS (relative to the anchor) — the waxed lightning rods of
+    // the core column; each group of beams is gated by its own laser power.
+    // Parsed from darkfusionreactor.nbt:
+    //   side power-laser rods: (3,4,4) (7,4,4)   → rel (−2,−5,0) (2,−5,0)
+    //   stabilizer ring rods:  (4,6,4) (5,6,3) (5,6,5) (6,6,4) → rel (±1/0,−3,0/±1)
+    // The low center rod (0,−7,0) has NO beam — it is the Content Absorber
+    // zone (suction particles flow from the core into the floor barrel).
     // =========================
-    private static final int[][] RODS = {
-            { 0, -7, 0 }, { -2, -5, 0 }, { 2, -5, 0 },
-            { -1, -3, 0 }, { 0, -3, -1 }, { 0, -3, 1 }, { 1, -3, 0 }
-    };
+    private static final int[][] POWER_RODS = { { -2, -5, 0 }, { 2, -5, 0 } };
+    private static final int[][] STAB_RODS = { { -1, -3, 0 }, { 0, -3, -1 }, { 0, -3, 1 }, { 1, -3, 0 } };
+    /** Content Absorber inlet — the floor barrel the content is sucked into. */
+    private static final int[] ABSORBER_BARREL = { 0, -9, 0 };
+    /** Suction particle count at a fully open (100%) absorber valve, per tick. */
+    private static final int ABSORBER_PARTICLES_FULL = 10;
 
     public ReactorShield(ReactorManager reactor) {
         this.reactor = reactor;
@@ -187,15 +195,16 @@ public class ReactorShield {
     }
 
     // =========================
-    // PARTICLES — vector laser beams from the rods into the core
+    // PARTICLES — gated laser beams + absorber suction flow
     // =========================
     private void tickParticles(Location base) {
         var lasers = reactor.getLasers();
-        boolean lasersActive = state == State.WORKING
-                && (lasers.getPower(ReactorLasers.LASER_P1) > 0
-                    || lasers.getPower(ReactorLasers.LASER_P2) > 0
-                    || lasers.getPower(ReactorLasers.LASER_STAB) > 0);
-        if (!lasersActive) return;
+        double p1 = lasers.getPower(ReactorLasers.LASER_P1);
+        double p2 = lasers.getPower(ReactorLasers.LASER_P2);
+        double stab = lasers.getPower(ReactorLasers.LASER_STAB);
+        double valve = lasers.getPower(ReactorLasers.LASER_ABSORBER);
+        boolean anyLaser = p1 > 0 || p2 > 0 || stab > 0;
+        if (state != State.WORKING || (!anyLaser && valve <= 0)) return;
 
         ReactorConfig cfg = ReactorConfig.getInstance();
 
@@ -204,35 +213,70 @@ public class ReactorShield {
         Location core = base.clone().add(0.5, -4.5, 0.5);
 
         // =========================
-        // END_ROD beams — from each rod tip toward the core (moderate speed,
-        // NORMAL render mode, 16 particles total across the active rods)
+        // END_ROD beams — vector particles from a rod tip toward the core
+        // (count = 0 → (dx,dy,dz) act as the velocity vector). Each group of
+        // beams is only drawn while its laser has power (> 0).
         // =========================
-        // Speed comes straight from the config (0.35 blocks/tick default)
-        double speed = cfg.getShieldParticleRodSpeed();
-        int total = cfg.getShieldParticleRodCount();
-        int perRod = Math.max(1, total / RODS.length);
-        for (int[] rod : RODS) {
-            Location tip = base.clone().add(rod[0] + 0.5, rod[1] + 0.5, rod[2] + 0.5);
-            Vector dir = core.toVector().subtract(tip.toVector());
-            double len = dir.length();
-            if (len < 0.1) continue;
-            dir.multiply(1.0 / len);
-            Location start = tip.clone().add(dir.clone().multiply(0.6));
-            // count = 0 → (dx,dy,dz) act as the velocity vector
-            for (int i = 0; i < perRod; i++) {
-                base.getWorld().spawnParticle(Particle.END_ROD, start, 0,
-                        dir.getX(), dir.getY(), dir.getZ(), speed);
+        if (anyLaser) {
+            double speed = cfg.getShieldParticleRodSpeed();
+            int total = cfg.getShieldParticleRodCount();
+            int perBeam = Math.max(1, total / (POWER_RODS.length + STAB_RODS.length));
+
+            // Side lasers: west beam = Power Laser #1, east beam = Power Laser #2
+            spawnBeamGroup(base, core, POWER_RODS[0], perBeam, speed, p1 > 0);
+            spawnBeamGroup(base, core, POWER_RODS[1], perBeam, speed, p2 > 0);
+            // Stabilizer ring: 4 beams, on while the cooler has any power
+            for (int[] rod : STAB_RODS) {
+                spawnBeamGroup(base, core, rod, perBeam, speed, stab > 0);
+            }
+        }
+
+        // =========================
+        // CONTENT ABSORBER — suction flow from the core down into the floor
+        // barrel. Particle count scales with the valve opening: 100% → 10,
+        // −25% of valve → −25% of particles (75% → 7, 50% → 5, 25% → 2),
+        // closed valve → nothing.
+        // =========================
+        if (valve > 0) {
+            int count = (int) (ABSORBER_PARTICLES_FULL * valve / 100.0);
+            if (count > 0) {
+                Location barrel = base.clone().add(ABSORBER_BARREL[0] + 0.5, ABSORBER_BARREL[1] + 1.0,
+                        ABSORBER_BARREL[2] + 0.5);
+                Vector dir = barrel.toVector().subtract(core.toVector());
+                double len = dir.length();
+                if (len > 0.1) {
+                    dir.multiply(1.0 / len);
+                    base.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, core, count,
+                            dir.getX(), dir.getY(), dir.getZ(), 0.4);
+                }
             }
         }
 
         // =========================
         // DUST inside the core — dense cloud, color follows the temperature:
         // black (0) → red → orange → yellow → white (10M working point).
-        // Offsets ±0.2 — a compact (half-radius) cloud; count is unchanged.
+        // Offsets ±0.25 — a compact cloud; count is unchanged.
         // =========================
-        Particle.DustOptions dust = new Particle.DustOptions(dustColor(reactor.getCoreTemp()), 1.25f);
-        base.getWorld().spawnParticle(Particle.DUST, core,
-                cfg.getShieldParticleDustCount(), 0.2, 0.2, 0.2, 0, dust);
+        if (anyLaser) {
+            Particle.DustOptions dust = new Particle.DustOptions(dustColor(reactor.getCoreTemp()), 1.25f);
+            base.getWorld().spawnParticle(Particle.DUST, core,
+                    cfg.getShieldParticleDustCount(), 0.25, 0.25, 0.25, 0, dust);
+        }
+    }
+
+    /** Spawns {@code count} END_ROD particles from a rod tip toward the core. */
+    private void spawnBeamGroup(Location base, Location core, int[] rod, int count, double speed, boolean active) {
+        if (!active) return;
+        Location tip = base.clone().add(rod[0] + 0.5, rod[1] + 0.5, rod[2] + 0.5);
+        Vector dir = core.toVector().subtract(tip.toVector());
+        double len = dir.length();
+        if (len < 0.1) return;
+        dir.multiply(1.0 / len);
+        Location start = tip.clone().add(dir.clone().multiply(0.6));
+        for (int i = 0; i < count; i++) {
+            base.getWorld().spawnParticle(Particle.END_ROD, start, 0,
+                    dir.getX(), dir.getY(), dir.getZ(), speed);
+        }
     }
 
     /**
