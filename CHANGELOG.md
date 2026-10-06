@@ -21,6 +21,17 @@ in this file.
   The chat-command stats box shows the nearest reactor.
 
 ### Fixed
+- **The startup sequence could run alongside the self-destruct protocol** —
+  the startup lamp pulse rolled the 1% self-destruct chance and then started
+  the cinematic startup anyway, so both sequences broadcast at once; pulsing
+  the lamp while the protocol was already active started a fresh startup
+  during the countdown. The protocol now owns the reactor: a pulse while it
+  is active is ignored, a roll that hits aborts the startup before it begins,
+  an in-flight sequence (restored from the database) is cancelled on load and
+  on the next tick (a still-forming CREATING shield resets to OFFLINE). The
+  FINALE no longer hangs when the protocol runs on a core that never formed a
+  shield (the startup was blocked — nothing to burn): it completes and shuts
+  the systems down instead of waiting for a shield failure forever.
 - **`/ui reload` reloaded 0 of 20 addons** — the hot-reload engine unloaded
   every addon from the PluginManager and tried to load it back from its JAR
   file, which Paper/Purpur 26.3 hard-blocks for paper-plugins

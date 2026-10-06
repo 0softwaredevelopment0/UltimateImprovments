@@ -165,6 +165,11 @@ public class ReactorManager {
                 // running — the protocol reports completion and disarms.
                 if (shield.isFailed()) {
                     onSelfdestructReportStage();
+                } else if (shield.getState() != ReactorShield.State.WORKING) {
+                    // The protocol ran on a core with no formed shield (the
+                    // startup was blocked — nothing to burn): it completes and
+                    // shuts the systems down instead of hanging forever.
+                    onSelfdestructReportStage();
                 }
             }
             case NONE -> { /* not armed */ }
@@ -455,6 +460,12 @@ public class ReactorManager {
 
     /** Startup sequence phase machine (every tick). */
     private void tickStartupSequence() {
+        // The self-destruct protocol owns the reactor — the normal startup
+        // cannot run alongside it: an in-flight sequence is aborted
+        if (isSelfdestructActive()) {
+            abortStartupSequence();
+            return;
+        }
         switch (startupPhase) {
             case NONE -> { }
 
@@ -553,6 +564,21 @@ public class ReactorManager {
     public boolean isStartupControlInert() {
         return isStartupSequenceActive()
                 && shield.getState() != ReactorShield.State.WORKING;
+    }
+
+    /**
+     * Kills the in-flight startup sequence (self-destruct owns the reactor).
+     * A still-forming CREATING shield is reset to OFFLINE — nothing formed
+     * while the sequence ran should survive the abort.
+     */
+    private void abortStartupSequence() {
+        if (startupPhase == StartupPhase.NONE) return;
+        startupPhase = StartupPhase.NONE;
+        startupTicks = 0;
+        if (shield.getState() == ReactorShield.State.CREATING) {
+            shield.reset();
+        }
+        saveToDb();
     }
     /** Whether the core finished its shutdown and is awaiting a new startup pulse. */
     public boolean isCoreOfflineMarked() { return coreOfflineMarked; }
@@ -895,6 +921,12 @@ public class ReactorManager {
                 || selfdestructPhase == SelfdestructPhase.DETONATION_MSG
                 || selfdestructPhase == SelfdestructPhase.BYPASS_MSG) {
             lasers.setControlLocked(true);
+        }
+
+        // The protocol owns the reactor: a restored in-flight startup
+        // sequence cannot run alongside it — abort it
+        if (isSelfdestructActive() && startupPhase != StartupPhase.NONE) {
+            abortStartupSequence();
         }
 
         // Stall procedure: a persisted SHUTDOWN shield (restart mid-ramp)
@@ -1637,6 +1669,11 @@ public class ReactorManager {
 
     /** Called by the laser startup pulse — begins the cinematic startup sequence. */
     public void onStartupPulse() {
+        // The self-destruct protocol owns the reactor: no normal startup
+        // while it runs (the pulse is silently ignored)
+        if (isSelfdestructActive()) {
+            return;
+        }
         if (coreEmergencyStopped) {
             coreEmergencyStopped = false;
             broadcast(StructuresMessages.get("core_restart_after_shutdown",
@@ -1646,6 +1683,11 @@ public class ReactorManager {
         coreOfflineMarked = false;
         lasers.clearControlDisable();
         rollSelfdestruct();
+        if (isSelfdestructActive()) {
+            // The roll just armed the protocol — the startup sequence is
+            // aborted before it begins (the protocol replaces it)
+            return;
+        }
         // The shield starts forming later, at the "Forming reactor shield..." step
         startupPhase = StartupPhase.WAIT_ANNOUNCE;
         startupTicks = 0;
