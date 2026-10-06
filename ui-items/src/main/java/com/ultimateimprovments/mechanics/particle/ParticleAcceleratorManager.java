@@ -120,10 +120,10 @@ public class ParticleAcceleratorManager implements Listener {
     }
 
     // =========================
-    // SCAN EXISTING — rebuild from Marker entities
+    // SCAN EXISTING — rebuild from the structure registry (SQLite)
     // =========================
     public static void scanExistingAccelerators() {
-        // 1. Add/update from Markers (do NOT clear engineEnergy — it holds DB data!)
+        // 1. Add/update from registry entries (do NOT clear engineEnergy — it holds DB data!)
         for (var entry : StructureMarker.getAllEntries()) {
             String type = entry.getValue().type();
             if (!"accelerator".equals(type)) continue;
@@ -274,7 +274,7 @@ public class ParticleAcceleratorManager implements Listener {
 
         Location spawnLoc = normLoc.clone().add(0.5, 0.5, 0.5);
 
-        // No Marker entity — the particle is purely coordinate-driven.
+        // No entity anchor — the particle is purely coordinate-driven.
         // Movement/collision logic works on data.location only.
         ParticleData data = new ParticleData(id, spawnLoc, sourceMat, path);
         activeParticles.put(id, data);
@@ -468,7 +468,7 @@ public class ParticleAcceleratorManager implements Listener {
             return;
         }
 
-        // Create Marker entity
+        // Register in the structure registry (structure_markers)
         StructureMarker.place(loc, "accelerator", UUID.randomUUID());
 
         // Initialize engine energy buffer

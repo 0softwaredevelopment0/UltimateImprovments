@@ -87,7 +87,7 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
-    // SCAN EXISTING — rebuild from Marker entities
+    // SCAN EXISTING — rebuild from the structure registry (SQLite)
     // =========================
     public static void scanExistingGenerators() {
         activeGenerators.clear();
@@ -116,7 +116,7 @@ public class GeneratorManager implements Listener {
             }
         }
         ConsoleLogger.info(
-                "[Generator] Auto-detected " + count + " generators from Marker entities");
+                "[Generator] Auto-detected " + count + " generators from the structure registry (SQLite)");
     }
 
     // =========================

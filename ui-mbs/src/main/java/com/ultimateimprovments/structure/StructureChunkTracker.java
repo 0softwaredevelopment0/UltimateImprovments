@@ -14,13 +14,13 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * 🗺 Tracks the coordinates of chunks that contain structure Markers.
+ * 🗺 Tracks the coordinates of chunks that contain registered structures.
  * <p>
  * Stores the data in SQLite (table {@code structure_chunks}) — on server startup
- * these chunks are force-loaded and their Markers are scanned.
+ * these chunks are force-loaded and their structures are rebuilt from the registry.
  * <p>
- * After a chunk is loaded, the Marker entity keeps it loaded itself
- * via a plugin chunk ticket ({@link #addTicket}).
+ * After a chunk is loaded, the plugin keeps it loaded itself
+ * via a chunk ticket ({@link #addTicket}).
  */
 public class StructureChunkTracker {
 

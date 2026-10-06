@@ -522,7 +522,7 @@ public class ReactorManager {
             if (reactors != null && !reactors.contains(this)) {
                 reactors.add(this);
             }
-            // Marker entity for reactor identification
+            // Structure registry entry (structure_markers) for reactor identification
             StructureMarker.place(normalized, "reactor", UUID.randomUUID());
             saveToDb();
         } else {

@@ -54,7 +54,7 @@ public class LightningManager implements Listener {
     private static BukkitRunnable periodicScanTask = null;
 
     // =========================
-    // INIT — rebuild from Marker entities
+    // INIT — rebuild from the structure registry (SQLite)
     // =========================
     public static void init() {
         instance = new LightningManager();
@@ -130,7 +130,7 @@ public class LightningManager implements Listener {
     }
 
     // =========================
-    // ASSEMBLE (+ Marker entity)
+    // ASSEMBLE (+ structure registry entry)
     // =========================
     public static void assemble(Location center, ItemFrame frame, Player player) {
         center = LocationUtil.normalize(center);
@@ -169,7 +169,7 @@ public class LightningManager implements Listener {
                 frame.remove();
             }
 
-            // Activate + Marker entity
+            // Activate + structure registry entry
             activeStructures.put(center, true);
             StructureMarker.place(center, "lightning", UUID.randomUUID());
 

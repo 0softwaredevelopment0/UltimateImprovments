@@ -240,7 +240,7 @@ public class CableNetwork {
     }
 
     // =========================
-    // SAVE / DELETE — no-op (Marker entities persist in world files)
+    // SAVE / DELETE — no-op (nodes are persisted immediately in structure_markers)
     // =========================
     public static void save() { /* no-op */ }
     public static void saveNode(CableNode node) { /* no-op */ }
