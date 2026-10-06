@@ -1023,6 +1023,18 @@ sensor_no_signal = "<red>Не удаётся получить данные с д
 sign_multimeter_required = "<red>Для считывания данных нужен мультиметр!"
 # Default: <dark_red>☠ <red>Протокол самоуничтожения активирован! Взрыв через T-1:00.
 selfdestruct_protocol = "<dark_red>☠ <red>Протокол самоуничтожения активирован! Взрыв через T-1:00."
+# Default: <light_purple>Все системы управления не функционируют, перезапуск систем...
+selfdestruct_controls_down = "<light_purple>Все системы управления не функционируют, перезапуск систем..."
+# Default: <light_purple>Внимание всему персоналу: <red>внутренняя система реактора <light_purple>активировала <red>протокол самоуничтожения, <light_purple>процедура детонации начнётся через <red>T-60с, <light_purple>удачи.
+selfdestruct_announce = "<light_purple>Внимание всему персоналу: <red>внутренняя система реактора <light_purple>активировала <red>протокол самоуничтожения, <light_purple>процедура детонации начнётся через <red>T-60с, <light_purple>удачи."
+# Default: <light_purple>Запуск процедуры детонации...
+selfdestruct_detonation_begin = "<light_purple>Запуск процедуры детонации..."
+# Default: <light_purple>Обход внутренних лимитов мощности PL, новый лимит — <red>2000%.
+selfdestruct_bypass_limits = "<light_purple>Обход внутренних лимитов мощности PL, новый лимит — <red>2000%."
+# Default: <light_purple>Разгон силовых лазеров до <red>2000%, <light_purple>ожидание расплавления.
+selfdestruct_overdrive = "<light_purple>Разгон силовых лазеров до <red>2000%, <light_purple>ожидание расплавления."
+# Default: <light_purple>Протокол самоуничтожения выполнен: обнаружен отказ щита ядра, отключение систем...
+selfdestruct_shutdown_systems = "<light_purple>Протокол самоуничтожения выполнен: обнаружен отказ щита ядра, отключение систем..."
 # Default: <dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-%sec%s, удачи.
 selfdestruct_final_warn = "<dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-%sec%s, удачи."
 # Default: <dark_red>☠ <red>Финал самоуничтожения: силовые лазеры работают на 1000%!
@@ -1326,6 +1338,18 @@ sensor_no_signal = "<red>Cannot receive any data from sensors: <gray>No signal"
 sign_multimeter_required = "<red>A multimeter is required to read the data!"
 # Default: <dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00.
 selfdestruct_protocol = "<dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00."
+# Default: <light_purple>All controls are non-functional, restarting systems...
+selfdestruct_controls_down = "<light_purple>All controls are non-functional, restarting systems..."
+# Default: <light_purple>Attention all personnel, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck.
+selfdestruct_announce = "<light_purple>Attention all personnel, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck."
+# Default: <light_purple>Beginning detonation procedure...
+selfdestruct_detonation_begin = "<light_purple>Beginning detonation procedure..."
+# Default: <light_purple>Bypassing internal PL power limits, new limit is <red>2000%.
+selfdestruct_bypass_limits = "<light_purple>Bypassing internal PL power limits, new limit is <red>2000%."
+# Default: <light_purple>Overdriving power lasers for <red>2000%, <light_purple>waiting for a meltdown.
+selfdestruct_overdrive = "<light_purple>Overdriving power lasers for <red>2000%, <light_purple>waiting for a meltdown."
+# Default: <light_purple>Self-destruct protocol complete, detecting core shield failure, shutting down systems...
+selfdestruct_shutdown_systems = "<light_purple>Self-destruct protocol complete, detecting core shield failure, shutting down systems..."
 # Default: <dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-%sec%s, good luck.
 selfdestruct_final_warn = "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-%sec%s, good luck."
 # Default: <dark_red>☠ <red>Self-destruct finale: the Power Lasers are running at 1000%!

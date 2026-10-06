@@ -232,10 +232,12 @@ public class ReactorDisplay {
             var sd = reactor.getSelfdestructPhase();
             var shieldState = reactor.getShield().getState();
 
-            // Protocol screen during the timed phase (and its 5s No signal before it
-            // is only shown while the shield is up — after the burn the detonation
-            // screen takes over)
+            // Protocol screen during the timed countdown and everything after
+            // it (detonation procedure, overdrive, finale — the timer shows
+            // T-0:00). The pre-timer phases show the No signal screen instead.
             if (sd == ReactorManager.SelfdestructPhase.TIMED
+                    || sd == ReactorManager.SelfdestructPhase.DETONATION_MSG
+                    || sd == ReactorManager.SelfdestructPhase.BYPASS_MSG
                     || sd == ReactorManager.SelfdestructPhase.FINALE) {
                 int sec = reactor.getSelfdestructSecondsLeft();
                 String dots = "<red>........................................";

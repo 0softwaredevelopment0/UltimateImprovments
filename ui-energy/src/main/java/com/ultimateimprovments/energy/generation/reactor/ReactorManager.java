@@ -58,17 +58,22 @@ public class ReactorManager {
     // =========================
     // SELF-DESTRUCT PROTOCOL (DFC): 1% chance on startup.
     // Phase 1 — sensors go dark for 5s (No signal screen).
-    // Phase 2 — 60s timed countdown, the core runs normally but the control
-    //           bulbs are locked; the signs show the protocol screen.
-    // Phase 3 — overpower finale: Power Lasers ramp to 1000%, burning the
-    //           shield to 0% (report stage) — the sequence then completes.
+    // Phase 2 — 1s, then "All controls are non-functional..." — every control
+    //           lamp is locked (inert to the levers).
+    // Phase 3 — 5s, then the T-60s announcement: the protocol screen replaces
+    //           the readings, a warning ping sounds every second.
+    // Phase 4 — 60s timed countdown → "Beginning detonation procedure..."
+    // Phase 5 — 5s → "Bypassing internal PL power limits, new limit is 2000%."
+    // Phase 6 — 5s → the Power Lasers overdrive to 2000% and burn the shield;
+    //           at 0% integrity the shield failure countdown (T-10s) begins and
+    //           the protocol reports "detecting core shield failure" — the
+    //           detonation then proceeds on its own.
     // =========================
-    public enum SelfdestructPhase { NONE, SENSORS_DOWN, TIMED, FINALE }
+    public enum SelfdestructPhase { NONE, SENSORS_DOWN, CONTROLS_DOWN, PROTOCOL_MSG, TIMED, DETONATION_MSG, BYPASS_MSG, FINALE }
 
     private SelfdestructPhase selfdestructPhase = SelfdestructPhase.NONE;
     private int selfdestructTicks;        // ticks in the current phase
     private boolean selfdestructDone;     // completed — not rolled again
-    private int selfdestructWarnTicks;    // legacy debounce (unused after the single T-10s warning)
     private boolean selfdestructJustRolled; // one-tick latch: the protocol armed → dfc_self_destruct grant
     private boolean fusionDebrisJustCrafted; // one-tick latch: debris crafted → power_of_fusion grant
 
@@ -86,39 +91,78 @@ public class ReactorManager {
     public boolean isSelfdestructFinale() { return selfdestructPhase == SelfdestructPhase.FINALE; }
     public SelfdestructPhase getSelfdestructPhase() { return selfdestructPhase; }
 
-    /** T-10s warning is sent once per second for the last 10 seconds of the timed phase. */
-    private static final int SELFDESTRUCT_WARN_WINDOW = 10;
-
     private void tickSelfdestruct() {
         ReactorConfig cfg = ReactorConfig.getInstance();
         switch (selfdestructPhase) {
             case SENSORS_DOWN -> {
                 selfdestructTicks++;
                 if (selfdestructTicks >= cfg.getSelfdestructNoSignalSec() * 20) {
-                    beginTimedSelfdestruct();
+                    // 1s of silence, then the controls-down report
+                    selfdestructPhase = SelfdestructPhase.CONTROLS_DOWN;
+                    selfdestructTicks = 0;
+                }
+            }
+            case CONTROLS_DOWN -> {
+                selfdestructTicks++;
+                if (selfdestructTicks >= 20) {
+                    // Every control lamp goes dead to the levers
+                    lasers.setControlLocked(true);
+                    broadcast(StructuresMessages.get("selfdestruct_controls_down",
+                            "<light_purple>All controls are non-functional, restarting systems..."));
+                    selfdestructPhase = SelfdestructPhase.PROTOCOL_MSG;
+                    selfdestructTicks = 0;
+                }
+            }
+            case PROTOCOL_MSG -> {
+                selfdestructTicks++;
+                if (selfdestructTicks >= 20 * 5) {
+                    // The T-60s announcement, then the timed countdown begins
+                    broadcast(StructuresMessages.get("selfdestruct_announce",
+                            "<light_purple>Attention all personnel, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck."));
+                    selfdestructPhase = SelfdestructPhase.TIMED;
+                    selfdestructTicks = 0;
+                    display.resetSignCache();
                 }
             }
             case TIMED -> {
                 selfdestructTicks++;
                 int total = cfg.getSelfdestructTimedSec() * 20;
-                int leftTicks = total - selfdestructTicks;
-                // ONE warning at exactly 10 seconds left — no spam
-                if (leftTicks == SELFDESTRUCT_WARN_WINDOW * 20) {
-                    broadcast(StructuresMessages.get("selfdestruct_final_warn",
-                            "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
+                // Protocol screen + a warning ping every second
+                if (selfdestructTicks % 20 == 0 && reactorLocation != null) {
+                    reactorLocation.getWorld().playSound(reactorLocation,
+                            org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING,
+                            org.bukkit.SoundCategory.MASTER, 1.0f, 1.5f);
                 }
                 if (selfdestructTicks >= total) {
-                    // The timed phase runs out — the overpower finale begins
+                    broadcast(StructuresMessages.get("selfdestruct_detonation_begin",
+                            "<light_purple>Beginning detonation procedure..."));
+                    selfdestructPhase = SelfdestructPhase.DETONATION_MSG;
+                    selfdestructTicks = 0;
+                }
+            }
+            case DETONATION_MSG -> {
+                selfdestructTicks++;
+                if (selfdestructTicks >= 20 * 5) {
+                    broadcast(StructuresMessages.get("selfdestruct_bypass_limits",
+                            "<light_purple>Bypassing internal PL power limits, new limit is <red>2000%."));
+                    selfdestructPhase = SelfdestructPhase.BYPASS_MSG;
+                    selfdestructTicks = 0;
+                }
+            }
+            case BYPASS_MSG -> {
+                selfdestructTicks++;
+                if (selfdestructTicks >= 20 * 5) {
+                    broadcast(StructuresMessages.get("selfdestruct_overdrive",
+                            "<light_purple>Overdriving power lasers for <red>2000%, <light_purple>waiting for a meltdown."));
+                    lasers.beginOverpower();
                     selfdestructPhase = SelfdestructPhase.FINALE;
                     selfdestructTicks = 0;
-                    lasers.beginOverpower();
-                    broadcast(StructuresMessages.get("selfdestruct_finale",
-                            "<dark_red>☠ <red>Self-destruct finale: the Power Lasers are running at 1000%!"));
                 }
             }
             case FINALE -> {
-                // Report stage reached (shield burned to 0% → detonation
-                // countdown): the self-destruct sequence is complete.
+                // The shield died (overpower burn / stress — whatever got it to
+                // 0% first): the T-10s shield failure countdown is already
+                // running — the protocol reports completion and disarms.
                 if (shield.isFailed()) {
                     onSelfdestructReportStage();
                 }
@@ -127,28 +171,17 @@ public class ReactorManager {
         }
     }
 
-    /** Phase 1 → Phase 2 transition: the protocol screen replaces No signal. */
-    private void beginTimedSelfdestruct() {
-        selfdestructPhase = SelfdestructPhase.TIMED;
-        selfdestructTicks = 0;
-        selfdestructWarnTicks = -1;
-        display.resetSignCache();
-        lasers.setControlLocked(true);
-        broadcast(StructuresMessages.get("selfdestruct_protocol",
-                "<dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00."));
-    }
-
     /**
-     * Report stage reached (shield 0% → detonation countdown): the self-destruct
-     * sequence is complete and disarms itself — the shield detonation proceeds
-     * on its own countdown.
+     * Shield failure detected (0% integrity → T-10s detonation countdown):
+     * the self-destruct sequence reports completion and disarms itself — the
+     * detonation proceeds on its own countdown.
      */
     public void onSelfdestructReportStage() {
         if (selfdestructPhase == SelfdestructPhase.NONE || selfdestructDone) return;
         selfdestructPhase = SelfdestructPhase.NONE;
         selfdestructDone = true;
-        broadcast(StructuresMessages.get("selfdestruct_complete",
-                "<dark_red>☠ <red>Self-destruct sequence complete — the core is beyond saving."));
+        broadcast(StructuresMessages.get("selfdestruct_shutdown_systems",
+                "<light_purple>Self-destruct protocol complete, detecting core shield failure, shutting down systems..."));
         saveToDb();
     }
 
@@ -410,7 +443,8 @@ public class ReactorManager {
         WAIT_ABS_MSG,     // 3s → "Success."
         WAIT_ABS_PAUSE,   // 3s → "Forming reactor shield..." + shield forming begins
         SHIELD_FORMING,   // until integrity 100% (10%/sec) → "Success."
-        WAIT_IGNITE       // 3s → "Igniting reactor core..." (ignite) + complete message
+        WAIT_IGNITE,      // 3s → "Igniting reactor core..." (ignite)
+        WAIT_COMPLETE     // 3s → "Reactor startup complete, resume normal operations."
     }
 
     private StartupPhase startupPhase = StartupPhase.NONE;
@@ -492,10 +526,16 @@ public class ReactorManager {
             case WAIT_IGNITE -> {
                 if (++startupTicks >= 20 * 3) {
                     // The core is formed: particles appear, laser/absorber
-                    // control takes effect (the ramp gate lifts with the phase)
+                    // control takes effect (the inert gate lifts with WORKING)
                     broadcast(StructuresMessages.get("startup_ignite",
                             "<white>Igniting reactor core..."));
                     shield.ignite();
+                    startupPhase = StartupPhase.WAIT_COMPLETE;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_COMPLETE -> {
+                if (++startupTicks >= 20 * 3) {
                     broadcast(StructuresMessages.get("startup_complete",
                             "<white>Reactor startup complete, resume normal operations."));
                     startupPhase = StartupPhase.NONE;
@@ -504,6 +544,15 @@ public class ReactorManager {
                 }
             }
         }
+    }
+
+    /**
+     * The ±5% control is inert during the whole startup sequence until the
+     * core ignites ("Igniting reactor core..." step, shield WORKING).
+     */
+    public boolean isStartupControlInert() {
+        return isStartupSequenceActive()
+                && shield.getState() != ReactorShield.State.WORKING;
     }
     /** Whether the core finished its shutdown and is awaiting a new startup pulse. */
     public boolean isCoreOfflineMarked() { return coreOfflineMarked; }
@@ -836,10 +885,15 @@ public class ReactorManager {
             shield.setIntegrity(Math.max(shield.getIntegrity(), 100));
         }
 
-        // Self-destruct overpower finale: re-arm the forced 1000% ramp
+        // Self-destruct overpower finale: re-arm the forced 2000% ramp.
+        // The control lamps are dead from the controls-down phase on.
         if (selfdestructPhase == SelfdestructPhase.FINALE) {
             lasers.beginOverpower();
-        } else if (selfdestructPhase == SelfdestructPhase.TIMED) {
+        } else if (selfdestructPhase == SelfdestructPhase.CONTROLS_DOWN
+                || selfdestructPhase == SelfdestructPhase.PROTOCOL_MSG
+                || selfdestructPhase == SelfdestructPhase.TIMED
+                || selfdestructPhase == SelfdestructPhase.DETONATION_MSG
+                || selfdestructPhase == SelfdestructPhase.BYPASS_MSG) {
             lasers.setControlLocked(true);
         }
 
@@ -1330,7 +1384,6 @@ public class ReactorManager {
         selfdestructPhase = SelfdestructPhase.NONE;
         selfdestructTicks = 0;
         selfdestructDone = false;
-        selfdestructWarnTicks = -1;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
         stallManual = false;
@@ -1442,7 +1495,6 @@ public class ReactorManager {
         selfdestructPhase = SelfdestructPhase.NONE;
         selfdestructTicks = 0;
         selfdestructDone = false;
-        selfdestructWarnTicks = -1;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
         stallManual = false;
@@ -1543,11 +1595,15 @@ public class ReactorManager {
 
     // =========================
     // SENSOR DEAD — the signs show the No signal screen instead of readings
-    // (self-destruct phase 1, damaged structure, shield detonation countdown).
+    // (self-destruct pre-timer phases, damaged structure, shield detonation
+    // countdown). The timed phase itself shows the protocol screen.
     // =========================
     public boolean isSensorsDead() {
         return structureDamaged
-                || selfdestructPhase == SelfdestructPhase.SENSORS_DOWN                || shield.isFailed();
+                || selfdestructPhase == SelfdestructPhase.SENSORS_DOWN
+                || selfdestructPhase == SelfdestructPhase.CONTROLS_DOWN
+                || selfdestructPhase == SelfdestructPhase.PROTOCOL_MSG
+                || shield.isFailed();
     }
 
     /** Fuel tick (every second): consumption by spin + spin decay when dry. */
