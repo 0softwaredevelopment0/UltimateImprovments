@@ -3,6 +3,29 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.10] — since 1.8.3-beta.9 (2026-10-06)
+
+### Changed
+- **Self-destruct protocol reworked (D.F.C)** — the 1% startup roll now runs
+  a longer cinematic: 5s sensor blackout (No signal) → 1s → "All controls
+  are non-functional, restarting systems..." (every control lamp locked) →
+  5s → the T-60s announcement → 60s countdown with the protocol screen on
+  the signs and a warning ping every second → "Beginning detonation
+  procedure..." → 5s → "Bypassing internal PL power limits, new limit is
+  2000%." → 5s → "Overdriving power lasers for 2000%, waiting for a
+  meltdown." The overdrive now ramps each Power Laser to 2000% (was 1000%)
+  and burns the shield twice as fast (default rate ×2); the pre-timer T-10s
+  warning during the countdown is gone. When the shield reaches 0% (burn,
+  stress — whatever kills it first) the protocol reports "Self-destruct
+  protocol complete, detecting core shield failure, shutting down
+  systems..." and the existing T-10s detonation countdown proceeds.
+
+### Fixed
+- **3s pause between the core ignition and the startup completion message**
+  — "Igniting reactor core..." is now followed by a 3s wait before
+  "Reactor startup complete, resume normal operations." The laser/absorber
+  control still takes effect at the ignition step, not after the pause.
+
 ## [1.8.3-beta.9] — since 1.8.3-beta.8 (2026-10-06)
 
 ### Added

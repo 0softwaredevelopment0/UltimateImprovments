@@ -47,11 +47,12 @@ public class ReactorLasers {
 
     // =========================
     // OVERPOWER MODE (self-destruct finale): the Power Lasers are forced to
-    // 1000% (beyond their normal 100% limit — not a normal situation), control
+    // 2000% (beyond their normal 100% limit — not a normal situation), control
     // bulbs are locked and the shield burns. Reaching the report stage (shield
     // 0% → detonation countdown) completes the self-destruct sequence.
     // =========================
-    private static final int OVERPOWER_RAMP_TICKS = 40; // ~2s ramp 0 → 1000%
+    private static final int OVERPOWER_RAMP_TICKS = 40;  // ~2s ramp 0 → 2000%
+    private static final double OVERPOWER_TARGET = 2000; // % per Power Laser
     private boolean overpowerMode;
     private int overpowerRampTicks;
 
@@ -107,11 +108,11 @@ public class ReactorLasers {
         // POWER RAMP — always responsive: the ±5/−5 lamps ramp their laser
         // power (signs show it) even before the startup pulse. Self-destruct:
         // the control bulbs are locked (dead) — no ramp. Startup sequence:
-        // the control is inert until the "Igniting reactor core..." step.
+        // the control is inert until the core ignites (WORKING).
         // =========================
         double rampPerTick = cfg.getLaserRampRate() / 20.0;
         double[] max = { 100, 100, 200, 100 };
-        boolean rampAllowed = !controlLocked && !reactor.isStartupSequenceActive();
+        boolean rampAllowed = !controlLocked && !reactor.isStartupControlInert();
         for (int i = 0; i < 4; i++) {
             if (!rampAllowed || controlDisabled[i]) continue;
             if (isLampPowered(base, LAMP_PLUS[i])) {
@@ -161,11 +162,11 @@ public class ReactorLasers {
 
         if (overpowerRampTicks < OVERPOWER_RAMP_TICKS) {
             overpowerRampTicks++;
-            power[LASER_P1] = Math.min(1000, power[LASER_P1] + 1000.0 / OVERPOWER_RAMP_TICKS);
-            power[LASER_P2] = Math.min(1000, power[LASER_P2] + 1000.0 / OVERPOWER_RAMP_TICKS);
+            power[LASER_P1] = Math.min(OVERPOWER_TARGET, power[LASER_P1] + OVERPOWER_TARGET / OVERPOWER_RAMP_TICKS);
+            power[LASER_P2] = Math.min(OVERPOWER_TARGET, power[LASER_P2] + OVERPOWER_TARGET / OVERPOWER_RAMP_TICKS);
         }
 
-        // 1000% heating — the fuel check is deliberately skipped (not a normal situation)
+        // 2000% heating — the fuel check is deliberately skipped (not a normal situation)
         double heatPerTick = (power[LASER_P1] + power[LASER_P2]) / 100.0
                 * cfg.getPowerLaserHeatRate() / 20.0;
         double delta = heatPerTick + tempRemainder;
@@ -176,9 +177,10 @@ public class ReactorLasers {
         }
 
         // While the burn phase is active the lasers damage the shield directly
-        // (independent of the stress model) — report stage in ~10s at the default rate
+        // (independent of the stress model) — twice as fast as the old 1000%
+        // overdrive (report stage in ~5s at the default rate)
         if (reactor.isSelfdestructFinale()) {
-            reactor.getShield().applyOverpowerDamage(cfg.getSelfdestructOverpowerRate() / 20.0);
+            reactor.getShield().applyOverpowerDamage(cfg.getSelfdestructOverpowerRate() * 2.0 / 20.0);
         }
     }
 
