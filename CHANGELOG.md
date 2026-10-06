@@ -6,6 +6,11 @@ in this file.
 ## [Unreleased] — alpha.8 in-game testing fixes
 
 ### Added
+- **`/ui update [tag]` — download a release into the update folder** — fetches
+  a GitHub release (latest, or an explicit tag "1.8.4"/"v1.8.4"), downloads
+  its `*-jars.tar` asset and extracts the family JARs into
+  `plugins/UltimateImprovments/update/`. Nothing is applied automatically;
+  permission `ui.command.swapjar` (one workflow with `/ui swapjar`).
 - **Multi-reactor support completed (D.F.C)** — assembling a second reactor at
   a different location no longer fails with "The reactor is already active at
   this place!". The assembly used to go through the legacy single-reactor
@@ -19,6 +24,25 @@ in this file.
   glass auto-repair resolve their reactor by block position, and component
   broadcasts (shield/lasers/fusion/case) go through their owning reactor.
   The chat-command stats box shows the nearest reactor.
+
+### Changed
+- **`/ui swapjar` is now the apply step of the update flow** — instead of the
+  dead runtime hot-swap (Paper 26.3+ blocks runtime JAR registration) it
+  moves the downloaded `UI-*.jar` files from
+  `plugins/UltimateImprovments/update/` into `plugins/` (deleting the old
+  JARs of the same artifacts first — a move, not a copy) and asks for a
+  server restart. Artifacts whose old JARs are locked (Windows holds the
+  open JAR handles of the running JVM) are reported and left in `update/`
+  with manual replacement instructions; on Linux the move succeeds while the
+  server runs.
+
+### Removed
+- **The legacy updater (`/ui checkver`, `/ui updatejar`, the startup update
+  check)** — it queried the old repository layout (`rizer001` owner,
+  `build/libs/` Contents API, monolithic `UltimateImprovments-<ver>.jar`
+  names) and matched nothing since the multi-module release era. Replaced by
+  `/ui update` + `/ui swapjar`. The module count drops 98 → 97
+  (UpdateChecker module removed).
 
 ### Fixed
 - **The startup sequence could run alongside the self-destruct protocol** —

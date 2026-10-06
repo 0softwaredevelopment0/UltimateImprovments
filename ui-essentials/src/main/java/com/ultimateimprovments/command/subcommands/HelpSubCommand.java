@@ -323,7 +323,8 @@ public class HelpSubCommand implements SubCommand {
                 .u("disable <addon>", "disable an addon (real onDisable, confirmed)")
                 .u("restart <addon>", "restart an addon (confirmed)");
         cmd("lang", "View or switch the UI language").u("[ru|en]", "applies to every addon");
-        cmd("swapjar", "Swap the plugin JAR").u("", "hot-swap after an update");
+        cmd("update", "Download release JARs into update/").u("[tag]", "does NOT apply them — use /ui swapjar");
+        cmd("swapjar", "Apply downloaded JARs").u("", "moves update/ → plugins/, live after a restart");
         cmd("menu", "Open the admin menu").u("", "");
         cmd("cmdblocklist", null);
         COMMANDS.remove("cmdblocklist"); // already in Core section

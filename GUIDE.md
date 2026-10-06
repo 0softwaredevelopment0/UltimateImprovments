@@ -84,7 +84,7 @@ Database, Auth, Crafting, Energy, Reactor, Radiation, Power, Tasks) are always
 on; everything else is optional.
 
 **Optional modules include:** Datapack, RedstoneGuard, PacketGuard,
-VoidProtection, ChatFilter, UpdateChecker, Vanish, Notes, Magnet, MinecartSpeed,
+VoidProtection, ChatFilter, Vanish, Notes, Magnet, MinecartSpeed,
 Lightning, Integrity, Antimatter, Attributes, Beacon, BlockDmg, BoostedCobweb,
 ContainerTrigger, DeathBell, DragonEgg, EnderChest, EntityLocator, GlassBreak,
 HealthMeter, Leash, ModeProtect, ShieldSlowness, TerracotaSpeed,
@@ -203,7 +203,8 @@ tab-completion for all subcommands.
 /ui checkrad [nick]     — check radiation
 /ui power off|reboot|confirm|undo — server power
 /ui plugin              — plugin management
-/ui swapjar             — swap plugin jar
+/ui update [tag]        — download release JARs into UltimateImprovments/update (not applied)
+/ui swapjar             — move update/ JARs into plugins/ (apply = server restart)
 /ui op <nick> / deop <nick> / chgop <nick>
 /ui meteor              — meteor module
 /ui cilist              — custom item list
