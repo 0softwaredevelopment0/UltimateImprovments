@@ -135,7 +135,7 @@ public final class ReactorDamageTracker {
     }
 
     // =========================
-    // ROTATING AUDIT — live cell-state cache
+    // ROTATING AUDIT — live cell-state cache (per reactor base)
     // =========================
     /** Cells checked per {@link #auditTick} call (full pass ≈ index/50 ticks). */
     public static final int AUDIT_CELLS_PER_TICK = 50;
@@ -144,15 +144,17 @@ public final class ReactorDamageTracker {
     public record AuditResult(java.util.List<Category> damaged, java.util.List<Category> repaired) {}
 
     private static final Category[] CATEGORIES = Category.values();
-    /** Cached number of present (matching) cells per category. */
-    private static final int[] auditPresent = new int[CATEGORIES.length];
-    /** Keys of tracked cells currently missing in the world. */
-    private static final java.util.Set<String> missingCells = new java.util.HashSet<>();
-    /** Rotating key ring over the index (null until the first audit tick). */
-    private static String[] auditKeys;
-    private static int auditCursor;
-    /** Reactor base the audit state belongs to (re-bind resets the cache). */
-    private static Location auditBase;
+
+    /** Per-reactor audit cache (multi-reactor support: one state per anchor). */
+    private static final class AuditState {
+        final int[] present = new int[CATEGORIES.length];
+        final java.util.Set<String> missing = new java.util.HashSet<>();
+        String[] keys;
+        int cursor;
+    }
+
+    /** Reactor anchor → its audit cache. */
+    private static final Map<Location, AuditState> audits = new HashMap<>();
 
     /** True when the template index is loaded and has tracked cells. */
     public static boolean isTracked() {
@@ -160,59 +162,9 @@ public final class ReactorDamageTracker {
         return !index.isEmpty();
     }
 
-    /**
-     * Advances the rotating audit by {@value #AUDIT_CELLS_PER_TICK} cells.
-     * The first call (and every re-bind to another reactor base) runs one full
-     * pass so the cached counts start correct. Unloaded chunks are skipped
-     * without state changes (blocks there cannot be verified — and reading
-     * them would sync-load the chunk).
-     */
-    public static synchronized AuditResult auditTick(Location base) {
-        init();
-        if (index.isEmpty() || base == null || base.getWorld() == null) {
-            return new AuditResult(java.util.List.of(), java.util.List.of());
-        }
-        if (auditKeys == null || !base.equals(auditBase)) {
-            resetAudit();
-            auditBase = base.clone();
-            auditKeys = index.keySet().toArray(new String[0]);
-            fullAuditPass(base);
-        }
-
-        java.util.List<Category> damaged = new java.util.ArrayList<>();
-        java.util.List<Category> repaired = new java.util.ArrayList<>();
-        World world = base.getWorld();
-        int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
-        int steps = Math.min(AUDIT_CELLS_PER_TICK, auditKeys.length);
-        for (int i = 0; i < steps; i++) {
-            auditCursor = (auditCursor + 1) % auditKeys.length;
-            String key = auditKeys[auditCursor];
-            String[] p = key.split(",");
-            int dx = Integer.parseInt(p[0]);
-            int dy = Integer.parseInt(p[1]);
-            int dz = Integer.parseInt(p[2]);
-            if (!world.isChunkLoaded((bx + dx) >> 4, (bz + dz) >> 4)) continue;
-
-            Category cat = index.get(key);
-            boolean present = matches(dx, dy, dz, cat, world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
-            boolean knownMissing = missingCells.contains(key);
-            if (!present && !knownMissing) {
-                missingCells.add(key);
-                auditPresent[cat.ordinal()]--;
-                if (!damaged.contains(cat)) damaged.add(cat);
-            } else if (present && knownMissing) {
-                missingCells.remove(key);
-                auditPresent[cat.ordinal()]++;
-                if (!repaired.contains(cat)) repaired.add(cat);
-            }
-        }
-        return new AuditResult(damaged, repaired);
-    }
-
-    /** One-time (per bind) full pass: seeds the cached counts from the world. */
-    private static void fullAuditPass(Location base) {
-        missingCells.clear();
-        java.util.Arrays.fill(auditPresent, 0);
+    /** Seeds the audit state for one base with a full pass over the template. */
+    private static AuditState seedState(Location base) {
+        AuditState st = new AuditState();
         World world = base.getWorld();
         int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
         for (Map.Entry<String, Category> e : index.entrySet()) {
@@ -221,48 +173,107 @@ public final class ReactorDamageTracker {
             int dy = Integer.parseInt(p[1]);
             int dz = Integer.parseInt(p[2]);
             boolean present = matches(dx, dy, dz, e.getValue(), world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
-            if (present) auditPresent[e.getValue().ordinal()]++;
-            else missingCells.add(e.getKey());
+            if (present) st.present[e.getValue().ordinal()]++;
+            else st.missing.add(e.getKey());
         }
+        st.keys = index.keySet().toArray(new String[0]);
+        audits.put(base.clone(), st);
+        return st;
+    }
+
+    /** Audit cache for the base, seeded on first use (null when the template is empty). */
+    private static synchronized AuditState stateFor(Location base) {
+        if (base == null) return null;
+        AuditState st = audits.get(base);
+        if (st == null && isTracked()) st = seedState(base);
+        return st;
+    }
+
+    /**
+     * Advances the rotating audit by {@value #AUDIT_CELLS_PER_TICK} cells.
+     * Every reactor base keeps its own cache. Unloaded chunks are skipped
+     * without state changes (blocks there cannot be verified — and reading
+     * them would sync-load the chunk).
+     */
+    public static synchronized AuditResult auditTick(Location base) {
+        init();
+        if (index.isEmpty() || base == null || base.getWorld() == null) {
+            return new AuditResult(java.util.List.of(), java.util.List.of());
+        }
+        AuditState st = stateFor(base);
+        if (st == null) {
+            return new AuditResult(java.util.List.of(), java.util.List.of());
+        }
+
+        java.util.List<Category> damaged = new java.util.ArrayList<>();
+        java.util.List<Category> repaired = new java.util.ArrayList<>();
+        World world = base.getWorld();
+        int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
+        int steps = Math.min(AUDIT_CELLS_PER_TICK, st.keys.length);
+        for (int i = 0; i < steps; i++) {
+            st.cursor = (st.cursor + 1) % st.keys.length;
+            String key = st.keys[st.cursor];
+            String[] p = key.split(",");
+            int dx = Integer.parseInt(p[0]);
+            int dy = Integer.parseInt(p[1]);
+            int dz = Integer.parseInt(p[2]);
+            if (!world.isChunkLoaded((bx + dx) >> 4, (bz + dz) >> 4)) continue;
+
+            Category cat = index.get(key);
+            boolean present = matches(dx, dy, dz, cat, world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
+            boolean knownMissing = st.missing.contains(key);
+            if (!present && !knownMissing) {
+                st.missing.add(key);
+                st.present[cat.ordinal()]--;
+                if (!damaged.contains(cat)) damaged.add(cat);
+            } else if (present && knownMissing) {
+                st.missing.remove(key);
+                st.present[cat.ordinal()]++;
+                if (!repaired.contains(cat)) repaired.add(cat);
+            }
+        }
+        return new AuditResult(damaged, repaired);
     }
 
     /**
      * O(1) cache update from the break listener: one tracked cell disappeared.
-     * No-op when the audit was not initialized yet (the first full pass will
-     * pick the real state up).
+     * No-op when the audit was not initialized yet (the first tick/lookup seeds it).
      */
-    public static synchronized void noteCellBroken(int dx, int dy, int dz) {
-        if (auditKeys == null) return;
+    public static synchronized void noteCellBroken(Location base, int dx, int dy, int dz) {
+        if (base == null) return;
+        AuditState st = audits.get(base);
+        if (st == null) return;
         String key = dx + "," + dy + "," + dz;
         Category cat = index.get(key);
-        if (cat != null && missingCells.add(key)) auditPresent[cat.ordinal()]--;
+        if (cat != null && st.missing.add(key)) st.present[cat.ordinal()]--;
     }
 
     /** O(1) cache update from the place listener: one tracked cell is back. */
-    public static synchronized void noteCellRepaired(int dx, int dy, int dz) {
-        if (auditKeys == null) return;
+    public static synchronized void noteCellRepaired(Location base, int dx, int dy, int dz) {
+        if (base == null) return;
+        AuditState st = audits.get(base);
+        if (st == null) return;
         String key = dx + "," + dy + "," + dz;
         Category cat = index.get(key);
-        if (cat != null && missingCells.remove(key)) auditPresent[cat.ordinal()]++;
+        if (cat != null && st.missing.remove(key)) st.present[cat.ordinal()]++;
     }
 
     /** Cached {@code {present, total}} for one category — the (left/total) message placeholders. */
-    public static synchronized int[] cachedCount(Category cat) {
-        return new int[]{ auditPresent[cat.ordinal()], totalOf(cat) };
+    public static synchronized int[] cachedCount(Location base, Category cat) {
+        AuditState st = stateFor(base);
+        int present = st != null ? st.present[cat.ordinal()] : 0;
+        return new int[]{ present, totalOf(cat) };
     }
 
     /** True when no tracked cell is currently missing. */
-    public static synchronized boolean cachedAllPresent() {
-        return missingCells.isEmpty();
+    public static synchronized boolean cachedAllPresent(Location base) {
+        AuditState st = stateFor(base);
+        return st == null || st.missing.isEmpty();
     }
 
-    /** Drops the audit cache (teardown/reassembly — the next tick re-seeds it). */
-    public static synchronized void resetAudit() {
-        auditKeys = null;
-        auditCursor = 0;
-        auditBase = null;
-        missingCells.clear();
-        java.util.Arrays.fill(auditPresent, 0);
+    /** Drops the audit cache of one base (teardown/reassembly — the next tick re-seeds it). */
+    public static synchronized void resetAudit(Location base) {
+        if (base != null) audits.remove(base);
     }
 
     // =========================

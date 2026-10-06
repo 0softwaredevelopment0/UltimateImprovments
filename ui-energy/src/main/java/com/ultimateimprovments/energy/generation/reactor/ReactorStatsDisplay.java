@@ -17,8 +17,7 @@ public final class ReactorStatsDisplay {
 
     /** Sends the reactor stats box to the player if an active reactor is nearby. */
     public static void sendStats(Player player) {
-        ReactorManager reactor = ReactorManager.getInstance();
-        if (reactor == null || ReactorManager.getReactors().isEmpty()) {
+        if (ReactorManager.getReactors().isEmpty()) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>No active reactors found."));
             return;
         }
@@ -37,7 +36,7 @@ public final class ReactorStatsDisplay {
             player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>No active reactor nearby."));
             return;
         }
-        reactor = nearest;
+        ReactorManager reactor = nearest;
 
         Location reactorLoc = reactor.getReactorLocation();
         if (reactorLoc == null || !playerLoc.getWorld().equals(reactorLoc.getWorld())) {

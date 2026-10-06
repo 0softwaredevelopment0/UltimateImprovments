@@ -159,7 +159,7 @@ public class ReactorCase {
             brokenWarnTick++;
             if (brokenWarnTick >= 600) {
                 brokenWarnTick = 0;
-                ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+                reactor.broadcastRaw(StructuresMessages.get(
                         "case_broken_reminder",
                         "<dark_red>⚠ <red>Case glass broken! Repair it with glass."));
             }
@@ -219,10 +219,10 @@ public class ReactorCase {
             case "pressure" -> "<dark_red>💥 <red>Case glass shattered by pressure! (15 MPa)";
             default -> "<dark_red>💥 <red>Case glass broken! Integrity 0%";
         };
-        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(msgKey, def));
+        reactor.broadcastRaw(StructuresMessages.get(msgKey, def));
 
         if (broken > 0) {
-            ReactorManager.getInstance().saveToDb();
+            reactor.saveToDb();
         }
     }
 
@@ -245,10 +245,10 @@ public class ReactorCase {
 
         Location core = base.clone().add(0.5, -5.5, 0.5);
         base.getWorld().playSound(core, Sound.BLOCK_GLASS_PLACE, SoundCategory.MASTER, 2.0f, 1.0f);
-        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+        reactor.broadcastRaw(StructuresMessages.get(
                 "case_repaired", "<green>✔ <white>Case glass restored! Integrity 100%"));
 
-        ReactorManager.getInstance().saveToDb();
+        reactor.saveToDb();
         return true;
     }
 
@@ -272,9 +272,9 @@ public class ReactorCase {
 
         Location core = base.clone().add(0.5, -5.5, 0.5);
         base.getWorld().playSound(core, Sound.BLOCK_GLASS_PLACE, SoundCategory.MASTER, 2.0f, 1.0f);
-        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+        reactor.broadcastRaw(StructuresMessages.get(
                 "case_repaired", "<green>✔ <white>Case glass restored! Integrity 100%"));
-        ReactorManager.getInstance().saveToDb();
+        reactor.saveToDb();
     }
 
     // =========================

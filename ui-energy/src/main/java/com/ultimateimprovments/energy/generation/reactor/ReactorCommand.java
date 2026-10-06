@@ -29,9 +29,6 @@ public final class ReactorCommand {
     // =========================
     public static void assembleDarkSynthesis(Player player) {
 
-        ReactorManager reactor = ReactorManager.getInstance();
-        if (reactor == null) return;
-
         // =========================
         // CHECK PENDING ASSEMBLY
         // =========================
@@ -68,21 +65,18 @@ public final class ReactorCommand {
         }
 
         // =========================
-        // CHECK IF ALREADY ACTIVE
+        // CHECK IF ALREADY ACTIVE (multi-reactor: only the SAME place is a
+        // duplicate — a different location assembles its own reactor with
+        // its own ID)
         // =========================
-        Location existing = reactor.getReactorLocation();
-        if (existing != null) {
-            if (existing.equals(pending.center())) {
-                player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
-                        "<yellow>The reactor is already active at this place!")));
-                ReactorManager.clearPendingAssembly(player);
-                return;
-            }
+        ReactorManager reactor = ReactorManager.getAt(pending.center());
+        if (reactor != null) {
             player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
                     "<yellow>The reactor is already active at this place!")));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
+        reactor = ReactorManager.createPending();
 
         // =========================
         // REMOVE ITEM FRAME & DROP IT
