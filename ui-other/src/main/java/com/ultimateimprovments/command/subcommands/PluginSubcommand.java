@@ -256,8 +256,9 @@ public final class PluginSubcommand {
                                 "<yellow>⚠</yellow> <white>Plugin </white><yellow>" + pending.pluginName()
                                         + "</yellow> <white>is already enabled.</white>"));
                     } else if (target instanceof org.bukkit.plugin.java.JavaPlugin) {
-                        // Fresh load from disk: re-enabling the old disabled instance
-                        // would run onEnable against its closed JAR ("zip file closed").
+                        // Soft enable path: re-enable the SAME instance (the
+                        // classloader stays open). A fresh load from disk is
+                        // hard-blocked on Paper/Purpur 26.3 for paper-plugins.
                         com.ultimateimprovments.core.HotReloadEngine.hotReload(target, "plugin enable");
                         sender.sendMessage(MessageUtil.parse(
                                 "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
@@ -278,10 +279,10 @@ public final class PluginSubcommand {
                     ConsoleLogger.info("[PLUGIN] " + sender.getName() + " disabled " + pending.pluginName());
                 }
                 case "restart" -> {
-                    // REAL hot-reload: onDisable → unload → fresh load from the JAR
-                    // (new classloader) → onEnable. Plain disable+enable is never
-                    // used: on Paper disabling closes the JAR and re-enabling does
-                    // not reopen it ("zip file closed" zombie).
+                    // Soft hot-reload: onDisable → reloadConfig → onEnable on
+                    // the SAME instance (classloader kept open). A fresh load
+                    // from the JAR is hard-blocked on Paper/Purpur 26.3 for
+                    // paper-plugins; plain disablePlugin closes the JAR.
                     if (target instanceof org.bukkit.plugin.java.JavaPlugin) {
                         com.ultimateimprovments.core.HotReloadEngine.hotReload(target, "plugin restart");
                         sender.sendMessage(MessageUtil.parse(

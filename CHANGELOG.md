@@ -21,6 +21,23 @@ in this file.
   The chat-command stats box shows the nearest reactor.
 
 ### Fixed
+- **`/ui reload` reloaded 0 of 20 addons** — the hot-reload engine unloaded
+  every addon from the PluginManager and tried to load it back from its JAR
+  file, which Paper/Purpur 26.3 hard-blocks for paper-plugins
+  (`IllegalStateException: Cannot register paper plugins during runtime!` —
+  every UI JAR ships a `paper-plugin.yml`), leaving the whole family
+  disabled and unloaded. Verified against the server bytecode: this version
+  also CLOSES the plugin classloader inside `disablePlugin`
+  (`ConfiguredPluginClassLoader.close()`), so plain disable→enable would hit
+  a "zip file closed" zombie. The engine now performs a SOFT lifecycle cycle
+  on the same instance — `PluginDisableEvent` + `setEnabled(false)` (a real
+  `onDisable`, classloader kept open) → config re-read →
+  `enablePlugin` (real `onEnable`). The same soft path serves
+  `/ui reload <addon>`, `/ui addon enable|disable|restart` (disable no longer
+  closes the JAR, so a later enable works) and
+  `/ui plugin enable|restart`. Note: code updates still require a server
+  restart — already-loaded classes stay cached and a closed classloader
+  cannot be reopened.
 - **Custom-enchant wear ignored the Unbreaking enchantment** — the Unbreaking
   roll in `ItemDurabilityUtil` read the enchantment level through the legacy
   `Enchantment.UNBREAKING` constant, which on Paper 26.3 is a stale API-view
