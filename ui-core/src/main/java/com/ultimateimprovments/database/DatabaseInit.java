@@ -182,7 +182,9 @@ public class DatabaseInit {
                 {"core_emergency_stopped", "INTEGER DEFAULT 0"},
                 {"stall_phase", "TEXT DEFAULT 'NONE'"},
                 {"stall_ticks", "INTEGER DEFAULT 0"},
-                {"core_offline", "INTEGER DEFAULT 0"}
+                {"core_offline", "INTEGER DEFAULT 0"},
+                {"startup_phase", "TEXT DEFAULT 'NONE'"},
+                {"startup_ticks", "INTEGER DEFAULT 0"}
             };
             for (String[] col : reactorCols) {
                 try {

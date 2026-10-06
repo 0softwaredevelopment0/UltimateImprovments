@@ -392,6 +392,119 @@ public class ReactorManager {
 
     public boolean isStallShutdownActive() { return stallPhase != StallPhase.NONE; }
     public StallPhase getStallPhase() { return stallPhase; }
+
+    // =========================
+    // STARTUP SEQUENCE: the startup lamp pulse begins the cinematic startup —
+    // announcement → 5s → stabilization lasers → power lasers → absorber valve
+    // (each with its own 3s pauses) → shield forming at 10%/sec → ignition:
+    // the core becomes operational, central particles appear and the
+    // laser/absorber control takes effect (it is inert during the sequence).
+    // =========================
+    public enum StartupPhase {
+        NONE,             // idle
+        WAIT_ANNOUNCE,    // 5s → "Starting up stabilization lasers..."
+        WAIT_STAB_MSG,    // 3s → "Success."
+        WAIT_STAB_PAUSE,  // 3s → "Starting up power lasers..."
+        WAIT_POWER_MSG,   // 3s → "Success."
+        WAIT_POWER_PAUSE, // 3s → "Opening content absorber valve..."
+        WAIT_ABS_MSG,     // 3s → "Success."
+        WAIT_ABS_PAUSE,   // 3s → "Forming reactor shield..." + shield forming begins
+        SHIELD_FORMING,   // until integrity 100% (10%/sec) → "Success."
+        WAIT_IGNITE       // 3s → "Igniting reactor core..." (ignite) + complete message
+    }
+
+    private StartupPhase startupPhase = StartupPhase.NONE;
+    private int startupTicks;
+
+    public boolean isStartupSequenceActive() { return startupPhase != StartupPhase.NONE; }
+    public StartupPhase getStartupPhase() { return startupPhase; }
+
+    /** Startup sequence phase machine (every tick). */
+    private void tickStartupSequence() {
+        switch (startupPhase) {
+            case NONE -> { }
+
+            case WAIT_ANNOUNCE -> {
+                if (++startupTicks >= 20 * 5) {
+                    broadcast(StructuresMessages.get("startup_stab_lasers",
+                            "<white>Starting up stabilization lasers..."));
+                    startupPhase = StartupPhase.WAIT_STAB_MSG;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_STAB_MSG -> {
+                if (++startupTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    startupPhase = StartupPhase.WAIT_STAB_PAUSE;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_STAB_PAUSE -> {
+                if (++startupTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("startup_power_lasers",
+                            "<white>Starting up power lasers..."));
+                    startupPhase = StartupPhase.WAIT_POWER_MSG;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_POWER_MSG -> {
+                if (++startupTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    startupPhase = StartupPhase.WAIT_POWER_PAUSE;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_POWER_PAUSE -> {
+                if (++startupTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("startup_absorber",
+                            "<white>Opening content absorber valve..."));
+                    startupPhase = StartupPhase.WAIT_ABS_MSG;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_ABS_MSG -> {
+                if (++startupTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    startupPhase = StartupPhase.WAIT_ABS_PAUSE;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_ABS_PAUSE -> {
+                if (++startupTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("startup_shield",
+                            "<white>Forming reactor shield..."));
+                    shield.start();
+                    startupPhase = StartupPhase.SHIELD_FORMING;
+                    startupTicks = 0;
+                }
+            }
+            case SHIELD_FORMING -> {
+                // Safety: a lost CREATING state cannot build — re-arm it
+                if (shield.getState() == ReactorShield.State.OFFLINE) {
+                    shield.start();
+                }
+                if (shield.getIntegrity() >= 100) {
+                    broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    startupPhase = StartupPhase.WAIT_IGNITE;
+                    startupTicks = 0;
+                }
+            }
+            case WAIT_IGNITE -> {
+                if (++startupTicks >= 20 * 3) {
+                    // The core is formed: particles appear, laser/absorber
+                    // control takes effect (the ramp gate lifts with the phase)
+                    broadcast(StructuresMessages.get("startup_ignite",
+                            "<white>Igniting reactor core..."));
+                    shield.ignite();
+                    broadcast(StructuresMessages.get("startup_complete",
+                            "<white>Reactor startup complete, resume normal operations."));
+                    startupPhase = StartupPhase.NONE;
+                    startupTicks = 0;
+                    saveToDb();
+                }
+            }
+        }
+    }
     /** Whether the core finished its shutdown and is awaiting a new startup pulse. */
     public boolean isCoreOfflineMarked() { return coreOfflineMarked; }
 
@@ -642,6 +755,8 @@ public class ReactorManager {
         s.setStallPhase(r.stallPhase.name());
         s.setStallTicks(r.stallTicks);
         s.setCoreOffline(r.coreOfflineMarked);
+        s.setStartupPhase(r.startupPhase.name());
+        s.setStartupTicks(r.startupTicks);
         s.setLaserPowers(new double[] {
                 r.lasers.getPower(ReactorLasers.LASER_P1),
                 r.lasers.getPower(ReactorLasers.LASER_P2),
@@ -704,6 +819,8 @@ public class ReactorManager {
         stallManual = stallPhase == StallPhase.HEAT_DUMP;
         stallCoolPerTick = stallManual ? Math.max(1.0, coreTemp * 0.10 / 20.0) : 0;
         stallCoolRemainder = 0;
+        startupPhase = parseStartupPhase(state.getStartupPhase());
+        startupTicks = state.getStartupTicks();
 
         // Shield: restore the exact phase + integrity + detonation countdown
         try {
@@ -777,6 +894,16 @@ public class ReactorManager {
             return StallPhase.valueOf(name);
         } catch (IllegalArgumentException e) {
             return StallPhase.NONE;
+        }
+    }
+
+    /** Parses a persisted startup-sequence phase name, NONE on any mismatch. */
+    private static StartupPhase parseStartupPhase(String name) {
+        if (name == null) return StartupPhase.NONE;
+        try {
+            return StartupPhase.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return StartupPhase.NONE;
         }
     }
 
@@ -1016,6 +1143,11 @@ public class ReactorManager {
         tickStallShutdown();
 
         // =========================
+        // STARTUP SEQUENCE — cinematic startup driven by the startup lamp
+        // =========================
+        tickStartupSequence();
+
+        // =========================
         // SHIELD INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%) — via the
         // stress model; the case integrity lives in ReactorCase.
         // =========================
@@ -1205,6 +1337,8 @@ public class ReactorManager {
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
         coreOfflineMarked = false;
+        startupPhase = StartupPhase.NONE;
+        startupTicks = 0;
 
         display.resetDisplay();
 
@@ -1315,6 +1449,8 @@ public class ReactorManager {
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
         coreOfflineMarked = false;
+        startupPhase = StartupPhase.NONE;
+        startupTicks = 0;
         energyGenerated = 0;
         energyRemainder = 0;
         prevShInt = 100;
@@ -1442,7 +1578,7 @@ public class ReactorManager {
         fusionDebrisJustCrafted = true;
     }
 
-    /** Called by the laser startup pulse — ignites the shield formation. */
+    /** Called by the laser startup pulse — begins the cinematic startup sequence. */
     public void onStartupPulse() {
         if (coreEmergencyStopped) {
             coreEmergencyStopped = false;
@@ -1452,8 +1588,13 @@ public class ReactorManager {
         // New run: the offline mark goes away and the ±5% control lamps work again
         coreOfflineMarked = false;
         lasers.clearControlDisable();
-        shield.start();
         rollSelfdestruct();
+        // The shield starts forming later, at the "Forming reactor shield..." step
+        startupPhase = StartupPhase.WAIT_ANNOUNCE;
+        startupTicks = 0;
+        broadcast(StructuresMessages.get("startup_initiated",
+                "<white>Core startup initiated due to a manual trigger, please wait."));
+        saveToDb();
     }
 
     /** Shield breach detonation — tears down the reactor. */

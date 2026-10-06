@@ -1054,6 +1054,21 @@ stall_absorber = "<white>Закрытие клапана сборщика сод
 stall_shield = "<white>Отключение щита реактора..."
 # Default: <white>Ядро помечено как отключённое, ожидается стартап.
 stall_offline = "<white>Ядро помечено как отключённое, ожидается стартап."
+# Startup sequence — кинематичный запуск по пульсу лампы стартапа.
+# Default: <white>Запуск ядра по ручному триггеру, пожалуйста, подождите.
+startup_initiated = "<white>Запуск ядра по ручному триггеру, пожалуйста, подождите."
+# Default: <white>Запуск стабилизирующих лазеров...
+startup_stab_lasers = "<white>Запуск стабилизирующих лазеров..."
+# Default: <white>Запуск силовых лазеров...
+startup_power_lasers = "<white>Запуск силовых лазеров..."
+# Default: <white>Открытие клапана сборщика содержимого...
+startup_absorber = "<white>Открытие клапана сборщика содержимого..."
+# Default: <white>Формирование щита реактора...
+startup_shield = "<white>Формирование щита реактора..."
+# Default: <white>Воспламенение ядра реактора...
+startup_ignite = "<white>Воспламенение ядра реактора..."
+# Default: <white>Запуск реактора завершён, возобновите нормальную работу.
+startup_complete = "<white>Запуск реактора завершён, возобновите нормальную работу."
 # Default: <red>Сначала нажмите SHIFT+ПКМ по рамке реактора!
 pending_frame_reactor = "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"
 # Default: <red>Сначала нажмите SHIFT+ПКМ по рамке на магните!
@@ -1342,6 +1357,21 @@ stall_absorber = "<white>Closing content absorber valve..."
 stall_shield = "<white>Shutting down reactor shield..."
 # Default: <white>Core marked as offline, awaiting for startup.
 stall_offline = "<white>Core marked as offline, awaiting for startup."
+# Startup sequence — cinematic startup driven by the startup lamp pulse.
+# Default: <white>Core startup initiated due to a manual trigger, please wait.
+startup_initiated = "<white>Core startup initiated due to a manual trigger, please wait."
+# Default: <white>Starting up stabilization lasers...
+startup_stab_lasers = "<white>Starting up stabilization lasers..."
+# Default: <white>Starting up power lasers...
+startup_power_lasers = "<white>Starting up power lasers..."
+# Default: <white>Opening content absorber valve...
+startup_absorber = "<white>Opening content absorber valve..."
+# Default: <white>Forming reactor shield...
+startup_shield = "<white>Forming reactor shield..."
+# Default: <white>Igniting reactor core...
+startup_ignite = "<white>Igniting reactor core..."
+# Default: <white>Reactor startup complete, resume normal operations.
+startup_complete = "<white>Reactor startup complete, resume normal operations."
 # Default: <red>First press SHIFT+RMB on the reactor frame!
 pending_frame_reactor = "<red>First press SHIFT+RMB on the reactor frame!"
 # Default: <red>First press SHIFT+RMB on the magnet frame!

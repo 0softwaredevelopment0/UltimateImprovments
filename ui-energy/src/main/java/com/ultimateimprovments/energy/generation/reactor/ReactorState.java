@@ -62,6 +62,10 @@ public class ReactorState {
     private int stallTicks;
     private boolean coreOffline;        // shutdown finished, awaiting a new startup
 
+    // Cinematic startup sequence (lamp pulse → lasers → valve → shield → ignite)
+    private String startupPhase = "NONE";
+    private int startupTicks;
+
     public boolean isStructureDamaged() { return structureDamaged; }
     public void setStructureDamaged(boolean val) { structureDamaged = val; }
 
@@ -88,6 +92,11 @@ public class ReactorState {
     public void setStallTicks(int val) { stallTicks = Math.max(0, val); }
     public boolean isCoreOffline() { return coreOffline; }
     public void setCoreOffline(boolean val) { coreOffline = val; }
+
+    public String getStartupPhase() { return startupPhase; }
+    public void setStartupPhase(String val) { startupPhase = val == null ? "NONE" : val; }
+    public int getStartupTicks() { return startupTicks; }
+    public void setStartupTicks(int val) { startupTicks = Math.max(0, val); }
 
     /** Copies all fields from another state (used by persistence load). */
     public void copyFrom(ReactorState o) {
@@ -121,6 +130,8 @@ public class ReactorState {
         stallPhase = o.stallPhase;
         stallTicks = o.stallTicks;
         coreOffline = o.coreOffline;
+        startupPhase = o.startupPhase;
+        startupTicks = o.startupTicks;
     }
 
     // Tick counters
@@ -324,5 +335,7 @@ public class ReactorState {
         stallPhase = "NONE";
         stallTicks = 0;
         coreOffline = false;
+        startupPhase = "NONE";
+        startupTicks = 0;
     }
 }

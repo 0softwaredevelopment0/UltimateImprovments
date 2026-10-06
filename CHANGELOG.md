@@ -3,6 +3,30 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.9] — since 1.8.3-beta.8 (2026-10-06)
+
+### Added
+- **Cinematic reactor startup (D.F.C)** — the startup lamp pulse now runs a
+  full sequence instead of instantly forming the shield: "Core startup
+  initiated due to a manual trigger, please wait." → 5s → "Starting up
+  stabilization lasers..." → 3s → "Success." → 3s → "Starting up power
+  lasers..." → 3s → "Success." → 3s → "Opening content absorber valve..."
+  → 3s → "Success." → 3s → "Forming reactor shield..." (the shield builds
+  at a fixed 10%/sec, ~10s) → "Success." at 100% → 3s → "Igniting reactor
+  core..." (the core becomes operational, central particles appear) →
+  "Reactor startup complete, resume normal operations."
+- The laser/absorber ±5% control is inert during the whole startup sequence
+  and takes effect at the ignition step.
+- The startup phase persists (`startup_phase`/`startup_ticks` columns) and
+  resumes after a restart mid-sequence.
+
+### Changed
+- The shield no longer transitions to WORKING automatically at 100% — the
+  ignition is an explicit step of the startup sequence (new `ignite()`).
+  The old instant messages ("Forming the shield...", "Shield formed!...")
+  are replaced by the sequence; the `shield_build_rate` config key no
+  longer affects the forming speed (fixed 10%/sec).
+
 ## [1.8.3-beta.8] — since 1.8.3-beta.7 (2026-10-06)
 
 ### Changed
