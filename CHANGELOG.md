@@ -3,6 +3,8 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [Unreleased]
+
 ## [1.8.3-release.1] — since 1.8.3-alpha.8 (2026-10-07)
 
 > **Release channel** — the first full (non-pre-release) family release.
