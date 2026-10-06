@@ -96,7 +96,7 @@ public class ReactorFusion {
                     // per stall episode instead of silently freezing at N/N.
                     if (!depositStalled) {
                         depositStalled = true;
-                        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+                        reactor.broadcastRaw(StructuresMessages.get(
                                 "fusion_deposit_stalled",
                                 "<dark_gray>│ <dark_red>D.F.C <dark_gray>» <gold>⚠ <white>Fusion output stalled: <red>floor barrel is missing or full<white> — the debris counter is holding."));
                     }

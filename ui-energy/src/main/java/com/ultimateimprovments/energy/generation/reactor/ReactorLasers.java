@@ -93,7 +93,7 @@ public class ReactorLasers {
         if (startupPowered && !prevStartupPowered && !started) {
             started = true;
             // Cinematic startup sequence begins (announcement inside)
-            ReactorManager.getInstance().onStartupPulse();
+            reactor.onStartupPulse();
         } else if (startupPowered && !prevStartupPowered && started) {
             reactor.tryManualShutdownTrigger();
         }
@@ -214,7 +214,7 @@ public class ReactorLasers {
     // HELPERS
     // =========================
     private boolean isLampPowered(Location base, int[] off) {
-        return ReactorManager.getInstance().isBulbPoweredAt(base, off[0], off[1], off[2]);
+        return reactor.isBulbPoweredAt(base, off[0], off[1], off[2]);
     }
 
     /** Resets the laser system (disassemble / meltdown / fresh install). */
@@ -271,6 +271,6 @@ public class ReactorLasers {
 
     /** Localized startup broadcast support (delegates to the manager). */
     private void broadcastRaw(String message) {
-        ReactorManager.getInstance().broadcastRaw(message);
+        reactor.broadcastRaw(message);
     }
 }

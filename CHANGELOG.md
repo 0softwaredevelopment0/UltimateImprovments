@@ -5,6 +5,21 @@ in this file.
 
 ## [Unreleased] — alpha.8 in-game testing fixes
 
+### Added
+- **Multi-reactor support completed (D.F.C)** — assembling a second reactor at
+  a different location no longer fails with "The reactor is already active at
+  this place!". The assembly used to go through the legacy single-reactor
+  accessor and rejected whenever ANY reactor existed on the server; it now
+  rejects only a reactor at the SAME anchor and otherwise creates a new
+  reactor instance with its own ID (`REACTOR-<world>-<x>-<y>-<z>`) that is
+  ticked, persisted, audited and reported independently. Supporting changes:
+  the tick task drives every assembled reactor, the rotating structure audit
+  keeps one cell-state cache per anchor (the audit used to be bound to a
+  single base and would thrash between two reactors), sign click stats and
+  glass auto-repair resolve their reactor by block position, and component
+  broadcasts (shield/lasers/fusion/case) go through their owning reactor.
+  The chat-command stats box shows the nearest reactor.
+
 ### Fixed
 - **Chat filter word patterns failed to compile** — the wildcard-to-regex
   converter built an invalid Unicode property escape (`\p%L%` instead of

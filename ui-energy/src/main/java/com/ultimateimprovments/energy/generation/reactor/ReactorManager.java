@@ -998,13 +998,14 @@ public class ReactorManager {
                 }
             }
             String oldId = this.reactorId;
+            Location oldLoc = this.reactorLocation;
             if (oldId != null) {
                 deleteFromDb(oldId);
             }
             this.reactorLocation = null;
             this.valid = false;
             this.reactorId = null;
-            ReactorDamageTracker.resetAudit();
+            ReactorDamageTracker.resetAudit(oldLoc);
             resetAll();
         }
     }
@@ -1702,7 +1703,7 @@ public class ReactorManager {
      * the audit cache immediately (O(1)) — the counts in the report are exact.
      */
     public void addDamage(int dx, int dy, int dz, ReactorDamageTracker.Category cat) {
-        ReactorDamageTracker.noteCellBroken(dx, dy, dz);
+        ReactorDamageTracker.noteCellBroken(reactorLocation, dx, dy, dz);
         reportDamage(cat);
     }
 
@@ -1723,7 +1724,7 @@ public class ReactorManager {
         }
 
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
-        int[] c = ReactorDamageTracker.cachedCount(cat);
+        int[] c = ReactorDamageTracker.cachedCount(reactorLocation, cat);
         boolean fullyGone = c[0] <= 0;
         String key = fullyGone ? "failure_report" : "damage_report";
         String body = StructuresMessages.get(key,
@@ -1743,7 +1744,7 @@ public class ReactorManager {
      * the structure counts as repaired.
      */
     public void addRepair(int dx, int dy, int dz, ReactorDamageTracker.Category cat) {
-        ReactorDamageTracker.noteCellRepaired(dx, dy, dz);
+        ReactorDamageTracker.noteCellRepaired(reactorLocation, dx, dy, dz);
         reportRepair(cat);
     }
 
@@ -1757,7 +1758,7 @@ public class ReactorManager {
         }
 
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
-        int[] c = ReactorDamageTracker.cachedCount(cat);
+        int[] c = ReactorDamageTracker.cachedCount(reactorLocation, cat);
         String body = StructuresMessages.get("repair_report",
                 "<gold>Attention! <white>%cat% repair detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>")
                 .replace("%cat%", catName(cat))
@@ -1770,13 +1771,13 @@ public class ReactorManager {
             display.resetSignCache();
         }
 
-        if (ReactorDamageTracker.cachedAllPresent() && structureDamaged) {
+        if (ReactorDamageTracker.cachedAllPresent(reactorLocation) && structureDamaged) {
             structureDamaged = false;
             damageWarnTick = 0;
             broadcast(StructuresMessages.get("structure_repaired",
                     "<green>✔ <white>Reactor structure fully restored — control returned."));
         } else if (cat == ReactorDamageTracker.Category.STRUCTURE
-                && ReactorDamageTracker.cachedCount(ReactorDamageTracker.Category.STRUCTURE)[0]
+                && ReactorDamageTracker.cachedCount(reactorLocation, ReactorDamageTracker.Category.STRUCTURE)[0]
                         >= ReactorDamageTracker.totalOf(ReactorDamageTracker.Category.STRUCTURE)
                 && structureDamaged) {
             // All "control" cells are back — control returns even if some

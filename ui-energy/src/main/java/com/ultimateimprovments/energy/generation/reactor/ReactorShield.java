@@ -332,8 +332,8 @@ public class ReactorShield {
      * Gradient color for the core dust: temperature 0 → black, the 10M working
      * point → white; stops at black / red / orange / yellow / white.
      */
-    static Color dustColor(int temp) {
-        double workTemp = ReactorManager.getInstance().getCoreWorkTemp();
+    Color dustColor(int temp) {
+        double workTemp = reactor.getCoreWorkTemp();
         if (workTemp <= 0) workTemp = 10_000_000;
         double t = Math.max(0, Math.min(1, temp / workTemp));
 
@@ -362,7 +362,7 @@ public class ReactorShield {
     private void startFailure(ReactorConfig cfg) {
         state = State.FAILED;
         failCountdown = cfg.getShieldFailureCountdown() * 20;
-        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+        reactor.broadcastRaw(StructuresMessages.get(
                 "shield_failure",
                 "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
     }
@@ -380,7 +380,7 @@ public class ReactorShield {
         core.getWorld().playSound(core, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE,
                 org.bukkit.SoundCategory.MASTER, 3.0f, 0.6f);
 
-        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+        reactor.broadcastRaw(StructuresMessages.get(
                 "shield_detonated", "<dark_red>☠ <red>Shield detonation! Reactor destroyed."));
 
         reactor.onShieldDetonated();

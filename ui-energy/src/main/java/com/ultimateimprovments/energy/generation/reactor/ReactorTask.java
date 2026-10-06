@@ -28,68 +28,70 @@ public class ReactorTask extends BukkitRunnable {
     @Override
     public void run() {
 
-        ReactorManager reactor = ReactorManager.getInstance();
-
-        if (reactor == null) {
+        java.util.List<ReactorManager> list = ReactorManager.getReactors();
+        if (list.isEmpty()) {
             return;
         }
 
         tick++;
 
-        // =========================
-        // MAIN TICK (every tick)
-        // =========================
-        reactor.tick();
-        reactor.tickVisual();
-        reactor.tickSmoothDisplay();
+        for (ReactorManager reactor : list) {
 
-        // =========================
-        // CONTROLLED SHUTDOWN CHECK (every tick while the structure is damaged)
-        // =========================
-        reactor.checkControlledShutdown();
+            // =========================
+            // MAIN TICK (every tick)
+            // =========================
+            reactor.tick();
+            reactor.tickVisual();
+            reactor.tickSmoothDisplay();
 
-        // =========================
-        // ROTATING STRUCTURE AUDIT (every tick, ~50 cells — full pass in ~1s;
-        // catches event-blind block changes: explosions, pistons, plugin setType)
-        // =========================
-        reactor.tickStructureAudit();
+            // =========================
+            // CONTROLLED SHUTDOWN CHECK (every tick while the structure is damaged)
+            // =========================
+            reactor.checkControlledShutdown();
 
-        // =========================
-        // SOUND TICK (every 10 ticks)
-        // =========================
-        if (tick % SOUND_INTERVAL == 0) {
-            reactor.tickSound();
-        }
+            // =========================
+            // ROTATING STRUCTURE AUDIT (every tick, ~50 cells — full pass in ~1s;
+            // catches event-blind block changes: explosions, pistons, plugin setType)
+            // =========================
+            reactor.tickStructureAudit();
 
-        // =========================
-        // DISPLAY UPDATE (every tick)
-        // =========================
-        reactor.updateDisplays();
+            // =========================
+            // SOUND TICK (every 10 ticks)
+            // =========================
+            if (tick % SOUND_INTERVAL == 0) {
+                reactor.tickSound();
+            }
 
-        // =========================
-        // STRUCTURE CHECK (every 1s)
-        // =========================
-        if (tick % STRUCTURE_CHECK_INTERVAL == 0) {
-            reactor.validateStructure();
-        }
+            // =========================
+            // DISPLAY UPDATE (every tick)
+            // =========================
+            reactor.updateDisplays();
 
-        // =========================
-        // PRESSURE TICK (every 5s)
-        // =========================
-        if (tick % PRESSURE_INTERVAL == 0) {
-            reactor.tickPressure();
-        }
+            // =========================
+            // STRUCTURE CHECK (every 1s)
+            // =========================
+            if (tick % STRUCTURE_CHECK_INTERVAL == 0) {
+                reactor.validateStructure();
+            }
 
-        // =========================
-        // FUSION TICK (every tick — particles spawn/collect)
-        // =========================
-        reactor.tickFusion();
+            // =========================
+            // PRESSURE TICK (every 5s)
+            // =========================
+            if (tick % PRESSURE_INTERVAL == 0) {
+                reactor.tickPressure();
+            }
 
-        // =========================
-        // FUEL TICK (every 1s — spin-driven consumption)
-        // =========================
-        if (tick % FUEL_INTERVAL == 0) {
-            reactor.tickFuel();
+            // =========================
+            // FUSION TICK (every tick — particles spawn/collect)
+            // =========================
+            reactor.tickFusion();
+
+            // =========================
+            // FUEL TICK (every 1s — spin-driven consumption)
+            // =========================
+            if (tick % FUEL_INTERVAL == 0) {
+                reactor.tickFuel();
+            }
         }
     }
 }

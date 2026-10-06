@@ -131,7 +131,7 @@ public class ReactorDisplay {
         // =========================
         if (coreActive) {
             Particle.DustOptions color = new Particle.DustOptions(
-                    ReactorShield.dustColor(reactor.getCoreTemp()), 1.25f);
+                    reactor.getShield().dustColor(reactor.getCoreTemp()), 1.25f);
 
             base.getWorld().spawnParticle(
                     Particle.DUST, coreCenter, 16, 0, 0, 0, 0, color

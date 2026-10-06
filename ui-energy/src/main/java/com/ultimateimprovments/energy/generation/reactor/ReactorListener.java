@@ -90,8 +90,6 @@ public class ReactorListener implements Listener {
         // =========================
         // Normal right-click — show info
         // =========================
-        ReactorManager reactor = ReactorManager.getInstance();
-        if (reactor == null) return;
 
         // Check: part of a reactor (multi-reactor support)
         ReactorManager clickedReactor = ReactorManager.getReactorForBlock(clicked.getLocation());
@@ -229,10 +227,15 @@ public class ReactorListener implements Listener {
             return;
         }
 
-        // No reactor here: block placement may re-validate the (single) reactor
-        ReactorManager first = ReactorManager.getInstance();
-        if (first != null && isReactorBlock(block.getType())) {
-            first.validateStructure();
+        // No reactor here: a reactor-block placement may re-validate any
+        // assembled reactor (multi-reactor support) — the rotating audit
+        // would catch it too, this just updates the status immediately
+        if (isReactorBlock(block.getType())) {
+            for (ReactorManager r : ReactorManager.getReactors()) {
+                if (r.isValid()) {
+                    r.validateStructure();
+                }
+            }
         }
     }
 
@@ -326,14 +329,12 @@ public class ReactorListener implements Listener {
                 }
             }
             if (center != null) {
-                ReactorManager reactor = ReactorManager.getInstance();
-                if (reactor != null) {
-                    Location existing = reactor.getReactorLocation();
-                    if (existing != null && existing.equals(center)) {
-                        player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
-                                "<yellow>The reactor is already active at this place!")));
-                        return;
-                    }
+                // Multi-reactor: only a reactor at THIS place is a duplicate —
+                // a different location assembles its own reactor
+                if (ReactorManager.getAt(center) != null) {
+                    player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
+                            "<yellow>The reactor is already active at this place!")));
+                    return;
                 }
                 ReactorManager.setPendingAssembly(player, center, frame, "dark_synthesis");
                 player.sendMessage(MessageUtil.parse(msg("reactor_detected",
@@ -520,16 +521,13 @@ public class ReactorListener implements Listener {
         if (!isAnyWallSign(type)) return;
 
         Player player = e.getPlayer();
-        ReactorManager reactor = ReactorManager.getInstance();
-        if (reactor == null || !reactor.isValid()) return;
 
+        // Multi-reactor: find the reactor whose structure contains this sign
         Location signLoc = block.getLocation();
+        ReactorManager reactor = ReactorManager.getReactorForBlock(signLoc);
+        if (reactor == null || !reactor.isValid()) return;
         Location reactorLoc = reactor.getReactorLocation();
         if (reactorLoc == null) return;
-        if (!signLoc.getWorld().equals(reactorLoc.getWorld())) return;
-
-        // Check if sign is within reactor structure bounds
-        if (!isWithinStructure(reactorLoc, signLoc)) return;
 
         // Prevent sign editor from opening
         e.setCancelled(true);
@@ -585,17 +583,11 @@ public class ReactorListener implements Listener {
         if (!e.getBlockPlaced().getType().isSolid() || !e.getBlockPlaced().getType().name().endsWith("GLASS")) {
             return;
         }
-        ReactorManager reactor = ReactorManager.getInstance();
+        ReactorManager reactor = ReactorManager.getReactorForBlock(e.getBlockPlaced().getLocation());
         if (reactor == null || !reactor.isValid() || !reactor.isCaseBroken()) return;
 
-        Location reactorLoc = reactor.getReactorLocation();
-        if (reactorLoc == null) return;
-        Location placed = e.getBlockPlaced().getLocation();
-        if (!placed.getWorld().equals(reactorLoc.getWorld())) return;
-        if (!isWithinStructure(reactorLoc, placed)) return;
-
         // Let the case system decide whether the repair is complete
-        reactor.getCase().checkAutoRepair(reactorLoc);
+        reactor.getCase().checkAutoRepair(reactor.getReactorLocation());
     }
 
     // =========================
