@@ -1040,6 +1040,8 @@ stall_warn_critical = "<aqua>Температура ядра критическ�
 stall_warn_failure = "<aqua>Сбой реакции ядра из-за критически низкой температуры, неизбежна остановка реакции!"
 # Default: <white>Отключение ядра из-за сбоя реакции, пожалуйста, подождите.
 stall_shutdown_initiated = "<white>Отключение ядра из-за сбоя реакции, пожалуйста, подождите."
+# Default: <white>Отключение ядра по ручному триггеру, пожалуйста, подождите.
+stall_shutdown_manual = "<white>Отключение ядра по ручному триггеру, пожалуйста, подождите."
 # Default: <white>Отключение силовых лазеров...
 stall_power_lasers = "<white>Отключение силовых лазеров..."
 # Default: <green>Выполнено.
@@ -1318,14 +1320,16 @@ selfdestruct_complete = "<dark_red>☠ <red>Self-destruct sequence complete — 
 # Default: <dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck.
 shield_failure = "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."
 # Stall — the reaction lost its heat: threshold warnings and the automatic shutdown at -273 C*.
-# Default: <white>Core temperatures are too low to continue fusion reaction, please active all power lasers.
-stall_warn_low = "<white>Core temperatures are too low to continue fusion reaction, please active all power lasers."
+# Default: <white>Core temperatures are too low to continue fusion reaction, please activate all power lasers.
+stall_warn_low = "<white>Core temperatures are too low to continue fusion reaction, please activate all power lasers."
 # Default: <aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!
 stall_warn_critical = "<aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!"
 # Default: <aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!
 stall_warn_failure = "<aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!"
-# Default: <white>Core shutdown initained due to reaction failue, please wait.
-stall_shutdown_initiated = "<white>Core shutdown initained due to reaction failue, please wait."
+# Default: <white>Core shutdown initiated due to reaction failure, please wait.
+stall_shutdown_initiated = "<white>Core shutdown initiated due to reaction failure, please wait."
+# Default: <white>Core shutdown initiated due to manual trigger, please wait.
+stall_shutdown_manual = "<white>Core shutdown initiated due to manual trigger, please wait."
 # Default: <white>Shutting down power lasers...
 stall_power_lasers = "<white>Shutting down power lasers..."
 # Default: <green>Success.
@@ -1336,8 +1340,8 @@ stall_stab_lasers = "<white>Shutting down stabilization lasers..."
 stall_absorber = "<white>Closing content absorber valve..."
 # Default: <white>Shutting down reactor shield...
 stall_shield = "<white>Shutting down reactor shield..."
-# Default: <white>Core marked as offline, awating for startup.
-stall_offline = "<white>Core marked as offline, awating for startup."
+# Default: <white>Core marked as offline, awaiting for startup.
+stall_offline = "<white>Core marked as offline, awaiting for startup."
 # Default: <red>First press SHIFT+RMB on the reactor frame!
 pending_frame_reactor = "<red>First press SHIFT+RMB on the reactor frame!"
 # Default: <red>First press SHIFT+RMB on the magnet frame!
