@@ -3,6 +3,12 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.11] — since 1.8.3-beta.10 (2026-10-06)
+
+### Fixed
+- **Self-destruct announcement wording** — "Attention all personal" (as
+  intended), not "personnel" (code fallback + EN config section).
+
 ## [1.8.3-beta.10] — since 1.8.3-beta.9 (2026-10-06)
 
 ### Changed
