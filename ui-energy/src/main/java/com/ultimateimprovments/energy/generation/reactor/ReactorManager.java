@@ -804,7 +804,8 @@ public class ReactorManager {
         if (!enabled || !valid || reactorLocation == null) return;
 
         Location base = reactorLocation;
-        // Above the core chamber, matches the core visuals
+        // Pressure vent: 1.5 blocks above the core column top — otherwise the
+        // smoke spawns inside the core chamber instead of venting outward.
         Location coreCenter = base.clone().add(0.5, -4.5, 0.5);
 
         int particleCount;
@@ -818,7 +819,7 @@ public class ReactorManager {
         else                        { particleCount = 0;   radAmount = 0;   }
 
         if (particleCount > 0) {
-            Location smokePos = coreCenter.clone().add(0, 2.5, 0);
+            Location smokePos = coreCenter.clone().add(0, 4.0, 0);
             base.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE,
                     smokePos, particleCount, 0, 0, 0, 0.1);
             if (radAmount > 0) {
