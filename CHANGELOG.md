@@ -3,73 +3,28 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
-## [1.8.3-beta.11] — since 1.8.3-beta.10 (2026-10-06)
+## [1.8.3-alpha.8] — since 1.8.3-beta.4 (2026-10-06)
 
-### Fixed
-- **Self-destruct announcement wording** — "Attention all personal" (as
-  intended), not "personnel" (code fallback + EN config section).
-
-## [1.8.3-beta.10] — since 1.8.3-beta.9 (2026-10-06)
-
-### Changed
-- **Self-destruct protocol reworked (D.F.C)** — the 1% startup roll now runs
-  a longer cinematic: 5s sensor blackout (No signal) → 1s → "All controls
-  are non-functional, restarting systems..." (every control lamp locked) →
-  5s → the T-60s announcement → 60s countdown with the protocol screen on
-  the signs and a warning ping every second → "Beginning detonation
-  procedure..." → 5s → "Bypassing internal PL power limits, new limit is
-  2000%." → 5s → "Overdriving power lasers for 2000%, waiting for a
-  meltdown." The overdrive now ramps each Power Laser to 2000% (was 1000%)
-  and burns the shield twice as fast (default rate ×2); the pre-timer T-10s
-  warning during the countdown is gone. When the shield reaches 0% (burn,
-  stress — whatever kills it first) the protocol reports "Self-destruct
-  protocol complete, detecting core shield failure, shutting down
-  systems..." and the existing T-10s detonation countdown proceeds.
-
-### Fixed
-- **3s pause between the core ignition and the startup completion message**
-  — "Igniting reactor core..." is now followed by a 3s wait before
-  "Reactor startup complete, resume normal operations." The laser/absorber
-  control still takes effect at the ignition step, not after the pause.
-
-## [1.8.3-beta.9] — since 1.8.3-beta.8 (2026-10-06)
+> **Alpha channel**: a large consolidated release (the interim beta.5–beta.11
+> builds were never released). The DFC sequences are verified by build + unit
+> tests; in-game verification on the test server is pending.
 
 ### Added
-- **Cinematic reactor startup (D.F.C)** — the startup lamp pulse now runs a
-  full sequence instead of instantly forming the shield: "Core startup
-  initiated due to a manual trigger, please wait." → 5s → "Starting up
-  stabilization lasers..." → 3s → "Success." → 3s → "Starting up power
-  lasers..." → 3s → "Success." → 3s → "Opening content absorber valve..."
-  → 3s → "Success." → 3s → "Forming reactor shield..." (the shield builds
-  at a fixed 10%/sec, ~10s) → "Success." at 100% → 3s → "Igniting reactor
-  core..." (the core becomes operational, central particles appear) →
-  "Reactor startup complete, resume normal operations."
-- The laser/absorber ±5% control is inert during the whole startup sequence
-  and takes effect at the ignition step.
-- The startup phase persists (`startup_phase`/`startup_ticks` columns) and
-  resumes after a restart mid-sequence.
-
-### Changed
-- The shield no longer transitions to WORKING automatically at 100% — the
-  ignition is an explicit step of the startup sequence (new `ignite()`).
-  The old instant messages ("Forming the shield...", "Shield formed!...")
-  are replaced by the sequence; the `shield_build_rate` config key no
-  longer affects the forming speed (fixed 10%/sec).
-
-## [1.8.3-beta.8] — since 1.8.3-beta.7 (2026-10-06)
-
-### Changed
-- **Stall shutdown pacing and shield ramp** — after the absorber valve
-  "Success." the procedure now waits 3s before announcing "Shutting down
-  reactor shield..."; the shield then shuts down in the SHUTDOWN state
-  losing integrity at a fixed 10%/sec (~10s from 100% to 0, was the forming
-  rate 5%/sec); after the shield "Success." it waits another 3s before the
-  "Core marked as offline, awaiting for startup." message. Messages no
-  longer fire back-to-back at the end of the sequence.
-
-## [1.8.3-beta.7] — since 1.8.3-beta.6 (2026-10-06)
-
-### Added
+- **Reactor stall shutdown (D.F.C)** — when the reaction loses its heat the
+  core warns and shuts itself down automatically. One warning per downward
+  threshold crossing while the reaction is running: below 1M C* (fusion
+  stops), below 10k C* (critical), below 0 C* (reaction failure). Reaching
+  absolute zero (−273 C*) starts the full shutdown procedure: announcement
+  → 5s → "Shutting down power lasers..." (Power Laser #1 off, 3s, Power
+  Laser #2 off) → 2s → "Shutting down stabilization lasers..." (2s, stab
+  off) → 2s → "Closing content absorber valve..." (3s, valve closed) → 3s
+  → "Shutting down reactor shield..." (SHUTDOWN state, integrity −10%/sec,
+  sign status "Shutting down") → "Success." → 3s → "Core marked as offline,
+  awaiting for startup." A laser switched off by the procedure ignores its
+  ±5% control lamps until the next startup pulse; the startup sign shows
+  "Offline" until a new pulse. The stall phase persists
+  (`stall_phase`/`stall_ticks`/`core_offline` columns) and resumes after a
+  restart.
 - **Manual reactor shutdown (D.F.C)** — pulsing the startup lamp while the
   core is already running starts the shutdown with "Core shutdown initiated
   due to manual trigger, please wait." followed by the normal stall
@@ -78,48 +33,30 @@ in this file.
   and after the "Shutting down power lasers..." step the core dumps all its
   heat to −273 C* at 10%/sec of the temperature it had at the shutdown
   start — the next shutdown step does not proceed until −273 is reached.
-
-### Fixed
-- **Typos in the stall messages** — "initained" → "initiated",
-  "failue" → "failure", "awating" → "awaiting", "please active" →
-  "please activate" (code fallbacks + EN config section).
-
-## [1.8.3-beta.6] — since 1.8.3-beta.5 (2026-10-06)
-
-### Added
-- **Reactor stall shutdown (D.F.C)** — when the reaction loses its heat the
-  core now warns and shuts itself down automatically. One warning per
-  downward threshold crossing while the reaction is running: below 1M C*
-  (fusion stops), below 10k C* (critical), below 0 C* (reaction failure).
-  Reaching absolute zero (−273 C*) starts the full shutdown procedure:
-  announcement → 5s → "Shutting down power lasers..." (Power Laser #1 off,
-  3s, Power Laser #2 off) → 2s → "Shutting down stabilization lasers..."
-  (2s, stab off) → 2s → "Closing content absorber valve..." (3s, valve
-  closed) → "Shutting down reactor shield..." (smooth ramp-down at the
-  forming rate, sign status "Shutting down") → "Core marked as offline,
-  awating for startup." A laser switched off by the procedure ignores its
-  ±5% control lamps until the next startup pulse. The stall phase persists
-  in the DB (`stall_phase`/`stall_ticks`/`core_offline`) and resumes after a
-  restart; after completion the startup sign shows "Offline" until a new
-  startup pulse.
-
-### Changed
-- **Inert control while offline/starting/stopping** — the control lamps are
-  never locked, but while the reactor is offline, forming or shutting down
-  the lasers do not heat/cool and no core particles/ambient hum are emitted.
-- **Shield ramp-down is detonation-proof** — the new SHUTDOWN shield state
-  cannot fail, detonate or trigger the emergency stop; integrity simply
-  ramps down and the shield ends offline.
-
-### Fixed
-- **False alarms during shield forming** — the integrity warning ping
-  (every 0.5s), the "Shield integrity compromised!" broadcast (every 10s),
-  the red-white sign flashing and the side-barrel indicator bulbs treated
-  the CREATING state (integrity below 100%) as a problem; they now only
-  fire while the shield is actually WORKING. The same applies to the new
-  SHUTDOWN state.
-
-## [1.8.3-beta.5] — since 1.8.3-beta.4 (2026-10-05)
+- **Cinematic reactor startup (D.F.C)** — the startup lamp pulse runs a full
+  sequence instead of instantly forming the shield: "Core startup initiated
+  due to a manual trigger, please wait." → 5s → "Starting up stabilization
+  lasers..." → 3s → "Success." → 3s → "Starting up power lasers..." → 3s →
+  "Success." → 3s → "Opening content absorber valve..." → 3s → "Success."
+  → 3s → "Forming reactor shield..." (the shield builds at a fixed
+  10%/sec, ~10s) → "Success." at 100% → 3s → "Igniting reactor core..."
+  (the core becomes operational, central particles appear) → 3s → "Reactor
+  startup complete, resume normal operations." The laser/absorber ±5%
+  control is inert during the whole sequence and takes effect at the
+  ignition step. The startup phase persists
+  (`startup_phase`/`startup_ticks` columns) and resumes after a restart.
+- **Self-destruct protocol reworked (D.F.C)** — the 1% startup roll now runs
+  a longer cinematic: 5s sensor blackout (No signal) → 1s → "All controls
+  are non-functional, restarting systems..." (every control lamp locked) →
+  5s → the T-60s announcement → 60s countdown with the protocol screen on
+  the signs and a warning ping every second → "Beginning detonation
+  procedure..." → 5s → "Bypassing internal PL power limits, new limit is
+  2000%." → 5s → "Overdriving power lasers for 2000%, waiting for a
+  meltdown." The overdrive ramps each Power Laser to 2000% and burns the
+  shield at double the configured rate. When the shield reaches 0% (burn,
+  stress — whatever kills it first) the protocol reports "Self-destruct
+  protocol complete, detecting core shield failure, shutting down
+  systems..." and the existing T-10s detonation countdown proceeds.
 
 ### Changed
 - **Unbreaking now applies to all plugin durability wear** — the Unbreaking
@@ -134,6 +71,17 @@ in this file.
   config toggle is kept — vanilla wear is always rolled by vanilla itself.
 - **INFO hint at startup** when the Unbreaking roll is disabled, so servers
   can immediately see why item durability ignores the enchantment.
+- **Inert control while offline/starting/stopping** — the control lamps are
+  never locked, but while the reactor is offline, forming or shutting down
+  the lasers do not heat/cool and no core particles/ambient hum are emitted.
+- **Shield ramp-down is detonation-proof** — the SHUTDOWN shield state
+  cannot fail, detonate or trigger the emergency stop; integrity simply
+  ramps down and the shield ends offline.
+- **The shield no longer transitions to WORKING automatically at 100%** —
+  the ignition is an explicit step of the startup sequence (new `ignite()`).
+  The old instant messages ("Forming the shield...", "Shield formed!...")
+  are replaced by the sequence; the `shield_build_rate` config key no
+  longer affects the forming speed (fixed 10%/sec).
 
 ### Fixed
 - **Plugin wear ignored the `minecraft:unbreakable` tag** — items with the
@@ -141,6 +89,19 @@ in this file.
   veinminer, treecapitator, degradation, levitation, flight, item stealing,
   Piercing, sunburn). All plugin wear paths now respect the tag, including
   the sunburn fallback path.
+- **False alarms during shield forming** — the integrity warning ping
+  (every 0.5s), the "Shield integrity compromised!" broadcast (every 10s),
+  the red-white sign flashing and the side-barrel indicator bulbs treated
+  the CREATING state (integrity below 100%) as a problem; they now only
+  fire while the shield is actually WORKING. The same applies to the new
+  SHUTDOWN state.
+- **Typos in the stall messages** — "initained" → "initiated",
+  "failue" → "failure", "awating" → "awaiting", "please active" →
+  "please activate" (code fallbacks + EN config section).
+- **3s pause between the core ignition and the startup completion message**
+  — "Igniting reactor core..." is followed by a 3s wait before "Reactor
+  startup complete, resume normal operations."; the laser/absorber control
+  still takes effect at the ignition step, not after the pause.
 
 ### Removed
 - **Legacy integrity-system migration code** — the one-time migration of old
