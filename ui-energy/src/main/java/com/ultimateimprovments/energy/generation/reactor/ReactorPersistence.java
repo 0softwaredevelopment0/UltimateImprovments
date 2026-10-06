@@ -37,7 +37,8 @@ public class ReactorPersistence {
                  structure_damaged,
                  shield_state, shield_integrity, shield_fail_countdown,
                  selfdestruct_phase, selfdestruct_ticks, selfdestruct_done,
-                 core_emergency_stopped)
+                 core_emergency_stopped,
+                 stall_phase, stall_ticks, core_offline)
                 VALUES (?, ?, ?, ?, ?,
                         ?, ?, ?,
                         ?, ?, ?,
@@ -48,7 +49,8 @@ public class ReactorPersistence {
                         ?,
                         ?, ?, ?,
                         ?, ?, ?,
-                        ?)
+                        ?,
+                        ?, ?, ?)
             """)) {
 
             ps.setString(1, id);
@@ -83,6 +85,9 @@ public class ReactorPersistence {
             ps.setInt(29, state.getSelfdestructTicks());
             ps.setInt(30, state.isSelfdestructDone() ? 1 : 0);
             ps.setInt(31, state.isCoreEmergencyStopped() ? 1 : 0);
+            ps.setString(32, state.getStallPhase());
+            ps.setInt(33, state.getStallTicks());
+            ps.setInt(34, state.isCoreOffline() ? 1 : 0);
 
             ps.executeUpdate();
 
@@ -197,6 +202,13 @@ public class ReactorPersistence {
                 }
                 try { state.setCoreEmergencyStopped(rs.getInt("core_emergency_stopped") == 1); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load core_emergency_stopped: " + e.getMessage());
+                }
+                try {
+                    state.setStallPhase(rs.getString("stall_phase"));
+                    state.setStallTicks(rs.getInt("stall_ticks"));
+                    state.setCoreOffline(rs.getInt("core_offline") == 1);
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load stall state: " + e.getMessage());
                 }
                 try {
                     state.setLaserPowers(new double[] {

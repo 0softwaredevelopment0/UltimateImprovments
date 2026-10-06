@@ -56,6 +56,12 @@ public class ReactorState {
     // Emergency core shutdown latch (shield integrity below the critical threshold)
     private boolean coreEmergencyStopped;
 
+    // Stall shutdown (reaction lost its heat → auto shutdown at −273 C*):
+    // full restore — the procedure resumes after a restart mid-sequence
+    private String stallPhase = "NONE"; // NONE / WAIT_POWER / ... / SHIELD_RAMP
+    private int stallTicks;
+    private boolean coreOffline;        // shutdown finished, awaiting a new startup
+
     public boolean isStructureDamaged() { return structureDamaged; }
     public void setStructureDamaged(boolean val) { structureDamaged = val; }
 
@@ -75,6 +81,13 @@ public class ReactorState {
 
     public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
     public void setCoreEmergencyStopped(boolean val) { coreEmergencyStopped = val; }
+
+    public String getStallPhase() { return stallPhase; }
+    public void setStallPhase(String val) { stallPhase = val == null ? "NONE" : val; }
+    public int getStallTicks() { return stallTicks; }
+    public void setStallTicks(int val) { stallTicks = Math.max(0, val); }
+    public boolean isCoreOffline() { return coreOffline; }
+    public void setCoreOffline(boolean val) { coreOffline = val; }
 
     /** Copies all fields from another state (used by persistence load). */
     public void copyFrom(ReactorState o) {
@@ -105,6 +118,9 @@ public class ReactorState {
         selfdestructTicks = o.selfdestructTicks;
         selfdestructDone = o.selfdestructDone;
         coreEmergencyStopped = o.coreEmergencyStopped;
+        stallPhase = o.stallPhase;
+        stallTicks = o.stallTicks;
+        coreOffline = o.coreOffline;
     }
 
     // Tick counters
@@ -305,5 +321,8 @@ public class ReactorState {
         selfdestructTicks = 0;
         selfdestructDone = false;
         coreEmergencyStopped = false;
+        stallPhase = "NONE";
+        stallTicks = 0;
+        coreOffline = false;
     }
 }

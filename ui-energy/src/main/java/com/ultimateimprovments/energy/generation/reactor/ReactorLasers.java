@@ -65,6 +65,13 @@ public class ReactorLasers {
     /** Laser powers in %: P1, P2 (0..100), Stab (0..200), Absorber valve (0..100). */
     private final double[] power = new double[4];
 
+    /**
+     * Lasers shut down by the stall procedure: power forced to 0 and the ±5%
+     * control lamps detached for that laser (the lever keeps working but has
+     * no effect until the next startup pulse).
+     */
+    private final boolean[] controlDisabled = new boolean[4];
+
     /** Fractional C* remainder for smooth per-tick heating/cooling. */
     private double tempRemainder;
 
@@ -104,7 +111,7 @@ public class ReactorLasers {
         double rampPerTick = cfg.getLaserRampRate() / 20.0;
         double[] max = { 100, 100, 200, 100 };
         for (int i = 0; i < 4; i++) {
-            if (controlLocked) break;
+            if (controlLocked || controlDisabled[i]) continue;
             if (isLampPowered(base, LAMP_PLUS[i])) {
                 power[i] = Math.min(max[i], power[i] + rampPerTick);
             }
@@ -114,15 +121,15 @@ public class ReactorLasers {
         }
 
         // =========================
-        // HEATING / COOLING — only after the startup pulse with a fully formed
-        // shield (WORKING): before that the lasers hold their ramped power but
-        // do not heat/cool.
+        // HEATING / COOLING — only while the core is operational: after the
+        // startup pulse with a fully formed shield (WORKING) and no shutdown
+        // in progress. While the reactor is offline / forming / shutting down
+        // the lasers hold their ramped power but do not heat/cool.
         // Power Lasers: power_laser_heat_rate C*/sec each at 100%
         // Stab Laser: stab_cool_rate C*/sec per 100% of power
         // Without fuel the Power Lasers do not heat at all (Fuel Stats: No)
         // =========================
-        if (!started) return;
-        if (reactor.getShield().getState() != ReactorShield.State.WORKING) return;
+        if (!isOperational()) return;
 
         double heatPerTick = reactor.hasBarrelFuelPublic()
                 ? (power[LASER_P1] + power[LASER_P2]) / 100.0
@@ -179,6 +186,24 @@ public class ReactorLasers {
         overpowerRampTicks = 0;
     }
 
+    /**
+     * Stall-shutdown step: forces a laser's power to 0 and detaches its ±5%
+     * control lamps — the levers keep working but no longer affect this laser
+     * (until the next startup pulse re-enables control).
+     */
+    public void shutDownLaser(int laser) {
+        power[laser] = 0;
+        tempRemainder = 0;
+        controlDisabled[laser] = true;
+    }
+
+    /** Re-enables ±5% control for every laser (next startup pulse). */
+    public void clearControlDisable() {
+        java.util.Arrays.fill(controlDisabled, false);
+    }
+
+    public boolean isControlDisabled(int laser) { return controlDisabled[laser]; }
+
     public boolean isOverpowerMode() { return overpowerMode; }
 
     // =========================
@@ -201,6 +226,7 @@ public class ReactorLasers {
         overpowerMode = false;
         overpowerRampTicks = 0;
         controlLocked = false;
+        java.util.Arrays.fill(controlDisabled, false);
     }
 
     // =========================
@@ -222,10 +248,13 @@ public class ReactorLasers {
 
     /**
      * Lasers actually heat/cool only when operational: after the startup pulse
-     * with a fully formed shield (WORKING). Power ramping works regardless.
+     * with a fully formed shield (WORKING) and no stall shutdown in progress.
+     * Power ramping works regardless (control is not blocked, just inert).
      */
     private boolean isOperational() {
-        return started && reactor.getShield().getState() == ReactorShield.State.WORKING;
+        return started
+                && reactor.getShield().getState() == ReactorShield.State.WORKING
+                && !reactor.isStallShutdownActive();
     }
 
     /** True while operational, any Power Laser has positive power and the reactor has fuel. */

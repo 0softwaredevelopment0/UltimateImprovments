@@ -93,11 +93,12 @@ public class ReactorDisplay {
         Location base = reactor.getReactorLocation();
         if (base == null) return;
 
-        // Warning pings only while the shield is actually operating: an
-        // OFFLINE shield (no startup yet, integrity 0) is its normal state.
+        // Warning pings only while the shield is actually operating (WORKING):
+        // an OFFLINE shield (no startup yet, integrity 0) is its normal state,
+        // and CREATING (forming) / SHUTDOWN (planned shutdown) legitimately run
+        // below 100% — they must not ping (fixes the startup ping bug).
         var shieldState = reactor.getShield().getState();
-        boolean shieldActive = shieldState == ReactorShield.State.CREATING
-                || shieldState == ReactorShield.State.WORKING;
+        boolean shieldActive = shieldState == ReactorShield.State.WORKING;
         if ((shieldActive && reactor.getCoreShInt() < 100) || reactor.getCoreCaseInt() < 100) {
             base.getWorld().playSound(
                     base, Sound.BLOCK_NOTE_BLOCK_PLING,
@@ -121,47 +122,52 @@ public class ReactorDisplay {
                 ? (double) reactor.getCoreTemp() / reactor.getCoreWorkTemp() : 0.0;
         boolean meltdown = reactor.isMeltdownCountdown();
         int meltdownTimer = reactor.getMeltdownTimer();
+        // Core effects only while the core is actually running — offline /
+        // forming / shutting down: no particles, no ambient hum.
+        boolean coreActive = reactor.isCoreActive();
 
         // =========================
         // CORE TEMPERATURE PARTICLES (black → red → orange → yellow → white gradient)
         // =========================
-        Particle.DustOptions color = new Particle.DustOptions(
-                ReactorShield.dustColor(reactor.getCoreTemp()), 1.25f);
+        if (coreActive) {
+            Particle.DustOptions color = new Particle.DustOptions(
+                    ReactorShield.dustColor(reactor.getCoreTemp()), 1.25f);
 
-        base.getWorld().spawnParticle(
-                Particle.DUST, coreCenter, 16, 0, 0, 0, 0, color
-        );
+            base.getWorld().spawnParticle(
+                    Particle.DUST, coreCenter, 16, 0, 0, 0, 0, color
+            );
 
-        // =========================
-        // HIGH TEMP EFFECTS (near the working point and above)
-        // =========================
-        if (workMult > 0.0001 && workMult <= 0.5) {
-            base.getWorld().spawnParticle(
-                    Particle.END_ROD,
-                    coreCenter.clone().add(0, 0, 1),
-                    1, 0, 0, -1.5, 0.1
-            );
-            base.getWorld().spawnParticle(
-                    Particle.LAVA,
-                    coreCenter.clone().add(0, 0, -0.4),
-                    1, 0, 0, 0, 0
-            );
-            base.getWorld().spawnParticle(
-                    Particle.COPPER_FIRE_FLAME,
-                    coreCenter.clone().add(0, 0, 2.4),
-                    1, 0, 0, 0, 0.01f
-            );
-        }
+            // =========================
+            // HIGH TEMP EFFECTS (near the working point and above)
+            // =========================
+            if (workMult > 0.0001 && workMult <= 0.5) {
+                base.getWorld().spawnParticle(
+                        Particle.END_ROD,
+                        coreCenter.clone().add(0, 0, 1),
+                        1, 0, 0, -1.5, 0.1
+                );
+                base.getWorld().spawnParticle(
+                        Particle.LAVA,
+                        coreCenter.clone().add(0, 0, -0.4),
+                        1, 0, 0, 0, 0
+                );
+                base.getWorld().spawnParticle(
+                        Particle.COPPER_FIRE_FLAME,
+                        coreCenter.clone().add(0, 0, 2.4),
+                        1, 0, 0, 0, 0.01f
+                );
+            }
 
-        // =========================
-        // BEACON HUM SOUND AT HIGH TEMP
-        // =========================
-        if (workMult > 0.0001 && !meltdown) {
-            base.getWorld().playSound(
-                    coreCenter,
-                    Sound.BLOCK_BEACON_POWER_SELECT,
-                    SoundCategory.MASTER, 0.5f, 1
-            );
+            // =========================
+            // BEACON HUM SOUND AT HIGH TEMP
+            // =========================
+            if (workMult > 0.0001 && !meltdown) {
+                base.getWorld().playSound(
+                        coreCenter,
+                        Sound.BLOCK_BEACON_POWER_SELECT,
+                        SoundCategory.MASTER, 0.5f, 1
+                );
+            }
         }
 
         // =========================
@@ -270,11 +276,11 @@ public class ReactorDisplay {
         String casePress = String.format("%.3f", displayCoreCasePress);
         int caseIntInt = (int) Math.round(displayCoreCaseInt);
 
-        // Flash red-white only when it is actually a problem: shield must be
-        // operating (OFFLINE/0% is its normal state before startup).
+        // Flash red-white only when it is actually a problem: the shield must
+        // be operating (WORKING) — OFFLINE/0% before startup, CREATING (forming)
+        // and SHUTDOWN (planned shutdown) are normal below-100% states.
         var shieldState = reactor.getShield().getState();
-        boolean shieldProblem = (shieldState == ReactorShield.State.CREATING
-                || shieldState == ReactorShield.State.WORKING) && shIntInt < 100;
+        boolean shieldProblem = shieldState == ReactorShield.State.WORKING && shIntInt < 100;
         boolean flashing = shieldProblem || caseIntInt < 100;
         String color = (flashing && (displayTick % 10 < 5)) ? "<red>" : "<white>";
 
@@ -431,10 +437,13 @@ public class ReactorDisplay {
                     11 + i);
         }
 
-        // Startup sign (x=−4, z=4)
+        // Startup sign (x=−4, z=4): Running while the core runs, Offline after
+        // a completed shutdown, No startup before the first pulse.
         String startupText = lasers.isStarted()
                 ? msg("signs.status_running", "Running")
-                : msg("signs.status_no_startup", "No startup");
+                : (reactor.isCoreOfflineMarked()
+                        ? msg("signs.status_offline", "Offline")
+                        : msg("signs.status_no_startup", "No startup"));
         setRoofSignPower(base, -4, 4, startupText, 15);
     }
 
@@ -549,10 +558,10 @@ public class ReactorDisplay {
     // (old positions were part of the legacy geometry; kept as no-op-safe)
     // =========================
     public void updateIntegrityBulbs(Location base) {
-        // Glow bulbs only for a real problem — shield must be operating
+        // Glow bulbs only for a real problem — the shield must be operating
+        // (WORKING); forming/shutdown below 100% is normal, not an alarm
         var shieldState = reactor.getShield().getState();
-        boolean shieldActive = shieldState == ReactorShield.State.CREATING
-                || shieldState == ReactorShield.State.WORKING;
+        boolean shieldActive = shieldState == ReactorShield.State.WORKING;
         setBulbLit(base, -3, -5, 0, shieldActive && reactor.getCoreShInt() < 100);
         setBulbLit(base, 3, -5, 0, reactor.getCoreCaseInt() < 100);
     }

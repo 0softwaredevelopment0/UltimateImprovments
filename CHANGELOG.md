@@ -3,6 +3,41 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.6] — since 1.8.3-beta.5 (2026-10-06)
+
+### Added
+- **Reactor stall shutdown (D.F.C)** — when the reaction loses its heat the
+  core now warns and shuts itself down automatically. One warning per
+  downward threshold crossing while the reaction is running: below 1M C*
+  (fusion stops), below 10k C* (critical), below 0 C* (reaction failure).
+  Reaching absolute zero (−273 C*) starts the full shutdown procedure:
+  announcement → 5s → "Shutting down power lasers..." (Power Laser #1 off,
+  3s, Power Laser #2 off) → 2s → "Shutting down stabilization lasers..."
+  (2s, stab off) → 2s → "Closing content absorber valve..." (3s, valve
+  closed) → "Shutting down reactor shield..." (smooth ramp-down at the
+  forming rate, sign status "Shutting down") → "Core marked as offline,
+  awating for startup." A laser switched off by the procedure ignores its
+  ±5% control lamps until the next startup pulse. The stall phase persists
+  in the DB (`stall_phase`/`stall_ticks`/`core_offline`) and resumes after a
+  restart; after completion the startup sign shows "Offline" until a new
+  startup pulse.
+
+### Changed
+- **Inert control while offline/starting/stopping** — the control lamps are
+  never locked, but while the reactor is offline, forming or shutting down
+  the lasers do not heat/cool and no core particles/ambient hum are emitted.
+- **Shield ramp-down is detonation-proof** — the new SHUTDOWN shield state
+  cannot fail, detonate or trigger the emergency stop; integrity simply
+  ramps down and the shield ends offline.
+
+### Fixed
+- **False alarms during shield forming** — the integrity warning ping
+  (every 0.5s), the "Shield integrity compromised!" broadcast (every 10s),
+  the red-white sign flashing and the side-barrel indicator bulbs treated
+  the CREATING state (integrity below 100%) as a problem; they now only
+  fire while the shield is actually WORKING. The same applies to the new
+  SHUTDOWN state.
+
 ## [1.8.3-beta.5] — since 1.8.3-beta.4 (2026-10-05)
 
 ### Changed
