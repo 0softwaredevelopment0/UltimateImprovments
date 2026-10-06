@@ -134,6 +134,10 @@ public class UIOther extends JavaPlugin implements com.ultimateimprovments.core.
         SimpleModules.registerMOTD(mm);
         SimpleModules.registerBackground(mm);
         SimpleModules.registerStructureIntegrity(mm);
+        // SYSTEM: PowerManager (/ui power off|reboot) + PowerInterceptListener.
+        // Previously never registered — PowerManager.getInstance() stayed null
+        // and /ui power commands threw NullPointerException.
+        SimpleModules.registerSystem(mm);
         // Crafting, item tools, particle and omniscanner live in the UI-Items addon.
     }
 
