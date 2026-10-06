@@ -69,6 +69,26 @@ public final class Registries {
         }
     }
 
+    /** Cached holder-identical Unbreaking enchantment. */
+    private static Enchantment unbreaking;
+
+    /**
+     * Holder-identical {@code minecraft:unbreaking}. The legacy Bukkit
+     * constant ({@code Enchantment.UNBREAKING}) comes from the stale API view
+     * described in {@link #enchantmentByKey} — its holder never matches the
+     * holders stored on items, so {@code item.getEnchantmentLevel(Enchantment.UNBREAKING)}
+     * always reports 0 and every Unbreaking readout must go through this
+     * resolver. Falls back to the constant when the server registry lookup
+     * fails (better than nothing on a version where the API view is fine).
+     */
+    public static Enchantment unbreaking() {
+        if (unbreaking != null) return unbreaking;
+        Enchantment resolved = enchantmentByKey(NamespacedKey.minecraft("unbreaking"));
+        if (resolved == null) resolved = Enchantment.UNBREAKING;
+        unbreaking = resolved;
+        return unbreaking;
+    }
+
     /** Modern access to the enchantment registry. */
     public static Registry<Enchantment> enchantment() {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT);

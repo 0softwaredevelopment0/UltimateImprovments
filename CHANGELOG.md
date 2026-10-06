@@ -21,6 +21,17 @@ in this file.
   The chat-command stats box shows the nearest reactor.
 
 ### Fixed
+- **Custom-enchant wear ignored the Unbreaking enchantment** — the Unbreaking
+  roll in `ItemDurabilityUtil` read the enchantment level through the legacy
+  `Enchantment.UNBREAKING` constant, which on Paper 26.3 is a stale API-view
+  wrapper whose holder never matches the holders stored on items (the same
+  registry mismatch the custom enchantments hit earlier). `getEnchantmentLevel`
+  therefore always returned 0 and AoE, veinminer, treecapitator, degradation,
+  levitation, flight, item stealing, Piercing and the sunburn wear consumed
+  full durability regardless of the Unbreaking level. All Unbreaking readouts
+  now resolve `minecraft:unbreaking` through the server registry
+  (`Registries.unbreaking()`); the `/ui dura` info readout had the same
+  defect and is fixed too.
 - **Chat filter word patterns failed to compile** — the wildcard-to-regex
   converter built an invalid Unicode property escape (`\p%L%` instead of
   `\p{L}`) for word boundaries, so every word pattern with a single `*`

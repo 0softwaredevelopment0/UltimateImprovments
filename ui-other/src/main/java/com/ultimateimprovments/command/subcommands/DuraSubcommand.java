@@ -3,9 +3,9 @@ package com.ultimateimprovments.command.subcommands;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -81,7 +81,8 @@ public final class DuraSubcommand {
         int max = ItemDurabilityUtil.getMaxDurability(held);
         int beforeRemaining = max - ItemDurabilityUtil.getVanillaDamage(held);
         boolean unbreakable = ItemDurabilityUtil.isUnbreakable(held);
-        int unbreakingLevel = held.getEnchantmentLevel(Enchantment.UNBREAKING);
+        org.bukkit.enchantments.Enchantment unbreaking = Registries.unbreaking();
+        int unbreakingLevel = unbreaking != null ? held.getEnchantmentLevel(unbreaking) : 0;
 
         double result = op.equals("multiply")
                 ? (raw ? ItemDurabilityUtil.multiplyItemIntegrity(held, value)
@@ -152,7 +153,10 @@ public final class DuraSubcommand {
         player.sendMessage(MessageUtil.parse("<gray>Осталось: <green>" + (max - damage) + "</green><gray>/" + max
                 + " <gray>(<white>" + String.format(Locale.ROOT, "%.1f", ItemDurabilityUtil.getItemIntegrityPercent(held)) + "%<gray>)"));
         player.sendMessage(MessageUtil.parse("<gray>Неломаемый: <white>" + ItemDurabilityUtil.isUnbreakable(held)));
-        player.sendMessage(MessageUtil.parse("<gray>Прочность (чар): <white>" + held.getEnchantmentLevel(Enchantment.UNBREAKING)));
+        player.sendMessage(MessageUtil.parse("<gray>Прочность (чар): <white>"
+                + (Registries.unbreaking() != null
+                        ? held.getEnchantmentLevel(Registries.unbreaking())
+                        : held.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.UNBREAKING))));
         player.sendMessage(MessageUtil.parse("<gray>Варианты: <white>multiply|divide <gray>(гейты) / <white>raw multiply|divide <gray>(без)"));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════"));
     }
