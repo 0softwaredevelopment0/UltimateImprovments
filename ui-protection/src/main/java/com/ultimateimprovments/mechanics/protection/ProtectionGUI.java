@@ -201,21 +201,11 @@ public final class ProtectionGUI {
     }
 
     /**
-     * Atomically fetches and removes the awaiting block. Previously split into
-     * {@code consumeAwaitingPlayerName} (remove) and {@code getAwaitingBlock} (read) —
-     * but consume removed the entry BEFORE the read, so getAwaitingBlock always
-     * returned null and GUI whitelist-add was completely broken.
-     * Now this method returns the block (or null if the player isn't awaiting).
+     * Atomically fetches and removes the awaiting block entry.
+     * Returns the block, or null if the player isn't awaiting.
      */
     public static ProtectionBlock consumeAwaitingPlayerName(Player player) {
         return awaitingPlayerName.remove(player.getUniqueId());
-    }
-
-    /** @deprecated use {@link #consumeAwaitingPlayerName(Player)} — this method is
-     *  kept only for compatibility and always returns null after consume. */
-    @Deprecated
-    public static ProtectionBlock getAwaitingBlock(Player player) {
-        return awaitingPlayerName.get(player.getUniqueId());
     }
 
     public static void cancelAwaiting(Player player) {

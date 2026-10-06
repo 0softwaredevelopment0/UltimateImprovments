@@ -49,7 +49,6 @@ public class ParticleAcceleratorManager implements Listener {
     // =========================
     // PDC KEYS
     // =========================
-    public static final NamespacedKey PARTICLE_ID_KEY = new NamespacedKey("ui", "particle_id");
     /** PDC key on the accelerator block item — stores the block type string ("particle_ring", "particle_engine", etc.). */
     public static final NamespacedKey PARTICLE_BLOCK_KEY = new NamespacedKey("ui", "particle_block");
 
@@ -144,7 +143,7 @@ public class ParticleAcceleratorManager implements Listener {
                 EnginePos pos = new EnginePos(world.getUID(), LocationUtil.toKey(x, y, z));
                 engineEnergy.putIfAbsent(pos, 0);
             }
-            // Sensor speed is transient — loaded from Marker PDC on first particle pass
+            // Sensor speed is transient — kept in the in-memory sensorLastSpeed map
         }
 
         // 2. Clear stale engineEnergy entries — only for loaded worlds!
@@ -369,7 +368,7 @@ public class ParticleAcceleratorManager implements Listener {
         // BFS through the cable network from the engine.
         // In this architecture CABLE nodes themselves do NOT store energy:
         // CableNode.addEnergy/removeEnergy return no-op for NodeType.CABLE
-        // (see methods and comments in CableLossTask / CableTickTask).
+        // (see methods and comments in CableLossTask).
         // They're just «wire» routers between sources (BATTERY/GENERATOR)
         // and consumers (our accelerator engine). So we traverse the network
         // and draw energy directly from BATTERY/GENERATOR.

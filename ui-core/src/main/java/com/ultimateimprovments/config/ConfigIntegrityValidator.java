@@ -34,28 +34,4 @@ public class ConfigIntegrityValidator {
         }
         ConfigValueValidator.validateValues(plugin, plugin.getConfig());
     }
-
-    /**
-     * Removes legacy message files from the shared folder. Kept for compatibility
-     * with earlier startup code paths.
-     */
-    public static void cleanupLegacyFiles(Main plugin) {
-        File data = com.ultimateimprovments.core.UltimateDirs.base();
-        String[] legacy = {
-                "messages.yml",
-                "messages-en.yml"
-        };
-        for (String name : legacy) {
-            File f = new File(data, name);
-            if (f.exists()) {
-                try {
-                    if (f.delete()) {
-                        ConsoleLogger.info("[ConfigIntegrity] Removed legacy file: " + name);
-                    }
-                } catch (Exception e) {
-                    ConsoleLogger.warn("[ConfigIntegrity] Could not delete legacy " + name + ": " + e.getMessage());
-                }
-            }
-        }
-    }
 }

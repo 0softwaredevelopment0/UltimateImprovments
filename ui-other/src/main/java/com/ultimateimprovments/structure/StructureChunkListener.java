@@ -14,7 +14,6 @@ import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 
 /**
@@ -32,15 +31,6 @@ public class StructureChunkListener implements Listener {
     @EventHandler
     public void onWorldLoad(WorldLoadEvent e) {
         rebuildAllManagers();
-    }
-
-    // ════════════════════════════════════════
-    // CHUNK LOAD — nothing is scanned anymore: structure data lives in the DB,
-    // the cache is complete from the moment the plugin loads.
-    // ════════════════════════════════════════
-    @EventHandler
-    public void onChunkLoad(ChunkLoadEvent e) {
-        // no-op: Marker scanning was removed in favor of SQLite persistence
     }
 
     // ════════════════════════════════════════
