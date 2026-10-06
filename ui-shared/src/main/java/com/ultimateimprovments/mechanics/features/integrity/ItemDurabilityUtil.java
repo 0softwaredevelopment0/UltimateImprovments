@@ -3,6 +3,7 @@ package com.ultimateimprovments.mechanics.features.integrity;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -179,7 +180,11 @@ public final class ItemDurabilityUtil {
     public static int applyUnbreaking(ItemStack item, int points) {
         if (item == null || points <= 0) return 0;
         if (!unbreakingEnabled) return points;
-        int level = item.getEnchantmentLevel(Enchantment.UNBREAKING);
+        // Resolve through the server registry: the Enchantment.UNBREAKING
+        // constant is a stale API-view wrapper on 26.3 whose holder never
+        // matches item holders (getEnchantmentLevel would always be 0).
+        Enchantment unbreaking = Registries.unbreaking();
+        int level = unbreaking != null ? item.getEnchantmentLevel(unbreaking) : 0;
         if (level <= 0) return points;
         boolean armor = isArmorPiece(item);
         double consume = unbreakingConsumeChance(level, armor);
@@ -267,7 +272,8 @@ public final class ItemDurabilityUtil {
         if (isUnbreakable(item)) return getItemIntegrityPercent(item);
 
         if (unbreakingEnabled) {
-            int level = item.getEnchantmentLevel(Enchantment.UNBREAKING);
+            Enchantment unbreaking = Registries.unbreaking();
+            int level = unbreaking != null ? item.getEnchantmentLevel(unbreaking) : 0;
             if (level > 0 && Math.random() >= unbreakingConsumeChance(level, isArmorPiece(item))) {
                 return getItemIntegrityPercent(item);
             }
