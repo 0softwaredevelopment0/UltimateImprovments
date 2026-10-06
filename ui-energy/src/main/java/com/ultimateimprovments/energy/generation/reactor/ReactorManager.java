@@ -301,6 +301,13 @@ public class ReactorManager {
                 if (++stallTicks >= 20 * 3) {
                     lasers.shutDownLaser(ReactorLasers.LASER_ABSORBER);
                     broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+                    stallPhase = StallPhase.WAIT_SHIELD_MSG;
+                    stallTicks = 0;
+                }
+            }
+            case WAIT_SHIELD_MSG -> {
+                // 3s pause after the absorber "Success." — only then the shield message
+                if (++stallTicks >= 20 * 3) {
                     broadcast(StructuresMessages.get("stall_shield",
                             "<white>Shutting down reactor shield..."));
                     shield.beginShutdown();
@@ -308,18 +315,19 @@ public class ReactorManager {
                     stallTicks = 0;
                 }
             }
+            case WAIT_OFFLINE_MSG -> {
+                // 3s pause after the shield "Success." — only then the offline mark
+                if (++stallTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("stall_offline",
+                            "<white>Core marked as offline, awaiting for startup."));
+                    finishStallShutdown();
+                }
+            }
         }
     }
 
-    /**
-     * The shield finished its smooth shutdown ramp (stall procedure) — the
-     * core is marked offline and awaits a new startup pulse.
-     */
-    public void onStallShieldDown() {
-        if (stallPhase != StallPhase.SHIELD_RAMP) return;
-        broadcast(StructuresMessages.get("stall_success", "<green>Success."));
-        broadcast(StructuresMessages.get("stall_offline",
-                "<white>Core marked as offline, awaiting for startup."));
+    /** Final step of the stall shutdown: the core is marked offline. */
+    private void finishStallShutdown() {
         lasers.setStarted(false);
         coreOfflineMarked = true;
         stallPhase = StallPhase.NONE;
@@ -328,6 +336,17 @@ public class ReactorManager {
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
         saveToDb();
+    }
+
+    /**
+     * The shield finished its smooth shutdown ramp (stall procedure) — report
+     * "Success." and hold a 3s pause before the offline mark.
+     */
+    public void onStallShieldDown() {
+        if (stallPhase != StallPhase.SHIELD_RAMP) return;
+        broadcast(StructuresMessages.get("stall_success", "<green>Success."));
+        stallPhase = StallPhase.WAIT_OFFLINE_MSG;
+        stallTicks = 0;
     }
 
     /** Emergency core shutdown latch (shield integrity fell below the critical threshold). */
@@ -345,15 +364,17 @@ public class ReactorManager {
     // lasers simply have no effect and no particles are emitted.
     // =========================
     public enum StallPhase {
-        NONE,          // idle
-        WAIT_POWER,    // 5s after the announcement → power lasers step
-        HEAT_DUMP,     // manual only: cool to -273 C* at 10%/sec of the shutdown-start temp
-        WAIT_P2,       // P1 off → 3s → P2 off
-        WAIT_STAB_MSG, // 2s → "Shutting down stabilization lasers..."
-        WAIT_STAB_OFF, // 2s → stab off
-        WAIT_ABS_MSG,  // 2s → "Closing content absorber valve..."
-        WAIT_ABS_OFF,  // 3s → valve closed, shield shutdown begins
-        SHIELD_RAMP    // shield ramps down (ReactorShield) → onStallShieldDown()
+        NONE,            // idle
+        WAIT_POWER,      // 5s after the announcement → power lasers step
+        HEAT_DUMP,       // manual only: cool to -273 C* at 10%/sec of the shutdown-start temp
+        WAIT_P2,         // P1 off → 3s → P2 off
+        WAIT_STAB_MSG,   // 2s → "Shutting down stabilization lasers..."
+        WAIT_STAB_OFF,   // 2s → stab off
+        WAIT_ABS_MSG,    // 2s → "Closing content absorber valve..."
+        WAIT_ABS_OFF,    // 3s → valve closed + "Success."
+        WAIT_SHIELD_MSG, // 3s → "Shutting down reactor shield..." + the ramp begins
+        SHIELD_RAMP,     // shield ramps down at 10%/sec (ReactorShield) → onStallShieldDown()
+        WAIT_OFFLINE_MSG // shield "Success." → 3s → "Core marked as offline..." → done
     }
 
     /** Manual shutdown (startup lamp re-trigger) is silently ignored above this shield stress %. */
