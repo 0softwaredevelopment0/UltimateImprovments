@@ -3,7 +3,12 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
-## [Unreleased] — alpha.8 in-game testing fixes
+## [1.8.3-release.1] — since 1.8.3-alpha.8 (2026-10-07)
+
+> **Release channel** — the first full (non-pre-release) family release.
+> The whole 1.8.3 content (DFC cinematic startup/shutdowns/self-destruct,
+> Unbreaking on plugin wear, multi-reactor) plus the fixes below were
+> verified in-game on the test server against the full checklist.
 
 ### Added
 - **`/ui update [tag]` — download a release into the update folder** — fetches
