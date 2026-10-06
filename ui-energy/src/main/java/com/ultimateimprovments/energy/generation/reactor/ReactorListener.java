@@ -1,5 +1,6 @@
 package com.ultimateimprovments.energy.generation.reactor;
 
+import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningManager;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningStructure;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
@@ -28,7 +29,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 
 public class ReactorListener implements Listener {
 
@@ -502,12 +505,13 @@ public class ReactorListener implements Listener {
     }
 
     // =========================
-    // SIGN CLICK → STATS
+    // SIGN CLICK → STATS (multimeter required)
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onSignClick(PlayerInteractEvent e) {
 
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND) return;
 
         Block block = e.getClickedBlock();
         if (block == null) return;
@@ -530,8 +534,39 @@ public class ReactorListener implements Listener {
         // Prevent sign editor from opening
         e.setCancelled(true);
 
+        // The data readout only works with a multimeter in hand
+        if (!holdsMultimeter(player)) {
+            player.sendMessage(MessageUtil.parse(msg("sign_multimeter_required",
+                    "<dark_gray>[<red>D.F.C<dark_gray>] <red>A multimeter is required to read the data!")));
+            return;
+        }
+
+        // Sensors are down: the meter receives no data at all
+        if (reactor.isSensorsDead()) {
+            player.sendMessage(MessageUtil.parse(msg("sensor_no_signal",
+                    "<red>Cannot receive any data from sensors: <gray>No signal")));
+            return;
+        }
+
         // Open reactor stats
         ReactorStatsDisplay.sendStats(player);
+    }
+
+    // =========================
+    // HOLDS MULTIMETER (main or off hand, PDC tag)
+    // =========================
+    private boolean holdsMultimeter(Player player) {
+        return isMultimeter(player.getInventory().getItemInMainHand())
+                || isMultimeter(player.getInventory().getItemInOffHand());
+    }
+
+    /** PDC tag check for the custom multimeter item (base: clock). */
+    private boolean isMultimeter(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        var meta = item.getItemMeta();
+        if (meta == null) return false;
+        Byte val = meta.getPersistentDataContainer().get(Keys.MULTIMETER, PersistentDataType.BYTE);
+        return val != null && val == (byte) 1;
     }
 
     // =========================
