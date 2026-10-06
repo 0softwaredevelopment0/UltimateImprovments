@@ -118,7 +118,7 @@ public class ReactorManager {
                 if (selfdestructTicks >= 20 * 5) {
                     // The T-60s announcement, then the timed countdown begins
                     broadcast(StructuresMessages.get("selfdestruct_announce",
-                            "<light_purple>Attention all personnel, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck."));
+                            "<light_purple>Attention all personal, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck."));
                     selfdestructPhase = SelfdestructPhase.TIMED;
                     selfdestructTicks = 0;
                     display.resetSignCache();

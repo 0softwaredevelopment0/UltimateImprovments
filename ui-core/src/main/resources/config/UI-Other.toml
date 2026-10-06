@@ -1340,8 +1340,8 @@ sign_multimeter_required = "<red>A multimeter is required to read the data!"
 selfdestruct_protocol = "<dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00."
 # Default: <light_purple>All controls are non-functional, restarting systems...
 selfdestruct_controls_down = "<light_purple>All controls are non-functional, restarting systems..."
-# Default: <light_purple>Attention all personnel, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck.
-selfdestruct_announce = "<light_purple>Attention all personnel, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck."
+# Default: <light_purple>Attention all personal, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck.
+selfdestruct_announce = "<light_purple>Attention all personal, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck."
 # Default: <light_purple>Beginning detonation procedure...
 selfdestruct_detonation_begin = "<light_purple>Beginning detonation procedure..."
 # Default: <light_purple>Bypassing internal PL power limits, new limit is <red>2000%.
