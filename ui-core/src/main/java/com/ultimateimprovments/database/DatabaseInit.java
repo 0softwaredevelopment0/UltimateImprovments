@@ -13,87 +13,6 @@ public class DatabaseInit {
              Statement st = con.createStatement()) {
 
             // Execute each CREATE TABLE/INDEX individually for consistency
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS cables (
-                    world TEXT NOT NULL,
-                    x INTEGER NOT NULL,
-                    y INTEGER NOT NULL,
-                    z INTEGER NOT NULL,
-                    energy INTEGER DEFAULT 0,
-                    type TEXT DEFAULT 'CABLE',
-                    PRIMARY KEY(world, x, y, z)
-                );
-            """);
-
-            st.execute("""
-                CREATE INDEX IF NOT EXISTS idx_cables_world
-                ON cables(world);
-            """);
-
-            // =========================
-            // 🔌 CABLE CONNECTIONS
-            // =========================
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS cable_connections (
-                    world TEXT NOT NULL,
-                    x INTEGER NOT NULL,
-                    y INTEGER NOT NULL,
-                    z INTEGER NOT NULL,
-
-                    to_world TEXT NOT NULL,
-                    to_x INTEGER NOT NULL,
-                    to_y INTEGER NOT NULL,
-                    to_z INTEGER NOT NULL
-                );
-            """);
-
-            st.execute("""
-                CREATE INDEX IF NOT EXISTS idx_connections_from
-                ON cable_connections(world, x, y, z);
-            """);
-
-            st.execute("""
-                CREATE INDEX IF NOT EXISTS idx_connections_to
-                ON cable_connections(to_world, to_x, to_y, to_z);
-            """);
-
-            // =========================
-            // 🛠 WORKBENCHES
-            // =========================
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS workbenches (
-                    world TEXT NOT NULL,
-                    x INTEGER NOT NULL,
-                    y INTEGER NOT NULL,
-                    z INTEGER NOT NULL,
-                    PRIMARY KEY(world, x, y, z)
-                );
-            """);
-
-            st.execute("""
-                CREATE INDEX IF NOT EXISTS idx_workbenches_world
-                ON workbenches(world);
-            """);
-
-            // =========================
-            // ⚡ GENERATORS
-            // =========================
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS generators (
-                    world TEXT NOT NULL,
-                    x INTEGER NOT NULL,
-                    y INTEGER NOT NULL,
-                    z INTEGER NOT NULL,
-                    fuel INTEGER DEFAULT 0,
-                    energy INTEGER DEFAULT 0,
-                    PRIMARY KEY(world, x, y, z)
-                );
-            """);
-
-            st.execute("""
-                CREATE INDEX IF NOT EXISTS idx_generators_world
-                ON generators(world);
-            """);
 
             // =========================
             // ☢ PLAYER RADIATION
@@ -149,37 +68,6 @@ public class DatabaseInit {
             st.execute("""
                 CREATE INDEX IF NOT EXISTS idx_reactors_world
                 ON reactors(world);
-            """);
-
-            // =========================
-            // 🧲 MAGNETS
-            // =========================
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS magnets (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    world TEXT NOT NULL,
-                    center_x INTEGER NOT NULL,
-                    center_y INTEGER NOT NULL,
-                    center_z INTEGER NOT NULL,
-                    block_count INTEGER DEFAULT 1,
-                    active INTEGER DEFAULT 1
-                );
-            """);
-
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS magnet_blocks (
-                    magnet_id INTEGER NOT NULL,
-                    x INTEGER NOT NULL,
-                    y INTEGER NOT NULL,
-                    z INTEGER NOT NULL,
-                    PRIMARY KEY(magnet_id, x, y, z),
-                    FOREIGN KEY(magnet_id) REFERENCES magnets(id) ON DELETE CASCADE
-                );
-            """);
-
-            st.execute("""
-                CREATE INDEX IF NOT EXISTS idx_magnet_blocks_id
-                ON magnet_blocks(magnet_id);
             """);
 
             // =========================
@@ -300,67 +188,6 @@ public class DatabaseInit {
                     // Column already exists — fine, try the next one
                 }
             }
-
-        // =========================
-        // 🔋 BATTERY MULTIBLOCK
-        // =========================
-        st.execute("""
-            CREATE TABLE IF NOT EXISTS batteries (
-                id INTEGER PRIMARY KEY,
-                world TEXT NOT NULL,
-                center_x INTEGER NOT NULL,
-                center_y INTEGER NOT NULL,
-                center_z INTEGER NOT NULL,
-                block_count INTEGER DEFAULT 1
-            );
-        """);
-
-        st.execute("""
-            CREATE TABLE IF NOT EXISTS battery_blocks (
-                battery_id INTEGER NOT NULL,
-                x INTEGER NOT NULL,
-                y INTEGER NOT NULL,
-                z INTEGER NOT NULL,
-                PRIMARY KEY(battery_id, x, y, z),
-                FOREIGN KEY(battery_id) REFERENCES batteries(id) ON DELETE CASCADE
-            );
-        """);
-
-        st.execute("""
-            CREATE INDEX IF NOT EXISTS idx_battery_blocks_id
-            ON battery_blocks(battery_id);
-        """);
-
-        // =========================
-        // 💡 LIGHT MULTIBLOCK
-        // =========================
-        st.execute("""
-            CREATE TABLE IF NOT EXISTS lights (
-                id INTEGER PRIMARY KEY,
-                world TEXT NOT NULL,
-                center_x INTEGER NOT NULL,
-                center_y INTEGER NOT NULL,
-                center_z INTEGER NOT NULL,
-                block_count INTEGER DEFAULT 1,
-                lit INTEGER DEFAULT 0
-            );
-        """);
-
-        st.execute("""
-            CREATE TABLE IF NOT EXISTS light_blocks (
-                light_id INTEGER NOT NULL,
-                x INTEGER NOT NULL,
-                y INTEGER NOT NULL,
-                z INTEGER NOT NULL,
-                PRIMARY KEY(light_id, x, y, z),
-                FOREIGN KEY(light_id) REFERENCES lights(id) ON DELETE CASCADE
-            );
-        """);
-
-        st.execute("""
-            CREATE INDEX IF NOT EXISTS idx_light_blocks_id
-            ON light_blocks(light_id);
-        """);
 
         // =========================
         // 🦅 ELYTRA BOOST DISABLED (persist /ui togglefly state)

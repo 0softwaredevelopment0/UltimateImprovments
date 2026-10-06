@@ -5,7 +5,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,15 +111,6 @@ public class CableNode {
     public void clearConnections() { connections.clear(); }
 
     public Set<Long> getConnectionKeys() { return Collections.unmodifiableSet(connections); }
-
-    @Deprecated
-    public Set<Location> getConnections() {
-        Set<Location> result = new HashSet<>();
-        for (long connKey : connections) {
-            result.add(LocationUtil.toLocation(connKey, world));
-        }
-        return result;
-    }
 
     // =========================
     // ENERGY TRANSFER TRACKING

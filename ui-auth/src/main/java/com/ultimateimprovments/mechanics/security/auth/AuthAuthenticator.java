@@ -401,15 +401,6 @@ public class AuthAuthenticator {
         authenticatePlayer(player, "<green>✅</green> <white>GitHub authorization successful! Welcome.</white>");
     }
 
-    /**
-     * Deprecated method — no longer needed (2FA via buttons, not codes).
-     * Kept for backward compatibility.
-     */
-    @Deprecated
-    public boolean verify2FACode(Player player, String code) {
-        return false;
-    }
-
     // =========================
     // WRONG PASSWORD
     // =========================

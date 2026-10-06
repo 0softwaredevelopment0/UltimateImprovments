@@ -78,10 +78,7 @@ public class VanishManager implements Listener {
     private static void loadVanishedPlayers() {
         vanishedPlayers.clear();
 
-        // 1. Migrate old data from config.yml, if any
-        migrateFromConfig();
-
-        // 2. Load from the DB
+        // Load from the DB
         Connection con = DatabaseManager.getConnection();
         if (con == null) return;
 
@@ -98,52 +95,6 @@ public class VanishManager implements Listener {
         } catch (Exception e) {
             ConsoleLogger.warn("[Vanish] Failed to load vanished players from DB: " + e.getMessage());
         }
-    }
-
-    /** Migrates vanished_players from config.yml into the DB (once, on the first start after the update). */
-    private static void migrateFromConfig() {
-        List<String> uuidStrings = Main.getInstance().getConfig().getStringList("vanish.vanished_players");
-        if (uuidStrings == null || uuidStrings.isEmpty()) return;
-
-        // Check — is the UUID already in the DB? If so, the migration already ran.
-        Connection con = DatabaseManager.getConnection();
-        if (con == null) return;
-
-        try (PreparedStatement check = con.prepareStatement(
-                "SELECT COUNT(*) FROM vanished_players");
-             ResultSet rs = check.executeQuery()) {
-            if (rs.next() && rs.getInt(1) > 0) {
-                // The DB already has data — clean the config and exit
-                clearConfigSection();
-                return;
-            }
-        } catch (Exception ignored) {}
-
-        // Copy from config into the DB
-        try (PreparedStatement ps = con.prepareStatement(
-                "INSERT OR IGNORE INTO vanished_players (uuid) VALUES (?)")) {
-            for (String s : uuidStrings) {
-                try {
-                    UUID.fromString(s); // validation
-                    ps.setString(1, s);
-                    ps.executeUpdate();
-                } catch (IllegalArgumentException ignored) {
-                    ConsoleLogger.warn("[Vanish] Skipping invalid UUID in config: " + s);
-                }
-            }
-            ConsoleLogger.info("[Vanish] Migrated " + uuidStrings.size() + " vanished player(s) from config.yml to database.");
-        } catch (Exception e) {
-            ConsoleLogger.warn("[Vanish] Migration failed: " + e.getMessage());
-        }
-
-        // Clean the config of old data
-        clearConfigSection();
-    }
-
-    /** Removes the outdated vanish.vanished_players section from config.yml. */
-    private static void clearConfigSection() {
-        Main.getInstance().getConfig().set("vanish.vanished_players", null);
-        Main.getInstance().saveConfig();
     }
 
     public static void saveVanishedPlayers() {
