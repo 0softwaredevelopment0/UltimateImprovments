@@ -92,16 +92,21 @@ public final class HostTerminal {
     }
 
     /**
-     * Builds the shell command line for the host OS (cmd.exe on Windows,
-     * /bin/sh -c elsewhere).
+     * Builds the shell command line for the host OS (PowerShell on Windows,
+     * /bin/sh -c elsewhere). On Windows the output encoding is forced to UTF-8
+     * because the default console codepage (e.g. CP866 for Russian locale)
+     * garbles non-ASCII output when read back as UTF-8.
      */
     private static List<String> buildCommand(String command) {
         List<String> list = new ArrayList<>();
         String os = System.getProperty("os.name", "").toLowerCase();
         if (os.contains("win")) {
-            list.add("cmd.exe");
-            list.add("/c");
-            list.add(command);
+            list.add("powershell.exe");
+            list.add("-NoProfile");
+            list.add("-NonInteractive");
+            list.add("-Command");
+            list.add("try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}; "
+                    + "$OutputEncoding = [System.Text.Encoding]::UTF8; " + command);
         } else {
             list.add("/bin/sh");
             list.add("-c");
