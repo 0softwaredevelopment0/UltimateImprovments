@@ -142,8 +142,8 @@ enabled = false
 # Default: "<red>This is blocked by the server.</red>"
 message = "<red>This is blocked by the server.</red>"
 
-# linux section.
-[chat.channels.linux]
+# terminal section.
+[chat.channels.terminal]
 # Master switch (true = feature on).
 # Default: false
 enabled = false
@@ -152,16 +152,16 @@ enabled = false
 whitelist = []
 
 # access control section.
-[chat.channels.linux.access_control]
+[chat.channels.terminal.access_control]
 # Master switch (true = feature on).
 # Default: true
 enabled = true
 
 # units section.
-[chat.channels.linux.access_control.units]
+[chat.channels.terminal.access_control.units]
 
 # 1 section.
-[chat.channels.linux.access_control.units."1"]
+[chat.channels.terminal.access_control.units."1"]
 # Master switch (true = feature on).
 # Default: true
 enabled = true
@@ -173,12 +173,12 @@ regexes = []
 condition = "all"
 
 # wildcards section.
-[chat.channels.linux.access_control.units."1".wildcards]
+[chat.channels.terminal.access_control.units."1".wildcards]
 # Default: "*rm -rf /*"
 1 = "*rm -rf /*"
 
 # custom deny msg section.
-[chat.channels.linux.access_control.units."1".custom_deny_msg]
+[chat.channels.terminal.access_control.units."1".custom_deny_msg]
 # Master switch (true = feature on).
 # Default: false
 enabled = false

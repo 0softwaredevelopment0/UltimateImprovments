@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Executes host (terminal) commands for the {@link ChatChannel#LINUX} channel.
+ * Executes host (terminal) commands for the {@link ChatChannel#TERMINAL} channel.
  * <p>
  * Each player runs at most one tracked process at a time; typing {@code ^C} in
  * chat interrupts it (like Ctrl+C). Command output is streamed back to the player.
