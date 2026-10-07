@@ -56,9 +56,9 @@ public class ChatManager implements Listener {
     private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
     private AccessControl consoleAccessControl = AccessControl.disabled();
-    private boolean linuxEnabled;
-    private java.util.List<String> linuxWhitelist = java.util.List.of();
-    private AccessControl linuxAccessControl = AccessControl.disabled();
+    private boolean terminalEnabled;
+    private java.util.List<String> terminalWhitelist = java.util.List.of();
+    private AccessControl terminalAccessControl = AccessControl.disabled();
     // Chat-wide access control: filters message content in ALL channels
     private AccessControl chatAccessControl = AccessControl.disabled();
 
@@ -113,10 +113,14 @@ public class ChatManager implements Listener {
         this.consoleWhitelist = cfg.getStringList("chat.channels.console.whitelist");
         this.consoleAccessControl = AccessControl.load(cfg, "chat.channels.console.access_control");
 
-        // Linux (host terminal) channel settings
-        this.linuxEnabled = cfg.getBoolean("chat.channels.linux.enabled", false);
-        this.linuxWhitelist = cfg.getStringList("chat.channels.linux.whitelist");
-        this.linuxAccessControl = AccessControl.load(cfg, "chat.channels.linux.access_control");
+        // Terminal (host shell) channel settings. Falls back to the legacy
+        // "chat.channels.linux" section for configs created before the rename.
+        String terminalBase = cfg.contains("chat.channels.terminal.enabled")
+                || !cfg.contains("chat.channels.linux.enabled")
+                ? "chat.channels.terminal" : "chat.channels.linux";
+        this.terminalEnabled = cfg.getBoolean(terminalBase + ".enabled", false);
+        this.terminalWhitelist = cfg.getStringList(terminalBase + ".whitelist");
+        this.terminalAccessControl = AccessControl.load(cfg, terminalBase + ".access_control");
 
         // Chat-wide access control for message content (all channels)
         this.chatAccessControl = AccessControl.load(cfg, "chat.access_control");
@@ -243,16 +247,16 @@ public class ChatManager implements Listener {
             }
         }
 
-        // LINUX channel — the message is executed on the host shell (terminal),
+        // TERMINAL channel — the message is executed on the host shell,
         // its output is sent back to the player, and ^C acts like Ctrl+C.
-        if (channel == ChatChannel.LINUX) {
-            if (!linuxEnabled || !isLinuxAllowed(player)) {
+        if (channel == ChatChannel.TERMINAL) {
+            if (!terminalEnabled || !isTerminalAllowed(player)) {
                 // Channel disabled or access revoked while the mode was active
-                boolean disabled = !linuxEnabled;
+                boolean disabled = !terminalEnabled;
                 PlayerChannelManager.setChannel(player, ChatChannel.GLOBAL);
                 player.sendMessage(MessageUtil.parse(disabled
-                        ? "<red>\u274c Linux channel is disabled — chat restored.</red>"
-                        : "<red>\u274c Linux channel access revoked — chat restored.</red>"));
+                        ? "<red>\u274c Terminal channel is disabled — chat restored.</red>"
+                        : "<red>\u274c Terminal channel access revoked — chat restored.</red>"));
                 channel = ChatChannel.GLOBAL;
                 format = channelFormats.get(channel);
                 if (format == null || format.isEmpty()) format = staticFormat;
@@ -264,17 +268,17 @@ public class ChatManager implements Listener {
                     HostTerminal.interrupt(player);
                     return;
                 }
-                AccessControl.Result r = linuxAccessControl.decide(cmd);
+                AccessControl.Result r = terminalAccessControl.decide(cmd);
                 if (r.isAllowed()) {
                     HostTerminal.execute(player, cmd);
-                    ConsoleLogger.info("[LinuxChat] " + player.getName() + " ran: " + cmd);
+                    ConsoleLogger.info("[TerminalChat] " + player.getName() + " ran: " + cmd);
                 } else {
                     sendAccessDenied(player, cmd, r);
                     if (r.isDeniedByBlacklist()) {
-                        ConsoleLogger.warn("[LinuxChat] blocked " + player.getName()
+                        ConsoleLogger.warn("[TerminalChat] blocked " + player.getName()
                                 + ": " + cmd + " (forbidden: " + r.forbidden() + ")");
                     } else {
-                        ConsoleLogger.warn("[LinuxChat] not allowed " + player.getName() + ": " + cmd);
+                        ConsoleLogger.warn("[TerminalChat] not allowed " + player.getName() + ": " + cmd);
                     }
                 }
                 return;
@@ -282,7 +286,7 @@ public class ChatManager implements Listener {
         }
 
         // Chat-wide access control filters the message content in all normal
-        // channels (console/linux are handled above on their command input).
+        // channels (console/terminal are handled above on their command input).
         AccessControl.Result chatResult = chatAccessControl.decide(messageText);
         if (!chatResult.isAllowed()) {
             event.setCancelled(true);
@@ -562,28 +566,28 @@ public class ChatManager implements Listener {
                 && isConsoleWhitelisted(player);
     }
 
-    /** Returns true if the linux (host terminal) channel is enabled in the config. */
-    public static boolean isLinuxEnabled() { return instance != null && instance.linuxEnabled; }
+    /** Returns true if the terminal (host shell) channel is enabled in the config. */
+    public static boolean isTerminalEnabled() { return instance != null && instance.terminalEnabled; }
 
     /**
-     * Returns true if the player is whitelisted for the linux channel
+     * Returns true if the player is whitelisted for the terminal channel
      * (nickname in the config whitelist, case-insensitive).
      */
-    public static boolean isLinuxWhitelisted(Player player) {
+    public static boolean isTerminalWhitelisted(Player player) {
         if (instance == null || player == null) return false;
-        for (String name : instance.linuxWhitelist) {
+        for (String name : instance.terminalWhitelist) {
             if (name != null && name.equalsIgnoreCase(player.getName())) return true;
         }
         return false;
     }
 
     /**
-     * Returns true if the player may use the linux channel:
+     * Returns true if the player may use the terminal channel:
      * requires the channel permission AND a whitelist entry.
      */
-    public static boolean isLinuxAllowed(Player player) {
+    public static boolean isTerminalAllowed(Player player) {
         return player != null
-                && player.hasPermission(ChatChannel.LINUX.getPermission())
-                && isLinuxWhitelisted(player);
+                && player.hasPermission(ChatChannel.TERMINAL.getPermission())
+                && isTerminalWhitelisted(player);
     }
 }

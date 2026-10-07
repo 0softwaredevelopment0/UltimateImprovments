@@ -37,12 +37,13 @@ public enum ChatChannel {
     CONSOLE("console", "ui.chat.channel.console"),
 
     /**
-     * Linux channel — the player's chat input is executed on the host shell
-     * (terminal) and the output is sent back to the player. Requires the channel
-     * permission AND a nickname in the config whitelist. Toggled via
-     * {@code /ui chatchnl linux}; typing {@code ^C} interrupts a running command.
+     * Terminal channel — the player's chat input is executed on the host shell
+     * (PowerShell on Windows, /bin/sh elsewhere) and the output is sent back to
+     * the player. Requires the channel permission AND a nickname in the config
+     * whitelist. Toggled via {@code /ui chatchnl terminal}; typing {@code ^C}
+     * interrupts a running command.
      */
-    LINUX("linux", "ui.chat.channel.linux");
+    TERMINAL("terminal", "ui.chat.channel.terminal");
 
     private final String configKey;
     private final String permission;

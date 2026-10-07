@@ -333,7 +333,7 @@ public class HelpSubCommand implements SubCommand {
         cmd("broadcast", "Broadcast a message").u("<text> [-clean]", "-clean = without the plugin prefix");
         cmd("clearchat", "Clear the chat").u("[player|all]", "");
         cmd("chatchnl", "Switch your chat channel")
-                .u("<local|global|world|private|admin|check|console|linux>", "");
+                .u("<local|global|world|private|admin|check|console|terminal>", "");
         cmd("report", "Report a player").u("<player> <reason>", "");
         cmd("reports", "List reports").u("[page]", "");
         cmd("modreport", "Moderate reports").u("<id> accept|decline", "");

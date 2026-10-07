@@ -5,6 +5,23 @@ in this file.
 
 ## [Unreleased]
 
+### Changed
+- **The "linux" chat channel is renamed to "terminal"** — `/ui chatchnl terminal`,
+  enum `ChatChannel.TERMINAL`, permission `ui.chat.channel.terminal`, config
+  section `chat.channels.terminal.*` and log prefix `[TerminalChat]`. The name
+  never matched reality (the channel runs PowerShell on Windows), so it now
+  says what it does. The config loader falls back to the legacy
+  `chat.channels.linux` section when the new one is absent, so existing
+  configs keep working until renamed manually.
+
+### Fixed
+- **Host terminal channel on Windows** — commands ran through `cmd.exe /c`
+  (no `ls` and no PowerShell aliases → exit 1) and the output was read as
+  UTF-8 while cmd writes the OEM codepage (CP866 on a Russian locale),
+  garbling non-ASCII output. Commands now run through
+  `powershell.exe -NoProfile -NonInteractive -Command` with the output
+  encoding forced to UTF-8.
+
 ## [1.8.3-release.1] — since 1.8.3-alpha.8 (2026-10-07)
 
 > **Release channel** — the first full (non-pre-release) family release.
