@@ -2,7 +2,7 @@
 
 **A huge collection of gameplay features for your server. For Paper 26.3+ (Java 26) — one core + 20 addon plugins**
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE.md)
 [![Java](https://img.shields.io/badge/Java-26%2B-orange)](https://www.oracle.com/java/)
 [![Server](https://img.shields.io/badge/Paper-26.3%2B-green)](https://papermc.io/)
 [![Version](https://img.shields.io/github/v/release/0softwaredevelopment0/UltimateImprovments?include_prereleases)](https://github.com/0softwaredevelopment0/UltimateImprovments/releases)
@@ -148,6 +148,6 @@ The built JARs will be in `build/libs/UI-<part>-<version>-all.jar`. Requires JDK
 
 ## License
 
-**GNU AGPL v3** — see [LICENSE](LICENSE). Free use, modification, and distribution allowed.
+**GNU AGPL v3** — see [LICENSE](LICENSE.md). Free use, modification, and distribution allowed.
 
 ---
