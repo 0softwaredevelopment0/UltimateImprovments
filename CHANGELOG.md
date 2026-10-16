@@ -20,8 +20,20 @@ in this file.
   the description urges you to run, but fleeing puts you outside the
   30-block grant radius of "Destructive Consequences", which fires at the
   actual blast. Goal frame, TNT icon, 60 XP, parent `ui:datapack/dfc_unstable`.
+- **DFC advancement "Senior ReactorOps"** — keep the shield integrity
+  within 0–10% for one minute straight. Entry requires deliberately
+  overdriving the core past ~22M C* (shield stress above 100%); hold the
+  band by balancing stress around the limit — a step to 0% is the
+  detonation, to 11% resets the progress. Challenge frame, spectral arrow
+  icon, 300 XP, parent `ui:datapack/dfc_unstable`.
 
 ### Changed
+- **Emergency core shutdown no longer rescues a deliberately overloaded
+  shield** — the integrity-below-threshold safety only fires while the
+  shield stress is within limits (≤100%): an operator-driven overheat is
+  the operators' responsibility. This opens the 0–10% integrity window the
+  "Senior ReactorOps" advancement requires; cooling down below the
+  threshold integrity brings the safety back.
 - **All DFC advancements now require proximity** — grants go only to players
   within 30 blocks of the DFC structure center (previously a mixed bag of
   everyone-online and a 20-block radius). The now-unused
