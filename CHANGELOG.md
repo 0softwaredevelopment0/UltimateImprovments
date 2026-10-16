@@ -26,6 +26,13 @@ in this file.
   band by balancing stress around the limit — a step to 0% is the
   detonation, to 11% resets the progress. Challenge frame, spectral arrow
   icon, 300 XP, parent `ui:datapack/dfc_unstable`.
+- **DFC advancement "Is it really that simple?"** (hidden) — pulsing the
+  startup lamp during the self-destruct timed countdown gives a 0.5% chance
+  per rising edge that the systems malfunction the protocol away: it
+  disarms, the reactor powers down (controlled shield ramp, lasers off)
+  and can be started again later. Too late once the detonation procedure
+  is announced. Challenge frame, redstone torch icon, 200 XP, parent
+  `ui:datapack/dfc_self_destruct`.
 
 ### Changed
 - **Emergency core shutdown no longer rescues a deliberately overloaded
