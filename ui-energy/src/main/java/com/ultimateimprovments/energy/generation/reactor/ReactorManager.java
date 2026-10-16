@@ -737,7 +737,7 @@ public class ReactorManager {
 
     private int coreTemp;           // C*, [TEMP_MIN .. TEMP_MAX]
     private double shieldPress;     // Shield pressure, MPa — follows (T/10M) × 10.01
-    private double spin;            // Core spin, RPS — follows 0.95 × (T/10M)
+    private double spin;            // Core spin, RPS — follows 95 000 × (T/10M)
 
     // =========================
     // ENERGY GENERATION (output to cable network)
@@ -804,6 +804,13 @@ public class ReactorManager {
      * players within this distance (blocks) of the DFC structure center.
      */
     private static final double ADV_GRANT_RADIUS = 30.0;
+
+    /**
+     * Broadcast radius (blocks from the anchor) — kept equal to the
+     * advancement grant radius so every warning (e.g. the T-10s "run"
+     * message) reaches exactly the audience eligible for the advancements.
+     */
+    private static final double BROADCAST_RADIUS = 30.0;
 
     /** The geometric center of the DFC structure (10×11×9 box around the anchor). */
     private Location reactorCenter() {
@@ -1311,6 +1318,12 @@ public class ReactorManager {
         prevShInt = (int) Math.round(shield.getIntegrity());
 
         // =========================
+        // 🏆 dfc_unstable — the first sign of instability while the core runs:
+        // any integrity (shield or case) below 100%
+        // =========================
+        checkDfcUnstable();
+
+        // =========================
         // ENERGY GENERATION (capped at 50% while the structure is damaged)
         // =========================
         if (coreTemp > coreWorkTemp / 100) {
@@ -1406,7 +1419,9 @@ public class ReactorManager {
                 RadiationManager.addRadiationNear(base, 4.0, radAmount);
             }
         }
-    }    // =========================
+    }
+
+    // =========================
     // FUSION TICK (every tick) — fusion particles, absorber collection
     // =========================
     public void tickFusion() {
@@ -1457,10 +1472,12 @@ public class ReactorManager {
     }
 
     // =========================
-    // INTEGRITY DECAY — dfc_unstable achievement
+    // 🏆 dfc_unstable ADVANCEMENT — the first integrity loss of a running
+    // reactor (shield or case below 100%). Granted once per reactor.
     // =========================
     private void checkDfcUnstable() {
-        if (!advDfcUnstableGranted && (shield.getIntegrity() < 100 || caseSys.getIntegrity() < 100)) {
+        if (advDfcUnstableGranted || !isCoreActive()) return;
+        if (shield.getIntegrity() < 100 || caseSys.getIntegrity() < 100) {
             advDfcUnstableGranted = true;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                 grantAdvancementNear("datapack/dfc_unstable"));
@@ -1800,7 +1817,7 @@ public class ReactorManager {
         for (Player player : online) {
             if (reactorLocation != null
                     && player.getWorld().equals(reactorLocation.getWorld())
-                    && player.getLocation().distanceSquared(reactorLocation) <= 225) {
+                    && player.getLocation().distanceSquared(reactorLocation) <= BROADCAST_RADIUS * BROADCAST_RADIUS) {
                 player.sendMessage(MessageUtil.parse(prefix + message));
             }
         }

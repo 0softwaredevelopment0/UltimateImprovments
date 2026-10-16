@@ -11,7 +11,7 @@ import org.bukkit.configuration.file.FileConfiguration;
  * and core spin (S) are derived from the temperature through that multiplier:
  * <ul>
  *   <li><b>P</b> — {@code (T / core_work_temp) * 10.01} MPa → 10.010 MPa at working temp</li>
- *   <li><b>S</b> — {@code 0.95 * (T / core_work_temp)} RPS → 0.95 RPS at working temp</li>
+ *   <li><b>S</b> — {@code 95 000 * (T / core_work_temp)} RPS → 95 000 RPS at working temp</li>
  * </ul>
  */
 public class ReactorConfig {

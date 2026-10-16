@@ -77,7 +77,6 @@ public class ReactorCase {
         }
         return list.toArray(new int[0][]);
     }
-;
 
     private final ReactorManager reactor;
     private final Random random = new Random();
