@@ -6,9 +6,9 @@ in this file.
 ## [Unreleased]
 
 ### Added
-- **DFC advancement "Operator Incompetence"** — granted when the stalled
-  reactor initiates its core shutdown procedure (the reaction lost all heat
-  and the automatic shutdown kicks in). Goal frame, ice icon, 50 XP, parent
+- **DFC advancement "Operator Incompetence"** — granted when the core
+  reaction dies from cooling (reaction failure at 0 C*, immediately before
+  the automatic cooling shutdown). Goal frame, ice icon, 50 XP, parent
   `ui:datapack/start_dfc`.
 - **DFC advancement "Self-destruct protocol"** (rework of "Fading signals",
   same `dfc_self_destruct` file) — granted at the T-60s announcement, after

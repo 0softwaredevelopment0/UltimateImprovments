@@ -228,6 +228,10 @@ public class ReactorManager {
         if (prevTemp > 0 && coreTemp <= 0) {
             broadcast(StructuresMessages.get("stall_warn_failure",
                     "<aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!"));
+
+            // 🏆 Advancement: operator_incompetence — the core reaction just
+            // died from cooling; the cooling shutdown (stall) is imminent
+            grantAdvancementNear("datapack/operator_incompetence");
         }
     }
 
@@ -246,10 +250,6 @@ public class ReactorManager {
         stallTicks = 0;
         broadcast(StructuresMessages.get("stall_shutdown_initiated",
                 "<white>Core shutdown initiated due to reaction failure, please wait."));
-
-        // 🏆 Advancement: operator_incompetence — the reaction stalled and the
-        // core shutdown procedure just kicked in (operators lost the heat)
-        grantAdvancementNear("datapack/operator_incompetence");
         saveToDb();
     }
 
