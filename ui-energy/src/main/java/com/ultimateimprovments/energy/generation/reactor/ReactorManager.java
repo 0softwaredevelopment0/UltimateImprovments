@@ -74,7 +74,7 @@ public class ReactorManager {
     private SelfdestructPhase selfdestructPhase = SelfdestructPhase.NONE;
     private int selfdestructTicks;        // ticks in the current phase
     private boolean selfdestructDone;     // completed — not rolled again
-    private boolean selfdestructJustRolled; // one-tick latch: the protocol armed → dfc_self_destruct grant
+    private boolean selfdestructAnnounced; // one-tick latch: the T-60s announcement fired → dfc_self_destruct grant
     private boolean fusionDebrisJustCrafted; // one-tick latch: debris crafted → power_of_fusion grant
 
     /** Seconds remaining in the timed phase (for the sign timer). */
@@ -121,6 +121,7 @@ public class ReactorManager {
                             "<light_purple>Attention all personal, an <red>Internal Dark Fusion Reactor Systems <light_purple>initiated a <red>self-destruct protocol, <light_purple> detonation procedure will begin in <red>T-60s, <light_purple>good luck."));
                     selfdestructPhase = SelfdestructPhase.TIMED;
                     selfdestructTicks = 0;
+                    selfdestructAnnounced = true;
                     display.resetSignCache();
                 }
             }
@@ -197,7 +198,6 @@ public class ReactorManager {
         if (Math.random() * 100.0 < cfg.getSelfdestructChance()) {
             selfdestructPhase = SelfdestructPhase.SENSORS_DOWN;
             selfdestructTicks = 0;
-            selfdestructJustRolled = true;
             display.resetSignCache();
             broadcast(StructuresMessages.get("sensor_no_signal",
                     "<red>Cannot receive any data from sensors: <gray>No signal"));
@@ -224,9 +224,6 @@ public class ReactorManager {
         if (prevTemp > STALL_WARN_CRITICAL && coreTemp <= STALL_WARN_CRITICAL) {
             broadcast(StructuresMessages.get("stall_warn_critical",
                     "<aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!"));
-
-            // 🏆 Advancement: operator_incompetence — brought the DFC to a potential reaction stall
-            grantAdvancementNear("datapack/operator_incompetence");
         }
         if (prevTemp > 0 && coreTemp <= 0) {
             broadcast(StructuresMessages.get("stall_warn_failure",
@@ -249,6 +246,10 @@ public class ReactorManager {
         stallTicks = 0;
         broadcast(StructuresMessages.get("stall_shutdown_initiated",
                 "<white>Core shutdown initiated due to reaction failure, please wait."));
+
+        // 🏆 Advancement: operator_incompetence — the reaction stalled and the
+        // core shutdown procedure just kicked in (operators lost the heat)
+        grantAdvancementNear("datapack/operator_incompetence");
         saveToDb();
     }
 
@@ -1128,9 +1129,10 @@ public class ReactorManager {
                 grantAdvancementNear("datapack/start_dfc"));
         }
 
-        // 🏆 Advancement: dfc_self_destruct — the protocol just armed
-        if (selfdestructJustRolled) {
-            selfdestructJustRolled = false;
+        // 🏆 Advancement: dfc_self_destruct — the T-60s announcement just fired
+        // (systems rebooted: sensors down → controls down → protocol message)
+        if (selfdestructAnnounced) {
+            selfdestructAnnounced = false;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                 grantAdvancementNear("datapack/dfc_self_destruct"));
         }

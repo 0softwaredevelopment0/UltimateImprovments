@@ -6,16 +6,25 @@ in this file.
 ## [Unreleased]
 
 ### Added
-- **DFC advancement "Operator Incompetence"** — granted when the running
-  reactor's core cools below the critical stall warning threshold (10k C*),
-  i.e. the operators let the DFC drift toward a potential reaction stall.
-  Goal frame, ice icon, 50 XP, parent `ui:datapack/start_dfc`.
+- **DFC advancement "Operator Incompetence"** — granted when the stalled
+  reactor initiates its core shutdown procedure (the reaction lost all heat
+  and the automatic shutdown kicks in). Goal frame, ice icon, 50 XP, parent
+  `ui:datapack/start_dfc`.
+- **DFC advancement "Self-destruct protocol"** (rework of "Fading signals",
+  same `dfc_self_destruct` file) — granted at the T-60s announcement, after
+  the reactor systems finish rebooting (sensors down → controls down →
+  "Internal Dark Fusion Reactor Systems initiated a self-destruct protocol").
+  Challenge frame, red terracotta icon, 150 XP.
 
 ### Changed
 - **All DFC advancements now require proximity** — grants go only to players
   within 30 blocks of the DFC structure center (previously a mixed bag of
   everyone-online and a 20-block radius). The now-unused
   `reactor.selfdestruct_adv_radius` config key was removed.
+- **DFC advancement XP rebalance** — every advancement got its own reward
+  instead of flat 1 XP: dfc_unstable 10, inside_dfc 20, start_dfc 25,
+  burn_inside_dfc 40, explode_dfc 75, power_of_fusion 100,
+  dfc_self_destruct 150, one_time_heater 250.
 
 ### Changed
 - **The "linux" chat channel is renamed to "terminal"** — `/ui chatchnl terminal`,

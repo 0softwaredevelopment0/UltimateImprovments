@@ -1,13 +1,13 @@
 {
   "display": {
     "icon": {
-      "id": "minecraft:lapis_lazuli",
+      "id": "minecraft:red_terracotta",
       "count": 1
     },
     "title": {
-      "text": "Fading signals",
+      "text": "Self-destruct protocol",
       "type": "text",
-      "color": "dark_blue",
+      "color": "white",
       "bold": false,
       "italic": false,
       "underlined": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Some things may be irreversible...",
+      "text": "Sometimes you still lose...",
       "type": "text",
       "color": "gray",
       "bold": false,
@@ -42,6 +42,6 @@
     ]
   ],
   "rewards": {
-    "experience": 1
+    "experience": 150
   }
 }
