@@ -15,6 +15,11 @@ in this file.
   the reactor systems finish rebooting (sensors down → controls down →
   "Internal Dark Fusion Reactor Systems initiated a self-destruct protocol").
   Challenge frame, red terracotta icon, 150 XP.
+- **DFC advancement "Detonation irreversible"** — granted when the shield
+  failure countdown starts (T-10s before the core detonation). The trap:
+  the description urges you to run, but fleeing puts you outside the
+  30-block grant radius of "Destructive Consequences", which fires at the
+  actual blast. Goal frame, TNT icon, 60 XP, parent `ui:datapack/dfc_unstable`.
 
 ### Changed
 - **All DFC advancements now require proximity** — grants go only to players
@@ -23,8 +28,8 @@ in this file.
   `reactor.selfdestruct_adv_radius` config key was removed.
 - **DFC advancement XP rebalance** — every advancement got its own reward
   instead of flat 1 XP: dfc_unstable 10, inside_dfc 20, start_dfc 25,
-  burn_inside_dfc 40, explode_dfc 75, power_of_fusion 100,
-  dfc_self_destruct 150, one_time_heater 250.
+  burn_inside_dfc 40, explode_dfc 75, detonation_irreversible 60,
+  power_of_fusion 100, dfc_self_destruct 150, one_time_heater 250.
 
 ### Changed
 - **The "linux" chat channel is renamed to "terminal"** — `/ui chatchnl terminal`,
