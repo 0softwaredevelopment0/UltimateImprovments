@@ -36,7 +36,7 @@ public class ReactorPersistence {
                  case_broken, case_temp, case_press, case_int,
                  structure_damaged,
                  shield_state, shield_integrity, shield_fail_countdown,
-                 selfdestruct_phase, selfdestruct_ticks, selfdestruct_done,
+                 selfdestruct_phase, selfdestruct_ticks, selfdestruct_done, selfdestruct_cancelled,
                  core_emergency_stopped,
                  stall_phase, stall_ticks, core_offline,
                  startup_phase, startup_ticks)
@@ -49,7 +49,7 @@ public class ReactorPersistence {
                          ?, ?, ?, ?,
                          ?,
                          ?, ?, ?,
-                         ?, ?, ?,
+                         ?, ?, ?, ?,
                          ?,
                          ?, ?, ?,
                          ?, ?)
@@ -86,12 +86,13 @@ public class ReactorPersistence {
             ps.setString(28, state.getSelfdestructPhase());
             ps.setInt(29, state.getSelfdestructTicks());
             ps.setInt(30, state.isSelfdestructDone() ? 1 : 0);
-            ps.setInt(31, state.isCoreEmergencyStopped() ? 1 : 0);
-            ps.setString(32, state.getStallPhase());
-            ps.setInt(33, state.getStallTicks());
-            ps.setInt(34, state.isCoreOffline() ? 1 : 0);
-            ps.setString(35, state.getStartupPhase());
-            ps.setInt(36, state.getStartupTicks());
+            ps.setInt(31, state.isSelfdestructCancelled() ? 1 : 0);
+            ps.setInt(32, state.isCoreEmergencyStopped() ? 1 : 0);
+            ps.setString(33, state.getStallPhase());
+            ps.setInt(34, state.getStallTicks());
+            ps.setInt(35, state.isCoreOffline() ? 1 : 0);
+            ps.setString(36, state.getStartupPhase());
+            ps.setInt(37, state.getStartupTicks());
 
             ps.executeUpdate();
 
@@ -201,6 +202,7 @@ public class ReactorPersistence {
                     state.setSelfdestructPhase(rs.getString("selfdestruct_phase"));
                     state.setSelfdestructTicks(rs.getInt("selfdestruct_ticks"));
                     state.setSelfdestructDone(rs.getInt("selfdestruct_done") == 1);
+                    state.setSelfdestructCancelled(rs.getInt("selfdestruct_cancelled") == 1);
                 } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load self-destruct state: " + e.getMessage());
                 }

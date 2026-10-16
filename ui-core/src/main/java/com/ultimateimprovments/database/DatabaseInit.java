@@ -179,6 +179,7 @@ public class DatabaseInit {
                 {"selfdestruct_phase", "TEXT DEFAULT 'NONE'"},
                 {"selfdestruct_ticks", "INTEGER DEFAULT 0"},
                 {"selfdestruct_done", "INTEGER DEFAULT 0"},
+                {"selfdestruct_cancelled", "INTEGER DEFAULT 0"},
                 {"core_emergency_stopped", "INTEGER DEFAULT 0"},
                 {"stall_phase", "TEXT DEFAULT 'NONE'"},
                 {"stall_ticks", "INTEGER DEFAULT 0"},
