@@ -30,9 +30,11 @@ in this file.
   startup lamp during the self-destruct timed countdown gives a 0.5% chance
   per rising edge that the systems malfunction the protocol away: it
   disarms, the reactor powers down (controlled shield ramp, lasers off)
-  and can be started again later. Too late once the detonation procedure
-  is announced. Challenge frame, redstone torch icon, 200 XP, parent
-  `ui:datapack/dfc_self_destruct`.
+  and can be started again later. The protocol is not gone for good: it
+  can roll again on subsequent startups at a halved chance (0.5% instead
+  of 1% on the default config) until the reactor is disassembled. Too late
+  once the detonation procedure is announced. Challenge frame, redstone
+  torch icon, 200 XP, parent `ui:datapack/dfc_self_destruct`.
 
 ### Changed
 - **Emergency core shutdown no longer rescues a deliberately overloaded

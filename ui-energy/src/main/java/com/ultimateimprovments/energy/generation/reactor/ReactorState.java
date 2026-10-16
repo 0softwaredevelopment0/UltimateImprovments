@@ -52,6 +52,7 @@ public class ReactorState {
     private String selfdestructPhase = "NONE"; // NONE / SENSORS_DOWN / TIMED / FINALE
     private int selfdestructTicks;
     private boolean selfdestructDone;
+    private boolean selfdestructCancelled; // protocol was cancelled once — re-roll chance halved until disassembly
 
     // Emergency core shutdown latch (shield integrity below the critical threshold)
     private boolean coreEmergencyStopped;
@@ -82,6 +83,8 @@ public class ReactorState {
     public void setSelfdestructTicks(int val) { selfdestructTicks = Math.max(0, val); }
     public boolean isSelfdestructDone() { return selfdestructDone; }
     public void setSelfdestructDone(boolean val) { selfdestructDone = val; }
+    public boolean isSelfdestructCancelled() { return selfdestructCancelled; }
+    public void setSelfdestructCancelled(boolean val) { selfdestructCancelled = val; }
 
     public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
     public void setCoreEmergencyStopped(boolean val) { coreEmergencyStopped = val; }
@@ -126,6 +129,7 @@ public class ReactorState {
         selfdestructPhase = o.selfdestructPhase;
         selfdestructTicks = o.selfdestructTicks;
         selfdestructDone = o.selfdestructDone;
+        selfdestructCancelled = o.selfdestructCancelled;
         coreEmergencyStopped = o.coreEmergencyStopped;
         stallPhase = o.stallPhase;
         stallTicks = o.stallTicks;
@@ -331,6 +335,7 @@ public class ReactorState {
         selfdestructPhase = "NONE";
         selfdestructTicks = 0;
         selfdestructDone = false;
+        selfdestructCancelled = false;
         coreEmergencyStopped = false;
         stallPhase = "NONE";
         stallTicks = 0;

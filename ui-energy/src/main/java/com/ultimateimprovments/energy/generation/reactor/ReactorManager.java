@@ -74,6 +74,7 @@ public class ReactorManager {
     private SelfdestructPhase selfdestructPhase = SelfdestructPhase.NONE;
     private int selfdestructTicks;        // ticks in the current phase
     private boolean selfdestructDone;     // completed — not rolled again
+    private boolean selfdestructCancelled; // cancelled once — re-roll chance halved until disassembly
     private boolean selfdestructAnnounced; // one-tick latch: the T-60s announcement fired → dfc_self_destruct grant
     private boolean fusionDebrisJustCrafted; // one-tick latch: debris crafted → power_of_fusion grant
 
@@ -191,11 +192,13 @@ public class ReactorManager {
         saveToDb();
     }
 
-    /** Rolls the 1% self-destruct chance at startup. */
+    /** Rolls the self-destruct chance at startup (1%, halved after a cancel). */
     private void rollSelfdestruct() {
         ReactorConfig cfg = ReactorConfig.getInstance();
         if (selfdestructDone || isSelfdestructActive()) return;
-        if (Math.random() * 100.0 < cfg.getSelfdestructChance()) {
+        double chance = cfg.getSelfdestructChance();
+        if (selfdestructCancelled) chance *= 0.5;
+        if (Math.random() * 100.0 < chance) {
             selfdestructPhase = SelfdestructPhase.SENSORS_DOWN;
             selfdestructTicks = 0;
             display.resetSignCache();
@@ -289,6 +292,8 @@ public class ReactorManager {
      * countdown): 0.5% chance per pulse that the systems malfunction the
      * protocol away — it disarms, the reactor powers down (controlled shield
      * ramp, lasers off, controls unlocked) and can be started again later.
+     * The protocol is not gone for good: it can roll again on the next
+     * startups, at a halved chance until the reactor is disassembled.
      * 🏆 Advancement: is_it_really_that_simple — everyone near the reactor.
      */
     private void tryCancelSelfdestruct() {
@@ -296,7 +301,7 @@ public class ReactorManager {
 
         selfdestructPhase = SelfdestructPhase.NONE;
         selfdestructTicks = 0;
-        selfdestructDone = true;
+        selfdestructCancelled = true;
         lasers.reset();
         shield.beginShutdown();
         display.resetSignCache();
@@ -868,6 +873,7 @@ public class ReactorManager {
         s.setSelfdestructPhase(r.selfdestructPhase.name());
         s.setSelfdestructTicks(r.selfdestructTicks);
         s.setSelfdestructDone(r.selfdestructDone);
+        s.setSelfdestructCancelled(r.selfdestructCancelled);
         s.setCoreEmergencyStopped(r.coreEmergencyStopped);
         s.setStallPhase(r.stallPhase.name());
         s.setStallTicks(r.stallTicks);
@@ -926,6 +932,7 @@ public class ReactorManager {
         structureDamaged = state.isStructureDamaged();
         coreEmergencyStopped = state.isCoreEmergencyStopped();
         selfdestructDone = state.isSelfdestructDone();
+        selfdestructCancelled = state.isSelfdestructCancelled();
         selfdestructPhase = parseSelfdestructPhase(state.getSelfdestructPhase());
         selfdestructTicks = state.getSelfdestructTicks();
         stallPhase = parseStallPhase(state.getStallPhase());
@@ -1479,6 +1486,7 @@ public class ReactorManager {
         selfdestructPhase = SelfdestructPhase.NONE;
         selfdestructTicks = 0;
         selfdestructDone = false;
+        selfdestructCancelled = false;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
         stallManual = false;
@@ -1590,6 +1598,7 @@ public class ReactorManager {
         selfdestructPhase = SelfdestructPhase.NONE;
         selfdestructTicks = 0;
         selfdestructDone = false;
+        selfdestructCancelled = false;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
         stallManual = false;
