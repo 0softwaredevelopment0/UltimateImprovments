@@ -71,9 +71,6 @@ selfdestruct_timed_sec = 60
 # Power.
 # Default: 10.0
 selfdestruct_overpower_rate = 10.0
-# Radius in blocks.
-# Default: 20.0
-selfdestruct_adv_radius = 20.0
 # Default: 9500.0
 absorber_cool_rate = 9500.0
 # Default: 40.0
