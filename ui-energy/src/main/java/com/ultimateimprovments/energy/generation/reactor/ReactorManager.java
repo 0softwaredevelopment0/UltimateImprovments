@@ -722,6 +722,13 @@ public class ReactorManager {
     private final Set<UUID> advBurnInsideDfcGranted = ConcurrentHashMap.newKeySet();
     private final Set<UUID> advOneTimeHeaterGranted = ConcurrentHashMap.newKeySet();
 
+    // 🏆 senior_reactor_ops: consecutive ticks with the shield integrity
+    // inside the 0–10% band; leaving the band (or losing the WORKING shield)
+    // resets the progress. One minute = 20 × 60 ticks.
+    private int advSeniorOpsTicks = 0;
+    private static final int SENIOR_OPS_TICKS_REQUIRED = 20 * 60;
+    private static final double SENIOR_OPS_BAND_MAX = 10.0;
+
     private static final Map<UUID, Map<String, PendingAssembly>> pendingAssemblies = new HashMap<>();
 
     public record PendingAssembly(Location center, org.bukkit.entity.ItemFrame frame, String type) {}
@@ -1091,6 +1098,10 @@ public class ReactorManager {
         // threshold (25% by default): the core shuts itself off, lasers reset.
         // Needs working control systems — never fires on a damaged structure
         // (sensors dead: the uncontrolled core cannot save itself).
+        // The safety only rescues a shield that is failing on its own
+        // (stress within limits): a deliberately overloaded shield
+        // (stress above 100%) is the operators' responsibility — no rescue
+        // while they keep riding the overheat (Senior ReactorOps).
         // =========================
         if (!coreEmergencyStopped
                 && !structureDamaged
@@ -1098,6 +1109,7 @@ public class ReactorManager {
                 && shield.getState() == ReactorShield.State.WORKING
                 && shield.getIntegrity() > 0
                 && shield.getIntegrity() < cfg.getShieldIntegrityShutdownPercent()
+                && shield.getTotalStress() <= 100
                 && !shield.isFailed()) {
             coreEmergencyStopped = true;
             lasers.reset();
@@ -1105,6 +1117,22 @@ public class ReactorManager {
             broadcast(StructuresMessages.get("core_emergency_shutdown",
                     "<dark_red>⚠ <red>Shield integrity critical — emergency core shutdown! Restart the reactor."));
             saveToDb();
+        }
+
+        // 🏆 Advancement: senior_reactor_ops — ride the dying shield: keep the
+        // integrity within 0–10% for one minute straight. The deliberate
+        // overload (stress above 100%) keeps the emergency shutdown away;
+        // dropping the overload below 10% integrity lets it fire — and ends
+        // the ride. A misstep to 0% is the detonation, to 11% — progress reset.
+        if (shield.getState() == ReactorShield.State.WORKING
+                && shield.getIntegrity() > 0
+                && shield.getIntegrity() <= SENIOR_OPS_BAND_MAX) {
+            if (++advSeniorOpsTicks >= SENIOR_OPS_TICKS_REQUIRED) {
+                advSeniorOpsTicks = 0;
+                grantAdvancementNear("datapack/senior_reactor_ops");
+            }
+        } else {
+            advSeniorOpsTicks = 0;
         }
 
         boolean heating = lasers.isHeating();
