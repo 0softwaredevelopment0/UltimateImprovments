@@ -4,8 +4,10 @@ import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
 
 /**
- * Reactor state — core, case, wear and recipe parameters.
- * Contains only fields and getter/setter methods, no tick logic.
+ * Reactor state transfer object for persistence (ReactorManager →
+ * ReactorPersistence → DB and back). Contains only fields and
+ * getter/setter methods, no tick logic — the live simulation state lives
+ * in {@link ReactorManager} and its subsystems.
  */
 public class ReactorState {
 
@@ -16,10 +18,7 @@ public class ReactorState {
     // Core parameters
     private int coreTemp;          // Core temperature, C* [-273 .. 2,000,000,000]
     private double shieldPress;    // Shield pressure, MPa (≈10.01 at working temp 10M C*)
-    private double spin;           // Core spin, RPS (0.95x of the ten-million multiplier)
-    private int coreCaseTemp;
-    private int coreCasePress;
-    private int coreCaseInt = 100;
+    private double spin;           // Core spin, RPS (95 000 at the 10M working point)
 
     // Fusion
     private double fusionParticles;
@@ -33,15 +32,12 @@ public class ReactorState {
 
     // Energy
     private long energyGenerated;
-    private double energyRemainder;
 
-    // Lasers (roof controls): startup latch + powers P1, P2 (0..100),
-    // Stab (0..200), Absorber valve (0..100)
+    // Lasers: startup latch + powers P1, P2 (0..100), Stab (0..200), Absorber valve (0..100)
     private boolean laserStarted;
     private double[] laserPowers = new double[4];
 
     private boolean structureDamaged;
-    private int damageWarnTick;
 
     // Shield (full restore — no loss on restart)
     private String shieldState = "OFFLINE";   // OFFLINE / CREATING / WORKING / FAILED
@@ -67,40 +63,6 @@ public class ReactorState {
     private String startupPhase = "NONE";
     private int startupTicks;
 
-    public boolean isStructureDamaged() { return structureDamaged; }
-    public void setStructureDamaged(boolean val) { structureDamaged = val; }
-
-    public String getShieldState() { return shieldState; }
-    public void setShieldState(String val) { shieldState = val == null ? "OFFLINE" : val; }
-    public double getShieldIntegrity() { return shieldIntegrity; }
-    public void setShieldIntegrity(double val) { shieldIntegrity = Math.max(0, Math.min(100, val)); }
-    public int getShieldFailCountdown() { return shieldFailCountdown; }
-    public void setShieldFailCountdown(int val) { shieldFailCountdown = Math.max(0, val); }
-
-    public String getSelfdestructPhase() { return selfdestructPhase; }
-    public void setSelfdestructPhase(String val) { selfdestructPhase = val == null ? "NONE" : val; }
-    public int getSelfdestructTicks() { return selfdestructTicks; }
-    public void setSelfdestructTicks(int val) { selfdestructTicks = Math.max(0, val); }
-    public boolean isSelfdestructDone() { return selfdestructDone; }
-    public void setSelfdestructDone(boolean val) { selfdestructDone = val; }
-    public boolean isSelfdestructCancelled() { return selfdestructCancelled; }
-    public void setSelfdestructCancelled(boolean val) { selfdestructCancelled = val; }
-
-    public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
-    public void setCoreEmergencyStopped(boolean val) { coreEmergencyStopped = val; }
-
-    public String getStallPhase() { return stallPhase; }
-    public void setStallPhase(String val) { stallPhase = val == null ? "NONE" : val; }
-    public int getStallTicks() { return stallTicks; }
-    public void setStallTicks(int val) { stallTicks = Math.max(0, val); }
-    public boolean isCoreOffline() { return coreOffline; }
-    public void setCoreOffline(boolean val) { coreOffline = val; }
-
-    public String getStartupPhase() { return startupPhase; }
-    public void setStartupPhase(String val) { startupPhase = val == null ? "NONE" : val; }
-    public int getStartupTicks() { return startupTicks; }
-    public void setStartupTicks(int val) { startupTicks = Math.max(0, val); }
-
     /** Copies all fields from another state (used by persistence load). */
     public void copyFrom(ReactorState o) {
         reactorLocation = o.reactorLocation;
@@ -109,9 +71,6 @@ public class ReactorState {
         coreTemp = o.coreTemp;
         shieldPress = o.shieldPress;
         spin = o.spin;
-        coreCaseTemp = o.coreCaseTemp;
-        coreCasePress = o.coreCasePress;
-        coreCaseInt = o.coreCaseInt;
         fusionParticles = o.fusionParticles;
         fusionCollected = o.fusionCollected;
         caseBroken = o.caseBroken;
@@ -119,7 +78,6 @@ public class ReactorState {
         casePress = o.casePress;
         caseIntegrity = o.caseIntegrity;
         energyGenerated = o.energyGenerated;
-        energyRemainder = o.energyRemainder;
         laserStarted = o.laserStarted;
         laserPowers = o.laserPowers == null ? new double[4] : o.laserPowers.clone();
         structureDamaged = o.structureDamaged;
@@ -137,24 +95,6 @@ public class ReactorState {
         startupPhase = o.startupPhase;
         startupTicks = o.startupTicks;
     }
-
-    // Tick counters
-    private int soundTick;
-    private int displayTick;
-    private boolean prevHeating;
-    private boolean prevCooling;
-    private int integrityWarnTick;
-    private int noFuelWarnTick;
-
-    // Display (smooth)
-    private double displayCoreTemp;
-    private double displayShieldPress;
-    private double displaySpin;
-    private double displayCoreShInt = 100;
-    private double displayCoreCaseTemp;
-    private double displayCoreCasePress;
-    private double displayCoreCaseInt = 100;
-    private double displayEnergyRate;
 
     // =========================
     // LOCATION
@@ -195,19 +135,6 @@ public class ReactorState {
     public void setSpin(double val) { spin = Math.max(0, val); }
 
     // =========================
-    // CASE
-    // =========================
-    public int getCoreCaseTemp() { return coreCaseTemp; }
-    public void setCoreCaseTemp(int val) { coreCaseTemp = val; }
-    public void addCoreCaseTemp(int val) { coreCaseTemp = Math.min(coreCaseTemp + val, ReactorConfig.getInstance().getCaseTempMax()); }
-
-    public int getCoreCasePress() { return coreCasePress; }
-    public void setCoreCasePress(int val) { coreCasePress = val; }
-
-    public int getCoreCaseInt() { return coreCaseInt; }
-    public void setCoreCaseInt(int val) { coreCaseInt = Math.max(0, Math.min(100, val)); }
-
-    // =========================
     // RECIPE
     // =========================
     public double getFusionParticles() { return fusionParticles; }
@@ -229,9 +156,6 @@ public class ReactorState {
     // =========================
     public long getEnergyGenerated() { return energyGenerated; }
     public void setEnergyGenerated(long val) { energyGenerated = val; }
-    public double getEnergyRemainder() { return energyRemainder; }
-    public void setEnergyRemainder(double val) { energyRemainder = val; }
-    public void addEnergyGenerated(int val) { energyGenerated += val; }
 
     // =========================
     // LASERS
@@ -246,101 +170,49 @@ public class ReactorState {
         }
     }
 
-    // =========================
-    // TICK COUNTERS
-    // =========================
-    public int getDisplayTick() { return displayTick; }
-    public void setDisplayTick(int val) { displayTick = val; }
-    public void incrementDisplayTick() { displayTick++; }
-
-    public boolean isPrevHeating() { return prevHeating; }
-    public void setPrevHeating(boolean val) { prevHeating = val; }
-    public boolean isPrevCooling() { return prevCooling; }
-    public void setPrevCooling(boolean val) { prevCooling = val; }
-
-    public int getIntegrityWarnTick() { return integrityWarnTick; }
-    public void setIntegrityWarnTick(int val) { integrityWarnTick = val; }
-    public int getNoFuelWarnTick() { return noFuelWarnTick; }
-    public void setNoFuelWarnTick(int val) { noFuelWarnTick = val; }
+    public boolean isStructureDamaged() { return structureDamaged; }
+    public void setStructureDamaged(boolean val) { structureDamaged = val; }
 
     // =========================
-    // DISPLAY (interpolated/smoothed)
+    // SHIELD
     // =========================
-    public double getDisplayCoreTemp() { return displayCoreTemp; }
-    public void setDisplayCoreTemp(double val) { displayCoreTemp = val; }
-    public double getDisplayShieldPress() { return displayShieldPress; }
-    public void setDisplayShieldPress(double val) { displayShieldPress = val; }
-    public double getDisplaySpin() { return displaySpin; }
-    public void setDisplaySpin(double val) { displaySpin = val; }
-    public double getDisplayCoreShInt() { return displayCoreShInt; }
-    public void setDisplayCoreShInt(double val) { displayCoreShInt = val; }
-    public double getDisplayCoreCaseTemp() { return displayCoreCaseTemp; }
-    public void setDisplayCoreCaseTemp(double val) { displayCoreCaseTemp = val; }
-    public double getDisplayCoreCasePress() { return displayCoreCasePress; }
-    public void setDisplayCoreCasePress(double val) { displayCoreCasePress = val; }
-    public double getDisplayCoreCaseInt() { return displayCoreCaseInt; }
-    public void setDisplayCoreCaseInt(double val) { displayCoreCaseInt = val; }
-    public double getDisplayEnergyRate() { return displayEnergyRate; }
-    public void setDisplayEnergyRate(double val) { displayEnergyRate = val; }
+    public String getShieldState() { return shieldState; }
+    public void setShieldState(String val) { shieldState = val == null ? "OFFLINE" : val; }
+    public double getShieldIntegrity() { return shieldIntegrity; }
+    public void setShieldIntegrity(double val) { shieldIntegrity = Math.max(0, Math.min(100, val)); }
+    public int getShieldFailCountdown() { return shieldFailCountdown; }
+    public void setShieldFailCountdown(int val) { shieldFailCountdown = Math.max(0, val); }
 
     // =========================
-    // INT DISPLAY GETTERS
+    // SELF-DESTRUCT
     // =========================
-    public int getDisplayCoreTempInt() { return (int) Math.round(displayCoreTemp); }
-    public int getDisplayShieldPressInt() { return (int) Math.round(displayShieldPress); }
-    public int getDisplayCoreShIntInt() { return (int) Math.round(displayCoreShInt); }
-    public int getDisplayCoreCaseTempInt() { return (int) Math.round(displayCoreCaseTemp); }
-    public int getDisplayCoreCasePressInt() { return (int) Math.round(displayCoreCasePress); }
-    public int getDisplayCoreCaseIntInt() { return (int) Math.round(displayCoreCaseInt); }
+    public String getSelfdestructPhase() { return selfdestructPhase; }
+    public void setSelfdestructPhase(String val) { selfdestructPhase = val == null ? "NONE" : val; }
+    public int getSelfdestructTicks() { return selfdestructTicks; }
+    public void setSelfdestructTicks(int val) { selfdestructTicks = Math.max(0, val); }
+    public boolean isSelfdestructDone() { return selfdestructDone; }
+    public void setSelfdestructDone(boolean val) { selfdestructDone = val; }
+    public boolean isSelfdestructCancelled() { return selfdestructCancelled; }
+    public void setSelfdestructCancelled(boolean val) { selfdestructCancelled = val; }
+
+    public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
+    public void setCoreEmergencyStopped(boolean val) { coreEmergencyStopped = val; }
 
     // =========================
-    // RESET
+    // STALL SHUTDOWN
     // =========================
-    public void resetAll() {
-        coreTemp = 0;
-        shieldPress = 0;
-        spin = 0;
-        coreCaseTemp = 0;
-        coreCasePress = 0;
-        coreCaseInt = 100;
-        fusionParticles = 0;
-        fusionCollected = 0;
-        caseBroken = false;
-        caseTemp = -273;
-        casePress = 0;
-        caseIntegrity = 100;
-        energyGenerated = 0;
-        energyRemainder = 0;
+    public String getStallPhase() { return stallPhase; }
+    public void setStallPhase(String val) { stallPhase = val == null ? "NONE" : val; }
+    public int getStallTicks() { return stallTicks; }
+    public void setStallTicks(int val) { stallTicks = Math.max(0, val); }
+    public boolean isCoreOffline() { return coreOffline; }
+    public void setCoreOffline(boolean val) { coreOffline = val; }
 
-        soundTick = 0;
-        noFuelWarnTick = 0;
-
-        displayCoreTemp = 0;
-        displayShieldPress = 0;
-        displaySpin = 0;
-        displayCoreShInt = 100;
-        displayCoreCaseTemp = 0;
-        displayCoreCasePress = 0;
-        displayCoreCaseInt = 100;
-        displayEnergyRate = 0;
-        displayTick = 0;
-        prevHeating = false;
-        prevCooling = false;
-        integrityWarnTick = 0;
-        laserStarted = false;
-        laserPowers = new double[4];
-        shieldState = "OFFLINE";
-        shieldIntegrity = 0;
-        shieldFailCountdown = 0;
-        selfdestructPhase = "NONE";
-        selfdestructTicks = 0;
-        selfdestructDone = false;
-        selfdestructCancelled = false;
-        coreEmergencyStopped = false;
-        stallPhase = "NONE";
-        stallTicks = 0;
-        coreOffline = false;
-        startupPhase = "NONE";
-        startupTicks = 0;
-    }
+    // =========================
+    // STARTUP SEQUENCE
+    // =========================
+    public String getStartupPhase() { return startupPhase; }
+    public void setStartupPhase(String val) { startupPhase = val == null ? "NONE" : val; }
+    public int getStartupTicks() { return startupTicks; }
+    public void setStartupTicks(int val) { startupTicks = Math.max(0, val); }
 }

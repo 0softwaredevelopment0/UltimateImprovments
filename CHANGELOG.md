@@ -62,6 +62,29 @@ in this file.
   configs keep working until renamed manually.
 
 ### Fixed
+- **The `dfc_unstable` advancement is now obtainable** — its grant check
+  (`ReactorManager.checkDfcUnstable`) was defined but never called, so the
+  parent of the whole DFC advancement branch could never fire. It is now
+  checked every tick with the running core: the first shield or case
+  integrity drop below 100% while the core is active grants it (once per
+  reactor).
+- **Reactor broadcasts reach the advancement grant radius** — event
+  messages were sent only within 15 blocks of the anchor while all DFC
+  advancements grant within 30, so a player could earn an advancement
+  without ever seeing the warning that caused it (e.g. the T-10s
+  detonation "run" message). Broadcasts now use the same 30-block radius
+  (new `BROADCAST_RADIUS` constant).
+- **The legacy `core_case_temp/press/int` DB columns are no longer
+  written** — the persistence DTO carried a dead inner-case stat trio that
+  was always saved as 0/0/100 and ignored on load (the live case lives in
+  `case_broken/temp/press/int`). The columns remain in existing databases,
+  just unused.
+- **Dead code cleanup in the reactor package** — `ReactorState` trimmed to
+  the fields persistence actually uses (the unused smoothed-display
+  values, tick counters and the inner-case trio are gone), a stray `;`
+  after a method in `ReactorCase`, stale spin comments fixed (the core
+  spin target is 95 000 RPS at the working point, not "0.95 RPS").
+
 - **Host terminal channel on Windows** — commands ran through `cmd.exe /c`
   (no `ls` and no PowerShell aliases → exit 1) and the output was read as
   UTF-8 while cmd writes the OEM codepage (CP866 on a Russian locale),

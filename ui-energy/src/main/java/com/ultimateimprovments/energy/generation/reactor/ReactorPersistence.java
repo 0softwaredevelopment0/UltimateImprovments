@@ -24,12 +24,11 @@ public class ReactorPersistence {
         String id = state.getReactorId();
         if (loc == null || id == null) return;
 
-        try (Connection con = DatabaseManager.getConnection();
+            try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement("""
                 INSERT OR REPLACE INTO reactors
                 (reactor_id, world, x, y, z,
                  core_temp, shield_press, spin,
-                 core_case_temp, core_case_press, core_case_int,
                  energy_generated,
                  laser_started, laser_p1, laser_p2, laser_stab, laser_absorber,
                  fusion_particles, fusion_collected,
@@ -41,7 +40,6 @@ public class ReactorPersistence {
                  stall_phase, stall_ticks, core_offline,
                  startup_phase, startup_ticks)
                  VALUES (?, ?, ?, ?, ?,
-                         ?, ?, ?,
                          ?, ?, ?,
                          ?,
                          ?, ?, ?, ?, ?,
@@ -55,6 +53,8 @@ public class ReactorPersistence {
                          ?, ?)
             """)) {
 
+            // The legacy core_case_temp/press/int columns (old inner-case stats)
+            // are no longer written — the live case lives in case_broken/temp/press/int.
             ps.setString(1, id);
             ps.setString(2, loc.getWorld().getName());
             ps.setInt(3, loc.getBlockX());
@@ -63,36 +63,33 @@ public class ReactorPersistence {
             ps.setInt(6, state.getCoreTemp());
             ps.setDouble(7, state.getShieldPress());
             ps.setDouble(8, state.getSpin());
-            ps.setInt(9, state.getCoreCaseTemp());
-            ps.setInt(10, (int) Math.round(state.getCoreCasePress() / 1000.0)); // kPa → MPa
-            ps.setInt(11, state.getCoreCaseInt());
-            ps.setLong(12, state.getEnergyGenerated());
-            ps.setInt(13, state.isLaserStarted() ? 1 : 0);
+            ps.setLong(9, state.getEnergyGenerated());
+            ps.setInt(10, state.isLaserStarted() ? 1 : 0);
             double[] lp = state.getLaserPowers();
-            ps.setDouble(14, lp.length > 0 ? lp[0] : 0);
-            ps.setDouble(15, lp.length > 1 ? lp[1] : 0);
-            ps.setDouble(16, lp.length > 2 ? lp[2] : 0);
-            ps.setDouble(17, lp.length > 3 ? lp[3] : 0);
-            ps.setDouble(18, state.getFusionParticles());
-            ps.setDouble(19, state.getFusionCollected());
-            ps.setInt(20, state.isCaseBroken() ? 1 : 0);
-            ps.setInt(21, state.getCaseTemp());
-            ps.setDouble(22, state.getCasePress());
-            ps.setInt(23, state.getCaseIntegrity());
-            ps.setInt(24, state.isStructureDamaged() ? 1 : 0);
-            ps.setString(25, state.getShieldState());
-            ps.setDouble(26, state.getShieldIntegrity());
-            ps.setInt(27, state.getShieldFailCountdown());
-            ps.setString(28, state.getSelfdestructPhase());
-            ps.setInt(29, state.getSelfdestructTicks());
-            ps.setInt(30, state.isSelfdestructDone() ? 1 : 0);
-            ps.setInt(31, state.isSelfdestructCancelled() ? 1 : 0);
-            ps.setInt(32, state.isCoreEmergencyStopped() ? 1 : 0);
-            ps.setString(33, state.getStallPhase());
-            ps.setInt(34, state.getStallTicks());
-            ps.setInt(35, state.isCoreOffline() ? 1 : 0);
-            ps.setString(36, state.getStartupPhase());
-            ps.setInt(37, state.getStartupTicks());
+            ps.setDouble(11, lp.length > 0 ? lp[0] : 0);
+            ps.setDouble(12, lp.length > 1 ? lp[1] : 0);
+            ps.setDouble(13, lp.length > 2 ? lp[2] : 0);
+            ps.setDouble(14, lp.length > 3 ? lp[3] : 0);
+            ps.setDouble(15, state.getFusionParticles());
+            ps.setDouble(16, state.getFusionCollected());
+            ps.setInt(17, state.isCaseBroken() ? 1 : 0);
+            ps.setInt(18, state.getCaseTemp());
+            ps.setDouble(19, state.getCasePress());
+            ps.setInt(20, state.getCaseIntegrity());
+            ps.setInt(21, state.isStructureDamaged() ? 1 : 0);
+            ps.setString(22, state.getShieldState());
+            ps.setDouble(23, state.getShieldIntegrity());
+            ps.setInt(24, state.getShieldFailCountdown());
+            ps.setString(25, state.getSelfdestructPhase());
+            ps.setInt(26, state.getSelfdestructTicks());
+            ps.setInt(27, state.isSelfdestructDone() ? 1 : 0);
+            ps.setInt(28, state.isSelfdestructCancelled() ? 1 : 0);
+            ps.setInt(29, state.isCoreEmergencyStopped() ? 1 : 0);
+            ps.setString(30, state.getStallPhase());
+            ps.setInt(31, state.getStallTicks());
+            ps.setInt(32, state.isCoreOffline() ? 1 : 0);
+            ps.setString(33, state.getStartupPhase());
+            ps.setInt(34, state.getStartupTicks());
 
             ps.executeUpdate();
 
@@ -164,9 +161,6 @@ public class ReactorPersistence {
                 try { state.setSpin(rs.getDouble("spin")); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load spin: " + e.getMessage());
                 }
-                state.setCoreCaseTemp(rs.getInt("core_case_temp"));
-                state.setCoreCasePress(rs.getInt("core_case_press") * 1000); // MPa → kPa
-                state.setCoreCaseInt(rs.getInt("core_case_int"));
                 try {
                     state.setFusionParticles(rs.getDouble("fusion_particles"));
                     state.setFusionCollected(rs.getDouble("fusion_collected"));
