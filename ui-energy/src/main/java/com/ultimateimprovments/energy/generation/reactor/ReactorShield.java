@@ -365,6 +365,7 @@ public class ReactorShield {
         reactor.broadcastRaw(StructuresMessages.get(
                 "shield_failure",
                 "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
+        reactor.onShieldFailureCountdown();
     }
 
     /** Shield breach detonation: primed creeper (fuse 0) + radius from config. */
