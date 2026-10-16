@@ -155,7 +155,6 @@ final class ConfigRules {
             integer("reactor.selfdestruct_no_signal_sec", 0, 3600),
             integer("reactor.selfdestruct_timed_sec", 1, 3600),
             dbl("reactor.selfdestruct_overpower_rate", 0.1, 100.0),
-            dbl("reactor.selfdestruct_adv_radius", 1.0, 200.0),
             dbl("reactor.absorber_cool_rate", 0.0, 2000000000.0),
             dbl("reactor.absorber_rad_per_sec", 0.0, 100000.0),
             integer("reactor.shield_particle_rod_count", 0, 1000),

@@ -5,6 +5,18 @@ in this file.
 
 ## [Unreleased]
 
+### Added
+- **DFC advancement "Operator Incompetence"** — granted when the running
+  reactor's core cools below the critical stall warning threshold (10k C*),
+  i.e. the operators let the DFC drift toward a potential reaction stall.
+  Goal frame, ice icon, 50 XP, parent `ui:datapack/start_dfc`.
+
+### Changed
+- **All DFC advancements now require proximity** — grants go only to players
+  within 30 blocks of the DFC structure center (previously a mixed bag of
+  everyone-online and a 20-block radius). The now-unused
+  `reactor.selfdestruct_adv_radius` config key was removed.
+
 ### Changed
 - **The "linux" chat channel is renamed to "terminal"** — `/ui chatchnl terminal`,
   enum `ChatChannel.TERMINAL`, permission `ui.chat.channel.terminal`, config

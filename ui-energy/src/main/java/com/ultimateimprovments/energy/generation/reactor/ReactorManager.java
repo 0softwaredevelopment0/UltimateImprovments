@@ -224,6 +224,9 @@ public class ReactorManager {
         if (prevTemp > STALL_WARN_CRITICAL && coreTemp <= STALL_WARN_CRITICAL) {
             broadcast(StructuresMessages.get("stall_warn_critical",
                     "<aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!"));
+
+            // 🏆 Advancement: operator_incompetence — brought the DFC to a potential reaction stall
+            grantAdvancementNear("datapack/operator_incompetence");
         }
         if (prevTemp > 0 && coreTemp <= 0) {
             broadcast(StructuresMessages.get("stall_warn_failure",
@@ -753,24 +756,25 @@ public class ReactorManager {
         }
     }
 
-    private void grantAdvancementAll(String key) {
-        Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
-        for (Player player : online) {
-            if (reactorLocation != null
-                    && player.getWorld().equals(reactorLocation.getWorld())
-                    && player.getLocation().distanceSquared(reactorLocation) <= 225) {
-                grantAdvancement(player, key);
-            }
-        }
+    /**
+     * Advancement grant radius — every DFC advancement is granted only to
+     * players within this distance (blocks) of the DFC structure center.
+     */
+    private static final double ADV_GRANT_RADIUS = 30.0;
+
+    /** The geometric center of the DFC structure (10×11×9 box around the anchor). */
+    private Location reactorCenter() {
+        return reactorLocation.clone().add(0.5, -4.5, 0.5);
     }
 
-    /** Grants to every online player within {@code radius} blocks of the reactor center. */
-    private void grantAdvancementNear(String key, double radius) {
+    /** Grants to every online player within {@link #ADV_GRANT_RADIUS} of the reactor center. */
+    private void grantAdvancementNear(String key) {
         if (reactorLocation == null) return;
-        double radiusSq = radius * radius;
+        double radiusSq = ADV_GRANT_RADIUS * ADV_GRANT_RADIUS;
+        Location center = reactorCenter();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getWorld().equals(reactorLocation.getWorld())
-                    && player.getLocation().distanceSquared(reactorLocation) <= radiusSq) {
+            if (player.getWorld().equals(center.getWorld())
+                    && player.getLocation().distanceSquared(center) <= radiusSq) {
                 grantAdvancement(player, key);
             }
         }
@@ -1121,23 +1125,21 @@ public class ReactorManager {
         if (lasers.isStarted() && !advStartDfcGranted) {
             advStartDfcGranted = true;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-                grantAdvancementAll("datapack/start_dfc"));
+                grantAdvancementNear("datapack/start_dfc"));
         }
 
         // 🏆 Advancement: dfc_self_destruct — the protocol just armed
         if (selfdestructJustRolled) {
             selfdestructJustRolled = false;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-                grantAdvancementNear("datapack/dfc_self_destruct",
-                        cfg.getSelfdestructAdvRadius()));
+                grantAdvancementNear("datapack/dfc_self_destruct"));
         }
 
         // 🏆 Advancement: power_of_fusion — the fusion completed one ancient debris
         if (fusionDebrisJustCrafted) {
             fusionDebrisJustCrafted = false;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-                grantAdvancementNear("datapack/power_of_fusion",
-                        cfg.getSelfdestructAdvRadius()));
+                grantAdvancementNear("datapack/power_of_fusion"));
         }
 
         // =========================
@@ -1394,7 +1396,7 @@ public class ReactorManager {
         if (!advDfcUnstableGranted && (shield.getIntegrity() < 100 || caseSys.getIntegrity() < 100)) {
             advDfcUnstableGranted = true;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-                grantAdvancementAll("datapack/dfc_unstable"));
+                grantAdvancementNear("datapack/dfc_unstable"));
         }
     }
 
@@ -1486,7 +1488,7 @@ public class ReactorManager {
         // 🏆 Advancement: explode_dfc — reactor explosion
         if (!advExplodeDfcGranted) {
             advExplodeDfcGranted = true;
-            grantAdvancementAll("datapack/explode_dfc");
+            grantAdvancementNear("datapack/explode_dfc");
         }
 
         // 🏆 Advancement: one_time_heater — player inside the reactor during the explosion
