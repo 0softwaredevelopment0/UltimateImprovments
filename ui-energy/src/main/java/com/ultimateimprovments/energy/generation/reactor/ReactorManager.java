@@ -262,6 +262,14 @@ public class ReactorManager {
      * start — the next shutdown step waits until −273 is reached.
      */
     public void tryManualShutdownTrigger() {
+        // Self-destruct, timed countdown: the startup lamp pulse becomes the
+        // secret protocol-cancel attempt — 0.5% per rising edge that the
+        // systems "malfunction" the protocol away. Past the announcement of
+        // the detonation procedure (TIMED over) it is already too late.
+        if (selfdestructPhase == SelfdestructPhase.TIMED) {
+            tryCancelSelfdestruct();
+            return;
+        }
         if (stallPhase != StallPhase.NONE) return;
         if (structureDamaged || isSelfdestructActive()) return;
         if (shield.getState() != ReactorShield.State.WORKING) return;
@@ -273,6 +281,28 @@ public class ReactorManager {
         stallTicks = 0;
         broadcast(StructuresMessages.get("stall_shutdown_manual",
                 "<white>Core shutdown initiated due to manual trigger, please wait."));
+        saveToDb();
+    }
+
+    /**
+     * The secret protocol cancel (startup lamp pulse during the timed
+     * countdown): 0.5% chance per pulse that the systems malfunction the
+     * protocol away — it disarms, the reactor powers down (controlled shield
+     * ramp, lasers off, controls unlocked) and can be started again later.
+     * 🏆 Advancement: is_it_really_that_simple — everyone near the reactor.
+     */
+    private void tryCancelSelfdestruct() {
+        if (Math.random() * 100.0 >= 0.5) return;
+
+        selfdestructPhase = SelfdestructPhase.NONE;
+        selfdestructTicks = 0;
+        selfdestructDone = true;
+        lasers.reset();
+        shield.beginShutdown();
+        display.resetSignCache();
+        broadcast(StructuresMessages.get("selfdestruct_cancelled",
+                "<white>Self-destruct protocol has been cancelled due to system malfunction."));
+        grantAdvancementNear("datapack/is_it_really_that_simple");
         saveToDb();
     }
 
