@@ -147,9 +147,13 @@ public final class ReactorCommand {
             return ReactorStructure.getValidationErrors(center);
         }
 
+        var result = tmpl.checkAt(center);
         java.util.List<String> errors = new java.util.ArrayList<>();
-        for (var fix : tmpl.checkAt(center).fixes()) {
+        for (var fix : result.fixes()) {
             errors.add(com.ultimateimprovments.util.StructureTemplate.formatFix(fix, center));
+        }
+        for (var fix : result.forbidden()) {
+            errors.add(com.ultimateimprovments.util.StructureTemplate.formatFixForbidden(fix, center));
         }
         return errors;
     }

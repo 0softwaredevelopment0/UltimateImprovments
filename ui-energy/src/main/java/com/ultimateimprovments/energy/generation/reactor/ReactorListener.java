@@ -442,23 +442,32 @@ public class ReactorListener implements Listener {
                 .replace("%name%", best.template().getDisplayName())
                 .replace("%percent%", String.valueOf(best.result().percent()))));
 
-        if (best.result().fixes().isEmpty()) {
+        // Regular mismatches + forbidden blocks in one hint list (forbidden
+        // entries keep their distinct "forbidden" formatting)
+        java.util.List<StructureTemplate.Fix> allFixes =
+                new java.util.ArrayList<>(best.result().fixes());
+        allFixes.addAll(best.result().forbidden());
+
+        if (allFixes.isEmpty()) {
             player.sendMessage(MessageUtil.parse(msg("no_fixes_needed",
                     "<gray>No critical mismatches found — check the frame position.")));
             return;
         }
 
-        int limit = Math.min(best.result().fixes().size(), 15);
+        int limit = Math.min(allFixes.size(), 15);
         player.sendMessage(MessageUtil.parse(msg("fixes_header",
                         "<gray>To assemble you need (%count% pcs.):")
-                .replace("%count%", String.valueOf(best.result().fixes().size()))));
-        for (StructureTemplate.Fix fix : best.result().fixes().subList(0, limit)) {
-            player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>" + StructureTemplate.formatFix(fix, best.result().center())));
+                .replace("%count%", String.valueOf(allFixes.size()))));
+        for (StructureTemplate.Fix fix : allFixes.subList(0, limit)) {
+            String text = best.result().forbidden().contains(fix)
+                    ? StructureTemplate.formatFixForbidden(fix, best.result().center())
+                    : StructureTemplate.formatFix(fix, best.result().center());
+            player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>" + text));
         }
-        if (best.result().fixes().size() > limit) {
+        if (allFixes.size() > limit) {
             player.sendMessage(MessageUtil.parse(msg("fixes_more",
                             "<dark_gray> • <gray>...and %count% more fixes")
-                    .replace("%count%", String.valueOf(best.result().fixes().size() - limit))));
+                    .replace("%count%", String.valueOf(allFixes.size() - limit))));
         }
     }
 

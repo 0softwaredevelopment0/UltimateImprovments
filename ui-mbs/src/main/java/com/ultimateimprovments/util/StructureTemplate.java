@@ -42,6 +42,11 @@ import java.util.zip.GZIPInputStream;
  * (interior decor space, the space above the top face) is <b>ignored</b> — outside
  * the functional core it cannot interfere with the structure.
  * <p>
+ * <b>Forbidden blocks</b> (see {@link #FORBIDDEN_BLOCKS} and
+ * {@link #FORBIDDEN_OVERRIDES}) are the exception: they fail the check of ANY
+ * structure no matter where in the full NBT footprint they stand, reported
+ * separately in {@link MatchResult#forbidden()}.
+ * <p>
  * When no exact match exists, {@link #bestMatch(Location, int)} finds the candidate
  * center with the fewest mismatched cells and reports the match percentage together
  * with concrete fix instructions (place/break/replace with coordinates).
@@ -68,7 +73,8 @@ public class StructureTemplate {
     private record AirZone(int dx, int dy, int dz, double radius) {}
 
     /** Result of checking one candidate center position against a template. */
-    public record MatchResult(boolean matched, int total, int mismatches, Location center, List<Fix> fixes) {
+    public record MatchResult(boolean matched, int total, int mismatches, Location center,
+                              List<Fix> fixes, List<Fix> forbidden) {
 
         /** Percentage of matching cells (0..100). */
         public int percent() {
@@ -139,30 +145,47 @@ public class StructureTemplate {
      */
     public MatchResult checkAt(Location center) {
         if (center == null || center.getWorld() == null || totalCells() == 0) {
-            return new MatchResult(false, Math.max(1, totalCells()), Math.max(1, totalCells()), center, List.of());
+            return new MatchResult(false, Math.max(1, totalCells()), Math.max(1, totalCells()), center,
+                    List.of(), List.of());
         }
 
         World world = center.getWorld();
         int cx = center.getBlockX(), cy = center.getBlockY(), cz = center.getBlockZ();
 
         List<Fix> fixes = new ArrayList<>();
+        List<Fix> forbidden = new ArrayList<>();
         for (BlockEntry b : blocks) {
             Material actual = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
-            if (!materialMatches(b.material(), actual)) {
+            if (materialMatches(b.material(), actual)) continue;
+            // A forbidden material fails the check wherever it stands —
+            // even in place of an expected solid block (a clearer error
+            // than "place X" for something that must not be here at all)
+            if (isForbidden(name, actual)) {
+                forbidden.add(new Fix(b.dx(), b.dy(), b.dz(), b.material(), actual));
+            } else {
                 fixes.add(new Fix(b.dx(), b.dy(), b.dz(), b.material(), actual));
             }
         }
         for (BlockEntry b : airBlocks) {
             Material actual = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
             if (actual == Material.AIR) continue;
-            // Foreign block in an air cell: enforced only inside the
+            // Forbidden blocks fail everywhere in the full footprint —
+            // a chest parked far outside the core chamber is still not
+            // tolerated inside the structure
+            if (isForbidden(name, actual)) {
+                forbidden.add(new Fix(b.dx(), b.dy(), b.dz(), Material.AIR, actual));
+                continue;
+            }
+            // Other foreign blocks in an air cell: enforced only inside the
             // template's air-enforcement zones (the reactor core chamber) —
             // anywhere else it is decoration and cannot interfere
             if (!isAirEnforced(b)) continue;
             fixes.add(new Fix(b.dx(), b.dy(), b.dz(), Material.AIR, actual));
         }
 
-        return new MatchResult(fixes.isEmpty(), totalCells(), fixes.size(), center, List.copyOf(fixes));
+        int mismatchCount = fixes.size() + forbidden.size();
+        return new MatchResult(mismatchCount == 0, totalCells(), mismatchCount, center,
+                List.copyOf(fixes), List.copyOf(forbidden));
     }
 
     /**
@@ -322,6 +345,23 @@ public class StructureTemplate {
     /** Same as {@link #formatFix(Fix, Location)} but with offsets relative to the center. */
     public static String formatFixRelative(Fix f) {
         return formatFixMessage(f, "<white>[" + f.dx() + ", " + f.dy() + ", " + f.dz() + "]");
+    }
+
+    /**
+     * Formats a FORBIDDEN-block mismatch (from {@code MatchResult#forbidden()})
+     * — distinct from the regular place/break/replace fixes: the block must
+     * simply be broken, no template material can take its place.
+     */
+    public static String formatFixForbidden(Fix f, Location base) {
+        String where = base == null || base.getWorld() == null
+                ? "<white>[" + f.dx() + ", " + f.dy() + ", " + f.dz() + "]"
+                : "<white>[" + (base.getBlockX() + f.dx())
+                  + " " + (base.getBlockY() + f.dy())
+                  + " " + (base.getBlockZ() + f.dz()) + "]";
+        return StructuresMessages.get("fix_forbidden",
+                "<dark_red>forbidden</dark_red> <gray>%block% <gray>at %coords%")
+                .replace("%block%", blockName(f.actual()))
+                .replace("%coords%", where);
     }
 
     private static String formatFixMessage(Fix f, String where) {
@@ -587,6 +627,51 @@ public class StructureTemplate {
     private static final Map<String, int[]> ANCHOR_ADJUSTMENTS = Map.of(
             "darkfusionreactor", new int[]{ 0, -1, 0 }
     );
+
+    // =========================
+    // FORBIDDEN BLOCKS — the general mechanic: these materials fail the
+    // check of ANY structure no matter where in its full NBT footprint they
+    // stand (a solid or an air cell, inside or outside the air-enforcement
+    // zones): fluids and structure movers destroy any multi-block, and TNT
+    // is TNT.
+    // =========================
+    private static final Set<Material> FORBIDDEN_BLOCKS = Set.of(
+            Material.WATER, Material.LAVA,
+            Material.TNT,
+            Material.PISTON, Material.STICKY_PISTON);
+
+    // =========================
+    // FORBIDDEN OVERRIDES — per-structure additions, maintained by the
+    // developers for OUR own structures (not a user config): everything
+    // here fails the named template's check on top of the global list.
+    // <p>
+    // darkfusionreactor: containers would clash with the fuel/debris barrel
+    // systems and let players hide items inside the case; an OBSERVER wired
+    // against the roof control bulbs could auto-pulse the Trigger Action
+    // lamp — the reactor is started and stopped by a player, not by a
+    // redstone accident.
+    // =========================
+    private static final Map<String, Set<Material>> FORBIDDEN_OVERRIDES = Map.of(
+            "darkfusionreactor", buildReactorForbidden());
+
+    private static Set<Material> buildReactorForbidden() {
+        Set<Material> set = new HashSet<>(List.of(
+                Material.CHEST, Material.TRAPPED_CHEST, Material.ENDER_CHEST,
+                Material.HOPPER, Material.DROPPER, Material.DISPENSER,
+                Material.FURNACE, Material.BLAST_FURNACE, Material.SMOKER,
+                Material.BREWING_STAND, Material.OBSERVER));
+        for (Material m : Material.values()) {
+            if (m.name().endsWith("SHULKER_BOX")) set.add(m);
+        }
+        return set;
+    }
+
+    /** Whether this material fails the named template's check (global list + its override entry). */
+    private static boolean isForbidden(String templateName, Material m) {
+        if (FORBIDDEN_BLOCKS.contains(m)) return true;
+        Set<Material> override = FORBIDDEN_OVERRIDES.get(templateName);
+        return override != null && override.contains(m);
+    }
 
     /**
      * Per-template AIR-ENFORCEMENT ZONES: spheres (anchor-relative cell-offset
