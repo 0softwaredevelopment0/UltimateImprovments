@@ -203,7 +203,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     p.sendMessage(MessageUtil.parse(
                             MessageUtil.PREFIX + "<gold>Are you sure to run this command?"));
                     p.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
-                            + "<white>This action may cause <red>unforeseen conseqences"));
+                            + "<white>This action may cause <red>unforeseen consequences"));
                     p.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
                             + "<white>and this action is <red>irreversible<white>."));
                     p.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
