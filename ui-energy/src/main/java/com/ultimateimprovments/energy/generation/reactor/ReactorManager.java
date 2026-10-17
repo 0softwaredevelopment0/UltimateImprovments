@@ -304,7 +304,7 @@ public class ReactorManager {
         boolean manual = trigger == ShutdownTrigger.MANUAL;
         broadcast(StructuresMessages.get(manual ? "stall_shutdown_manual" : "stall_shutdown_automatic",
                 manual ? "<white>Core shutdown initiated due to manual trigger, please wait."
-                       : "<white>Core shutdown initiated due to automatical trigger, please wait."));
+                       : "<white>Core shutdown initiated due to automatic trigger, please wait."));
         saveToDb();
     }
 
@@ -488,7 +488,7 @@ public class ReactorManager {
                             "<white>Attempting shield re-creation..."));
                 } else if (meltdownTicks == 20 * 15) {
                     broadcast(StructuresMessages.get("meltdown_estimating",
-                            "<white>Estimating chance of sucessfull shutdown..."));
+                            "<white>Estimating chance of successful shutdown..."));
                 } else if (meltdownTicks == 20 * 20) {
                     broadcast(StructuresMessages.get("meltdown_chance",
                             "<white>Estimated chance of success: <yellow>%chance%%<white>.")
@@ -812,7 +812,7 @@ public class ReactorManager {
      * How the running final shutdown was entered. MANUAL is the operator
      * procedure (Trigger Action lamp pulse on a running reactor); AUTOMATIC
      * and RESTAB share the automatic chain — the trigger kind only selects
-     * the announcement (due to manual / automatical trigger) and whether
+     * the announcement (due to manual / automatic trigger) and whether
      * the emergency-stall advancement counts (saved_from_extinction —
      * AUTOMATIC only).
      */
