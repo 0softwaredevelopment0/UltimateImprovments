@@ -16,7 +16,7 @@ public class ReactorState {
     private String reactorId;
 
     // Core parameters
-    private int coreTemp;          // Core temperature, C* [-273 .. 2,000,000,000]
+    private int coreTemp;          // Core temperature, C* [tempMin .. 2,000,000,000]
     private double shieldPress;    // Shield pressure, MPa (≈10.01 at working temp 10M C*)
     private double spin;           // Core spin, RPS (95 000 at the 10M working point)
     // Dynamic lower temperature limit, C*: rolled from the build-site biome
@@ -63,7 +63,7 @@ public class ReactorState {
     private int meltdownTicks;
     private double restabChance;       // success chance captured at the attempt start
 
-    // Stall shutdown (reaction lost its heat → auto shutdown at −273 C*):
+    // Stall shutdown (reaction lost its heat → auto shutdown at the lower limit):
     // full restore — the procedure resumes after a restart mid-sequence
     private String stallPhase = "NONE"; // NONE / WAIT_POWER / ... / SHIELD_RAMP
     private int stallTicks;

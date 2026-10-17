@@ -21,6 +21,13 @@ in this file.
   venting ambient floor. New config keys (UI-MBS.toml `[reactor]`):
   `temp_limit_offset` (0.0), `temp_limit_biome_multiplier` (10.0),
   `temp_limit_biome_fallback` (1.0).
+
+### Removed
+- **Dead config keys `reactor.core_temp_min` and `reactor.case_temp_min`**
+  (default −273) — they have never affected anything: the floors were
+  hardcoded and are now the dynamic per-reactor lower temperature limit.
+  Removed from the code, ConfigRules and the UI-MBS.toml template; keys
+  left in live server configs are simply ignored.
 - **DFC meltdown restabilization** — a depleted shield no longer detonates
   instantly. The emergency systems deploy an auxiliary shield (100%
   integrity draining linearly to 0% over the T-3m window — the drain is

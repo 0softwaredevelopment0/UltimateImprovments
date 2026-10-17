@@ -290,16 +290,17 @@ public class ReactorManager {
 
     /**
      * The final shutdown phase — the shared chain every shutdown runs after
-     * its trigger: power lasers off one by one, heat dump to −273 C*, the
-     * stabilization lasers, the content absorber valve, the shield ramp and
+     * its trigger: power lasers off one by one, heat dump to the lower
+     * limit, the stabilization lasers, the content absorber valve, the
+     * shield ramp and
      * the offline mark (see {@link #tickStallShutdown()}). The MANUAL and
      * AUTOMATIC procedures differ only in the announcement: the operator
-     * manual trigger vs the automatic trigger (the −273 C* reaction-failure
-     * stall, the meltdown restabilization success).
+     * manual trigger vs the automatic trigger (the reaction-failure stall
+     * at the lower limit, the meltdown restabilization success).
      */
     private void beginFinalShutdown(ShutdownTrigger trigger) {
         stallTrigger = trigger;
-        // Every trigger dumps the heat to −273 C* at 10%/sec of the
+        // Every trigger dumps the heat to the lower limit at 10%/sec of the
         // shutdown-start temperature; the automatic stall is already there
         // and passes through the dump instantly.
         stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
@@ -683,8 +684,9 @@ public class ReactorManager {
                     broadcast(StructuresMessages.get("stall_power_lasers",
                             "<white>Shutting down power lasers..."));
                     lasers.shutDownLaser(ReactorLasers.LASER_P1);
-                    // Every trigger dumps the heat to −273 C* before the next
-                    // step (the −273 C* stall passes through instantly)
+                    // Every trigger dumps the heat to the lower limit before
+                    // the next step (a stall at the limit passes through
+                    // instantly)
                     stallPhase = StallPhase.HEAT_DUMP;
                     stallTicks = 0;
                 }
@@ -769,7 +771,7 @@ public class ReactorManager {
     /** Final step of the stall shutdown: the core is marked offline. */
     private void finishStallShutdown() {
         // 🏆 Advancement: saved_from_extinction — only the EMERGENCY shutdown
-        // counts (reaction failure, the automatic −273 C* stall). A manual
+        // counts (reaction failure, the automatic lower-limit stall). A manual
         // trigger shutdown or the restabilization success shutdown does not.
         boolean emergencyShutdown = stallTrigger == ShutdownTrigger.AUTOMATIC;
         lasers.setStarted(false);
@@ -890,8 +892,8 @@ public class ReactorManager {
     /**
      * Core temperature right after ignition, C* — the idle burn level the
      * startup sequence leaves the core at. The reaction is running, so the
-     * core must not sit at ambient −273 C* until the operator ramps the
-     * power lasers; without heating it decays back down at 1 C* per tick.
+     * core must not sit at the lower-limit ambient until the operator ramps
+     * the power lasers; without heating it decays back down at 1 C* per tick.
      */
     private static final int IGNITION_TEMP = 20_000;
 
@@ -1148,7 +1150,6 @@ public class ReactorManager {
     private ReactorConfig cfg;
     private boolean enabled;
     private int coreTempMax;
-    private int coreTempMin;
     private int coreWorkTemp;
     private double pressFollowRate;
     private double spinFollowRate;
@@ -1159,7 +1160,6 @@ public class ReactorManager {
         if (cfg == null) return;
         enabled = cfg.isEnabled();
         coreTempMax = cfg.getCoreTempMax();
-        coreTempMin = cfg.getCoreTempMin();
         coreWorkTemp = cfg.getCoreWorkTemp();
         pressFollowRate = cfg.getPressFollowRate();
         spinFollowRate = cfg.getSpinFollowRate();
@@ -1413,7 +1413,7 @@ public class ReactorManager {
         // stall after a restart. Rows saved before the stall_trigger column
         // fall back to the legacy stall_manual flag.
         stallTrigger = parseStallTrigger(state.getStallTrigger(), state.isStallManual());
-        // Every trigger dumps the heat to −273 C*; the dump rate is re-derived
+        // Every trigger dumps the heat to the lower limit; the dump rate is re-derived
         // from the current temperature (the persisted phase survives the restart)
         stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
         stallCoolRemainder = 0;
@@ -1579,8 +1579,12 @@ public class ReactorManager {
             // should show the white labels right away
             display.updateLampSigns(normalized);
             // Roll the dynamic lower temperature limit from the build-site
-            // biome — a disassemble + rebuild rolls a fresh one
+            // biome — a disassemble + rebuild rolls a fresh one. Nothing in
+            // this reactor may sit below its new limit (a fresh core starts
+            // at 0, the case at the old limit — raise both).
             this.tempMin = rollTempLimit(normalized);
+            if (coreTemp < tempMin) coreTemp = tempMin;
+            if (caseSys.getTemp() < tempMin) caseSys.setTemp(tempMin);
             saveToDb();
         } else {
             if (reactorLocation != null) {
@@ -1815,15 +1819,17 @@ public class ReactorManager {
 
         // =========================
         // NATURAL TEMP DECAY — passive cooling 1 C*/tick (always, even with
-        // a damaged structure: the core coasts on its own decay)
+        // a damaged structure: the core coasts on its own decay), down to
+        // the reactor's dynamic lower temperature limit
         // =========================
-        if (coreTemp > coreTempMin) {
-            coreTemp = Math.max(coreTempMin, coreTemp - 1);
+        if (coreTemp > tempMin) {
+            coreTemp = Math.max(tempMin, coreTemp - 1);
         }
 
         // =========================
-        // STALL — reaction lost its heat: threshold warnings (1M / 10k / 0 C*)
-        // and the automatic shutdown once the core reaches −273 C*
+        // STALL — reaction lost its heat: threshold warnings (1M / 10k C*),
+        // then the reaction-failure warning at the lower limit and the
+        // automatic shutdown 5s later
         // =========================
         checkStallWarnings(prevTemp);
         tryTriggerStallShutdown(prevTemp);

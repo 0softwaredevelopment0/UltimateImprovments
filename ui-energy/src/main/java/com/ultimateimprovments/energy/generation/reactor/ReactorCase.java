@@ -15,7 +15,8 @@ import java.util.Random;
  * <p>
  * The case has three parameters:
  * <ul>
- *   <li><b>Temperature (T)</b>, C*: −273..10 000. Rises only while fusion is
+ *   <li><b>Temperature (T)</b>, C*: lower limit..10 000 (the reactor's dynamic
+ *       lower temperature limit, −273 C* legacy). Rises only while fusion is
  *       running (+15 C* per sec at 150% speed, scaled by the speed).</li>
  *   <li><b>Pressure (P)</b>, MPa: 0..15, follows the case temperature the same
  *       way the shield pressure follows the core temperature.</li>
@@ -27,7 +28,8 @@ import java.util.Random;
  * </ul>
  * A breach (any missing pane) vents the case: every missing cell drains the
  * pressure at (broken/total) × 100% of the max per second and the temperature
- * at half that rate (floor −273 C*) — the fusion heat rise never outruns the
+ * at half that rate (floor = the reactor's lower temperature limit) — the
+ * fusion heat rise never outruns the
  * drain, so a breached case trends to ambient and stays there until repaired.
  * There is NO hard shatter and NO reset: a fully broken case is just every
  * pane gone, venting at full scale.
@@ -86,7 +88,7 @@ public class ReactorCase {
     private final Random random = new Random();
 
     private State state = State.OK;
-    private int temp = -273;          // C*, -273..10000
+    private int temp;                  // C*, lower limit..10000
     private double press;             // kPa, 0..15000 (shown as MPa)
     private int integrity = 100;      // 0..100 %, mirrors the live glass count
     private double jitterPress;      // smoothed jitter value for the venting display
@@ -105,6 +107,9 @@ public class ReactorCase {
 
     public ReactorCase(ReactorManager reactor) {
         this.reactor = reactor;
+        // Start at the reactor's lower temperature limit (the legacy −273
+        // default until the build rolls the biome-based one)
+        this.temp = reactor.getTempMin();
     }
 
     // =========================
