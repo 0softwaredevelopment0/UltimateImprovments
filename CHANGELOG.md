@@ -135,6 +135,11 @@ in this file.
   hangs directly under "The force of decay" (`react_with_antimatter`).
 
 ### Fixed
+- **The reactor warning ping no longer loops on a breached idle case** — the
+  0.5s integrity ping in `ReactorDisplay.tickSound` fired for a case
+  integrity below 100% regardless of the shield state, so any breach pinged
+  forever even on an offline reactor. The case-integrity condition is gated
+  on a WORKING shield, same as the shield-integrity one.
 - **"Saved from extinction" is no longer granted for every shutdown** — the
   grant in `finishStallShutdown()` fired for the manual trigger shutdown
   and the restabilization success shutdown too. Only the EMERGENCY shutdown

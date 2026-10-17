@@ -96,10 +96,13 @@ public class ReactorDisplay {
         // Warning pings only while the shield is actually operating (WORKING):
         // an OFFLINE shield (no startup yet, integrity 0) is its normal state,
         // and CREATING (forming) / SHUTDOWN (planned shutdown) legitimately run
-        // below 100% — they must not ping (fixes the startup ping bug).
+        // below 100% — they must not ping (fixes the startup ping bug). The
+        // case-integrity ping is gated the same way — a breached case on an
+        // idle/offline reactor must not ping forever.
         var shieldState = reactor.getShield().getState();
         boolean shieldActive = shieldState == ReactorShield.State.WORKING;
-        if ((shieldActive && reactor.getCoreShInt() < 100) || reactor.getCoreCaseInt() < 100) {
+        if (shieldActive
+                && (reactor.getCoreShInt() < 100 || reactor.getCoreCaseInt() < 100)) {
             base.getWorld().playSound(
                     base, Sound.BLOCK_NOTE_BLOCK_PLING,
                     SoundCategory.MASTER, 1.0f, 1.5f
