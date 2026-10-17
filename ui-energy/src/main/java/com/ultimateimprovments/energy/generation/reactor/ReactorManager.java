@@ -1728,9 +1728,16 @@ public class ReactorManager {
 
         // =========================
         // SHIELD INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%) — via the
-        // stress model; the case integrity lives in ReactorCase.
+        // stress model; the case integrity lives in ReactorCase. The
+        // AUXILIARY shield (meltdown restabilization) has its own warning
+        // set (75/50/25/10%) and the SHUTDOWN ramp is a planned shutdown —
+        // neither is the regular shield degrading, so the regular warnings
+        // stay silent there. prevShInt still tracks, so a real degradation
+        // after the special state does not replay missed crossings.
         // =========================
-        checkIntegrityThreshold(prevShInt, (int) Math.round(shield.getIntegrity()), "Shield");
+        if (shield.getState() == ReactorShield.State.WORKING) {
+            checkIntegrityThreshold(prevShInt, (int) Math.round(shield.getIntegrity()), "Shield");
+        }
         prevShInt = (int) Math.round(shield.getIntegrity());
 
         // =========================
