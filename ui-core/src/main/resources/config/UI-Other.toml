@@ -1417,18 +1417,18 @@ stall_shield = "<white>Shutting down reactor shield..."
 # Default: <white>Core marked as offline, awaiting for startup.
 stall_offline = "<white>Core marked as offline, awaiting for startup."
 # Meltdown restabilization — a depleted shield starts the aux shield (T-3m) and the restabilization attempt.
-# Default: <red>Reactor shield failue, analyzing core systems...
-meltdown_analyzing = "<red>Reactor shield failue, analyzing core systems..."
+# Default: <red>Reactor shield failure, analyzing core systems...
+meltdown_analyzing = "<red>Reactor shield failure, analyzing core systems..."
 # Default: <white>Auxiliary shield creation in progress, manual shutdown required.
 meltdown_aux_creating = "<white>Auxiliary shield creation in progress, manual shutdown required."
 # Default: <gold>WARNING!!!
 meltdown_warn_1 = "<gold>WARNING!!!"
-# Default: <white>Reactor <gold>Emergency Termination Seqence
-meltdown_warn_2 = "<white>Reactor <gold>Emergency Termination Seqence"
+# Default: <white>Reactor <gold>Emergency Termination Sequence
+meltdown_warn_2 = "<white>Reactor <gold>Emergency Termination Sequence"
 # Default: <white>is now <gold>available<white>, auxiliary shield
 meltdown_warn_3 = "<white>is now <gold>available<white>, auxiliary shield"
-# Default: <red>failue estimated in T-3m<white>, shut down reactor immediately.
-meltdown_warn_4 = "<red>failue estimated in T-3m<white>, shut down reactor immediately."
+# Default: <red>failure estimated in T-3m<white>, shut down reactor immediately.
+meltdown_warn_4 = "<red>failure estimated in T-3m<white>, shut down reactor immediately."
 # Default: <gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key.
 meltdown_warn_5 = "<gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key."
 # Default: <gold>This is not a drill, I repeat, this is not a drill!
@@ -1437,14 +1437,14 @@ meltdown_warn_6 = "<gold>This is not a drill, I repeat, this is not a drill!"
 meltdown_attempt = "<white>Attempting reactor shutdown..."
 # Default: <white>Recalibrating stabilization lasers...
 meltdown_recalibrating = "<white>Recalibrating stabilization lasers..."
-# Default: <white>Attempting shiteld re-creation...
-meltdown_recreation = "<white>Attempting shiteld re-creation..."
+# Default: <white>Attempting shield re-creation...
+meltdown_recreation = "<white>Attempting shield re-creation..."
 # Default: <white>Estimated chance of success: <yellow>%chance%%<white>.
 meltdown_chance = "<white>Estimated chance of success: <yellow>%chance%%<white>."
-# Default: <green>Reactor re-stabilization successfull, performing reactor shutdown...
-meltdown_success = "<green>Reactor re-stabilization successfull, performing reactor shutdown..."
-# Default: <red>Timed out waiting reactor systems to response...
-meltdown_fail_timeout = "<red>Timed out waiting reactor systems to response..."
+# Default: <green>Reactor re-stabilization successful, performing reactor shutdown...
+meltdown_success = "<green>Reactor re-stabilization successful, performing reactor shutdown..."
+# Default: <red>Timed out waiting for reactor systems to respond...
+meltdown_fail_timeout = "<red>Timed out waiting for reactor systems to respond..."
 # Default: <red>Auxiliary shield integrity critical, failure imminent.
 meltdown_fail_critical = "<red>Auxiliary shield integrity critical, failure imminent."
 # Default: <red>Auxiliary shield failure detected, total system failure in T-10s.
