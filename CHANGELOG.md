@@ -29,7 +29,7 @@ in this file.
   the detonation becomes unavoidable (the shield FAILED T-10s countdown).
   The whole phase machine persists across restarts.
 - **DFC restabilization sequence extension** — two more reports between the
-  shield re-creation attempt and the roll: "Estimating chance of sucessfull
+  shield re-creation attempt and the roll: "Estimating chance of successful
   shutdown..." (5s after the re-creation attempt) and "Awaiting reactor
   systems to respond..." (5s after the estimated chance) — the roll now
   happens 30 seconds after the attempt starts instead of 20.
@@ -38,7 +38,7 @@ in this file.
   absorber valve → shield ramp → offline) is one shared chain entered
   through two explicit trigger kinds. Only the announcement differs:
   "due to manual trigger" (the operator lamp pulse on a running reactor)
-  vs "due to automatical trigger" (the −273 C* reaction-failure stall and
+  vs "due to automatic trigger" (the −273 C* reaction-failure stall and
   the restabilization success — previously announced as "due to reaction
   failure"). The restabilization success shutdown switched from the manual
   to the automatic procedure. The heat dump now runs for every trigger
