@@ -74,7 +74,7 @@ public class VoidProtectionListener implements Listener {
                 .getConfigurationSection("void_protection.target");
 
         if (targetSection == null) {
-            ConsoleLogger.warn("[VOID] void_protection.target не настроен в config.yml!");
+            ConsoleLogger.warn("[VOID] void_protection.target is not configured in config.yml!");
             return;
         }
 
@@ -82,7 +82,7 @@ public class VoidProtectionListener implements Listener {
         World targetWorld = Main.getInstance().getServer().getWorld(targetWorldName);
 
         if (targetWorld == null) {
-            ConsoleLogger.warn("[VOID] Мир " + targetWorldName + " не найден!");
+            ConsoleLogger.warn("[VOID] World \"" + targetWorldName + "\" not found!");
             return;
         }
 
