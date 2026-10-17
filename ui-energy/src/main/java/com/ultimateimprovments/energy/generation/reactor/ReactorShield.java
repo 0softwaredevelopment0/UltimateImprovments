@@ -158,7 +158,7 @@ public class ReactorShield {
                 } else if (!overStressed && degrading) {
                     degrading = false;
                     reactor.broadcastRaw(StructuresMessages.get("shield_stress_degradation_end",
-                            "<gold>Warning! <white>DFC Shield stress normalized, integrity degradation no longer occur."));
+                            "<gold>Warning! <white>DFC Shield stress normalized, integrity degradation no longer occurs."));
                 }
                 if (overStressed) {
                     // Degradation: (stress/100) × base %/sec — scales up to per-tick speeds
