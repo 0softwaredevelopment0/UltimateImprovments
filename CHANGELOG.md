@@ -52,10 +52,20 @@ in this file.
   and can be started again later. The protocol is not gone for good: it
   can roll again on subsequent startups at a halved chance (0.5% instead
   of 1% on the default config) until the reactor is disassembled. Too late
-  once the detonation procedure is announced. Challenge frame, redstone
-  torch icon, 200 XP, parent `ui:datapack/dfc_self_destruct`.
+   once the detonation procedure is announced. Challenge frame, redstone
+   torch icon, 200 XP, parent `ui:datapack/dfc_self_destruct`.
+- **DFC advancement "Saved from extinction"** — granted when the emergency
+  (stall) shutdown procedure completes successfully: the core coasts down,
+  the systems step off one by one and the reactor is marked offline,
+  awaiting a new startup. Covers both the automatic shutdown (reaction
+  failure at −273 C*) and the manual trigger shutdown. Challenge frame,
+  totem of undying icon, 200 XP, parent `ui:datapack/operator_incompetence`.
 
 ### Changed
+- **DFC advancement "One-time heating" renamed to "Vaporised in the plasma"**
+  (`one_time_heater` → `vaporised_in_plasma`, datapack file and code) — the
+  trigger is unchanged (be inside the DFC core when it explodes); new title
+  and description.
 - **Emergency core shutdown no longer rescues a deliberately overloaded
   shield** — the integrity-below-threshold safety only fires while the
   shield stress is within limits (≤100%): an operator-driven overheat is
