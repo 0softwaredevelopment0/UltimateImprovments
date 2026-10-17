@@ -378,7 +378,7 @@ public class ReactorManager {
         meltdownLineIndex = 0;
         spawnMeltdownExplosion();
         broadcast(StructuresMessages.get("meltdown_analyzing",
-                "<red>Reactor shield failue, analyzing core systems..."));
+                "<red>Reactor shield failure, analyzing core systems..."));
         grantAdvancementNear("datapack/critical_overload");
         saveToDb();
     }
@@ -440,7 +440,7 @@ public class ReactorManager {
                             "<white>Recalibrating stabilization lasers..."));
                 } else if (meltdownTicks == 20 * 10) {
                     broadcast(StructuresMessages.get("meltdown_recreation",
-                            "<white>Attempting shiteld re-creation..."));
+                            "<white>Attempting shield re-creation..."));
                 } else if (meltdownTicks == 20 * 11) {
                     broadcast(StructuresMessages.get("meltdown_chance",
                             "<white>Estimated chance of success: <yellow>%chance%%<white>.")
@@ -471,9 +471,9 @@ public class ReactorManager {
     private String[] meltdownWarningLines() {
         return new String[] {
                 StructuresMessages.get("meltdown_warn_1", "<gold>WARNING!!!"),
-                StructuresMessages.get("meltdown_warn_2", "<white>Reactor <gold>Emergency Termination Seqence"),
+                StructuresMessages.get("meltdown_warn_2", "<white>Reactor <gold>Emergency Termination Sequence"),
                 StructuresMessages.get("meltdown_warn_3", "<white>is now <gold>available<white>, auxiliary shield"),
-                StructuresMessages.get("meltdown_warn_4", "<red>failue estimated in T-3m<white>, shut down reactor immediately."),
+                StructuresMessages.get("meltdown_warn_4", "<red>failure estimated in T-3m<white>, shut down reactor immediately."),
                 StructuresMessages.get("meltdown_warn_5", "<gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key."),
                 StructuresMessages.get("meltdown_warn_6", "<gold>This is not a drill, I repeat, this is not a drill!")
         };
@@ -513,7 +513,7 @@ public class ReactorManager {
     private void rollRestabilization() {
         if (Math.random() * 100.0 < restabChance) {
             broadcast(StructuresMessages.get("meltdown_success",
-                    "<green>Reactor re-stabilization successfull, performing reactor shutdown..."));
+                    "<green>Reactor re-stabilization successful, performing reactor shutdown..."));
             meltdownPhase = MeltdownPhase.NONE;
             meltdownTicks = 0;
             lasers.setControlLocked(false);
@@ -525,7 +525,7 @@ public class ReactorManager {
             stallTicks = 0;
         } else {
             broadcast(StructuresMessages.get("meltdown_fail_timeout",
-                    "<red>Timed out waiting reactor systems to response..."));
+                    "<red>Timed out waiting for reactor systems to respond..."));
             meltdownPhase = MeltdownPhase.RESTAB_FAIL;
             meltdownTicks = 0;
         }
