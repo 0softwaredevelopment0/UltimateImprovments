@@ -6,7 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 
 import java.util.Random;
@@ -17,29 +16,26 @@ import java.util.Random;
  * The case has three parameters:
  * <ul>
  *   <li><b>Temperature (T)</b>, C*: −273..10 000. Rises only while fusion is
- *       running (+15 C* per sec at 150% speed, scaled by the speed), no
- *       passive cooling below the fusion minimum temperature.</li>
+ *       running (+15 C* per sec at 150% speed, scaled by the speed).</li>
  *   <li><b>Pressure (P)</b>, MPa: 0..15, follows the case temperature the same
- *       way the shield pressure follows the core temperature. At 15 MPa the
- *       glass shatters and the pressure vents to ~0 (jitters around zero).</li>
- *   <li><b>Integrity (I)</b>, %: degrades while over-temperature/over-pressure
- *       (like the shield); at 0% the glass shatters. Does NOT recover
- *       passively — repairing the glass restores the integrity.</li>
+ *       way the shield pressure follows the core temperature.</li>
+ *   <li><b>Integrity (I)</b>, %: <b>the live glass count</b> — every one of the
+ *       98 template panes is one point on the 100%..0% scale. Over-temp or
+ *       over-pressure degradation breaks one random intact pane per 1% of
+ *       decay, so the case falls apart gradually; every pane a player places
+ *       back raises the integrity by one point. No passive recovery.</li>
  * </ul>
- * A PARTIAL breach vents too: every missing glass cell lets the pressure drain
- * at (broken/total) × 100% of the max pressure per second and the temperature
- * at half that rate (floor −273 C*) — a holed case cannot hold its heat or
- * pressure. A full physical destruction (every glass cell gone by any cause)
- * breaks the case just like the integrity shatter.
+ * A breach (any missing pane) vents the case: every missing cell drains the
+ * pressure at (broken/total) × 100% of the max per second and the temperature
+ * at half that rate (floor −273 C*) — the fusion heat rise never outruns the
+ * drain, so a breached case trends to ambient and stays there until repaired.
+ * There is NO hard shatter and NO reset: a fully broken case is just every
+ * pane gone, venting at full scale.
  * <p>
  * Case messaging is exactly three events: breach detected (first pane broken),
- * case failure (fully broken, any cause), breach restored (fully repaired).
- * Broken glass is replaced with air; repairing (right-click a broken glass
- * position with glass in hand, or the repair command) restores the blocks and
- * resets the integrity to 100%. The shatter vents heat and pressure TOGETHER:
- * the case temperature resets to the ambient −273 C* and jitters around it
- * while broken, the pressure jitters around ~0 — so the freshly repaired
- * glass starts cold and cannot re-break on its own.
+ * case failure (fully broken, any cause, once per episode), breach restored
+ * (fully repaired). Players repair pane by pane; {@link #repair(Location,
+ * boolean)} is the instant full-repair path (DB load / admin).
  */
 public class ReactorCase {
 
@@ -91,8 +87,8 @@ public class ReactorCase {
 
     private State state = State.OK;
     private int temp = -273;          // C*, -273..10000
-    private double press;             // MPa, 0..15
-    private int integrity = 100;      // 0..100 %
+    private double press;             // kPa, 0..15000 (shown as MPa)
+    private int integrity = 100;      // 0..100 %, mirrors the live glass count
     private double jitterPress;      // smoothed jitter value for the venting display
 
     // =========================
@@ -101,7 +97,8 @@ public class ReactorCase {
     // up to a full pass (~1s) to see template-driven repairs, so a fresh
     // repair holds all breach announcements until it settles.
     // =========================
-    private boolean breachAnnounced;  // the breach message fired (OK + glass missing)
+    private boolean breachAnnounced;  // the breach message fired (glass missing)
+    private boolean failureAnnounced; // the full-failure message fired this episode
     private int ventGraceTicks;       // post-repair holdoff while the audit catches up
     private double ventPressRemainder; // fractional pressure vent accumulator (kPa)
     private double ventTempRemainder;  // fractional temperature vent accumulator (C*)
@@ -117,72 +114,58 @@ public class ReactorCase {
         ReactorConfig cfg = ReactorConfig.getInstance();
 
         // =========================
-        // TEMPERATURE — rises only from fusion (speed-scaled)
+        // TEMPERATURE — rises only from fusion (speed-scaled). A breached
+        // case loses it faster than fusion can add (see tickBreach), so a
+        // holed case trends to ambient on its own — no state switch needed.
         // =========================
-        if (state == State.OK) {
-            double fusionSpeed = reactor.getFusion().getSpeedPct();
-            if (fusionSpeed > 0) {
-                // 150% speed → +15 C*/sec (case_heat_rate), scaled by speed
-                double perTick = fusionSpeed / 150.0 * cfg.getCaseHeatRate() / 20.0;
-                int whole = (int) perTick;
-                caseTempRemainder += perTick - whole;
-                if (caseTempRemainder >= 1) { whole += 1; caseTempRemainder -= 1; }
-                temp = Math.min(cfg.getCaseTempMax(), temp + whole);
-            }
-        } else {
-            // Broken: the vented case stays at ambient — small jitter around −273
-            temp = -273 + random.nextInt(80);
+        double fusionSpeed = reactor.getFusion().getSpeedPct();
+        if (fusionSpeed > 0) {
+            // 150% speed → +15 C*/sec (case_heat_rate), scaled by speed
+            double perTick = fusionSpeed / 150.0 * cfg.getCaseHeatRate() / 20.0;
+            int whole = (int) perTick;
+            caseTempRemainder += perTick - whole;
+            if (caseTempRemainder >= 1) { whole += 1; caseTempRemainder -= 1; }
+            temp = Math.min(cfg.getCaseTempMax(), temp + whole);
         }
 
         // =========================
         // PRESSURE — follows the case temperature (like the shield follows T)
         // =========================
         double target = pressureTarget(temp, cfg);
-        if (state == State.OK) {
-            press = Math.max(0, press + (target - press) * cfg.getCasePressFollowRate());
-        } else {
-            // Broken: pressure vented — small jitter around ~0 (kPa scale!
-            // the old 0.15 was 150 Pa — effectively zero anyway, but the
-            // display rounded 0.0..0.15 kPa to MPa as 0.000..0.0002).
-            jitterPress += (0 - jitterPress) * 0.3;
-            press = Math.max(0, random.nextDouble() * 0.15 + jitterPress);
-        }
+        press = Math.max(0, press + (target - press) * cfg.getCasePressFollowRate());
 
         // =========================
         // BREACH VENT — broken glass cells vent the case (pressure drains at
         // broken/total × 100% of max per second, temperature at half that
-        // rate) and the breach/failure/restore messages fire here
+        // rate); the integrity is re-derived from the live glass and the
+        // breach/failure/restore messages fire here
         // =========================
         tickBreach(base, cfg);
 
         // =========================
-        // INTEGRITY — decays above the safe thresholds (like the shield)
+        // INTEGRITY — decays above the safe thresholds: every whole 1% of
+        // decay breaks one random intact pane (98 panes = the whole scale),
+        // so the case falls apart gradually instead of shattering at 0%.
         // =========================
-        if (state == State.OK) {
-            boolean over = temp >= cfg.getCaseIntDecayTemp()
-                    || press >= cfg.getCaseIntDecayPress() * 1000.0; // config MPa → kPa
-            if (over && integrity > 0) {
-                double ratePerTick = cfg.getCaseIntDecayRate() / 20.0;
-                caseIntRemainder += ratePerTick;
-                int whole = (int) caseIntRemainder;
-                if (whole > 0) {
-                    caseIntRemainder -= whole;
-                    integrity = Math.max(0, integrity - whole);
-                    if (integrity <= 0) {
-                        shatterGlass(base, cfg);
-                        return;
-                    }
-                }
+        boolean over = temp >= cfg.getCaseIntDecayTemp()
+                || press >= cfg.getCaseIntDecayPress() * 1000.0; // config MPa → kPa
+        if (over) {
+            double ratePerTick = cfg.getCaseIntDecayRate() / 20.0;
+            caseIntRemainder += ratePerTick;
+            int whole = (int) caseIntRemainder;
+            if (whole > 0) {
+                caseIntRemainder -= whole;
+                breakRandomPanes(base, whole);
             }
         }
     }
 
     /**
-     * Breach tick: vent physics and the three case messages (breach detected /
-     * case failure / breach restored), driven by the damage tracker's live
-     * glass counts. Full-physical-destruction detection lives here too — an
-     * explosion that takes out every pane must break the case just like the
-     * integrity shatter does.
+     * Breach tick: vent physics, the integrity derivation and the three case
+     * messages (breach detected / case failure / breach restored), driven by
+     * the damage tracker's live glass counts. The tracker cache is updated
+     * O(1) by the break/place listeners and by {@link #breakRandomPanes}, so
+     * the counts are exact up to one audit pass after plugin-made changes.
      */
     private void tickBreach(Location base, ReactorConfig cfg) {
         if (!ReactorDamageTracker.isTracked()) return;
@@ -193,28 +176,24 @@ public class ReactorCase {
         int broken = total - glass[0];
 
         if (ventGraceTicks > 0) {
-            // A repair()/checkAutoRepair() filled the glass with
-            // block.setType() (no place events) — the rotating audit needs a
-            // pass to reflect it; announce nothing until it settles.
+            // A repair() filled the glass with block.setType() (no place
+            // events) — the rotating audit needs a pass to reflect it; hold
+            // the derivation and the announcements until it settles.
             ventGraceTicks--;
             return;
         }
 
-        if (state != State.OK) return; // BROKEN already vents to ambient via its jitter model
+        // The integrity IS the glass: every pane is one point on the
+        // 100%..0% scale — repairs and breaks move it 1:1.
+        integrity = (int) Math.round(glass[0] * 100.0 / total);
+        state = broken >= total ? State.BROKEN : State.OK;
 
-        // Full failure — every glass cell gone (any cause): the same terminal
-        // state as the integrity shatter, same single message.
-        if (broken >= total) {
-            shatterGlass(base, cfg);
-            return;
-        }
-
+        // Vent physics — proportional to the breach scale, at ANY breach
+        // size: pressure drains at (broken/total) × 100% of max per second,
+        // the temperature at half that rate (floor −273 C*). A fully open
+        // case vents out within a second or two and stays ambient until
+        // repaired — no hard reset, the vent replaces the old shatter snap.
         if (broken > 0) {
-            // Vent physics: the hole scale drives the drain — pressure loses
-            // (broken/total) × 100% of the max pressure per second, the
-            // temperature the same formula at half the rate (floor −273 C*).
-            // The fusion heat rise (+15 C*/s at 150% speed) never outruns the
-            // drain, so any breach trends the case toward ambient.
             double frac = broken / (double) total;
 
             ventPressRemainder += frac * cfg.getCasePressMax() * 1000.0 / 20.0;
@@ -226,16 +205,27 @@ public class ReactorCase {
             int tempDrain = (int) ventTempRemainder;
             ventTempRemainder -= tempDrain;
             if (tempDrain > 0) temp = Math.max(-273, temp - tempDrain);
+        }
 
+        // Messaging — exactly three events.
+        if (broken >= total) {
+            if (!failureAnnounced) {
+                failureAnnounced = true;
+                breachAnnounced = true;
+                reactor.broadcastRaw(StructuresMessages.get("case_failure_detected",
+                        "<gold>Attention! <white>DFC case failure detected!"));
+            }
+        } else if (broken > 0) {
+            failureAnnounced = false;
             if (!breachAnnounced) {
                 breachAnnounced = true;
                 reactor.broadcastRaw(StructuresMessages.get("case_breach_detected",
                         "<gold>Attention! <white>DFC case breach detected!"));
             }
-        } else if (breachAnnounced) {
-            // Every pane is back (placed one by one — the place events kept
-            // the cache current) and the case never broke: restored.
+        } else if (breachAnnounced || failureAnnounced) {
+            // Every pane is back: restored (the last placed pane lands here).
             breachAnnounced = false;
+            failureAnnounced = false;
             reactor.broadcastRaw(StructuresMessages.get("case_breach_restored",
                     "<gold>Attention! <white>DFC case breach restored."));
         }
@@ -256,70 +246,69 @@ public class ReactorCase {
     }
 
     // =========================
-    // SHATTER / REPAIR
+    // GRADUAL DEGRADATION / REPAIR
     // =========================
     /**
-     * Breaks the case completely (integrity decay or every glass cell
-     * physically destroyed — the message does not care about the cause).
+     * Gradual degradation: breaks up to {@code count} random intact panes
+     * (1 pane = 1 point of the 98-pane integrity scale). The breach tick
+     * re-derives the integrity from the live counts and runs the vent and
+     * the messages — no full shatter, no reset, the case just loses panes
+     * one by one while the decay conditions hold.
      */
-    private void shatterGlass(Location base, ReactorConfig cfg) {
-        state = State.BROKEN;
-        integrity = 0;
-        // The vent releases heat AND pressure together: the case cools back to
-        // the ambient −273 C*, so repairing a hot case can no longer re-break
-        // it (the old code kept temp at ~10 000, which sat above the decay
-        // threshold and melted the fresh glass again).
-        temp = -273;
-        press = 0;
-        jitterPress = 0;
-        // The failure supersedes the breach — the restore message announces
-        // on the full repair.
-        breachAnnounced = false;
-
+    private void breakRandomPanes(Location base, int count) {
+        java.util.List<int[]> intact = new java.util.ArrayList<>();
         for (int[] off : GLASS) {
-            Block block = base.clone().add(off[0], off[1], off[2]).getBlock();
-            if (block.getType() == Material.GLASS) {
-                block.setType(Material.AIR);
+            if (base.clone().add(off[0], off[1], off[2]).getBlock().getType() == Material.GLASS) {
+                intact.add(off);
             }
+        }
+        if (intact.isEmpty()) return;
+
+        java.util.Collections.shuffle(intact, random);
+        int n = Math.min(count, intact.size());
+        for (int i = 0; i < n; i++) {
+            int[] off = intact.get(i);
+            base.clone().add(off[0], off[1], off[2]).getBlock().setType(Material.AIR);
+            // setType fires no events — keep the audit cache exact (O(1))
+            ReactorDamageTracker.noteCellBroken(base, off[0], off[1], off[2]);
         }
 
         Location core = base.clone().add(0.5, -5.5, 0.5);
-        World world = base.getWorld();
-        world.playSound(core, Sound.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 3.0f, 0.8f);
-        world.playSound(core, Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.MASTER, 1.5f, 1.4f);
-
-        reactor.broadcastRaw(StructuresMessages.get("case_failure_detected",
-                "<gold>Attention! <white>DFC case failure detected!"));
-
+        base.getWorld().playSound(core, Sound.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 2.0f, 0.8f);
         reactor.saveToDb();
     }
 
-    /** Repairs the case: restores all glass and resets integrity. */
+    /**
+     * Full instant repair: restores every missing pane and reseeds the
+     * integrity to 100% (the breach tick re-derives it from the audit once
+     * the grace window passes). Admin/DB path — players repair pane by pane
+     * and the integrity follows the glass automatically.
+     */
     public boolean repair(Location base) {
         return repair(base, true);
     }
 
     /**
-     * Repairs the case, optionally silent — the DB-load path restores the
+     * Full instant repair, optionally silent — the DB-load path restores the
      * glass blocks without announcing a player-facing repair.
      */
     public boolean repair(Location base, boolean announce) {
-        ReactorConfig cfg = ReactorConfig.getInstance();
-        if (state != State.BROKEN) return false;
-
+        boolean anyMissing = false;
         for (int[] off : GLASS) {
             Block block = base.clone().add(off[0], off[1], off[2]).getBlock();
-            if (block.getType() == Material.AIR) {
+            if (block.getType() != Material.GLASS) {
+                anyMissing = true;
                 block.setType(Material.GLASS);
             }
         }
+        if (!anyMissing) return false;
 
-        state = State.OK;
         integrity = 100;
-        temp = Math.min(temp, cfg.getCaseTempMax() - 1);
+        state = State.OK;
         breachAnnounced = false;
+        failureAnnounced = false;
         // The glass was filled with block.setType() — hold the breach
-        // announcements while the rotating audit catches up.
+        // announcements (and the derivation) while the audit catches up.
         ventGraceTicks = 60;
 
         Location core = base.clone().add(0.5, -5.5, 0.5);
@@ -334,28 +323,12 @@ public class ReactorCase {
     }
 
     /**
-     * Auto-repair check — called whenever a glass block is placed inside the
-     * structure while the case is broken. When every glass position of the
-     * template is filled again, the case repairs itself (integrity 100%).
+     * A player placed a glass pane into the structure (the place path already
+     * updated the audit cache O(1)). The breach tick re-derives the integrity
+     * from the live counts — every pane raises it by one point, the last pane
+     * fires the breach-restored broadcast. Only the progress is persisted here.
      */
-    public void checkAutoRepair(Location base) {
-        if (state != State.BROKEN || base == null) return;
-        for (int[] off : GLASS) {
-            Block block = base.clone().add(off[0], off[1], off[2]).getBlock();
-            if (block.getType() != Material.GLASS) return; // still missing glass
-        }
-        // Every glass position is filled — restore the case
-        state = State.OK;
-        integrity = 100;
-        jitterPress = 0;
-        temp = Math.min(temp, ReactorConfig.getInstance().getCaseTempMax() - 1);
-        breachAnnounced = false;
-        ventGraceTicks = 60;
-
-        Location core = base.clone().add(0.5, -5.5, 0.5);
-        base.getWorld().playSound(core, Sound.BLOCK_GLASS_PLACE, SoundCategory.MASTER, 2.0f, 1.0f);
-        reactor.broadcastRaw(StructuresMessages.get("case_breach_restored",
-                "<gold>Attention! <white>DFC case breach restored."));
+    public void onGlassPlaced() {
         reactor.saveToDb();
     }
 
@@ -369,6 +342,7 @@ public class ReactorCase {
         integrity = 100;
         jitterPress = 0;
         breachAnnounced = false;
+        failureAnnounced = false;
         ventGraceTicks = 0;
         ventPressRemainder = 0;
         ventTempRemainder = 0;
@@ -392,9 +366,18 @@ public class ReactorCase {
     public void setPress(double val) { press = Math.max(0, Math.min(15000, val)); }
 
     public int getIntegrity() { return integrity; }
+    /** DB-load seed only — the breach tick re-derives the integrity from the live glass. */
     public void setIntegrity(int val) {
         integrity = Math.max(0, Math.min(100, val));
-        if (integrity <= 0) state = State.BROKEN;
+    }
+
+    /**
+     * Quiet resume after a DB load: a saved breached case does not re-announce
+     * on startup; it re-announces only on a new episode (or restores normally).
+     */
+    public void setBreachAnnounced(boolean val) {
+        breachAnnounced = val;
+        failureAnnounced = val;
     }
 
     public boolean isBroken() { return state == State.BROKEN; }
