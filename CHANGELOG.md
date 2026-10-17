@@ -90,6 +90,13 @@ in this file.
   `chat.channels.linux` section when the new one is absent, so existing
   configs keep working until renamed manually.
 
+### Removed
+- **The dead "High-Tech Alloys" advancement (`craft_nethered_block`)** — its
+  criterion was `minecraft:impossible` and nothing in the code ever granted
+  it, which also made the whole subtree under it unobtainable (children are
+  not tracked until the parent completes). "Discharge!" (`craft_shoker`) now
+  hangs directly under "The force of decay" (`react_with_antimatter`).
+
 ### Fixed
 - **The `dfc_unstable` advancement is now obtainable** — its grant check
   (`ReactorManager.checkDfcUnstable`) was defined but never called, so the

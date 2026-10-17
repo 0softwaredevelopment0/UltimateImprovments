@@ -30,7 +30,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "ui:datapack/craft_nethered_block",
+  "parent": "ui:datapack/react_with_antimatter",
     "criteria": {
     "obtain": {
       "trigger": "minecraft:inventory_changed",
