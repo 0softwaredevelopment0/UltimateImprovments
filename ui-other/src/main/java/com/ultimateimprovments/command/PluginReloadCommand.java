@@ -179,21 +179,43 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("dont_run_this_command", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.dont_run_this_command")) { CommandErrors.noPermission(p, "ui.command.dont_run_this_command"); return false; }
-            try {
-                var adv = Bukkit.getAdvancement(
-                        new org.bukkit.NamespacedKey("ui", "datapack/impossible"));
-                if (adv != null) {
-                    var progress = p.getAdvancementProgress(adv);
-                    if (!progress.isDone()) {
-                        progress.awardCriteria("1");
-                        p.sendMessage(MessageUtil.parse(
-                                "<red>⚠ <white>Тебе же сказали <red>НЕ</red> выполнять эту команду...</white> "
-                                + "<yellow>Невозможное достижение получено!</yellow>"));
-                    }
+            String sub = a.length >= 2 ? a[1].toLowerCase() : "";
+            switch (sub) {
+                case "cancel" -> p.sendMessage(MessageUtil.parse(
+                        MessageUtil.PREFIX + "<green>Server operation has been cancelled."));
+                case "confirm" -> {
+                    p.sendMessage(MessageUtil.parse(
+                            MessageUtil.PREFIX + "<red>Server operation has been confirmed."));
+                    // 1-second pause before the irreversible part — the grant.
+                    Bukkit.getScheduler().runTaskLater(
+                            com.ultimateimprovments.core.Main.getInstance(), () -> {
+                                try {
+                                    var adv = Bukkit.getAdvancement(
+                                            new org.bukkit.NamespacedKey("ui", "datapack/impossible"));
+                                    if (adv != null) {
+                                        var progress = p.getAdvancementProgress(adv);
+                                        if (!progress.isDone()) progress.awardCriteria("1");
+                                    }
+                                } catch (Exception ignored) {}
+                            }, 20L);
                 }
-            } catch (Exception ignored) {}
+                default -> {
+                    p.sendMessage(MessageUtil.parse(
+                            MessageUtil.PREFIX + "<gold>Are you sure to run this command?"));
+                    p.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                            + "<white>This action may cause <red>unforeseen conseqences"));
+                    p.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                            + "<white>and this action is <red>irreversible<white>."));
+                    p.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                            + "<click:run_command:'/ui dont_run_this_command cancel'>"
+                            + "<dark_gray>[<dark_green>❌ <green>Cancel<dark_gray>]</dark_gray></click>"
+                            + "       "
+                            + "<click:run_command:'/ui dont_run_this_command confirm'>"
+                            + "<dark_gray>[<dark_red>✔ <red>Confirm<dark_gray>]</dark_gray></click>"));
+                }
+            }
             return true;
-        }));
+        }, tc((s, a) -> a.length == 2 ? List.of("cancel", "confirm") : List.of())));
 
         // ── /ui cmdblocklist and /ui advancement are registered by the UI-World addon ──
         registry.register(LegacySubCommandAdapter.of("unlock", (s, a) -> {
