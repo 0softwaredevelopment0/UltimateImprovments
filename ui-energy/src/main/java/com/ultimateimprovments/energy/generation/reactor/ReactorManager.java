@@ -472,12 +472,14 @@ public class ReactorManager {
                 } else if (meltdownTicks == 20 * 10) {
                     broadcast(StructuresMessages.get("meltdown_recreation",
                             "<white>Attempting shield re-creation..."));
-                } else if (meltdownTicks == 20 * 11) {
+                } else if (meltdownTicks == 20 * 15) {
+                    // 5s dramatic pause after the re-creation attempt message,
+                    // then the estimated chance; the roll keeps a 5s read window
                     broadcast(StructuresMessages.get("meltdown_chance",
                             "<white>Estimated chance of success: <yellow>%chance%%<white>.")
                             .replace("%chance%", String.valueOf((int) restabChance)));
                 }
-                if (meltdownTicks >= 20 * 16) {
+                if (meltdownTicks >= 20 * 20) {
                     rollRestabilization();
                 }
             }
