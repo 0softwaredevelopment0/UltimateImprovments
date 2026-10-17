@@ -695,6 +695,9 @@ public class ReactorManager {
         stallManual = false;
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
+        // 🏆 Advancement: saved_from_extinction — the emergency shutdown
+        // procedure ran to the end (core marked offline, awaiting startup)
+        grantAdvancementNear("datapack/saved_from_extinction");
         saveToDb();
     }
 
@@ -1038,7 +1041,7 @@ public class ReactorManager {
     private boolean advExplodeDfcGranted = false;
     private final Set<UUID> advInsideDfcGranted = ConcurrentHashMap.newKeySet();
     private final Set<UUID> advBurnInsideDfcGranted = ConcurrentHashMap.newKeySet();
-    private final Set<UUID> advOneTimeHeaterGranted = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> advVaporisedInPlasmaGranted = ConcurrentHashMap.newKeySet();
 
     // 🏆 senior_reactor_ops: consecutive ticks with the shield integrity
     // inside the 0–10% band; leaving the band (or losing the WORKING shield)
@@ -1893,20 +1896,20 @@ public class ReactorManager {
             grantAdvancementNear("datapack/explode_dfc");
         }
 
-        // 🏆 Advancement: one_time_heater — player inside the reactor during the explosion
+        // 🏆 Advancement: vaporised_in_plasma — player inside the reactor during the explosion
         if (reactorLocation != null) {
             int bx = reactorLocation.getBlockX(), by = reactorLocation.getBlockY(), bz = reactorLocation.getBlockZ();
             Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
             for (Player player : online) {
                 if (!player.getWorld().equals(base.getWorld())) continue;
-                if (advOneTimeHeaterGranted.contains(player.getUniqueId())) continue;
+                if (advVaporisedInPlasmaGranted.contains(player.getUniqueId())) continue;
                 Location ploc = player.getLocation();
                 int px = ploc.getBlockX(), py = ploc.getBlockY(), pz = ploc.getBlockZ();
                 if (px >= bx - 2 && px <= bx + 2
                         && py >= by - 5 && py <= by
                         && pz >= bz - 2 && pz <= bz + 2) {
-                    advOneTimeHeaterGranted.add(player.getUniqueId());
-                    grantAdvancement(player, "datapack/one_time_heater");
+                    advVaporisedInPlasmaGranted.add(player.getUniqueId());
+                    grantAdvancement(player, "datapack/vaporised_in_plasma");
                 }
             }
         }

@@ -1,13 +1,13 @@
 {
   "display": {
     "icon": {
-      "id": "minecraft:redstone_block",
+      "id": "minecraft:totem_of_undying",
       "count": 1
     },
     "title": {
-      "text": "One-time heating",
+      "text": "Saved from extinction",
       "type": "text",
-      "color": "dark_red",
+      "color": "green",
       "bold": false,
       "italic": false,
       "underlined": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Climb into the DFC core while it's exploding.",
+      "text": "Successfully perform the DFC emergency shutdown procedure.",
       "type": "text",
       "color": "gray",
       "bold": false,
@@ -29,7 +29,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "ui:datapack/burn_inside_dfc",
+  "parent": "ui:datapack/operator_incompetence",
   "criteria": {
     "1": {
       "trigger": "minecraft:impossible",
@@ -42,6 +42,6 @@
     ]
   ],
   "rewards": {
-    "experience": 250
+    "experience": 200
   }
 }

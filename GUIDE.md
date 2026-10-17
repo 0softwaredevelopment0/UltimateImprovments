@@ -329,7 +329,9 @@ People of the Past (find an End village) → High Temperatures → Light Attack
 ```
 Advanced Science (start the DFC) → We did it! (complete a reactor recipe)
 → Fading signals (DFC self-destruct) / Destructive Consequences (explode DFC)
-→ In the Depths of Hell → Large Microwave (burn inside DFC) → One-time heating
+→ In the Depths of Hell → Large Microwave (burn inside DFC) → Vaporised in the plasma
+→ Operator Incompetence (cool the reaction down to failure) → Saved from extinction
+(complete the emergency shutdown procedure)
 ```
 
 **Timed challenges** run with `/ui advancement start woodcutter|teleport`
