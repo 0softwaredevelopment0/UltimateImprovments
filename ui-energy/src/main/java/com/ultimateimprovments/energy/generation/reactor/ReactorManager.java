@@ -1268,16 +1268,14 @@ public class ReactorManager {
         spin = state.getSpin();
         fusion.setParticles(state.getFusionParticles());
         fusion.setCollected(state.getFusionCollected());
-        caseSys.setState(state.isCaseBroken() ? ReactorCase.State.BROKEN : ReactorCase.State.OK);
         caseSys.setTemp(state.getCaseTemp());
         caseSys.setPress(state.getCasePress());
         caseSys.setIntegrity(state.getCaseIntegrity());
-        if (caseSys.isBroken()) {
-            // Silent repair: restore the glass blocks at load without the
-            // player-facing "breach restored" message
-            caseSys.repair(reactorLocation, false);
-            caseSys.setState(ReactorCase.State.BROKEN);
-        }
+        // The glass on disk is the truth: the breach tick re-derives the
+        // integrity from the live block audit within one tick. A saved
+        // breached case resumes quietly — no re-announcement, no silent
+        // repair; the panes stay broken until players place them back.
+        caseSys.setBreachAnnounced(state.isCaseBroken());
         energyGenerated = state.getEnergyGenerated();
         lasers.setStarted(state.isLaserStarted());
         structureDamaged = state.isStructureDamaged();
@@ -2269,10 +2267,10 @@ public class ReactorManager {
         if (reactorLocation == null || !ReactorDamageTracker.isTracked()) return;
 
         // Case glass: no per-pane reports — the case system owns the messaging.
-        // The auto-repair check stays: an audit-driven glass restore (plugin
-        // setType fills the case) must still be able to repair a broken case.
+        // The progress persist stays: every placed pane raises the integrity
+        // by one point (the breach tick derives it from the live counts).
         if (cat == ReactorDamageTracker.Category.GLASS) {
-            if (caseSys.isBroken()) caseSys.checkAutoRepair(reactorLocation);
+            caseSys.onGlassPlaced();
             return;
         }
 

@@ -573,10 +573,10 @@ public class ReactorListener implements Listener {
     }
 
     // =========================
-    // GLASS PLACED INSIDE THE STRUCTURE → AUTO-REPAIR CHECK
-    // The player repairs the case manually: any glass block placed within the
-    // structure bounds while the case is broken is checked; when every glass
-    // position is filled again, the case repairs itself.
+    // GLASS PLACED INSIDE THE STRUCTURE → CASE REPAIR PROGRESS
+    // The player repairs the case pane by pane: every placed pane raises the
+    // case integrity by one point (the integrity mirrors the live glass
+    // count); the last pane restores the case fully.
     // =========================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onGlassPlace(org.bukkit.event.block.BlockPlaceEvent e) {
@@ -584,10 +584,10 @@ public class ReactorListener implements Listener {
             return;
         }
         ReactorManager reactor = ReactorManager.getReactorForBlock(e.getBlockPlaced().getLocation());
-        if (reactor == null || !reactor.isValid() || !reactor.isCaseBroken()) return;
+        if (reactor == null || !reactor.isValid()) return;
 
-        // Let the case system decide whether the repair is complete
-        reactor.getCase().checkAutoRepair(reactor.getReactorLocation());
+        // Persist the pane-by-pane repair progress
+        reactor.getCase().onGlassPlaced();
     }
 
     // =========================
