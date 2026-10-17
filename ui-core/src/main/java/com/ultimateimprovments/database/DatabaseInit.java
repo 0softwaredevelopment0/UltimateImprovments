@@ -97,7 +97,7 @@ public class DatabaseInit {
 
             // =========================
             // ⚛ DFC LASER COLUMNS MIGRATION (for old DBs)
-            // laser_started — startup latch (pulse on the startup lamp)
+            // laser_started — startup latch (pulse on the Trigger Action lamp)
             // laser_p1/p2 (0..100), laser_stab (0..200), laser_absorber (0..100)
             // =========================
             // =========================

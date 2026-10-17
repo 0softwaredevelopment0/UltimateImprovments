@@ -83,6 +83,24 @@ public class ReactorShield {
     /** Fractional aux-shield drain accumulator. */
     private double auxDrainRemainder;
 
+    // =========================
+    // AUX INTEGRITY WARNINGS — one broadcast per downward threshold crossing
+    // (75 / 50 / 25 / 10%) while the aux shield drains. The drain is
+    // monotonic, so each threshold fires at most once per meltdown window —
+    // no per-threshold state needed.
+    // =========================
+    private static final int[] AUX_WARN_THRESHOLDS = { 75, 50, 25, 10 };
+
+    private void checkAuxWarnings(double prev, double now) {
+        for (int threshold : AUX_WARN_THRESHOLDS) {
+            if (prev > threshold && now <= threshold) {
+                reactor.broadcastRaw(StructuresMessages.get("aux_integrity_warning",
+                        "<red>Warning! <white>Auxiliary shield integrity at <gold>%value%%<white>!")
+                        .replace("%value%", String.valueOf(threshold)));
+            }
+        }
+    }
+
     public ReactorShield(ReactorManager reactor) {
         this.reactor = reactor;
     }
@@ -107,10 +125,13 @@ public class ReactorShield {
                     int whole = (int) v;
                     auxDrainRemainder = v - whole;
                     if (whole > 0) {
+                        double prev = integrity;
                         integrity -= whole;
                         if (integrity <= 0) {
                             integrity = 0;
                             reactor.onAuxShieldExpired();
+                        } else {
+                            checkAuxWarnings(prev, integrity);
                         }
                     }
                 }

@@ -1429,8 +1429,8 @@ meltdown_warn_2 = "<white>Reactor <gold>Emergency Termination Sequence"
 meltdown_warn_3 = "<white>is now <gold>available<white>, auxiliary shield"
 # Default: <red>failure estimated in T-3m<white>, shut down reactor immediately.
 meltdown_warn_4 = "<red>failure estimated in T-3m<white>, shut down reactor immediately."
-# Default: <gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key.
-meltdown_warn_5 = "<gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key."
+# Default: <gray>Load netherite items into the contents barrel (debris/scrap +1%, ingot +2%, block +3% each) and pulse the trigger lamp.
+meltdown_warn_5 = "<gray>Load netherite items into the contents barrel (debris/scrap +1%, ingot +2%, block +3% each) and pulse the trigger lamp."
 # Default: <gold>This is not a drill, I repeat, this is not a drill!
 meltdown_warn_6 = "<gold>This is not a drill, I repeat, this is not a drill!"
 # Default: <white>Attempting reactor shutdown...
@@ -1449,7 +1449,7 @@ meltdown_fail_timeout = "<red>Timed out waiting for reactor systems to respond..
 meltdown_fail_critical = "<red>Auxiliary shield integrity critical, failure imminent."
 # Default: <red>Auxiliary shield failure detected, total system failure in T-10s.
 meltdown_fail_total = "<red>Auxiliary shield failure detected, total system failure in T-10s."
-# Startup sequence — cinematic startup driven by the startup lamp pulse.
+# Startup sequence — cinematic startup driven by the Trigger Action lamp pulse.
 # Default: <white>Core startup initiated due to a manual trigger, please wait.
 startup_initiated = "<white>Core startup initiated due to a manual trigger, please wait."
 # Default: <white>Starting up stabilization lasers...

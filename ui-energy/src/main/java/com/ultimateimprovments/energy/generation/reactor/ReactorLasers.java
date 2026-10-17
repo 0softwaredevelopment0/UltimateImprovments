@@ -7,8 +7,10 @@ import org.bukkit.Location;
  * <p>
  * 9 roof lamps (waxed copper bulbs) with lever+sign pairs. A laser ramps its
  * power by {@code laser_ramp_rate} percent/sec <b>while</b> redstone is applied to
- * its +5%/-5% lamp (powered state, not a pulse). The Core Startup lamp is the
- * exception: it is pulse-triggered - a rising redstone edge activates the reactor.
+ * its +5%/-5% lamp (powered state, not a pulse). The Trigger Action lamp is
+ * the exception: it is pulse-triggered — a rising redstone edge fires the
+ * context action (startup, manual shutdown, meltdown restabilization
+ * attempt, self-destruct cancel).
  * <p>
  * The control lamps respond (power ramps, signs show it) at any time — even
  * before the startup pulse. The lasers themselves only <b>heat/cool</b> after
@@ -27,12 +29,12 @@ public class ReactorLasers {
 
     // =========================
     // LAMP OFFSETS (relative to the anchor — frame cell above the central bulb)
-    // +5% lamps row (x=−4) and −5% lamps row (x=−2); the startup lamp ends row 1.
-    // Order: Power #1, Power #2, Stab, Absorber
+    // +5% lamps row (x=−4) and −5% lamps row (x=−2); the Trigger Action lamp
+    // ends row 1. Order: Power #1, Power #2, Stab, Absorber
     // =========================
     private static final int[][] LAMP_PLUS  = { { -4, 0, -4 }, { -4, 0, -2 }, { -4, 0, 0 }, { -4, 0, 2 } };
     private static final int[][] LAMP_MINUS = { { -2, 0, -4 }, { -2, 0, -2 }, { -2, 0, 0 }, { -2, 0, 2 } };
-    private static final int[] LAMP_STARTUP = { -4, 0, 4 };
+    private static final int[] LAMP_TRIGGER = { -4, 0, 4 };
 
     /** Laser indices. */
     public static final int LASER_P1 = 0;
@@ -43,7 +45,7 @@ public class ReactorLasers {
     private final ReactorManager reactor;
 
     private boolean started;
-    private boolean prevStartupPowered;
+    private boolean prevTriggerPowered;
 
     // =========================
     // OVERPOWER MODE (self-destruct finale): the Power Lasers are forced to
@@ -85,19 +87,20 @@ public class ReactorLasers {
         ReactorConfig cfg = ReactorConfig.getInstance();
 
         // =========================
-        // CORE STARTUP — pulse on the startup lamp (rising redstone edge).
-        // The same lamp pulsed while the core is already running = the manual
-        // shutdown trigger (silently ignored above 10% shield stress).
+        // TRIGGER ACTION — pulse on the Trigger Action lamp (rising redstone
+        // edge). The action depends on the reactor state, ReactorManager
+        // routes it: startup / manual shutdown / restabilization attempt /
+        // self-destruct cancel.
         // =========================
-        boolean startupPowered = isLampPowered(base, LAMP_STARTUP);
-        if (startupPowered && !prevStartupPowered && !started) {
+        boolean triggerPowered = isLampPowered(base, LAMP_TRIGGER);
+        if (triggerPowered && !prevTriggerPowered && !started) {
             started = true;
-            // Cinematic startup sequence begins (announcement inside)
-            reactor.onStartupPulse();
-        } else if (startupPowered && !prevStartupPowered && started) {
+            // Context action begins (startup sequence / self-destruct roll)
+            reactor.onTriggerPulse();
+        } else if (triggerPowered && !prevTriggerPowered && started) {
             reactor.tryManualShutdownTrigger();
         }
-        prevStartupPowered = startupPowered;
+        prevTriggerPowered = triggerPowered;
 
         if (overpowerMode) {
             tickOverpower();
@@ -220,7 +223,7 @@ public class ReactorLasers {
     /** Resets the laser system (disassemble / meltdown / fresh install). */
     public void reset() {
         started = false;
-        prevStartupPowered = false;
+        prevTriggerPowered = false;
         for (int i = 0; i < power.length; i++) power[i] = 0;
         tempRemainder = 0;
         overpowerMode = false;
@@ -242,8 +245,8 @@ public class ReactorLasers {
         power[laser] = Math.max(0, Math.min(max, val));
     }
 
-    public boolean isStartupLampPowered(Location base) {
-        return isLampPowered(base, LAMP_STARTUP);
+    public boolean isTriggerLampPowered(Location base) {
+        return isLampPowered(base, LAMP_TRIGGER);
     }
 
     /**

@@ -63,7 +63,7 @@ public class ReactorState {
     // full restore — the procedure resumes after a restart mid-sequence
     private String stallPhase = "NONE"; // NONE / WAIT_POWER / ... / SHIELD_RAMP
     private int stallTicks;
-    private boolean stallManual;        // manual trigger shutdown (startup lamp pulse), not the emergency stall
+    private boolean stallManual;        // manual trigger shutdown (Trigger Action lamp pulse), not the emergency stall
     private boolean coreOffline;        // shutdown finished, awaiting a new startup
 
     // Cinematic startup sequence (lamp pulse → lasers → valve → shield → ignite)

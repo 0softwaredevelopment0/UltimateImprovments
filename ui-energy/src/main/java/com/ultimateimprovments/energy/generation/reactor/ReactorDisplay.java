@@ -222,6 +222,11 @@ public class ReactorDisplay {
 
         displayTick++;
 
+        // Lamp label signs — full rewrite every 10s (self-healing, see below)
+        if (displayTick % LAMP_SIGN_INTERVAL_TICKS == 0) {
+            updateLampSigns(base);
+        }
+
         // Sign rewrite once per second (20 ticks) — smooth values keep ticking
         if (displayTick % 20 != 0) return;
 
@@ -254,7 +259,6 @@ public class ReactorDisplay {
                                     ? "0:00" : String.format("%d:%02d", sec / 60, sec % 60)), i);
                     setSignLine(base, all[i], 3, dots, i);
                 }
-                updateRoofLaserSignsDead(base);
                 return;
             }
 
@@ -267,7 +271,6 @@ public class ReactorDisplay {
                 setSignLine(base, all[i], 2, "<red>Please, stand by", i);
                 setSignLine(base, all[i], 3, dots, i);
             }
-            updateRoofLaserSignsDead(base);
             return;
         }
 
@@ -411,72 +414,47 @@ public class ReactorDisplay {
                 .replace("%p%", pressPct), 6);
         setSign(base, SIGN_STRESS, 3, color + msg("signs.stress_s", "S: %s%%")
                 .replace("%s%", spinPctStress), 6);
-
-        updateRoofLaserSigns(base, p1, p2, stab);
     }
 
     // =========================
-    // ROOF LASER SIGNS (9 standing signs next to the roof lamps)
-    // Sign line 1 keeps the template title ("Power Laser #1" etc.);
-    // line 2 shows the live power. Absorber shows the valve opening.
+    // ROOF LAMP SIGNS — one label sign above each control lamp (dy=+1).
+    // The texts come from the NBT template; the "Core Startup" label is
+    // renamed to "Trigger Action" — the lamp now fires several context
+    // actions (startup / manual shutdown / restabilization / self-destruct
+    // cancel). These are pure static labels in white: the full text is
+    // rewritten every 10s, so a broken, replaced or wiped sign heals itself;
+    // the live values live on the wall stats panels, not here.
     // =========================
-    private void updateRoofLaserSigns(Location base, int p1, int p2, int stab) {
-        var lasers = reactor.getLasers();
+    private static final int LAMP_SIGN_INTERVAL_TICKS = 200; // 10s
 
-        // [row (−4 | −2), sign offset z] — matches LAMP_PLUS/LAMP_MINUS rows in ReactorLasers
-        int[][] powerSigns = {
-                { -4, -4 }, { -4, -2 }, { -4, 0 }, { -4, 2 },
-                { -2, -4 }, { -2, -2 }, { -2, 0 }, { -2, 2 }
-        };
-        String[] powerText = { p1 + " %", p2 + " %", stab + " %",
-                (int) Math.round(lasers.getPower(ReactorLasers.LASER_ABSORBER)) + " %" };
+    /** {dx, dz, text lines...} — lamp label signs above the roof lamps. */
+    private static final String[][] LAMP_SIGNS = {
+            { "-4", "-4", "Power Laser #1", "+5% Power" },
+            { "-4", "-2", "Power Laser #2", "+5% Power" },
+            { "-4", "0", "Stab. Laser", "+5% Power" },
+            { "-4", "2", "Content Absorber", "+5% Valve", "Opening" },
+            { "-4", "4", "Trigger Action", "Startup / Shutdown", "Restab. / Cancel" },
+            { "-2", "-4", "Power Laser #1", "-5% Power" },
+            { "-2", "-2", "Power Laser #2", "-5% Power" },
+            { "-2", "0", "Stab. Laser", "-5% Power" },
+            { "-2", "2", "Content Absorber", "-5% Valve", "Opening" }
+    };
 
-        // +5% row (x=−4) — Power #1, Power #2, Stab, Absorber
-        for (int i = 0; i < 4; i++) {
-            setRoofSignPower(base, powerSigns[i][0], powerSigns[i][1], powerText[i],
-                    7 + i);
-        }
-        // −5% row (x=−2) — mirrors the same powers
-        for (int i = 0; i < 4; i++) {
-            setRoofSignPower(base, powerSigns[4 + i][0], powerSigns[4 + i][1], powerText[i],
-                    11 + i);
-        }
-
-        // Startup sign (x=−4, z=4): Running while the core runs, Offline after
-        // a completed shutdown, No startup before the first pulse.
-        String startupText = lasers.isStarted()
-                ? msg("signs.status_running", "Running")
-                : (reactor.isCoreOfflineMarked()
-                        ? msg("signs.status_offline", "Offline")
-                        : msg("signs.status_no_startup", "No startup"));
-        setRoofSignPower(base, -4, 4, startupText, 15);
-    }
-
-    // =========================
-    // ROOF LASER SIGNS — sensor-dead mode: the power readouts go dark too
-    // =========================
-    private void updateRoofLaserSignsDead(Location base) {
-        int[][] powerSigns = {
-                { -4, -4 }, { -4, -2 }, { -4, 0 }, { -4, 2 },
-                { -2, -4 }, { -2, -2 }, { -2, 0 }, { -2, 2 }
-        };
-        for (int i = 0; i < powerSigns.length; i++) {
-            setRoofSignPower(base, powerSigns[i][0], powerSigns[i][1],
-                    "<red>×", 7 + i);
-        }
-        setRoofSignPower(base, -4, 4, "<red>Off", 15);
-    }
-
-    private void setRoofSignPower(Location base, int dx, int dz, String powerText, int cacheIdx) {
-        String text = "<aqua>" + powerText;
-        if (signCache[cacheIdx][2] != null && signCache[cacheIdx][2].equals(text)) return;
-        signCache[cacheIdx][2] = text;
-
-        Block block = base.clone().add(dx, 1, dz).getBlock();
-        var state = block.getState();
-        if (state instanceof Sign signState) {
-            signState.line(2, MessageUtil.parse(text));
-            signState.update(true, false);
+    private void updateLampSigns(Location base) {
+        for (String[] label : LAMP_SIGNS) {
+            int dx = Integer.parseInt(label[0]);
+            int dz = Integer.parseInt(label[1]);
+            Block block = base.clone().add(dx, 1, dz).getBlock();
+            var state = block.getState();
+            if (!(state instanceof Sign signState)) continue;
+            int textLines = label.length - 2;
+            for (int line = 0; line < 4; line++) {
+                String text = line < textLines ? "<white>" + label[2 + line] : "";
+                signState.line(line, MessageUtil.parse(text));
+            }
+            // update() diffs against the live block entity — an unchanged
+            // sign is not rewritten (no client packet spam)
+            signState.update();
         }
     }
 
