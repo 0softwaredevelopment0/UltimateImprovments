@@ -832,6 +832,14 @@ public class ReactorManager {
     private StartupPhase startupPhase = StartupPhase.NONE;
     private int startupTicks;
 
+    /**
+     * Core temperature right after ignition, C* — the idle burn level the
+     * startup sequence leaves the core at. The reaction is running, so the
+     * core must not sit at ambient −273 C* until the operator ramps the
+     * power lasers; without heating it decays back down at 1 C* per tick.
+     */
+    private static final int IGNITION_TEMP = 20_000;
+
     public boolean isStartupSequenceActive() { return startupPhase != StartupPhase.NONE; }
     public StartupPhase getStartupPhase() { return startupPhase; }
 
@@ -918,6 +926,9 @@ public class ReactorManager {
                     broadcast(StructuresMessages.get("startup_ignite",
                             "<white>Igniting reactor core..."));
                     shield.ignite();
+                    // Ignition pre-heats the core to the idle burn level —
+                    // a started reaction does not stay at −273 C*
+                    coreTemp = Math.max(coreTemp, IGNITION_TEMP);
                     startupPhase = StartupPhase.WAIT_COMPLETE;
                     startupTicks = 0;
                 }
