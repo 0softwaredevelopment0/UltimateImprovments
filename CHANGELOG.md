@@ -7,14 +7,17 @@ in this file.
 
 ### Added
 - **DFC meltdown restabilization** — a depleted shield no longer detonates
-  instantly. The emergency systems deploy an auxiliary shield (a pure T-3m
-  countdown, no integrity): explosion and fire in the core, the systems
+  instantly. The emergency systems deploy an auxiliary shield (100%
+  integrity draining linearly to 0% over the T-3m window — the drain is
+  visible on the Shield Stats sign; at 0% the detonation becomes
+  unavoidable): explosion and fire in the core, the systems
   analyze, smoke vents and the multi-line WARNING block announces the
   "Emergency Termination Sequence". The stabilizers crank to 200% and the
   control locks (the lamps still click, nothing responds). The operators'
   second chance: netherite ingots in the content barrel (the floor barrel
   the fusion debris lands in) — 1 per slot, stacks count as one slot — set
-  the success chance, 2% per occupied slot (54% for a full barrel). The
+  the success chance, 2% per occupied slot (54% for a full 27-slot barrel,
+  capped at 100% — larger barrels cannot exceed certainty). The
   attempt is the startup lamp pulse: the ingots are consumed, the systems
   run their calibration sequence and roll the captured chance. Success →
   the manual (heat-dump) shutdown procedure runs and the reactor powers

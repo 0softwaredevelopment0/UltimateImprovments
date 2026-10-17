@@ -41,9 +41,9 @@ public class ReactorShield {
 
     /**
      * Shield states. {@code AUXILIARY} is the meltdown restabilization
-     * emergency shield: a pure countdown owned by the manager's meltdown
-     * machine (no integrity, no stress — it just holds the core for the
-     * T-3m restabilization window).
+     * emergency shield: no stress model — it forms at 100% integrity and
+     * drains linearly to 0% over the T-3m restabilization window; at 0% the
+     * manager is called back and the detonation becomes unavoidable.
      */
     public enum State { OFFLINE, CREATING, WORKING, AUXILIARY, FAILED, SHUTDOWN }
 
@@ -74,6 +74,15 @@ public class ReactorShield {
     /** Suction particle count at a fully open (100%) absorber valve, per tick. */
     private static final int ABSORBER_PARTICLES_FULL = 10;
 
+    /**
+     * Aux shield drain rate — 100% integrity over the whole restabilization
+     * window ({@link ReactorManager#AUX_SHIELD_SEC}), % per tick.
+     */
+    private static final double AUX_DRAIN_PER_TICK = 100.0 / (ReactorManager.AUX_SHIELD_SEC * 20);
+
+    /** Fractional aux-shield drain accumulator. */
+    private double auxDrainRemainder;
+
     public ReactorShield(ReactorManager reactor) {
         this.reactor = reactor;
     }
@@ -85,7 +94,27 @@ public class ReactorShield {
         ReactorConfig cfg = ReactorConfig.getInstance();
 
         switch (state) {
-            case OFFLINE, AUXILIARY -> { /* nothing until startup / the manager owns the aux countdown */ }
+            case OFFLINE -> { /* nothing until the startup sequence starts the shield */ }
+
+            case AUXILIARY -> {
+                // The aux shield drains linearly while it is up: 100% → 0% in
+                // AUX_SHIELD_SEC. The forming stages (analyzing / creating /
+                // warning lines) hold 100% — the drain starts when the
+                // manager opens the T-3m window (AUX_ACTIVE). At 0% the
+                // detonation becomes unavoidable.
+                if (reactor.isAuxShieldDraining()) {
+                    double v = AUX_DRAIN_PER_TICK + auxDrainRemainder;
+                    int whole = (int) v;
+                    auxDrainRemainder = v - whole;
+                    if (whole > 0) {
+                        integrity -= whole;
+                        if (integrity <= 0) {
+                            integrity = 0;
+                            reactor.onAuxShieldExpired();
+                        }
+                    }
+                }
+            }
 
             case CREATING -> {
                 // Build-up to 100% at a fixed 10%/sec; the core ignites later,
@@ -434,6 +463,7 @@ public class ReactorShield {
         decayRemainder = 0;
         overpowerRemainder = 0;
         shutdownRemainder = 0;
+        auxDrainRemainder = 0;
         recoveryTick = 0;
         failCountdown = 0;
     }

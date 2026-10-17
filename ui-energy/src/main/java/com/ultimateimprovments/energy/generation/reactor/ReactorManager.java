@@ -320,16 +320,19 @@ public class ReactorManager {
     // =========================
     // MELTDOWN RESTABILIZATION PROTOCOL — the reactor shield just died (0%
     // integrity). Instead of an instant T-10s detonation the emergency
-    // systems buy three minutes: an auxiliary shield (a pure countdown, no
-    // integrity) holds the core while the operators try to restabilize the
-    // reactor. Netherite ingots in the content barrel (the floor barrel the
+    // systems buy three minutes: an auxiliary shield (100% integrity,
+    // draining linearly to 0% over the window) holds the core while the
+    // operators try to restabilize the reactor. Netherite ingots in the
+    // content barrel (the floor barrel the
     // fusion debris lands in) set the success chance: 2% per occupied slot,
-    // stacks do not help (54% for a full 27-slot barrel). The attempt is the
+    // stacks do not help (54% for a full 27-slot barrel, capped at 100% —
+    // larger barrels cannot exceed certainty). The attempt is the
     // startup lamp pulse: the ingots are consumed, the systems run their
     // calibration sequence and roll the captured chance. Success starts the
     // manual (heat-dump) shutdown procedure — the reactor powers down and
-    // leaves the meltdown phase. Failure, or an expired aux shield, makes
-    // the detonation unavoidable (the shield FAILED T-10s countdown).
+    // leaves the meltdown phase. Failure, or an expired aux shield
+    // (integrity 0%), makes the detonation unavoidable (the shield FAILED
+    // T-10s countdown).
     // =========================
     public enum MeltdownPhase {
         NONE,          // normal operation
@@ -341,8 +344,11 @@ public class ReactorManager {
         RESTAB_FAIL    // attempt failed: failure reports, then T-10s
     }
 
-    /** The auxiliary shield lifetime — the "T-3m" restabilization window. */
-    private static final int AUX_SHIELD_SEC = 180;
+    /**
+     * The auxiliary shield lifetime — the "T-3m" restabilization window.
+     * Public: the shield drains its integrity linearly over the same span.
+     */
+    public static final int AUX_SHIELD_SEC = 180;
     /** Success chance % per content-barrel slot occupied by a netherite ingot. */
     private static final double RESTAB_CHANCE_PER_SLOT = 2.0;
     /** Ticks between the WARNING block lines. */
@@ -357,6 +363,29 @@ public class ReactorManager {
     public MeltdownPhase getMeltdownPhase() { return meltdownPhase; }
 
     /**
+     * True while the aux shield is up and must drain: the T-3m window is open
+     * (AUX_ACTIVE) or the attempt/fail sequence is running on top of it. The
+     * forming stages (analyzing / creating / warning lines) hold 100%.
+     */
+    public boolean isAuxShieldDraining() {
+        return meltdownPhase == MeltdownPhase.AUX_ACTIVE
+                || meltdownPhase == MeltdownPhase.RESTAB_SEQ
+                || meltdownPhase == MeltdownPhase.RESTAB_FAIL;
+    }
+
+    /**
+     * The aux shield integrity hit 0% (ReactorShield drain callback): the
+     * detonation becomes unavoidable — the standard shield-failure broadcast
+     * and the T-10s countdown. Also aborts an in-flight attempt/fail
+     * sequence: without a shield there is nothing left to restabilize.
+     */
+    public void onAuxShieldExpired() {
+        if (!isMeltdownActive()) return;
+        if (shield.getState() != ReactorShield.State.AUXILIARY) return;
+        beginUnavoidable(true);
+    }
+
+    /**
      * The reactor shield just died (0% integrity): the meltdown
      * restabilization protocol starts. The self-destruct protocol keeps its
      * own flow — its finale deliberately burns the shield, so a depleted
@@ -369,10 +398,11 @@ public class ReactorManager {
             return;
         }
         if (isMeltdownActive() || shield.isFailed()) return;
-        // The regular shield is gone — the AUXILIARY state (a pure countdown
-        // owned by tickMeltdown) takes its place
+        // The regular shield is gone — the AUXILIARY state takes its place:
+        // it forms full and drains linearly to 0% over the T-3m window
+        // (the drain itself lives in ReactorShield.tick)
         shield.setState(ReactorShield.State.AUXILIARY);
-        shield.setIntegrity(0);
+        shield.setIntegrity(100);
         meltdownPhase = MeltdownPhase.AUX_ANALYZING;
         meltdownTicks = 0;
         meltdownLineIndex = 0;
@@ -500,7 +530,9 @@ public class ReactorManager {
     // =========================
     private void tryRestabilization() {
         int slots = countRestabIngots();
-        restabChance = slots * RESTAB_CHANCE_PER_SLOT;
+        // Servers can run larger (multi-row) barrels — the chance is capped
+        // at 100% so a 54-slot barrel cannot roll above certainty.
+        restabChance = Math.min(100.0, slots * RESTAB_CHANCE_PER_SLOT);
         clearRestabIngots();
         meltdownPhase = MeltdownPhase.RESTAB_SEQ;
         meltdownTicks = 0;

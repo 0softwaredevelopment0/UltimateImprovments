@@ -217,7 +217,7 @@ public class ReactorState {
     public int getMeltdownTicks() { return meltdownTicks; }
     public void setMeltdownTicks(int val) { meltdownTicks = Math.max(0, val); }
     public double getRestabChance() { return restabChance; }
-    public void setRestabChance(double val) { restabChance = Math.max(0, val); }
+    public void setRestabChance(double val) { restabChance = Math.max(0, Math.min(100, val)); }
 
     // =========================
     // STALL SHUTDOWN
