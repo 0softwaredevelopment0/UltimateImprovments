@@ -192,7 +192,10 @@ public class DatabaseInit {
                 {"stall_trigger", "TEXT"},
                 {"core_offline", "INTEGER DEFAULT 0"},
                 {"startup_phase", "TEXT DEFAULT 'NONE'"},
-                {"startup_ticks", "INTEGER DEFAULT 0"}
+                {"startup_ticks", "INTEGER DEFAULT 0"},
+                // Dynamic lower temperature limit rolled from the build-site
+                // biome; -273 = legacy reactors built before the mechanic
+                {"temp_min", "INTEGER DEFAULT -273"}
             };
             for (String[] col : reactorCols) {
                 try {

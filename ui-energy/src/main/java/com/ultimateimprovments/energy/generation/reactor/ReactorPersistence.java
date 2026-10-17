@@ -39,7 +39,7 @@ public class ReactorPersistence {
                  core_emergency_stopped,
                  meltdown_phase, meltdown_ticks, restab_chance,
                  stall_phase, stall_ticks, stall_trigger, core_offline,
-                 startup_phase, startup_ticks)
+                 startup_phase, startup_ticks, temp_min)
                  VALUES (?, ?, ?, ?, ?,
                          ?, ?, ?,
                          ?,
@@ -52,7 +52,7 @@ public class ReactorPersistence {
                          ?,
                          ?, ?, ?,
                          ?, ?, ?, ?,
-                         ?, ?)
+                         ?, ?, ?)
             """)) {
 
             // The legacy core_case_temp/press/int columns (old inner-case stats)
@@ -96,6 +96,7 @@ public class ReactorPersistence {
             ps.setInt(36, state.isCoreOffline() ? 1 : 0);
             ps.setString(37, state.getStartupPhase());
             ps.setInt(38, state.getStartupTicks());
+            ps.setInt(39, state.getTempMin());
 
             ps.executeUpdate();
 
@@ -233,6 +234,11 @@ public class ReactorPersistence {
                     state.setStartupTicks(rs.getInt("startup_ticks"));
                 } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load startup state: " + e.getMessage());
+                }
+                try { state.setTempMin(rs.getInt("temp_min")); } catch (Exception e) {
+                    // Legacy rows pre-date the dynamic limit — the column
+                    // default (−273) keeps the old behaviour for them
+                    ConsoleLogger.warn("[Reactor] Failed to load temp_min: " + e.getMessage());
                 }
                 try {
                     state.setLaserPowers(new double[] {

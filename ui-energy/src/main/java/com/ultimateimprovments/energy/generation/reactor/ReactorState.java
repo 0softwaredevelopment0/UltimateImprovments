@@ -19,6 +19,10 @@ public class ReactorState {
     private int coreTemp;          // Core temperature, C* [-273 .. 2,000,000,000]
     private double shieldPress;    // Shield pressure, MPa (≈10.01 at working temp 10M C*)
     private double spin;           // Core spin, RPS (95 000 at the 10M working point)
+    // Dynamic lower temperature limit, C*: rolled from the build-site biome
+    // at assembly (biome temperature × multiplier + offset, rounded). -273 =
+    // legacy reactors built before the mechanic.
+    private int tempMin = -273;
 
     // Fusion
     private double fusionParticles;
@@ -97,6 +101,7 @@ public class ReactorState {
         selfdestructDone = o.selfdestructDone;
         selfdestructCancelled = o.selfdestructCancelled;
         coreEmergencyStopped = o.coreEmergencyStopped;
+        tempMin = o.tempMin;
         meltdownPhase = o.meltdownPhase;
         meltdownTicks = o.meltdownTicks;
         restabChance = o.restabChance;
@@ -138,6 +143,8 @@ public class ReactorState {
     // =========================
     public int getCoreTemp() { return coreTemp; }
     public void setCoreTemp(int val) { coreTemp = val; }
+    public int getTempMin() { return tempMin; }
+    public void setTempMin(int val) { tempMin = val; }
     public void addCoreTemp(int val) { coreTemp += val; }
     public void subtractCoreTemp(int val) { coreTemp -= val; }
 

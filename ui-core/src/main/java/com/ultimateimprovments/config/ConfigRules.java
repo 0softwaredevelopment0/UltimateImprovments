@@ -182,6 +182,9 @@ final class ConfigRules {
             dbl("reactor.case_int_decay_press", 0.0, 1000.0),
             dbl("reactor.case_int_decay_rate", 0.0, 100.0),
             integer("reactor.meltdown_explosion_radius", 0, 500, "Reactor detonation explosion radius"),
+            dbl("reactor.temp_limit_offset", -1000000.0, 1000000.0),
+            dbl("reactor.temp_limit_biome_multiplier", 0.0, 1000000.0),
+            dbl("reactor.temp_limit_biome_fallback", -1000000.0, 1000000.0),
 
             bool("features.antimatter.enabled"),
             integer("features.antimatter.explosion_radius", 0, 100),
