@@ -6,6 +6,21 @@ in this file.
 ## [Unreleased]
 
 ### Added
+- **Structure forbidden blocks** — a general mechanic for ALL NBT structures:
+  a material from the forbidden list fails the check no matter where in the
+  structure's full footprint it stands (a solid or an air cell, inside or
+  outside the air-enforcement zones — a chest parked far from the core
+  chamber is still rejected). Reported as a distinct "forbidden <block> at
+  [coords]" fix (new `fix_forbidden` message key) in a separate
+  `MatchResult.forbidden()` list; the match percentage counts them as
+  mismatches. Global list: water, lava, TNT, pistons (they destroy any
+  multi-block). Per-structure developer overrides
+  (`StructureTemplate.FORBIDDEN_OVERRIDES`, not a user config):
+  darkfusionreactor additionally forbids containers (chest/trapped/ender,
+  hopper, dropper, dispenser, furnace family, brewing stand, all shulker
+  boxes — they clash with the fuel/debris barrel systems and hide items
+  inside the case) and the observer (wired against the roof bulbs it could
+  auto-pulse the Trigger Action lamp — the reactor is player-operated).
 - **DFC dynamic lower temperature limits** — every reactor rolls its own
   lower temperature limit at build time from the build-site biome:
   `limit = biome temperature × reactor.temp_limit_biome_multiplier +
