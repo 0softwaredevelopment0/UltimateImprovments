@@ -217,7 +217,11 @@ public class PlaceholderResolver {
             }
         } catch (Exception e) {
             luckPermsAvailable = false;
-            ConsoleLogger.info("[PlaceholderResolver] LuckPerms not found — %prefix%/%suffix%/%group% disabled");
+            // Broad catch by design: missing classes (not installed) and
+            // IllegalStateException from LuckPermsProvider (LP not enabled yet)
+            // must both disable the hook — but the real reason is logged so a
+            // load-order race is never misreported as "not installed".
+            ConsoleLogger.info("[PlaceholderResolver] LuckPerms hook unavailable — %prefix%/%suffix%/%group% disabled (reason: " + e + ")");
         }
 
         StatsTracker.init();
