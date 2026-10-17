@@ -29,7 +29,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "ui:datapack/weaks_to_strongs",
+  "parent": "ui:datapack/craft_healthmeter",
     "criteria": {
     "obtain": {
       "trigger": "minecraft:inventory_changed",

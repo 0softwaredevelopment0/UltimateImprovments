@@ -59,9 +59,21 @@ in this file.
   the systems step off one by one and the reactor is marked offline,
   awaiting a new startup. Covers both the automatic shutdown (reaction
   failure at −273 C*) and the manual trigger shutdown. Challenge frame,
-  totem of undying icon, 200 XP, parent `ui:datapack/operator_incompetence`.
+  totem of undying icon, 250 XP, parent `ui:datapack/operator_incompetence`.
 
 ### Changed
+- **Advancement tree regrouped into clear lines** — the "Research" branch
+  (People of the Past → High Temperatures) no longer trails into tech
+  crafts: the Photon Cannon ("Light Attack") and reinforced deepslate moved
+  to the "Technology" branch, which is now one continuous craft progression
+  ending in the two warp-fungus weapons (Photon Cannon → shoker).
+- **Advancement XP rebalance (fairness pass)** — rewards now match the
+  actual effort: "Kaboom!" 100 → 200 (a 1000+ damage single mace hit is a
+  real challenge), "Suicide" 100 → 25 (one command), "java.lang.
+  OutOfMemoryError" 100 → 150 and "The server has not responding!" 100 →
+  150 (the rarer server incidents outscale the common ones), "Saved from
+  extinction" 200 → 250 (a full emergency shutdown procedure, level with
+  "Vaporised in the plasma").
 - **DFC advancement "One-time heating" renamed to "Vaporised in the plasma"**
   (`one_time_heater` → `vaporised_in_plasma`, datapack file and code) — the
   trigger is unchanged (be inside the DFC core when it explodes); new title
