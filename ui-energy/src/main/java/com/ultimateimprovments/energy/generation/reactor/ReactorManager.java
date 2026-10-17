@@ -228,22 +228,19 @@ public class ReactorManager {
             broadcast(StructuresMessages.get("stall_warn_critical",
                     "<aqua>Core temperatures are critically low, activate all power lasers immediately, to avoid a potential reaction stall!"));
         }
-        if (prevTemp > 0 && coreTemp <= 0) {
-            broadcast(StructuresMessages.get("stall_warn_failure",
-                    "<aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!"));
-
-            // 🏆 Advancement: operator_incompetence — the core reaction just
-            // died from cooling; the cooling shutdown (stall) is imminent
-            grantAdvancementNear("datapack/operator_incompetence");
-        }
+        // The reaction-failure warning ("stall imminent") is NOT here — it
+        // fires at the lower-limit crossing, 5s before the shutdown starts
+        // (see tryTriggerStallShutdown, together with the advancement).
     }
 
     /**
-     * Starts the stall shutdown when the core reaches the reactor's dynamic
-     * lower temperature limit (the build-site biome temperature × multiplier,
-     * −273 C* legacy default) — crossing into it, so a reactor restarted
-     * cold does not instantly re-stall: it must first gain heat and lose it
-     * again.
+     * The core reached the reactor's dynamic lower temperature limit (the
+     * build-site biome temperature × multiplier, −273 C* legacy default).
+     * The "reaction failure, stall imminent" warning fires first and the
+     * automatic shutdown starts 5 seconds later, together with the
+     * operator_incompetence advancement. Crossing detection, so a reactor
+     * restarted cold does not instantly re-stall: it must first gain heat
+     * and lose it again.
      */
     private void tryTriggerStallShutdown(int prevTemp) {
         if (stallPhase != StallPhase.NONE) return;
@@ -251,8 +248,13 @@ public class ReactorManager {
         if (shield.getState() != ReactorShield.State.WORKING) return;
         if (prevTemp <= tempMin || coreTemp > tempMin) return;
 
-        // Automatic trigger: the reaction died from heat loss (floor reached)
-        beginFinalShutdown(ShutdownTrigger.AUTOMATIC);
+        // Automatic trigger: the reaction died from heat loss (limit
+        // reached) — warn first, the shutdown follows in 5 seconds
+        stallPhase = StallPhase.STALL_WARN;
+        stallTicks = 0;
+        broadcast(StructuresMessages.get("stall_warn_failure",
+                "<aqua>Core reaction failure due to critically low temperatures, reaction stall imminent!"));
+        saveToDb();
     }
 
     /**
@@ -654,6 +656,18 @@ public class ReactorManager {
         switch (stallPhase) {
             case NONE -> { }
 
+            case STALL_WARN -> {
+                // 5s dramatic pause after the reaction-failure warning (the
+                // warning says "stall imminent") — then the shutdown starts
+                // and the advancement is granted
+                if (++stallTicks >= 20 * 5) {
+                    // 🏆 Advancement: operator_incompetence — the core
+                    // reaction died from cooling; the stall is happening
+                    grantAdvancementNear("datapack/operator_incompetence");
+                    beginFinalShutdown(ShutdownTrigger.AUTOMATIC);
+                }
+            }
+
             case SHIELD_RAMP -> {
                 // Normal path: the ramp completes via onStallShieldDown().
                 // A shield that dissolved instantly (the meltdown
@@ -788,11 +802,11 @@ public class ReactorManager {
     // =========================
     // STALL SHUTDOWN PROTOCOL: the reaction lost its heat. While the core is
     // running, threshold crossings broadcast one warning each (below 1M C* —
-    // fusion stops, below 10k C* — critical, below 0 C* — reaction failure;
-    // the 0 C* warning only fires on reactors whose dynamic lower limit is
-    // below zero). Reaching the reactor's dynamic lower temperature limit
-    // (build-site biome × multiplier, −273 C* legacy) starts the full
-    // automatic shutdown:
+    // fusion stops, below 10k C* — critical). Reaching the reactor's dynamic
+    // lower temperature limit (build-site biome × multiplier, −273 C* legacy)
+    // fires the reaction-failure warning ("stall imminent") and, 5 seconds
+    // later, starts the full automatic shutdown together with the
+    // operator_incompetence advancement:
     // power lasers off one by one (their ±5% control detached), stab laser,
     // absorber valve, then the shield ramps down smoothly (Shutting down) and
     // the core is marked offline, awaiting a new trigger pulse. Control is
@@ -801,6 +815,7 @@ public class ReactorManager {
     // =========================
     public enum StallPhase {
         NONE,            // idle
+        STALL_WARN,      // limit reached: "reaction failure" warning → 5s → shutdown + advancement
         WAIT_POWER,      // 5s after the announcement → power lasers step
         HEAT_DUMP,       // every trigger: cool to the lower limit at 10%/sec of the shutdown-start temp
         WAIT_P2,         // P1 off → 3s → P2 off

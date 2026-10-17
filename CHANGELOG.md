@@ -61,6 +61,15 @@ in this file.
   The trigger kind persists in the new `stall_trigger` column (legacy rows
   fall back to the old `stall_manual` flag), so the "Saved from extinction"
   advancement still counts only the genuine −273 C* emergency stall.
+
+### Changed
+- **DFC stall: the reaction-failure warning precedes the shutdown** — the
+  "Core reaction failure due to critically low temperatures, reaction stall
+  imminent!" warning moved from the 0 C* crossing to the lower-limit
+  crossing (so it fires on every reactor, whatever its dynamic limit is),
+  and the automatic shutdown now starts 5 seconds after it, together with
+  the "Operator Incompetence" advancement (previously both fired instantly
+  at the 0 C* crossing, one shutdown-length before the stall itself).
 - **DFC aux shield integrity warnings** — the draining auxiliary shield
   broadcasts once per downward threshold crossing at 75 / 50 / 25 / 10%:
   "Warning! Auxiliary shield integrity at N%!".
@@ -68,9 +77,11 @@ in this file.
   restabilization phase starts (the shield just died, the T-3m window is
   open). Goal frame, heart of the sea icon, 75 XP, parent
   `ui:datapack/dfc_unstable`.
-- **DFC advancement "Operator Incompetence"** — granted when the core
-  reaction dies from cooling (reaction failure at 0 C*, immediately before
-  the automatic cooling shutdown). Goal frame, ice icon, 50 XP, parent
+- **DFC advancement "Operator Incompetence"** — granted when the stall
+  shutdown starts: the core reached the reactor's dynamic lower temperature
+  limit, the "reaction failure, stall imminent" warning fired first and the
+  automatic cooling shutdown follows 5 seconds later (together with the
+  advancement). Goal frame, ice icon, 50 XP, parent
   `ui:datapack/start_dfc`.
 - **DFC advancement "Self-destruct protocol"** (rework of "Fading signals",
   same `dfc_self_destruct` file) — granted at the T-60s announcement, after
