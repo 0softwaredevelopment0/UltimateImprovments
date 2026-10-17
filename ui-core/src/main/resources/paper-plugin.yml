@@ -6,12 +6,19 @@ api-version: '26.3'
 author: rizer001
 dependencies:
   server:
+    # load: BEFORE — hooks reflect into these plugins during onEnable, so they
+    # must be fully enabled first. OMIT (default) = undefined ordering, which
+    # made LuckPermsProvider.get() throw "not initialized yet" and the hook
+    # misreport "LuckPerms not found" on some start-ups.
     PlaceholderAPI:
+      load: BEFORE
       required: false
       join-classpath: true
     LuckPerms:
+      load: BEFORE
       required: false
       join-classpath: true
     Vault:
+      load: BEFORE
       required: false
       join-classpath: true
