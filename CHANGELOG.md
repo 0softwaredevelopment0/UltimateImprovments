@@ -67,6 +67,17 @@ in this file.
   crafts: the Photon Cannon ("Light Attack") and reinforced deepslate moved
   to the "Technology" branch, which is now one continuous craft progression
   ending in the two warp-fungus weapons (Photon Cannon → shoker).
+- **Advancement icons reworked to match their content** — Critical overload
+  (heart of the sea → netherite ingot, the restabilization currency), The
+  power of fusion (emerald → ancient debris), Senior ReactorOps (spectral
+  arrow → shield), Destructive Consequences (redstone → creeper head, the
+  meltdown literally detonates a creeper), Vaporised in the plasma
+  (redstone block → blaze powder), In the Depths of Hell (nether wart →
+  lava bucket), Ah, where the oxyden? (redstone → bubble coral), The space
+  (ender pearl → firework star, the rocket theme), Where is the Earth's
+  core here? (firework star → magma block), OutOfMemoryError (structure
+  void → shulker box, "memory full"). This also removes the stray
+  redstone/redstone_block duplicates in the tree.
 - **Advancement XP rebalance (fairness pass)** — rewards now match the
   actual effort: "Kaboom!" 100 → 200 (a 1000+ damage single mace hit is a
   real challenge), "Suicide" 100 → 25 (one command), "java.lang.
@@ -110,6 +121,12 @@ in this file.
   hangs directly under "The force of decay" (`react_with_antimatter`).
 
 ### Fixed
+- **"Saved from extinction" is no longer granted for every shutdown** — the
+  grant in `finishStallShutdown()` fired for the manual trigger shutdown
+  and the restabilization success shutdown too. Only the EMERGENCY shutdown
+  counts now: the automatic stall procedure started by the reaction failure
+  (core coasting down to −273 C*). The manual/restab paths leave the
+  advancement untouched.
 - **The `dfc_unstable` advancement is now obtainable** — its grant check
   (`ReactorManager.checkDfcUnstable`) was defined but never called, so the
   parent of the whole DFC advancement branch could never fire. It is now

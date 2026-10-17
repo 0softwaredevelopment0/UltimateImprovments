@@ -688,6 +688,10 @@ public class ReactorManager {
 
     /** Final step of the stall shutdown: the core is marked offline. */
     private void finishStallShutdown() {
+        // 🏆 Advancement: saved_from_extinction — only the EMERGENCY shutdown
+        // counts (reaction failure, the automatic −273 C* stall). A manual
+        // trigger shutdown or the restabilization success shutdown does not.
+        boolean emergencyShutdown = !stallManual;
         lasers.setStarted(false);
         coreOfflineMarked = true;
         stallPhase = StallPhase.NONE;
@@ -695,9 +699,9 @@ public class ReactorManager {
         stallManual = false;
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
-        // 🏆 Advancement: saved_from_extinction — the emergency shutdown
-        // procedure ran to the end (core marked offline, awaiting startup)
-        grantAdvancementNear("datapack/saved_from_extinction");
+        if (emergencyShutdown) {
+            grantAdvancementNear("datapack/saved_from_extinction");
+        }
         saveToDb();
     }
 
