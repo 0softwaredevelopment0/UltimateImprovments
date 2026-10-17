@@ -25,7 +25,7 @@
       "obfuscated": false
     },
     "background": "minecraft:block/netherite_block",
-    "frame": "challenge",
+    "frame": "task",
     "show_toast": true,
     "announce_to_chat": false,
     "hidden": false
