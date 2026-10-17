@@ -38,7 +38,7 @@ public class ReactorPersistence {
                  selfdestruct_phase, selfdestruct_ticks, selfdestruct_done, selfdestruct_cancelled,
                  core_emergency_stopped,
                  meltdown_phase, meltdown_ticks, restab_chance,
-                 stall_phase, stall_ticks, stall_manual, core_offline,
+                 stall_phase, stall_ticks, stall_trigger, core_offline,
                  startup_phase, startup_ticks)
                  VALUES (?, ?, ?, ?, ?,
                          ?, ?, ?,
@@ -92,7 +92,7 @@ public class ReactorPersistence {
             ps.setDouble(32, state.getRestabChance());
             ps.setString(33, state.getStallPhase());
             ps.setInt(34, state.getStallTicks());
-            ps.setInt(35, state.isStallManual() ? 1 : 0);
+            ps.setString(35, state.getStallTrigger());
             ps.setInt(36, state.isCoreOffline() ? 1 : 0);
             ps.setString(37, state.getStartupPhase());
             ps.setInt(38, state.getStartupTicks());
@@ -219,6 +219,10 @@ public class ReactorPersistence {
                 try {
                     state.setStallPhase(rs.getString("stall_phase"));
                     state.setStallTicks(rs.getInt("stall_ticks"));
+                    // Legacy rows have no stall_trigger value (NULL) — the
+                    // old stall_manual flag stays as the fallback for them.
+                    String stallTrigger = rs.getString("stall_trigger");
+                    if (stallTrigger != null) state.setStallTrigger(stallTrigger);
                     state.setStallManual(rs.getInt("stall_manual") == 1);
                     state.setCoreOffline(rs.getInt("core_offline") == 1);
                 } catch (Exception e) {

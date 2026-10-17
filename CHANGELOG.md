@@ -24,10 +24,28 @@ in this file.
   work. The attempt is the Trigger Action lamp pulse: the netherite items
   are consumed, the systems run their calibration sequence and roll the
   captured chance. Success →
-  the manual (heat-dump) shutdown procedure runs and the reactor powers
+  the automatic shutdown procedure runs and the reactor powers
   down. Failure (its own three-report sequence) or an expired aux shield →
   the detonation becomes unavoidable (the shield FAILED T-10s countdown).
   The whole phase machine persists across restarts.
+- **DFC restabilization sequence extension** — two more reports between the
+  shield re-creation attempt and the roll: "Estimating chance of sucessfull
+  shutdown..." (5s after the re-creation attempt) and "Awaiting reactor
+  systems to respond..." (5s after the estimated chance) — the roll now
+  happens 30 seconds after the attempt starts instead of 20.
+- **DFC explicit manual/automatic final shutdown procedures** — the final
+  shutdown phase (power lasers → heat dump → stabilization lasers →
+  absorber valve → shield ramp → offline) is one shared chain entered
+  through two explicit trigger kinds. Only the announcement differs:
+  "due to manual trigger" (the operator lamp pulse on a running reactor)
+  vs "due to automatical trigger" (the −273 C* reaction-failure stall and
+  the restabilization success — previously announced as "due to reaction
+  failure"). The restabilization success shutdown switched from the manual
+  to the automatic procedure. The heat dump now runs for every trigger
+  (behaviorally identical: the −273 C* stall passes through instantly).
+  The trigger kind persists in the new `stall_trigger` column (legacy rows
+  fall back to the old `stall_manual` flag), so the "Saved from extinction"
+  advancement still counts only the genuine −273 C* emergency stall.
 - **DFC aux shield integrity warnings** — the draining auxiliary shield
   broadcasts once per downward threshold crossing at 75 / 50 / 25 / 10%:
   "Warning! Auxiliary shield integrity at N%!".

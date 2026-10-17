@@ -249,21 +249,16 @@ public class ReactorManager {
         if (shield.getState() != ReactorShield.State.WORKING) return;
         if (prevTemp <= TEMP_MIN || coreTemp > TEMP_MIN) return;
 
-        stallPhase = StallPhase.WAIT_POWER;
-        stallTicks = 0;
-        broadcast(StructuresMessages.get("stall_shutdown_initiated",
-                "<white>Core shutdown initiated due to reaction failure, please wait."));
-        saveToDb();
+        // Automatic trigger: the reaction died from heat loss (−273 C*)
+        beginFinalShutdown(ShutdownTrigger.AUTOMATIC);
     }
 
     /**
      * Manual shutdown: the Trigger Action lamp pulsed while the core is
      * already running. Silently ignored while the shield stress is above
-     * 10% (nothing happens); otherwise the stall procedure runs with the
-     * manual trigger announcement, and after the power lasers step the core
-     * dumps all its heat to −273 C* at 10%/sec of the temperature it had at
-     * the shutdown start — the next shutdown step waits until −273 is
-     * reached.
+     * 10% (nothing happens); otherwise the MANUAL final shutdown procedure
+     * starts — the same chain as the automatic one, only the announcement
+     * differs (due to manual trigger).
      */
     public void tryManualShutdownTrigger() {
         // Meltdown restabilization: the trigger lamp pulse while the aux
@@ -285,12 +280,31 @@ public class ReactorManager {
         if (shield.getState() != ReactorShield.State.WORKING) return;
         if (shield.getTotalStress() > MANUAL_TRIGGER_MAX_STRESS) return;
 
-        stallManual = true;
+        // Manual trigger: the operator pulsed the lamp on a running reactor
+        beginFinalShutdown(ShutdownTrigger.MANUAL);
+    }
+
+    /**
+     * The final shutdown phase — the shared chain every shutdown runs after
+     * its trigger: power lasers off one by one, heat dump to −273 C*, the
+     * stabilization lasers, the content absorber valve, the shield ramp and
+     * the offline mark (see {@link #tickStallShutdown()}). The MANUAL and
+     * AUTOMATIC procedures differ only in the announcement: the operator
+     * manual trigger vs the automatic trigger (the −273 C* reaction-failure
+     * stall, the meltdown restabilization success).
+     */
+    private void beginFinalShutdown(ShutdownTrigger trigger) {
+        stallTrigger = trigger;
+        // Every trigger dumps the heat to −273 C* at 10%/sec of the
+        // shutdown-start temperature; the automatic stall is already there
+        // and passes through the dump instantly.
         stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
         stallPhase = StallPhase.WAIT_POWER;
         stallTicks = 0;
-        broadcast(StructuresMessages.get("stall_shutdown_manual",
-                "<white>Core shutdown initiated due to manual trigger, please wait."));
+        boolean manual = trigger == ShutdownTrigger.MANUAL;
+        broadcast(StructuresMessages.get(manual ? "stall_shutdown_manual" : "stall_shutdown_automatic",
+                manual ? "<white>Core shutdown initiated due to manual trigger, please wait."
+                       : "<white>Core shutdown initiated due to automatical trigger, please wait."));
         saveToDb();
     }
 
@@ -473,13 +487,17 @@ public class ReactorManager {
                     broadcast(StructuresMessages.get("meltdown_recreation",
                             "<white>Attempting shield re-creation..."));
                 } else if (meltdownTicks == 20 * 15) {
-                    // 5s dramatic pause after the re-creation attempt message,
-                    // then the estimated chance; the roll keeps a 5s read window
+                    broadcast(StructuresMessages.get("meltdown_estimating",
+                            "<white>Estimating chance of sucessfull shutdown..."));
+                } else if (meltdownTicks == 20 * 20) {
                     broadcast(StructuresMessages.get("meltdown_chance",
                             "<white>Estimated chance of success: <yellow>%chance%%<white>.")
                             .replace("%chance%", String.valueOf((int) restabChance)));
+                } else if (meltdownTicks == 20 * 25) {
+                    broadcast(StructuresMessages.get("meltdown_awaiting",
+                            "<white>Awaiting reactor systems to respond..."));
                 }
-                if (meltdownTicks >= 20 * 20) {
+                if (meltdownTicks >= 20 * 30) {
                     rollRestabilization();
                 }
             }
@@ -544,7 +562,7 @@ public class ReactorManager {
         saveToDb();
     }
 
-    /** Rolls the captured chance: success → the manual shutdown, failure → T-10s. */
+    /** Rolls the captured chance: success → the automatic shutdown, failure → T-10s. */
     private void rollRestabilization() {
         if (Math.random() * 100.0 < restabChance) {
             broadcast(StructuresMessages.get("meltdown_success",
@@ -552,19 +570,17 @@ public class ReactorManager {
             meltdownPhase = MeltdownPhase.NONE;
             meltdownTicks = 0;
             lasers.setControlLocked(false);
-            // The manual shutdown: heat-dump to −273 C*, then the full
-            // stall procedure — the same flow as the trigger-lamp shutdown.
-            stallManual = true;
-            stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
-            stallPhase = StallPhase.WAIT_POWER;
-            stallTicks = 0;
+            // The restabilized reactor runs the AUTOMATIC procedure — the
+            // manual trigger procedure stays reserved for the operator lamp
+            // pulse (the announcement comes from beginFinalShutdown).
+            beginFinalShutdown(ShutdownTrigger.RESTAB);
         } else {
             broadcast(StructuresMessages.get("meltdown_fail_timeout",
                     "<red>Timed out waiting for reactor systems to respond..."));
             meltdownPhase = MeltdownPhase.RESTAB_FAIL;
             meltdownTicks = 0;
+            saveToDb();
         }
-        saveToDb();
     }
 
     /** The content barrel — the floor barrel the fusion debris lands in. */
@@ -651,16 +667,17 @@ public class ReactorManager {
                     broadcast(StructuresMessages.get("stall_power_lasers",
                             "<white>Shutting down power lasers..."));
                     lasers.shutDownLaser(ReactorLasers.LASER_P1);
-                    // Manual shutdown: dump the heat to -273 C* before the next step
-                    stallPhase = stallManual ? StallPhase.HEAT_DUMP : StallPhase.WAIT_P2;
+                    // Every trigger dumps the heat to −273 C* before the next
+                    // step (the −273 C* stall passes through instantly)
+                    stallPhase = StallPhase.HEAT_DUMP;
                     stallTicks = 0;
                 }
             }
             case HEAT_DUMP -> {
-                // Manual shutdown heat dump: the core loses 10%/sec (of the
-                // temperature it had at the shutdown start) until absolute
-                // zero — the next shutdown step does not proceed before that.
-                // (Lasers are already inert — stall gates the heat/cool path.)
+                // Common heat dump: the core loses 10%/sec (of the temperature
+                // it had at the shutdown start) until absolute zero — the next
+                // shutdown step does not proceed before that. (Lasers are
+                // already inert — the shutdown gates the heat/cool path.)
                 double v = stallCoolPerTick + stallCoolRemainder;
                 int whole = (int) v;
                 stallCoolRemainder = v - whole;
@@ -738,12 +755,12 @@ public class ReactorManager {
         // 🏆 Advancement: saved_from_extinction — only the EMERGENCY shutdown
         // counts (reaction failure, the automatic −273 C* stall). A manual
         // trigger shutdown or the restabilization success shutdown does not.
-        boolean emergencyShutdown = !stallManual;
+        boolean emergencyShutdown = stallTrigger == ShutdownTrigger.AUTOMATIC;
         lasers.setStarted(false);
         coreOfflineMarked = true;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
-        stallManual = false;
+        stallTrigger = ShutdownTrigger.AUTOMATIC;
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
         if (emergencyShutdown) {
@@ -780,7 +797,7 @@ public class ReactorManager {
     public enum StallPhase {
         NONE,            // idle
         WAIT_POWER,      // 5s after the announcement → power lasers step
-        HEAT_DUMP,       // manual only: cool to -273 C* at 10%/sec of the shutdown-start temp
+        HEAT_DUMP,       // every trigger: cool to -273 C* at 10%/sec of the shutdown-start temp
         WAIT_P2,         // P1 off → 3s → P2 off
         WAIT_STAB_MSG,   // 2s → "Shutting down stabilization lasers..."
         WAIT_STAB_OFF,   // 2s → stab off
@@ -791,13 +808,30 @@ public class ReactorManager {
         WAIT_OFFLINE_MSG // shield "Success." → 3s → "Core marked as offline..." → done
     }
 
+    /**
+     * How the running final shutdown was entered. MANUAL is the operator
+     * procedure (Trigger Action lamp pulse on a running reactor); AUTOMATIC
+     * and RESTAB share the automatic chain — the trigger kind only selects
+     * the announcement (due to manual / automatical trigger) and whether
+     * the emergency-stall advancement counts (saved_from_extinction —
+     * AUTOMATIC only).
+     */
+    public enum ShutdownTrigger {
+        /** Operator procedure: the trigger lamp pulsed while the reactor was running. */
+        MANUAL,
+        /** Reaction failure: the core cooled down to −273 C* on its own. */
+        AUTOMATIC,
+        /** Meltdown restabilization attempt succeeded. */
+        RESTAB
+    }
+
     /** Manual shutdown (Trigger Action lamp re-pulse) is silently ignored above this shield stress %. */
     private static final double MANUAL_TRIGGER_MAX_STRESS = 10.0;
 
     private StallPhase stallPhase = StallPhase.NONE;
     private int stallTicks;
-    /** Manual trigger (Trigger Action lamp pulse while running) vs automatic stall (-273 C*). */
-    private boolean stallManual;
+    /** How the running shutdown was entered (announcement + advancement kind). */
+    private ShutdownTrigger stallTrigger = ShutdownTrigger.AUTOMATIC;
     /** HEAT_DUMP cooling rate, C* per tick: 10%/sec of the temp at the shutdown start. */
     private double stallCoolPerTick;
     private double stallCoolRemainder;
@@ -1277,7 +1311,7 @@ public class ReactorManager {
         s.setRestabChance(r.restabChance);
         s.setStallPhase(r.stallPhase.name());
         s.setStallTicks(r.stallTicks);
-        s.setStallManual(r.stallManual);
+        s.setStallTrigger(r.stallTrigger.name());
         s.setCoreOffline(r.coreOfflineMarked);
         s.setStartupPhase(r.startupPhase.name());
         s.setStartupTicks(r.startupTicks);
@@ -1343,14 +1377,14 @@ public class ReactorManager {
         stallPhase = parseStallPhase(state.getStallPhase());
         stallTicks = state.getStallTicks();
         coreOfflineMarked = state.isCoreOffline();
-        // The manual-vs-emergency flag is persisted: a manual shutdown that
-        // already passed its HEAT_DUMP phase must not masquerade as the
-        // emergency stall after a restart. The HEAT_DUMP fallback covers rows
-        // saved before the stall_manual column existed.
-        stallManual = state.isStallManual() || stallPhase == StallPhase.HEAT_DUMP;
-        // HEAT_DUMP exists only in manual shutdowns; the dump rate is re-derived
+        // The trigger kind is persisted: a manual shutdown that already
+        // passed its HEAT_DUMP phase must not masquerade as the emergency
+        // stall after a restart. Rows saved before the stall_trigger column
+        // fall back to the legacy stall_manual flag.
+        stallTrigger = parseStallTrigger(state.getStallTrigger(), state.isStallManual());
+        // Every trigger dumps the heat to −273 C*; the dump rate is re-derived
         // from the current temperature (the persisted phase survives the restart)
-        stallCoolPerTick = stallManual ? Math.max(1.0, coreTemp * 0.10 / 20.0) : 0;
+        stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
         stallCoolRemainder = 0;
         startupPhase = parseStartupPhase(state.getStartupPhase());
         startupTicks = state.getStartupTicks();
@@ -1456,6 +1490,22 @@ public class ReactorManager {
         } catch (IllegalArgumentException e) {
             return MeltdownPhase.NONE;
         }
+    }
+
+    /**
+     * Parses a persisted shutdown trigger kind. Rows saved before the
+     * stall_trigger column (null/malformed) fall back to the legacy
+     * stall_manual flag.
+     */
+    private static ShutdownTrigger parseStallTrigger(String name, boolean legacyManual) {
+        if (name != null) {
+            try {
+                return ShutdownTrigger.valueOf(name);
+            } catch (IllegalArgumentException ignored) {
+                // fall through to the legacy flag
+            }
+        }
+        return legacyManual ? ShutdownTrigger.MANUAL : ShutdownTrigger.AUTOMATIC;
     }
 
     /** Parses a persisted startup-sequence phase name, NONE on any mismatch. */
@@ -1933,7 +1983,7 @@ public class ReactorManager {
         restabChance = 0;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
-        stallManual = false;
+        stallTrigger = ShutdownTrigger.AUTOMATIC;
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
         coreOfflineMarked = false;
@@ -2051,7 +2101,7 @@ public class ReactorManager {
         restabChance = 0;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
-        stallManual = false;
+        stallTrigger = ShutdownTrigger.AUTOMATIC;
         stallCoolPerTick = 0;
         stallCoolRemainder = 0;
         coreOfflineMarked = false;
