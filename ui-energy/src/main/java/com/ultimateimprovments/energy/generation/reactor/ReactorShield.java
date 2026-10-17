@@ -391,8 +391,6 @@ public class ReactorShield {
      * restabilization attempt failed). {@code announce} adds the standard
      * shield-failure broadcast — the failed restabilization attempt skips it
      * because it already reported its own total-failure message.
-     * 🏆 detonation_irreversible registers here: this is the point where the
-     * blast becomes unavoidable.
      */
     public void fail(boolean announce) {
         if (state == State.FAILED) return;
@@ -403,7 +401,6 @@ public class ReactorShield {
                     "shield_failure",
                     "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
         }
-        reactor.onShieldFailureCountdown();
     }
 
     /** Shield breach detonation: primed creeper (fuse 0) + radius from config. */
