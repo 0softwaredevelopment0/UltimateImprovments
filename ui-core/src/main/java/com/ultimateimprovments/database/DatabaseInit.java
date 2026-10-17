@@ -186,6 +186,7 @@ public class DatabaseInit {
                 {"restab_chance", "REAL DEFAULT 0"},
                 {"stall_phase", "TEXT DEFAULT 'NONE'"},
                 {"stall_ticks", "INTEGER DEFAULT 0"},
+                {"stall_manual", "INTEGER DEFAULT 0"},
                 {"core_offline", "INTEGER DEFAULT 0"},
                 {"startup_phase", "TEXT DEFAULT 'NONE'"},
                 {"startup_ticks", "INTEGER DEFAULT 0"}

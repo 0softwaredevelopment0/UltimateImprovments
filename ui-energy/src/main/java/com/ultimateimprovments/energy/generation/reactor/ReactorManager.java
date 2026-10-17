@@ -1177,6 +1177,7 @@ public class ReactorManager {
         s.setRestabChance(r.restabChance);
         s.setStallPhase(r.stallPhase.name());
         s.setStallTicks(r.stallTicks);
+        s.setStallManual(r.stallManual);
         s.setCoreOffline(r.coreOfflineMarked);
         s.setStartupPhase(r.startupPhase.name());
         s.setStartupTicks(r.startupTicks);
@@ -1242,9 +1243,13 @@ public class ReactorManager {
         stallPhase = parseStallPhase(state.getStallPhase());
         stallTicks = state.getStallTicks();
         coreOfflineMarked = state.isCoreOffline();
+        // The manual-vs-emergency flag is persisted: a manual shutdown that
+        // already passed its HEAT_DUMP phase must not masquerade as the
+        // emergency stall after a restart. The HEAT_DUMP fallback covers rows
+        // saved before the stall_manual column existed.
+        stallManual = state.isStallManual() || stallPhase == StallPhase.HEAT_DUMP;
         // HEAT_DUMP exists only in manual shutdowns; the dump rate is re-derived
         // from the current temperature (the persisted phase survives the restart)
-        stallManual = stallPhase == StallPhase.HEAT_DUMP;
         stallCoolPerTick = stallManual ? Math.max(1.0, coreTemp * 0.10 / 20.0) : 0;
         stallCoolRemainder = 0;
         startupPhase = parseStartupPhase(state.getStartupPhase());

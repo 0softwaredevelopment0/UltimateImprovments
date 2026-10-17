@@ -126,7 +126,10 @@ in this file.
   and the restabilization success shutdown too. Only the EMERGENCY shutdown
   counts now: the automatic stall procedure started by the reaction failure
   (core coasting down to −273 C*). The manual/restab paths leave the
-  advancement untouched.
+  advancement untouched. The manual-vs-emergency flag is now persisted
+  (new `stall_manual` reactors column): previously a restart during a
+  manual shutdown that had already passed its heat-dump phase lost the
+  flag and the shutdown completed as a phantom "emergency" one.
 - **The `dfc_unstable` advancement is now obtainable** — its grant check
   (`ReactorManager.checkDfcUnstable`) was defined but never called, so the
   parent of the whole DFC advancement branch could never fire. It is now
