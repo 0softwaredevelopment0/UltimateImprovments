@@ -440,7 +440,8 @@ public class ReactorDisplay {
             { "-2", "2", "Content Absorber", "-5% Valve", "Opening" }
     };
 
-    private void updateLampSigns(Location base) {
+    /** Writes the lamp label signs once (assembly stamp + the 10s healing pass). */
+    public void updateLampSigns(Location base) {
         for (String[] label : LAMP_SIGNS) {
             int dx = Integer.parseInt(label[0]);
             int dz = Integer.parseInt(label[1]);

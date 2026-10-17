@@ -1441,6 +1441,10 @@ public class ReactorManager {
             }
             // Structure registry entry (structure_markers) for reactor identification
             StructureMarker.place(normalized, "reactor", UUID.randomUUID());
+            // Stamp the lamp label signs immediately at assembly — the
+            // periodic 10s pass would heal them too, but a fresh build
+            // should show the white labels right away
+            display.updateLampSigns(normalized);
             saveToDb();
         } else {
             if (reactorLocation != null) {
