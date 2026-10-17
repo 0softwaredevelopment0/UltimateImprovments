@@ -31,10 +31,16 @@ import java.util.zip.GZIPInputStream;
 /**
  * Loads and matches Minecraft NBT structure files (.nbt) against the live world.
  * <p>
- * Matching is <b>exact and full</b>: every cell of the template must match the world,
- * including cells that must be AIR (interior chambers and the space above the top face).
- * Block orientation (stairs, trapdoors, levers, signs) is ignored — only the material type counts.
- * Wall signs of any wood type match each other.
+ * Matching is <b>exact for every SOLID cell</b>: each template block must match the
+ * world material (Block orientation (stairs, trapdoors, levers, signs) is ignored —
+ * only the material type counts. Wall signs of any wood type match each other).
+ * <p>
+ * <b>Air cells are enforced only inside the template's air-enforcement zones</b>
+ * (see {@link #AIR_ENFORCEMENT_ZONES}) — for the Dark Fusion Reactor that is the
+ * core chamber, a sphere around the core center: a foreign block there would
+ * interfere with the fusion. A foreign block in any other template air cell
+ * (interior decor space, the space above the top face) is <b>ignored</b> — outside
+ * the functional core it cannot interfere with the structure.
  * <p>
  * When no exact match exists, {@link #bestMatch(Location, int)} finds the candidate
  * center with the fewest mismatched cells and reports the match percentage together
@@ -53,6 +59,13 @@ public class StructureTemplate {
 
     /** One mismatch found while checking a candidate position. */
     public record Fix(int dx, int dy, int dz, Material expected, Material actual) {}
+
+    /**
+     * A sphere (cell-offset center relative to the anchor + radius in blocks)
+     * in which template air cells are still enforced. Air-cell mismatches
+     * outside every zone of the template are ignored (see the class javadoc).
+     */
+    private record AirZone(int dx, int dy, int dz, double radius) {}
 
     /** Result of checking one candidate center position against a template. */
     public record MatchResult(boolean matched, int total, int mismatches, Location center, List<Fix> fixes) {
@@ -141,12 +154,35 @@ public class StructureTemplate {
         }
         for (BlockEntry b : airBlocks) {
             Material actual = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
-            if (actual != Material.AIR) {
-                fixes.add(new Fix(b.dx(), b.dy(), b.dz(), Material.AIR, actual));
-            }
+            if (actual == Material.AIR) continue;
+            // Foreign block in an air cell: enforced only inside the
+            // template's air-enforcement zones (the reactor core chamber) —
+            // anywhere else it is decoration and cannot interfere
+            if (!isAirEnforced(b)) continue;
+            fixes.add(new Fix(b.dx(), b.dy(), b.dz(), Material.AIR, actual));
         }
 
         return new MatchResult(fixes.isEmpty(), totalCells(), fixes.size(), center, List.copyOf(fixes));
+    }
+
+    /**
+     * Whether a foreign block in this template air cell fails the check:
+     * true when the template has no air-enforcement zones (full matching,
+     * the old behaviour) or the cell lies within any zone sphere. Distance
+     * is measured cell-center to zone-center, so a zone of radius 3 around
+     * the core covers every cell whose center is within 3 blocks of the
+     * core center point.
+     */
+    private boolean isAirEnforced(BlockEntry b) {
+        List<AirZone> zones = AIR_ENFORCEMENT_ZONES.get(name);
+        if (zones == null) return true;
+        for (AirZone z : zones) {
+            double ddx = b.dx() - z.dx();
+            double ddy = b.dy() - z.dy();
+            double ddz = b.dz() - z.dz();
+            if (ddx * ddx + ddy * ddy + ddz * ddz <= z.radius() * z.radius()) return true;
+        }
+        return false;
     }
 
     /**
@@ -550,6 +586,24 @@ public class StructureTemplate {
      */
     private static final Map<String, int[]> ANCHOR_ADJUSTMENTS = Map.of(
             "darkfusionreactor", new int[]{ 0, -1, 0 }
+    );
+
+    /**
+     * Per-template AIR-ENFORCEMENT ZONES: spheres (anchor-relative cell-offset
+     * center + radius in blocks) in which template air cells must still be
+     * empty in the world. Templates without an entry enforce every air cell
+     * (full matching).
+     * <p>
+     * darkfusionreactor: only the core chamber is checked — a sphere of
+     * 3 blocks around the core center. The zone center is the core block cell
+     * (0, −5, 0), whose center point (0.5, −4.5, 0.5) is the same "core
+     * center" the particle/visual systems use. A foreign block inside the
+     * chamber would sit in the fusion space and interfere; anything else —
+     * interior decoration, chests on the floor slab, blocks above the roof —
+     * is outside the functional core and is ignored at assembly.
+     */
+    private static final Map<String, List<AirZone>> AIR_ENFORCEMENT_ZONES = Map.of(
+            "darkfusionreactor", List.of(new AirZone(0, -5, 0, 3.0))
     );
 
     /** Wall and standing sign materials of every wood type (interchangeable when matching). */
