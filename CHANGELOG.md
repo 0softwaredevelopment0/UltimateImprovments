@@ -6,6 +6,21 @@ in this file.
 ## [Unreleased]
 
 ### Added
+- **DFC dynamic lower temperature limits** — every reactor rolls its own
+  lower temperature limit at build time from the build-site biome:
+  `limit = biome temperature × reactor.temp_limit_biome_multiplier +
+  reactor.temp_limit_offset`, rounded to whole C* (desert 2.0 × 10 = 20).
+  The value is read live from the biome holder (`Block#getTemperature`),
+  so datapack/custom biomes work; a biome without a temperature value
+  falls back to `reactor.temp_limit_biome_fallback` (default 1.0). The
+  limit is per-reactor and persists in the new `temp_min` DB column;
+  a disassemble + rebuild rolls a fresh one (legacy reactors keep −273
+  until rebuilt). Every lower-limit check uses it: the core cooling
+  floor, the stall point (the automatic shutdown now starts at the limit
+  instead of absolute zero), the shutdown heat dump target and the case
+  venting ambient floor. New config keys (UI-MBS.toml `[reactor]`):
+  `temp_limit_offset` (0.0), `temp_limit_biome_multiplier` (10.0),
+  `temp_limit_biome_fallback` (1.0).
 - **DFC meltdown restabilization** — a depleted shield no longer detonates
   instantly. The emergency systems deploy an auxiliary shield (100%
   integrity draining linearly to 0% over the T-3m window — the drain is

@@ -190,7 +190,8 @@ public class ReactorCase {
 
         // Vent physics — proportional to the breach scale, at ANY breach
         // size: pressure drains at (broken/total) × 100% of max per second,
-        // the temperature at half that rate (floor −273 C*). A fully open
+        // the temperature at half that rate (floor = the reactor's dynamic
+        // lower temperature limit). A fully open
         // case vents out within a second or two and stays ambient until
         // repaired — no hard reset, the vent replaces the old shatter snap.
         if (broken > 0) {
@@ -204,7 +205,7 @@ public class ReactorCase {
             ventTempRemainder += frac * cfg.getCaseTempMax() * 0.5 / 20.0;
             int tempDrain = (int) ventTempRemainder;
             ventTempRemainder -= tempDrain;
-            if (tempDrain > 0) temp = Math.max(-273, temp - tempDrain);
+            if (tempDrain > 0) temp = Math.max(reactor.getTempMin(), temp - tempDrain);
         }
 
         // Messaging — exactly three events.
@@ -337,7 +338,7 @@ public class ReactorCase {
     // =========================
     public void reset() {
         state = State.OK;
-        temp = -273;
+        temp = reactor.getTempMin();
         press = 0;
         integrity = 100;
         jitterPress = 0;
@@ -358,7 +359,7 @@ public class ReactorCase {
 
     public int getTemp() { return temp; }
     public void setTemp(int val) {
-        temp = Math.max(-273, Math.min(10000, val));
+        temp = Math.max(reactor.getTempMin(), Math.min(10000, val));
     }
 
     public double getPress() { return press; }

@@ -77,6 +77,15 @@ public class ReactorConfig {
     // chance is capped so the best possible attempt is never certain.
     private double restabChanceMax;          // % cap (99)
 
+    // Dynamic lower temperature limits — rolled per reactor at build time
+    // from the build-site biome (a disassemble + rebuild rolls a fresh one):
+    // limit = biome temperature × temp_limit_biome_multiplier +
+    // temp_limit_offset, rounded to whole C* (the reactor temperature has
+    // no fractions). Biomes with no temperature value use the fallback.
+    private double tempLimitOffset;          // C* added after the multiplication (0.0)
+    private double tempLimitBiomeMultiplier; // biome temperature × this (10.0)
+    private double tempLimitBiomeFallback;   // biome temperature when the biome has none (1.0)
+
     // Fuel system — consumption by core spin (100% = 1 gold ingot + 1 diamond / 10s)
     private double fuelSpinMin;              // below this spin nothing is consumed
     private double fuelWorkSpin;             // working point: base rate (95 000 RPS)
@@ -123,6 +132,9 @@ public class ReactorConfig {
     public double getAbsorberCoolRate() { return absorberCoolRate; }
     public double getAbsorberRadPerSec() { return absorberRadPerSec; }
     public double getRestabChanceMax() { return restabChanceMax; }
+    public double getTempLimitOffset() { return tempLimitOffset; }
+    public double getTempLimitBiomeMultiplier() { return tempLimitBiomeMultiplier; }
+    public double getTempLimitBiomeFallback() { return tempLimitBiomeFallback; }
 
     private void load() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -159,6 +171,9 @@ public class ReactorConfig {
         absorberCoolRate = cfg.getDouble("reactor.absorber_cool_rate", 9500.0);
         absorberRadPerSec = cfg.getDouble("reactor.absorber_rad_per_sec", 40.0);
         restabChanceMax = Math.max(0, Math.min(100, cfg.getDouble("reactor.restab_chance_max", 99.0)));
+        tempLimitOffset = cfg.getDouble("reactor.temp_limit_offset", 0.0);
+        tempLimitBiomeMultiplier = Math.max(0.0, cfg.getDouble("reactor.temp_limit_biome_multiplier", 10.0));
+        tempLimitBiomeFallback = cfg.getDouble("reactor.temp_limit_biome_fallback", 1.0);
         fuelSpinMin = cfg.getDouble("reactor.fuel_spin_min", 1000);
         fuelWorkSpin = cfg.getDouble("reactor.fuel_work_spin", 95000);
         fuelOverSpin = cfg.getDouble("reactor.fuel_over_spin", 100000);

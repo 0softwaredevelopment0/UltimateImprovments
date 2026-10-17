@@ -239,17 +239,19 @@ public class ReactorManager {
     }
 
     /**
-     * Starts the stall shutdown when the core reaches absolute zero (−273 C*)
-     * — crossing into it, so a reactor restarted cold does not instantly
-     * re-stall: it must first gain heat and lose it again.
+     * Starts the stall shutdown when the core reaches the reactor's dynamic
+     * lower temperature limit (the build-site biome temperature × multiplier,
+     * −273 C* legacy default) — crossing into it, so a reactor restarted
+     * cold does not instantly re-stall: it must first gain heat and lose it
+     * again.
      */
     private void tryTriggerStallShutdown(int prevTemp) {
         if (stallPhase != StallPhase.NONE) return;
         if (structureDamaged || !lasers.isStarted() || isSelfdestructActive()) return;
         if (shield.getState() != ReactorShield.State.WORKING) return;
-        if (prevTemp <= TEMP_MIN || coreTemp > TEMP_MIN) return;
+        if (prevTemp <= tempMin || coreTemp > tempMin) return;
 
-        // Automatic trigger: the reaction died from heat loss (−273 C*)
+        // Automatic trigger: the reaction died from heat loss (floor reached)
         beginFinalShutdown(ShutdownTrigger.AUTOMATIC);
     }
 
@@ -682,9 +684,9 @@ public class ReactorManager {
                 int whole = (int) v;
                 stallCoolRemainder = v - whole;
                 if (whole > 0) {
-                    coreTemp = Math.max(TEMP_MIN, coreTemp - whole);
+                    coreTemp = Math.max(tempMin, coreTemp - whole);
                 }
-                if (coreTemp <= TEMP_MIN) {
+                if (coreTemp <= tempMin) {
                     stallPhase = StallPhase.WAIT_P2;
                     stallTicks = 0;
                 }
@@ -786,8 +788,11 @@ public class ReactorManager {
     // =========================
     // STALL SHUTDOWN PROTOCOL: the reaction lost its heat. While the core is
     // running, threshold crossings broadcast one warning each (below 1M C* —
-    // fusion stops, below 10k C* — critical, below 0 C* — reaction failure).
-    // Reaching absolute zero (−273 C*) starts the full automatic shutdown:
+    // fusion stops, below 10k C* — critical, below 0 C* — reaction failure;
+    // the 0 C* warning only fires on reactors whose dynamic lower limit is
+    // below zero). Reaching the reactor's dynamic lower temperature limit
+    // (build-site biome × multiplier, −273 C* legacy) starts the full
+    // automatic shutdown:
     // power lasers off one by one (their ±5% control detached), stab laser,
     // absorber valve, then the shield ramps down smoothly (Shutting down) and
     // the core is marked offline, awaiting a new trigger pulse. Control is
@@ -797,7 +802,7 @@ public class ReactorManager {
     public enum StallPhase {
         NONE,            // idle
         WAIT_POWER,      // 5s after the announcement → power lasers step
-        HEAT_DUMP,       // every trigger: cool to -273 C* at 10%/sec of the shutdown-start temp
+        HEAT_DUMP,       // every trigger: cool to the lower limit at 10%/sec of the shutdown-start temp
         WAIT_P2,         // P1 off → 3s → P2 off
         WAIT_STAB_MSG,   // 2s → "Shutting down stabilization lasers..."
         WAIT_STAB_OFF,   // 2s → stab off
@@ -819,7 +824,7 @@ public class ReactorManager {
     public enum ShutdownTrigger {
         /** Operator procedure: the trigger lamp pulsed while the reactor was running. */
         MANUAL,
-        /** Reaction failure: the core cooled down to −273 C* on its own. */
+        /** Reaction failure: the core cooled down to its lower limit on its own. */
         AUTOMATIC,
         /** Meltdown restabilization attempt succeeded. */
         RESTAB
@@ -1159,7 +1164,16 @@ public class ReactorManager {
     public static final int TEMP_MIN = -273;
     public static final int TEMP_MAX = 2_000_000_000;
 
-    private int coreTemp;           // C*, [TEMP_MIN .. TEMP_MAX]
+    private int coreTemp;           // C*, [tempMin .. TEMP_MAX]
+    /**
+     * Dynamic lower temperature limit (C*) — rolled from the build-site
+     * biome at assembly (biome temperature × multiplier + offset, rounded).
+     * Every lower limit of this reactor (core cooling floor, stall point,
+     * heat dump target, case ambient) uses it instead of the TEMP_MIN
+     * constant, which remains only as the legacy default (pre-mechanic
+     * reactors keep −273 until rebuilt).
+     */
+    private int tempMin = TEMP_MIN;
     private double shieldPress;     // Shield pressure, MPa — follows (T/10M) × 10.01
     private double spin;            // Core spin, RPS — follows 95 000 × (T/10M)
 
@@ -1287,6 +1301,7 @@ public class ReactorManager {
         s.setReactorId(r.reactorId);
         s.setReactorLocation(r.reactorLocation);
         s.setCoreTemp(r.coreTemp);
+        s.setTempMin(r.tempMin);
         s.setShieldPress(r.shieldPress);
         s.setSpin(r.spin);
         s.setFusionParticles(r.fusion.getParticles());
@@ -1350,6 +1365,7 @@ public class ReactorManager {
         valid = state.isValid();
         reactorId = state.getReactorId();
         coreTemp = state.getCoreTemp();
+        tempMin = state.getTempMin();
         shieldPress = state.getShieldPress();
         spin = state.getSpin();
         fusion.setParticles(state.getFusionParticles());
@@ -1547,6 +1563,9 @@ public class ReactorManager {
             // periodic 10s pass would heal them too, but a fresh build
             // should show the white labels right away
             display.updateLampSigns(normalized);
+            // Roll the dynamic lower temperature limit from the build-site
+            // biome — a disassemble + rebuild rolls a fresh one
+            this.tempMin = rollTempLimit(normalized);
             saveToDb();
         } else {
             if (reactorLocation != null) {
@@ -1570,6 +1589,30 @@ public class ReactorManager {
             resetAll();
         }
     }
+
+    /**
+     * Rolls the dynamic lower temperature limit from the build-site biome:
+     * biome temperature × reactor.temp_limit_biome_multiplier +
+     * reactor.temp_limit_offset, rounded to whole C* (the reactor
+     * temperature has no fractions). The value is read live from the biome
+     * holder, so datapack/custom biomes work; a biome without a temperature
+     * value falls back to reactor.temp_limit_biome_fallback.
+     */
+    private int rollTempLimit(Location base) {
+        ReactorConfig c = cfg != null ? cfg : ReactorConfig.getInstance();
+        double biomeTemp;
+        try {
+            double t = base.getBlock().getTemperature();
+            biomeTemp = Double.isFinite(t) ? t : c.getTempLimitBiomeFallback();
+        } catch (Exception e) {
+            biomeTemp = c.getTempLimitBiomeFallback();
+        }
+        double raw = biomeTemp * c.getTempLimitBiomeMultiplier() + c.getTempLimitOffset();
+        return (int) Math.round(raw);
+    }
+
+    /** The reactor's dynamic lower temperature limit (C*), shared by every lower-limit check. */
+    public int getTempMin() { return tempMin; }
 
     // =========================
     // VALIDATE STRUCTURE
@@ -1962,6 +2005,7 @@ public class ReactorManager {
     // =========================
     private void resetReactorState() {
         coreTemp = 0;
+        tempMin = TEMP_MIN;
         shieldPress = 0;
         spin = 0;
         lasers.reset();
@@ -2081,6 +2125,7 @@ public class ReactorManager {
     // =========================
     private void resetAll() {
         coreTemp = 0;
+        tempMin = TEMP_MIN;
         shieldPress = 0;
         spin = 0;
         lasers.reset();
@@ -2176,7 +2221,7 @@ public class ReactorManager {
 
     /** Applies a signed core temperature delta (from lasers), clamped to hard limits. */
     public void applyCoreTempDelta(int delta) {
-        coreTemp = Math.max(TEMP_MIN, Math.min(TEMP_MAX, coreTemp + delta));
+        coreTemp = Math.max(tempMin, Math.min(TEMP_MAX, coreTemp + delta));
     }
 
     /** Bulb power check for the laser system. */

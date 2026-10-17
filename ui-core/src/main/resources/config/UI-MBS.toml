@@ -135,3 +135,14 @@ case_int_decay_rate = 1.0
 # Radius in blocks.
 # Default: 10
 meltdown_explosion_radius = 10
+# Dynamic lower temperature limit — rolled per reactor at build time from
+# the build-site biome (a disassemble + rebuild rolls a fresh one).
+# limit = biome temperature × multiplier + offset, rounded to whole C*.
+# Default: 0.0
+temp_limit_offset = 0.0
+# Biome temperature multiplier.
+# Default: 10.0
+temp_limit_biome_multiplier = 10.0
+# Biome temperature used when the biome has no temperature value.
+# Default: 1.0
+temp_limit_biome_fallback = 1.0
