@@ -57,6 +57,20 @@ in this file.
   totem of undying icon, 250 XP, parent `ui:datapack/operator_incompetence`.
 
 ### Changed
+- **DFC case messaging consolidated to exactly three events** — "DFC case
+  breach detected!" (the first pane breaks), "DFC case failure detected!"
+  (the case breaks completely — the integrity shatter or every glass cell
+  destroyed by any cause; a full physical destruction now actually breaks
+  the case instead of leaving it officially intact with zero glass) and
+  "DFC case breach restored." (fully repaired). The 30-second broken-case
+  reminder and the 10-second "Case glass is broken!" warning are gone, as
+  are the per-pane "(left/total)" glass damage/repair reports.
+- **A breached DFC case now vents** — every missing glass cell drains the
+  case pressure at (broken/total) × 100% of the max pressure per second and
+  the case temperature at half that rate (floor −273 C*): a holed case can
+  no longer hold its pressure and temperature indefinitely while the glass
+  is partially broken. Any breach outruns the fusion heat rise, so a vented
+  case trends toward ambient until repaired.
 - **Advancement tree regrouped into clear lines** — the "Research" branch
   (People of the Past → High Temperatures) no longer trails into tech
   crafts: the Photon Cannon ("Light Attack") and reinforced deepslate moved

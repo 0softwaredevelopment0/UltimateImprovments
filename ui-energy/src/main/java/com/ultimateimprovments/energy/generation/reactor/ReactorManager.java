@@ -1225,7 +1225,9 @@ public class ReactorManager {
         caseSys.setPress(state.getCasePress());
         caseSys.setIntegrity(state.getCaseIntegrity());
         if (caseSys.isBroken()) {
-            caseSys.repair(reactorLocation);
+            // Silent repair: restore the glass blocks at load without the
+            // player-facing "breach restored" message
+            caseSys.repair(reactorLocation, false);
             caseSys.setState(ReactorCase.State.BROKEN);
         }
         energyGenerated = state.getEnergyGenerated();
@@ -1551,7 +1553,6 @@ public class ReactorManager {
             // run below 100% and must not raise false alarms.
             boolean shieldActive = shieldState == ReactorShield.State.WORKING;
             if (shieldActive && shield.getIntegrity() < 100) broadcast("<dark_red>⚠ <red>Shield integrity compromised!");
-            if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Case glass is broken!");
         }
 
         // =========================
@@ -2187,6 +2188,11 @@ public class ReactorManager {
                             "<red>Cannot receive any data from sensors: <gray>No signal"));
         }
 
+        // Case glass: per-pane reports would spam — the case announces exactly
+        // three events itself (breach detected / case failure / breach
+        // restored, see ReactorCase.tickBreach).
+        if (cat == ReactorDamageTracker.Category.GLASS) return;
+
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
         int[] c = ReactorDamageTracker.cachedCount(reactorLocation, cat);
         boolean fullyGone = c[0] <= 0;
@@ -2216,9 +2222,12 @@ public class ReactorManager {
     private void reportRepair(ReactorDamageTracker.Category cat) {
         if (reactorLocation == null || !ReactorDamageTracker.isTracked()) return;
 
-        // Case auto-repair: player restored glass into a broken case
-        if (cat == ReactorDamageTracker.Category.GLASS && caseSys.isBroken()) {
-            caseSys.checkAutoRepair(reactorLocation);
+        // Case glass: no per-pane reports — the case system owns the messaging.
+        // The auto-repair check stays: an audit-driven glass restore (plugin
+        // setType fills the case) must still be able to repair a broken case.
+        if (cat == ReactorDamageTracker.Category.GLASS) {
+            if (caseSys.isBroken()) caseSys.checkAutoRepair(reactorLocation);
+            return;
         }
 
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
