@@ -314,15 +314,18 @@ Kaboom! (kill a mob with 1000+ damage from ONE mace hit)
 
 ### Branch: Technology
 ```
-Large capacities (craft ender chest) → ... → Discharge! (craft shoker)
-→ Beyond Space (reach the world height limit; checked every 1s)
-→ Where is the Earth's core here? (reach the world build limit at the bottom)
-→ Hit, hit, to pieces! (break a bedrock block — possible via UnbreakableBreaker)
+Large capacities (craft ender chest) → Unforeseen Consequences (blow yourself up
+with the ender chest) → Dosimetry Measurements (craft dosimeter) → Through the
+Textures (craft locator) → Doctor for Creatures (craft healthmeter) → It looks
+pretty sturdy... (craft reinforced deepslate) → Victory Without a Fight (craft
+a nether star) → Echoes in the Furnace (craft echo shard) → Magical Substances
+(craft antimatter) → The force of decay (react with antimatter) → Light Attack
+(Photon Cannon) → Discharge! (craft shoker)
 ```
 
 ### Branch: Research
 ```
-People of the Past (find an End village) → High Temperatures → Light Attack
+People of the Past (find an End village) → High Temperatures (get the Dragon Egg)
 ```
 
 ### Branch: Reactor

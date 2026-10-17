@@ -30,7 +30,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "ui:datapack/high_temperatures",
+  "parent": "ui:datapack/react_with_antimatter",
     "criteria": {
     "obtain": {
       "trigger": "minecraft:inventory_changed",
