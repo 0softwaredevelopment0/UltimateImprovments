@@ -21,9 +21,6 @@ log_save = false
 # Maximum value.
 # Default: 2000000000
 core_temp_max = 2000000000
-# Minimum value.
-# Default: -273
-core_temp_min = -273
 # Default: 10000000
 core_work_temp = 10000000
 # Default: 0.02
@@ -115,9 +112,6 @@ fusion_absorb_rate = 21.0
 fusion_debris_per = 4000
 # Default: 15
 case_heat_rate = 15
-# Minimum value.
-# Default: -273
-case_temp_min = -273
 # Maximum value.
 # Default: 10000
 case_temp_max = 10000

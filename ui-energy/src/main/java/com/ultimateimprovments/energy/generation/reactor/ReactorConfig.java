@@ -37,7 +37,6 @@ public class ReactorConfig {
     /** Logs every reactor DB save to the console (default off — saves are frequent). */
     private boolean logSave;
     private int coreTempMax;        // hard limit (2,000,000,000)
-    private int coreTempMin;        // hard limit (-273)
     private int coreWorkTemp;       // working temperature = 1x (10,000,000)
     private double pressFollowRate; // how fast shield pressure follows its temperature target
     private double spinFollowRate;  // how fast core spin follows its temperature target
@@ -107,7 +106,6 @@ public class ReactorConfig {
     // Case system — outer glass protection (T/pressure/integrity)
     private int caseHeatRate;              // C*/sec at 150% fusion speed (15)
     private int caseTempMax;               // glass melts at this temp (10 000)
-    private int caseTempMin;               // hard minimum (-273)
     private double casePressMax;           // glass bursts at this MPa (15)
     private double casePressFollowRate;    // how fast pressure follows the temp (0..1/tick)
     private int caseIntDecayTemp;          // integrity decays above this temp
@@ -142,7 +140,6 @@ public class ReactorConfig {
         enabled = cfg.getBoolean("reactor.enabled", true);
         logSave = cfg.getBoolean("reactor.log_save", false);
         coreTempMax = cfg.getInt("reactor.core_temp_max", 2000000000);
-        coreTempMin = cfg.getInt("reactor.core_temp_min", -273);
         coreWorkTemp = cfg.getInt("reactor.core_work_temp", 10000000);
         pressFollowRate = cfg.getDouble("reactor.press_follow_rate", 0.02);
         spinFollowRate = cfg.getDouble("reactor.spin_follow_rate", 0.01);
@@ -190,7 +187,6 @@ public class ReactorConfig {
         fusionDebrisPer = cfg.getInt("reactor.fusion_debris_per", 4000);
         caseHeatRate = cfg.getInt("reactor.case_heat_rate", 15);
         caseTempMax = cfg.getInt("reactor.case_temp_max", 10000);
-        caseTempMin = cfg.getInt("reactor.case_temp_min", -273);
         casePressMax = cfg.getDouble("reactor.case_press_max", 15.0);
         casePressFollowRate = cfg.getDouble("reactor.case_press_follow_rate", 0.02);
         caseIntDecayTemp = cfg.getInt("reactor.case_int_decay_temp", 8000);
@@ -204,7 +200,6 @@ public class ReactorConfig {
     public boolean isEnabled() { return enabled; }
     public boolean isLogSaveEnabled() { return logSave; }
     public int getCoreTempMax() { return coreTempMax; }
-    public int getCoreTempMin() { return coreTempMin; }
     public int getCoreWorkTemp() { return coreWorkTemp; }
     public double getPressFollowRate() { return pressFollowRate; }
     public double getSpinFollowRate() { return spinFollowRate; }
@@ -242,7 +237,6 @@ public class ReactorConfig {
     public int getFusionDebrisPer() { return fusionDebrisPer; }
     public int getCaseHeatRate() { return caseHeatRate; }
     public int getCaseTempMax() { return caseTempMax; }
-    public int getCaseTempMin() { return caseTempMin; }
     public double getCasePressMax() { return casePressMax; }
     public double getCasePressFollowRate() { return casePressFollowRate; }
     public int getCaseIntDecayTemp() { return caseIntDecayTemp; }
