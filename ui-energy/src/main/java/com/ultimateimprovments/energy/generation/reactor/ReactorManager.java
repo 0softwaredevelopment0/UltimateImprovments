@@ -265,6 +265,12 @@ public class ReactorManager {
      * start — the next shutdown step waits until −273 is reached.
      */
     public void tryManualShutdownTrigger() {
+        // Meltdown restabilization: the startup lamp pulse while the aux
+        // shield holds is the restabilization attempt
+        if (meltdownPhase == MeltdownPhase.AUX_ACTIVE) {
+            tryRestabilization();
+            return;
+        }
         // Self-destruct, timed countdown: the startup lamp pulse becomes the
         // secret protocol-cancel attempt — 0.5% per rising edge that the
         // systems "malfunction" the protocol away. Past the announcement of
@@ -311,10 +317,287 @@ public class ReactorManager {
         saveToDb();
     }
 
+    // =========================
+    // MELTDOWN RESTABILIZATION PROTOCOL — the reactor shield just died (0%
+    // integrity). Instead of an instant T-10s detonation the emergency
+    // systems buy three minutes: an auxiliary shield (a pure countdown, no
+    // integrity) holds the core while the operators try to restabilize the
+    // reactor. Netherite ingots in the content barrel (the floor barrel the
+    // fusion debris lands in) set the success chance: 2% per occupied slot,
+    // stacks do not help (54% for a full 27-slot barrel). The attempt is the
+    // startup lamp pulse: the ingots are consumed, the systems run their
+    // calibration sequence and roll the captured chance. Success starts the
+    // manual (heat-dump) shutdown procedure — the reactor powers down and
+    // leaves the meltdown phase. Failure, or an expired aux shield, makes
+    // the detonation unavoidable (the shield FAILED T-10s countdown).
+    // =========================
+    public enum MeltdownPhase {
+        NONE,          // normal operation
+        AUX_ANALYZING, // explosion + fire in the core, "analyzing core systems" (3s)
+        AUX_CREATING,  // "auxiliary shield creation in progress" (3s)
+        AUX_LINES,     // core smoke + the WARNING block, one line per 5 ticks
+        AUX_ACTIVE,    // aux shield holds: T-3m timer, the attempt is allowed
+        RESTAB_SEQ,    // attempt running: chance captured, ingots consumed
+        RESTAB_FAIL    // attempt failed: failure reports, then T-10s
+    }
+
+    /** The auxiliary shield lifetime — the "T-3m" restabilization window. */
+    private static final int AUX_SHIELD_SEC = 180;
+    /** Success chance % per content-barrel slot occupied by a netherite ingot. */
+    private static final double RESTAB_CHANCE_PER_SLOT = 2.0;
+    /** Ticks between the WARNING block lines. */
+    private static final int MELTDOWN_LINE_DELAY_TICKS = 5;
+
+    private MeltdownPhase meltdownPhase = MeltdownPhase.NONE;
+    private int meltdownTicks;      // ticks in the current phase
+    private int meltdownLineIndex;  // WARNING line queue cursor
+    private double restabChance;    // chance captured at the attempt start
+
+    public boolean isMeltdownActive() { return meltdownPhase != MeltdownPhase.NONE; }
+    public MeltdownPhase getMeltdownPhase() { return meltdownPhase; }
+
+    /**
+     * The reactor shield just died (0% integrity): the meltdown
+     * restabilization protocol starts. The self-destruct protocol keeps its
+     * own flow — its finale deliberately burns the shield, so a depleted
+     * shield there goes straight to the old T-10s failure.
+     * 🏆 Advancement: critical_overload — bring the DFC to this phase.
+     */
+    public void onShieldDepleted() {
+        if (isSelfdestructActive()) {
+            shield.fail(true);
+            return;
+        }
+        if (isMeltdownActive() || shield.isFailed()) return;
+        // The regular shield is gone — the AUXILIARY state (a pure countdown
+        // owned by tickMeltdown) takes its place
+        shield.setState(ReactorShield.State.AUXILIARY);
+        shield.setIntegrity(0);
+        meltdownPhase = MeltdownPhase.AUX_ANALYZING;
+        meltdownTicks = 0;
+        meltdownLineIndex = 0;
+        spawnMeltdownExplosion();
+        broadcast(StructuresMessages.get("meltdown_analyzing",
+                "<red>Reactor shield failue, analyzing core systems..."));
+        grantAdvancementNear("datapack/critical_overload");
+        saveToDb();
+    }
+
+    /** Meltdown restabilization phase machine (every tick). */
+    private void tickMeltdown() {
+        switch (meltdownPhase) {
+            case NONE -> { }
+
+            case AUX_ANALYZING -> {
+                if (++meltdownTicks >= 20 * 3) {
+                    broadcast(StructuresMessages.get("meltdown_aux_creating",
+                            "<white>Auxiliary shield creation in progress, manual shutdown required."));
+                    meltdownPhase = MeltdownPhase.AUX_CREATING;
+                    meltdownTicks = 0;
+                }
+            }
+
+            case AUX_CREATING -> {
+                if (++meltdownTicks >= 20 * 3) {
+                    spawnMeltdownSmoke();
+                    meltdownPhase = MeltdownPhase.AUX_LINES;
+                    meltdownTicks = 0;
+                    meltdownLineIndex = 0;
+                }
+            }
+
+            case AUX_LINES -> {
+                meltdownTicks++;
+                if (meltdownTicks % MELTDOWN_LINE_DELAY_TICKS == 0) {
+                    String[] lines = meltdownWarningLines();
+                    if (meltdownLineIndex < lines.length) {
+                        broadcast(lines[meltdownLineIndex++]);
+                    }
+                    if (meltdownLineIndex >= lines.length) {
+                        // The aux shield is up: the T-3m window opens. The
+                        // stabilizers are cranked to full (200%) and the
+                        // control is locked — the ±5% lamps still click but
+                        // nothing responds.
+                        meltdownPhase = MeltdownPhase.AUX_ACTIVE;
+                        meltdownTicks = 0;
+                        lasers.setPower(ReactorLasers.LASER_STAB, 200);
+                        lasers.setControlLocked(true);
+                    }
+                }
+            }
+
+            case AUX_ACTIVE -> {
+                if (++meltdownTicks >= AUX_SHIELD_SEC * 20) {
+                    // The auxiliary shield died — the detonation is now unavoidable
+                    beginUnavoidable(true);
+                }
+            }
+
+            case RESTAB_SEQ -> {
+                meltdownTicks++;
+                if (meltdownTicks == 20 * 5) {
+                    broadcast(StructuresMessages.get("meltdown_recalibrating",
+                            "<white>Recalibrating stabilization lasers..."));
+                } else if (meltdownTicks == 20 * 10) {
+                    broadcast(StructuresMessages.get("meltdown_recreation",
+                            "<white>Attempting shiteld re-creation..."));
+                } else if (meltdownTicks == 20 * 11) {
+                    broadcast(StructuresMessages.get("meltdown_chance",
+                            "<white>Estimated chance of success: <yellow>%chance%%<white>.")
+                            .replace("%chance%", String.valueOf((int) restabChance)));
+                }
+                if (meltdownTicks >= 20 * 16) {
+                    rollRestabilization();
+                }
+            }
+
+            case RESTAB_FAIL -> {
+                meltdownTicks++;
+                if (meltdownTicks == 20 * 5) {
+                    broadcast(StructuresMessages.get("meltdown_fail_critical",
+                            "<red>Auxiliary shield integrity critical, failure imminent."));
+                } else if (meltdownTicks == 20 * 10) {
+                    broadcast(StructuresMessages.get("meltdown_fail_total",
+                            "<red>Auxiliary shield failure detected, total system failure in T-10s."));
+                }
+                if (meltdownTicks >= 20 * 20) {
+                    beginUnavoidable(false);
+                }
+            }
+        }
+    }
+
+    /** The WARNING block of the aux shield announcement, one line per 5 ticks. */
+    private String[] meltdownWarningLines() {
+        return new String[] {
+                StructuresMessages.get("meltdown_warn_1", "<gold>WARNING!!!"),
+                StructuresMessages.get("meltdown_warn_2", "<white>Reactor <gold>Emergency Termination Seqence"),
+                StructuresMessages.get("meltdown_warn_3", "<white>is now <gold>available<white>, auxiliary shield"),
+                StructuresMessages.get("meltdown_warn_4", "<red>failue estimated in T-3m<white>, shut down reactor immediately."),
+                StructuresMessages.get("meltdown_warn_5", "<gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key."),
+                StructuresMessages.get("meltdown_warn_6", "<gold>This is not a drill, I repeat, this is not a drill!")
+        };
+    }
+
+    /**
+     * The detonation becomes unavoidable: the shield enters FAILED with the
+     * T-10s countdown. The aux-shield expiry announces the standard
+     * shield-failure broadcast; a failed attempt stays silent — it already
+     * reported its own total-failure message.
+     */
+    private void beginUnavoidable(boolean announce) {
+        meltdownPhase = MeltdownPhase.NONE;
+        meltdownTicks = 0;
+        shield.fail(announce);
+        saveToDb();
+    }
+
+    // =========================
+    // RESTABILIZATION ATTEMPT — the startup lamp pulse while the aux shield
+    // holds. The success chance is 2% per content-barrel slot occupied by a
+    // netherite ingot (stacks count as one slot); the ingots are consumed
+    // whether the attempt succeeds or not.
+    // =========================
+    private void tryRestabilization() {
+        int slots = countRestabIngots();
+        restabChance = slots * RESTAB_CHANCE_PER_SLOT;
+        clearRestabIngots();
+        meltdownPhase = MeltdownPhase.RESTAB_SEQ;
+        meltdownTicks = 0;
+        broadcast(StructuresMessages.get("meltdown_attempt",
+                "<white>Attempting reactor shutdown..."));
+        saveToDb();
+    }
+
+    /** Rolls the captured chance: success → the manual shutdown, failure → T-10s. */
+    private void rollRestabilization() {
+        if (Math.random() * 100.0 < restabChance) {
+            broadcast(StructuresMessages.get("meltdown_success",
+                    "<green>Reactor re-stabilization successfull, performing reactor shutdown..."));
+            meltdownPhase = MeltdownPhase.NONE;
+            meltdownTicks = 0;
+            lasers.setControlLocked(false);
+            // The manual shutdown: heat-dump to −273 C*, then the full
+            // stall procedure — the same flow as the startup lamp shutdown.
+            stallManual = true;
+            stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
+            stallPhase = StallPhase.WAIT_POWER;
+            stallTicks = 0;
+        } else {
+            broadcast(StructuresMessages.get("meltdown_fail_timeout",
+                    "<red>Timed out waiting reactor systems to response..."));
+            meltdownPhase = MeltdownPhase.RESTAB_FAIL;
+            meltdownTicks = 0;
+        }
+        saveToDb();
+    }
+
+    /** The content barrel — the floor barrel the fusion debris lands in. */
+    private Barrel contentBarrel() {
+        if (reactorLocation == null) return null;
+        Block block = reactorLocation.clone()
+                .add(ReactorFusion.BARREL_FLOOR[0], ReactorFusion.BARREL_FLOOR[1], ReactorFusion.BARREL_FLOOR[2])
+                .getBlock();
+        return block.getState() instanceof Barrel barrel ? barrel : null;
+    }
+
+    /** Content-barrel slots occupied by a netherite ingot (a stack counts as one slot). */
+    private int countRestabIngots() {
+        Barrel barrel = contentBarrel();
+        if (barrel == null) return 0;
+        int slots = 0;
+        for (ItemStack item : barrel.getInventory().getContents()) {
+            if (item != null && item.getType() == Material.NETHERITE_INGOT) slots++;
+        }
+        return slots;
+    }
+
+    /** Removes every netherite ingot from the content barrel (the attempt consumes them). */
+    private void clearRestabIngots() {
+        Barrel barrel = contentBarrel();
+        if (barrel == null) return;
+        Inventory inv = barrel.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack item = inv.getItem(i);
+            if (item != null && item.getType() == Material.NETHERITE_INGOT) {
+                inv.setItem(i, null);
+            }
+        }
+    }
+
+    /** Shield-depleted visual: explosion, fire and lava particles in the core. */
+    private void spawnMeltdownExplosion() {
+        if (reactorLocation == null) return;
+        Location core = reactorLocation.clone().add(0.5, -4.5, 0.5);
+        var world = core.getWorld();
+        world.spawnParticle(Particle.EXPLOSION_EMITTER, core, 3, 0.5, 0.5, 0.5, 0);
+        world.spawnParticle(Particle.EXPLOSION, core, 20, 1.0, 1.0, 1.0, 0.1);
+        world.spawnParticle(Particle.FLAME, core, 80, 1.2, 1.2, 1.2, 0.08);
+        world.spawnParticle(Particle.LAVA, core, 30, 1.0, 1.0, 1.0, 0);
+        world.playSound(core, Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.MASTER, 2.5f, 0.7f);
+    }
+
+    /** Aux shield up visual: smoke venting from the core chamber. */
+    private void spawnMeltdownSmoke() {
+        if (reactorLocation == null) return;
+        Location core = reactorLocation.clone().add(0.5, -4.5, 0.5);
+        core.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, core, 48, 0.8, 0.8, 0.8, 0.05);
+    }
+
     /** Stall shutdown phase machine (every tick). */
     private void tickStallShutdown() {
         switch (stallPhase) {
-            case NONE, SHIELD_RAMP -> { /* SHIELD_RAMP completes via onStallShieldDown() */ }
+            case NONE -> { }
+
+            case SHIELD_RAMP -> {
+                // Normal path: the ramp completes via onStallShieldDown().
+                // A shield that dissolved instantly (the meltdown
+                // restabilization auxiliary shield has no integrity to ramp)
+                // never reports back — complete the ramp here.
+                if (shield.getState() != ReactorShield.State.SHUTDOWN) {
+                    onStallShieldDown();
+                }
+            }
 
             case WAIT_POWER -> {
                 if (++stallTicks >= 20 * 5) {
@@ -882,6 +1165,9 @@ public class ReactorManager {
         s.setSelfdestructDone(r.selfdestructDone);
         s.setSelfdestructCancelled(r.selfdestructCancelled);
         s.setCoreEmergencyStopped(r.coreEmergencyStopped);
+        s.setMeltdownPhase(r.meltdownPhase.name());
+        s.setMeltdownTicks(r.meltdownTicks);
+        s.setRestabChance(r.restabChance);
         s.setStallPhase(r.stallPhase.name());
         s.setStallTicks(r.stallTicks);
         s.setCoreOffline(r.coreOfflineMarked);
@@ -942,6 +1228,10 @@ public class ReactorManager {
         selfdestructCancelled = state.isSelfdestructCancelled();
         selfdestructPhase = parseSelfdestructPhase(state.getSelfdestructPhase());
         selfdestructTicks = state.getSelfdestructTicks();
+        meltdownPhase = parseMeltdownPhase(state.getMeltdownPhase());
+        meltdownTicks = state.getMeltdownTicks();
+        meltdownLineIndex = 0;
+        restabChance = state.getRestabChance();
         stallPhase = parseStallPhase(state.getStallPhase());
         stallTicks = state.getStallTicks();
         coreOfflineMarked = state.isCoreOffline();
@@ -976,6 +1266,13 @@ public class ReactorManager {
                 || selfdestructPhase == SelfdestructPhase.TIMED
                 || selfdestructPhase == SelfdestructPhase.DETONATION_MSG
                 || selfdestructPhase == SelfdestructPhase.BYPASS_MSG) {
+            lasers.setControlLocked(true);
+        }
+
+        // Meltdown restabilization: the stabilizers are cranked and the
+        // control stays locked while any meltdown phase runs (the laser
+        // powers themselves persist in the laser columns — stab at 200%)
+        if (isMeltdownActive()) {
             lasers.setControlLocked(true);
         }
 
@@ -1036,6 +1333,16 @@ public class ReactorManager {
             return StallPhase.valueOf(name);
         } catch (IllegalArgumentException e) {
             return StallPhase.NONE;
+        }
+    }
+
+    /** Parses a persisted meltdown-restabilization phase name, NONE on any mismatch. */
+    private static MeltdownPhase parseMeltdownPhase(String name) {
+        if (name == null) return MeltdownPhase.NONE;
+        try {
+            return MeltdownPhase.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return MeltdownPhase.NONE;
         }
     }
 
@@ -1246,6 +1553,12 @@ public class ReactorManager {
         // overpower finale (Power Lasers at 1000%) until the report stage.
         // =========================
         tickSelfdestruct();
+
+        // =========================
+        // MELTDOWN RESTABILIZATION — the aux shield countdown, the WARNING
+        // block and the restabilization attempt sequence
+        // =========================
+        tickMeltdown();
 
         // =========================
         // SHIELD PRESSURE & CORE SPIN
@@ -1504,6 +1817,10 @@ public class ReactorManager {
         selfdestructTicks = 0;
         selfdestructDone = false;
         selfdestructCancelled = false;
+        meltdownPhase = MeltdownPhase.NONE;
+        meltdownTicks = 0;
+        meltdownLineIndex = 0;
+        restabChance = 0;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
         stallManual = false;
@@ -1616,6 +1933,10 @@ public class ReactorManager {
         selfdestructTicks = 0;
         selfdestructDone = false;
         selfdestructCancelled = false;
+        meltdownPhase = MeltdownPhase.NONE;
+        meltdownTicks = 0;
+        meltdownLineIndex = 0;
+        restabChance = 0;
         stallPhase = StallPhase.NONE;
         stallTicks = 0;
         stallManual = false;
@@ -1721,6 +2042,7 @@ public class ReactorManager {
     // =========================
     public boolean isSensorsDead() {
         return structureDamaged
+                || isMeltdownActive()
                 || selfdestructPhase == SelfdestructPhase.SENSORS_DOWN
                 || selfdestructPhase == SelfdestructPhase.CONTROLS_DOWN
                 || selfdestructPhase == SelfdestructPhase.PROTOCOL_MSG
