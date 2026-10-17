@@ -825,7 +825,8 @@ public class ReactorManager {
         WAIT_ABS_MSG,     // 3s → "Success."
         WAIT_ABS_PAUSE,   // 3s → "Forming reactor shield..." + shield forming begins
         SHIELD_FORMING,   // until integrity 100% (10%/sec) → "Success."
-        WAIT_IGNITE,      // 3s → "Igniting reactor core..." (ignite)
+        WAIT_IGNITE,      // 3s → "Igniting reactor core..." (ignite + pre-heat)
+        IGNITE_HEATING,   // the core ramps smoothly to the 20k idle burn (~5s)
         WAIT_COMPLETE     // 3s → "Reactor startup complete, resume normal operations."
     }
 
@@ -839,6 +840,11 @@ public class ReactorManager {
      * power lasers; without heating it decays back down at 1 C* per tick.
      */
     private static final int IGNITION_TEMP = 20_000;
+
+    /** C* per tick during the ignition pre-heat ramp (~5s from ambient). */
+    private double igniteRampRate;
+    /** Fractional ignition-ramp accumulator. */
+    private double igniteRampRemainder;
 
     public boolean isStartupSequenceActive() { return startupPhase != StartupPhase.NONE; }
     public StartupPhase getStartupPhase() { return startupPhase; }
@@ -926,11 +932,34 @@ public class ReactorManager {
                     broadcast(StructuresMessages.get("startup_ignite",
                             "<white>Igniting reactor core..."));
                     shield.ignite();
-                    // Ignition pre-heats the core to the idle burn level —
-                    // a started reaction does not stay at −273 C*
-                    coreTemp = Math.max(coreTemp, IGNITION_TEMP);
-                    startupPhase = StartupPhase.WAIT_COMPLETE;
+                    // Ignition pre-heat: ramp the core smoothly to the 20k
+                    // idle burn level over ~5 seconds (~4k C* per second)
+                    startupPhase = StartupPhase.IGNITE_HEATING;
                     startupTicks = 0;
+                    igniteRampRate = Math.max(0, (IGNITION_TEMP - coreTemp) / (20.0 * 5));
+                    igniteRampRemainder = 0;
+                    if (igniteRampRate <= 0) igniteRampFinish(); // already at/above 20k
+                }
+            }
+
+            case IGNITE_HEATING -> {
+                // Mid-ramp restart self-heal: the phase persists in the DB but
+                // the rate does not — re-derive it (~5s from the current temp)
+                if (igniteRampRate <= 0) {
+                    igniteRampRate = Math.max(0, (IGNITION_TEMP - coreTemp) / (20.0 * 5));
+                }
+                if (igniteRampRate <= 0 || coreTemp >= IGNITION_TEMP) {
+                    igniteRampFinish();
+                } else {
+                    double v = igniteRampRate + igniteRampRemainder;
+                    int whole = (int) v;
+                    igniteRampRemainder = v - whole;
+                    if (whole > 0) {
+                        coreTemp = Math.min(IGNITION_TEMP, coreTemp + whole);
+                    }
+                    if (coreTemp >= IGNITION_TEMP) {
+                        igniteRampFinish();
+                    }
                 }
             }
             case WAIT_COMPLETE -> {
@@ -963,9 +992,21 @@ public class ReactorManager {
         if (startupPhase == StartupPhase.NONE) return;
         startupPhase = StartupPhase.NONE;
         startupTicks = 0;
+        igniteRampRate = 0;
+        igniteRampRemainder = 0;
         if (shield.getState() == ReactorShield.State.CREATING) {
             shield.reset();
         }
+        saveToDb();
+    }
+
+    /** Ends the ignition pre-heat: the core is at the idle burn level, hand over to the completion message. */
+    private void igniteRampFinish() {
+        coreTemp = Math.max(coreTemp, IGNITION_TEMP);
+        igniteRampRate = 0;
+        igniteRampRemainder = 0;
+        startupPhase = StartupPhase.WAIT_COMPLETE;
+        startupTicks = 0;
         saveToDb();
     }
     /** Whether the core finished its shutdown and is awaiting a new trigger pulse. */
@@ -1891,6 +1932,8 @@ public class ReactorManager {
         coreOfflineMarked = false;
         startupPhase = StartupPhase.NONE;
         startupTicks = 0;
+        igniteRampRate = 0;
+        igniteRampRemainder = 0;
 
         display.resetDisplay();
 
@@ -2007,6 +2050,8 @@ public class ReactorManager {
         coreOfflineMarked = false;
         startupPhase = StartupPhase.NONE;
         startupTicks = 0;
+        igniteRampRate = 0;
+        igniteRampRemainder = 0;
         energyGenerated = 0;
         energyRemainder = 0;
         prevShInt = 100;
