@@ -184,10 +184,10 @@ public class PlaceholderResolver {
         try {
             Class.forName("me.clip.placeholderapi.PlaceholderAPI");
             papiAvailable = true;
-            ConsoleLogger.info("[PlaceholderResolver] PlaceholderAPI detected — внешняя интеграция активна");
+            ConsoleLogger.info("[PlaceholderResolver] PlaceholderAPI detected — external integration active");
         } catch (ClassNotFoundException e) {
             papiAvailable = false;
-            ConsoleLogger.info("[PlaceholderResolver] PlaceholderAPI не найден — внешняя интеграция отключена, внутренний резолвер работает");
+            ConsoleLogger.info("[PlaceholderResolver] PlaceholderAPI not found — external integration disabled, internal resolver handles all placeholders");
         }
 
         // ── LuckPerms ──
@@ -213,11 +213,11 @@ public class PlaceholderResolver {
 
             if (userManager != null) {
                 luckPermsAvailable = true;
-                ConsoleLogger.info("[PlaceholderResolver] LuckPerms API detected — %prefix%/%suffix%/%group% активны");
+                ConsoleLogger.info("[PlaceholderResolver] LuckPerms API detected — %prefix%/%suffix%/%group% enabled");
             }
         } catch (Exception e) {
             luckPermsAvailable = false;
-            ConsoleLogger.info("[PlaceholderResolver] LuckPerms не найден — %prefix%/%suffix%/%group% отключены");
+            ConsoleLogger.info("[PlaceholderResolver] LuckPerms not found — %prefix%/%suffix%/%group% disabled");
         }
 
         StatsTracker.init();
