@@ -2123,16 +2123,6 @@ public class ReactorManager {
         meltdown();
     }
 
-    /**
-     * Shield failure countdown just started (T-10s until the core detonation):
-     * 🏆 Advancement: detonation_irreversible — the blast is now unavoidable,
-     * and the description is already telling everyone to run.
-     */
-    public void onShieldFailureCountdown() {
-        Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-            grantAdvancementNear("datapack/detonation_irreversible"));
-    }
-
     // Smoothed display values (delegated to ReactorDisplay)
     public int getDisplayCoreTemp() { return display.getDisplayCoreTemp(); }    public double getDisplayShieldPress() { return display.getDisplayShieldPress(); }
     public double getDisplayCoreSpin() { return display.getDisplayCoreSpin(); }

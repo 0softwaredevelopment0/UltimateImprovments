@@ -34,11 +34,6 @@ in this file.
   the reactor systems finish rebooting (sensors down → controls down →
   "Internal Dark Fusion Reactor Systems initiated a self-destruct protocol").
   Challenge frame, red terracotta icon, 150 XP.
-- **DFC advancement "Detonation irreversible"** — granted when the shield
-  failure countdown starts (T-10s before the core detonation). The trap:
-  the description urges you to run, but fleeing puts you outside the
-  30-block grant radius of "Destructive Consequences", which fires at the
-  actual blast. Goal frame, TNT icon, 60 XP, parent `ui:datapack/dfc_unstable`.
 - **DFC advancement "Senior ReactorOps"** — keep the shield integrity
   within 0–10% for one minute straight. Entry requires deliberately
   overdriving the core past ~22M C* (shield stress above 100%); hold the
@@ -114,6 +109,11 @@ in this file.
   configs keep working until renamed manually.
 
 ### Removed
+- **The "Detonation irreversible" advancement** — granted at the start of the
+  T-10s detonation countdown, which duplicated "Destructive Consequences"
+  (the same meltdown, just 10 seconds apart). Removed along with its grant
+  hook (`onShieldFailureCountdown`); the blast itself is still the moment
+  that counts. Its TNT icon moved to "Destructive Consequences".
 - **The dead "High-Tech Alloys" advancement (`craft_nethered_block`)** — its
   criterion was `minecraft:impossible` and nothing in the code ever granted
   it, which also made the whole subtree under it unobtainable (children are
