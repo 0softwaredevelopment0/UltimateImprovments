@@ -63,7 +63,8 @@ public class ReactorState {
     // full restore — the procedure resumes after a restart mid-sequence
     private String stallPhase = "NONE"; // NONE / WAIT_POWER / ... / SHIELD_RAMP
     private int stallTicks;
-    private boolean stallManual;        // manual trigger shutdown (Trigger Action lamp pulse), not the emergency stall
+    private String stallTrigger = "AUTOMATIC"; // MANUAL / AUTOMATIC / RESTAB — shutdown entry kind
+    private boolean stallManual;        // legacy flag (pre-stall_trigger rows): manual trigger shutdown
     private boolean coreOffline;        // shutdown finished, awaiting a new startup
 
     // Cinematic startup sequence (lamp pulse → lasers → valve → shield → ignite)
@@ -101,6 +102,7 @@ public class ReactorState {
         restabChance = o.restabChance;
         stallPhase = o.stallPhase;
         stallTicks = o.stallTicks;
+        stallTrigger = o.stallTrigger;
         stallManual = o.stallManual;
         coreOffline = o.coreOffline;
         startupPhase = o.startupPhase;
@@ -228,6 +230,8 @@ public class ReactorState {
     public void setStallTicks(int val) { stallTicks = Math.max(0, val); }
     public boolean isStallManual() { return stallManual; }
     public void setStallManual(boolean val) { stallManual = val; }
+    public String getStallTrigger() { return stallTrigger; }
+    public void setStallTrigger(String val) { stallTrigger = val; }
     public boolean isCoreOffline() { return coreOffline; }
     public void setCoreOffline(boolean val) { coreOffline = val; }
 

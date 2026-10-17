@@ -187,6 +187,9 @@ public class DatabaseInit {
                 {"stall_phase", "TEXT DEFAULT 'NONE'"},
                 {"stall_ticks", "INTEGER DEFAULT 0"},
                 {"stall_manual", "INTEGER DEFAULT 0"},
+                // No DEFAULT on purpose: existing rows must stay NULL so the
+                // load falls back to the legacy stall_manual flag
+                {"stall_trigger", "TEXT"},
                 {"core_offline", "INTEGER DEFAULT 0"},
                 {"startup_phase", "TEXT DEFAULT 'NONE'"},
                 {"startup_ticks", "INTEGER DEFAULT 0"}
