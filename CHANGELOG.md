@@ -14,16 +14,23 @@ in this file.
   analyze, smoke vents and the multi-line WARNING block announces the
   "Emergency Termination Sequence". The stabilizers crank to 200% and the
   control locks (the lamps still click, nothing responds). The operators'
-  second chance: netherite ingots in the content barrel (the floor barrel
-  the fusion debris lands in) — 1 per slot, stacks count as one slot — set
-  the success chance, 2% per occupied slot (54% for a full 27-slot barrel,
-  capped at 100% — larger barrels cannot exceed certainty). The
-  attempt is the startup lamp pulse: the ingots are consumed, the systems
-  run their calibration sequence and roll the captured chance. Success →
+  second chance: netherite items in the content barrel (the floor barrel
+  the fusion debris lands in) — the success chance is summed per item
+  (ancient debris / netherite scrap +1%, netherite ingot +2%, netherite
+  block +3%; other items are ignored, stacks count fully) and capped by
+  the new `reactor.restab_chance_max` config key (default 99, range 0–100)
+  — the best possible attempt is never certain. A long reactor run
+  naturally accumulates debris in the barrel, so a no-cargo attempt can
+  work. The attempt is the Trigger Action lamp pulse: the netherite items
+  are consumed, the systems run their calibration sequence and roll the
+  captured chance. Success →
   the manual (heat-dump) shutdown procedure runs and the reactor powers
   down. Failure (its own three-report sequence) or an expired aux shield →
   the detonation becomes unavoidable (the shield FAILED T-10s countdown).
   The whole phase machine persists across restarts.
+- **DFC aux shield integrity warnings** — the draining auxiliary shield
+  broadcasts once per downward threshold crossing at 75 / 50 / 25 / 10%:
+  "Warning! Auxiliary shield integrity at N%!".
 - **DFC advancement "Critical overload"** — granted when the meltdown
   restabilization phase starts (the shield just died, the T-3m window is
   open). Goal frame, heart of the sea icon, 75 XP, parent
@@ -60,6 +67,18 @@ in this file.
   totem of undying icon, 250 XP, parent `ui:datapack/operator_incompetence`.
 
 ### Changed
+- **The reactor lamp is officially the "Trigger Action" lamp** — one lamp,
+  context actions: startup, manual shutdown, meltdown restabilization
+  attempt, self-destruct cancel. Renamed across the code (`LAMP_STARTUP` →
+  `LAMP_TRIGGER`, `onStartupPulse` → `onTriggerPulse`, comments and the
+  WARNING hint line).
+- **Roof lamp signs are now static white labels** — the aqua live-power
+  readouts on the nine lamp signs are gone (the values live on the Power
+  Stats / Shield Stats panels). Every 10 seconds the plugin rewrites the
+  full label text taken from the NBT template (titles + "+5% Power" etc.),
+  with the "Core Startup" label renamed to "Trigger Action / Startup /
+  Shutdown / Restab. / Cancel" — a broken, replaced or wiped sign heals
+  itself on the next pass.
 - **DFC case messaging consolidated to exactly three events** — "DFC case
   breach detected!" (the first pane breaks), "DFC case failure detected!"
   (the case breaks completely — the integrity shatter or every glass cell

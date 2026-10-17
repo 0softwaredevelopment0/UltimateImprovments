@@ -55,7 +55,7 @@ public class ReactorStructure {
     private static final int[] BULB_WEST = { -3, -5, 0 };
     private static final int[] BULB_EAST = {  3, -5, 0 };
 
-    /** Roof control bulbs (y=9): row x=1 (5 pcs) + row x=3 (4 pcs). */
+    /** Roof control bulbs (y=9): row x=1 (5 pcs, the Trigger Action lamp ends the row) + row x=3 (4 pcs). */
     private static final int[][] ROOF_BULBS = {
             { -4, 0, -4 }, { -4, 0, -2 }, { -4, 0, 0 }, { -4, 0, 2 }, { -4, 0, 4 },
             { -2, 0, -4 }, { -2, 0, -2 }, { -2, 0, 0 }, { -2, 0, 2 }

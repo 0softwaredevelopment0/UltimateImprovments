@@ -257,21 +257,22 @@ public class ReactorManager {
     }
 
     /**
-     * Manual shutdown: the startup lamp pulsed while the core is already
-     * running. Silently ignored while the shield stress is above 10% (nothing
-     * happens); otherwise the stall procedure runs with the manual trigger
-     * announcement, and after the power lasers step the core dumps all its
-     * heat to −273 C* at 10%/sec of the temperature it had at the shutdown
-     * start — the next shutdown step waits until −273 is reached.
+     * Manual shutdown: the Trigger Action lamp pulsed while the core is
+     * already running. Silently ignored while the shield stress is above
+     * 10% (nothing happens); otherwise the stall procedure runs with the
+     * manual trigger announcement, and after the power lasers step the core
+     * dumps all its heat to −273 C* at 10%/sec of the temperature it had at
+     * the shutdown start — the next shutdown step waits until −273 is
+     * reached.
      */
     public void tryManualShutdownTrigger() {
-        // Meltdown restabilization: the startup lamp pulse while the aux
+        // Meltdown restabilization: the trigger lamp pulse while the aux
         // shield holds is the restabilization attempt
         if (meltdownPhase == MeltdownPhase.AUX_ACTIVE) {
             tryRestabilization();
             return;
         }
-        // Self-destruct, timed countdown: the startup lamp pulse becomes the
+        // Self-destruct, timed countdown: the trigger lamp pulse becomes the
         // secret protocol-cancel attempt — 0.5% per rising edge that the
         // systems "malfunction" the protocol away. Past the announcement of
         // the detonation procedure (TIMED over) it is already too late.
@@ -294,7 +295,7 @@ public class ReactorManager {
     }
 
     /**
-     * The secret protocol cancel (startup lamp pulse during the timed
+     * The secret protocol cancel (Trigger Action lamp pulse during the timed
      * countdown): 0.5% chance per pulse that the systems malfunction the
      * protocol away — it disarms, the reactor powers down (controlled shield
      * ramp, lasers off, controls unlocked) and can be started again later.
@@ -322,17 +323,19 @@ public class ReactorManager {
     // integrity). Instead of an instant T-10s detonation the emergency
     // systems buy three minutes: an auxiliary shield (100% integrity,
     // draining linearly to 0% over the window) holds the core while the
-    // operators try to restabilize the reactor. Netherite ingots in the
-    // content barrel (the floor barrel the
-    // fusion debris lands in) set the success chance: 2% per occupied slot,
-    // stacks do not help (54% for a full 27-slot barrel, capped at 100% —
-    // larger barrels cannot exceed certainty). The attempt is the
-    // startup lamp pulse: the ingots are consumed, the systems run their
-    // calibration sequence and roll the captured chance. Success starts the
-    // manual (heat-dump) shutdown procedure — the reactor powers down and
-    // leaves the meltdown phase. Failure, or an expired aux shield
-    // (integrity 0%), makes the detonation unavoidable (the shield FAILED
-    // T-10s countdown).
+    // operators try to restabilize the reactor. Netherite items in the
+    // content barrel (the floor barrel the fusion debris lands in) set the
+    // success chance, summed per item: ancient debris / netherite scrap +1%,
+    // netherite ingot +2%, netherite block +3% — other items are ignored.
+    // A working reactor naturally accumulates debris there, so a long run
+    // can afford a no-cargo attempt. The total is capped by
+    // reactor.restab_chance_max (default 99%) — the best possible attempt
+    // is never certain. The attempt is the Trigger Action lamp pulse: the
+    // netherite items are consumed, the systems run their calibration
+    // sequence and roll the captured chance. Success starts the manual
+    // (heat-dump) shutdown procedure — the reactor powers down and leaves
+    // the meltdown phase. Failure, or an expired aux shield (integrity 0%),
+    // makes the detonation unavoidable (the shield FAILED T-10s countdown).
     // =========================
     public enum MeltdownPhase {
         NONE,          // normal operation
@@ -349,8 +352,6 @@ public class ReactorManager {
      * Public: the shield drains its integrity linearly over the same span.
      */
     public static final int AUX_SHIELD_SEC = 180;
-    /** Success chance % per content-barrel slot occupied by a netherite ingot. */
-    private static final double RESTAB_CHANCE_PER_SLOT = 2.0;
     /** Ticks between the WARNING block lines. */
     private static final int MELTDOWN_LINE_DELAY_TICKS = 5;
 
@@ -504,7 +505,7 @@ public class ReactorManager {
                 StructuresMessages.get("meltdown_warn_2", "<white>Reactor <gold>Emergency Termination Sequence"),
                 StructuresMessages.get("meltdown_warn_3", "<white>is now <gold>available<white>, auxiliary shield"),
                 StructuresMessages.get("meltdown_warn_4", "<red>failure estimated in T-3m<white>, shut down reactor immediately."),
-                StructuresMessages.get("meltdown_warn_5", "<gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key."),
+                StructuresMessages.get("meltdown_warn_5", "<gray>Load netherite items into the contents barrel (debris/scrap +1%, ingot +2%, block +3% each) and pulse the trigger lamp."),
                 StructuresMessages.get("meltdown_warn_6", "<gold>This is not a drill, I repeat, this is not a drill!")
         };
     }
@@ -523,17 +524,17 @@ public class ReactorManager {
     }
 
     // =========================
-    // RESTABILIZATION ATTEMPT — the startup lamp pulse while the aux shield
-    // holds. The success chance is 2% per content-barrel slot occupied by a
-    // netherite ingot (stacks count as one slot); the ingots are consumed
-    // whether the attempt succeeds or not.
+    // RESTABILIZATION ATTEMPT — the Trigger Action lamp pulse while the aux
+    // shield holds. The success chance is the netherite value summed over
+    // every item in the content barrel (debris/scrap +1%, ingot +2%, block
+    // +3% — other items are ignored), capped by reactor.restab_chance_max;
+    // the items are consumed whether the attempt succeeds or not.
     // =========================
     private void tryRestabilization() {
-        int slots = countRestabIngots();
-        // Servers can run larger (multi-row) barrels — the chance is capped
-        // at 100% so a 54-slot barrel cannot roll above certainty.
-        restabChance = Math.min(100.0, slots * RESTAB_CHANCE_PER_SLOT);
-        clearRestabIngots();
+        int chance = countRestabValue();
+        // Cap: the best possible attempt can never be certain (config, default 99%)
+        restabChance = Math.min(ReactorConfig.getInstance().getRestabChanceMax(), chance);
+        clearRestabItems();
         meltdownPhase = MeltdownPhase.RESTAB_SEQ;
         meltdownTicks = 0;
         broadcast(StructuresMessages.get("meltdown_attempt",
@@ -550,7 +551,7 @@ public class ReactorManager {
             meltdownTicks = 0;
             lasers.setControlLocked(false);
             // The manual shutdown: heat-dump to −273 C*, then the full
-            // stall procedure — the same flow as the startup lamp shutdown.
+            // stall procedure — the same flow as the trigger-lamp shutdown.
             stallManual = true;
             stallCoolPerTick = Math.max(1.0, coreTemp * 0.10 / 20.0);
             stallPhase = StallPhase.WAIT_POWER;
@@ -573,25 +574,37 @@ public class ReactorManager {
         return block.getState() instanceof Barrel barrel ? barrel : null;
     }
 
-    /** Content-barrel slots occupied by a netherite ingot (a stack counts as one slot). */
-    private int countRestabIngots() {
-        Barrel barrel = contentBarrel();
-        if (barrel == null) return 0;
-        int slots = 0;
-        for (ItemStack item : barrel.getInventory().getContents()) {
-            if (item != null && item.getType() == Material.NETHERITE_INGOT) slots++;
-        }
-        return slots;
+    /** Restabilization chance value per item type: debris/scrap +1%, ingot +2%, block +3%. */
+    private static int restabValueOf(Material type) {
+        return switch (type) {
+            case ANCIENT_DEBRIS, NETHERITE_SCRAP -> 1;
+            case NETHERITE_INGOT -> 2;
+            case NETHERITE_BLOCK -> 3;
+            default -> 0;
+        };
     }
 
-    /** Removes every netherite ingot from the content barrel (the attempt consumes them). */
-    private void clearRestabIngots() {
+    /** Restabilization chance summed over every netherite item in the content barrel (stacks count fully). */
+    private int countRestabValue() {
+        Barrel barrel = contentBarrel();
+        if (barrel == null) return 0;
+        int chance = 0;
+        for (ItemStack item : barrel.getInventory().getContents()) {
+            if (item != null) {
+                chance += restabValueOf(item.getType()) * item.getAmount();
+            }
+        }
+        return chance;
+    }
+
+    /** Removes every netherite item from the content barrel (the attempt consumes them). */
+    private void clearRestabItems() {
         Barrel barrel = contentBarrel();
         if (barrel == null) return;
         Inventory inv = barrel.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
             ItemStack item = inv.getItem(i);
-            if (item != null && item.getType() == Material.NETHERITE_INGOT) {
+            if (item != null && restabValueOf(item.getType()) > 0) {
                 inv.setItem(i, null);
             }
         }
@@ -758,7 +771,7 @@ public class ReactorManager {
     // Reaching absolute zero (−273 C*) starts the full automatic shutdown:
     // power lasers off one by one (their ±5% control detached), stab laser,
     // absorber valve, then the shield ramps down smoothly (Shutting down) and
-    // the core is marked offline, awaiting a new startup pulse. Control is
+    // the core is marked offline, awaiting a new trigger pulse. Control is
     // never blocked while the reactor is offline/starting/stopping — the
     // lasers simply have no effect and no particles are emitted.
     // =========================
@@ -776,12 +789,12 @@ public class ReactorManager {
         WAIT_OFFLINE_MSG // shield "Success." → 3s → "Core marked as offline..." → done
     }
 
-    /** Manual shutdown (startup lamp re-trigger) is silently ignored above this shield stress %. */
+    /** Manual shutdown (Trigger Action lamp re-pulse) is silently ignored above this shield stress %. */
     private static final double MANUAL_TRIGGER_MAX_STRESS = 10.0;
 
     private StallPhase stallPhase = StallPhase.NONE;
     private int stallTicks;
-    /** Manual trigger (startup lamp pulse while running) vs automatic stall (-273 C*). */
+    /** Manual trigger (Trigger Action lamp pulse while running) vs automatic stall (-273 C*). */
     private boolean stallManual;
     /** HEAT_DUMP cooling rate, C* per tick: 10%/sec of the temp at the shutdown start. */
     private double stallCoolPerTick;
@@ -793,11 +806,12 @@ public class ReactorManager {
     public StallPhase getStallPhase() { return stallPhase; }
 
     // =========================
-    // STARTUP SEQUENCE: the startup lamp pulse begins the cinematic startup —
-    // announcement → 5s → stabilization lasers → power lasers → absorber valve
-    // (each with its own 3s pauses) → shield forming at 10%/sec → ignition:
-    // the core becomes operational, central particles appear and the
-    // laser/absorber control takes effect (it is inert during the sequence).
+    // STARTUP SEQUENCE: the Trigger Action lamp pulse begins the cinematic
+    // startup — announcement → 5s → stabilization lasers → power lasers →
+    // absorber valve (each with its own 3s pauses) → shield forming at
+    // 10%/sec → ignition: the core becomes operational, central particles
+    // appear and the laser/absorber control takes effect (it is inert during
+    // the sequence).
     // =========================
     public enum StartupPhase {
         NONE,             // idle
@@ -941,7 +955,7 @@ public class ReactorManager {
         }
         saveToDb();
     }
-    /** Whether the core finished its shutdown and is awaiting a new startup pulse. */
+    /** Whether the core finished its shutdown and is awaiting a new trigger pulse. */
     public boolean isCoreOfflineMarked() { return coreOfflineMarked; }
 
     /**
@@ -1547,7 +1561,7 @@ public class ReactorManager {
             display.setCooling(cooling);
         }
 
-        // 🏆 Advancement: start_dfc — reactor startup (laser startup pulse)
+        // 🏆 Advancement: start_dfc — reactor startup (trigger pulse starts the lasers)
         if (lasers.isStarted() && !advStartDfcGranted) {
             advStartDfcGranted = true;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
@@ -1664,7 +1678,7 @@ public class ReactorManager {
         tickStallShutdown();
 
         // =========================
-        // STARTUP SEQUENCE — cinematic startup driven by the startup lamp
+        // STARTUP SEQUENCE — cinematic startup driven by the Trigger Action lamp
         // =========================
         tickStartupSequence();
 
@@ -2122,8 +2136,14 @@ public class ReactorManager {
         fusionDebrisJustCrafted = true;
     }
 
-    /** Called by the laser startup pulse — begins the cinematic startup sequence. */
-    public void onStartupPulse() {
+    /**
+     * Called by the Trigger Action lamp pulse. Routes the action by the
+     * reactor state: a self-destruct owns the reactor (ignored), an emergency
+     * stop is acknowledged, a running core shuts down manually, an aux-shield
+     * meltdown attempts restabilization — and a fresh core begins the
+     * cinematic startup sequence.
+     */
+    public void onTriggerPulse() {
         // The self-destruct protocol owns the reactor: no normal startup
         // while it runs (the pulse is silently ignored)
         if (isSelfdestructActive()) {

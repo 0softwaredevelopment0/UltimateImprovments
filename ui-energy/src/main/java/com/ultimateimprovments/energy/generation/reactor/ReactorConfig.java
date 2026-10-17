@@ -72,6 +72,11 @@ public class ReactorConfig {
     private double absorberCoolRate;         // C*/sec at 100% valve (≈ stab_cool_rate)
     private double absorberRadPerSec;        // rad per second at 100% valve
 
+    // Meltdown restabilization — netherite items in the content barrel set the
+    // success chance (debris/scrap +1%, ingot +2%, block +3% per item); the
+    // chance is capped so the best possible attempt is never certain.
+    private double restabChanceMax;          // % cap (99)
+
     // Fuel system — consumption by core spin (100% = 1 gold ingot + 1 diamond / 10s)
     private double fuelSpinMin;              // below this spin nothing is consumed
     private double fuelWorkSpin;             // working point: base rate (95 000 RPS)
@@ -117,6 +122,7 @@ public class ReactorConfig {
     public double getSelfdestructOverpowerRate() { return selfdestructOverpowerRate; }
     public double getAbsorberCoolRate() { return absorberCoolRate; }
     public double getAbsorberRadPerSec() { return absorberRadPerSec; }
+    public double getRestabChanceMax() { return restabChanceMax; }
 
     private void load() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -152,6 +158,7 @@ public class ReactorConfig {
         selfdestructOverpowerRate = cfg.getDouble("reactor.selfdestruct_overpower_rate", 10.0);
         absorberCoolRate = cfg.getDouble("reactor.absorber_cool_rate", 9500.0);
         absorberRadPerSec = cfg.getDouble("reactor.absorber_rad_per_sec", 40.0);
+        restabChanceMax = Math.max(0, Math.min(100, cfg.getDouble("reactor.restab_chance_max", 99.0)));
         fuelSpinMin = cfg.getDouble("reactor.fuel_spin_min", 1000);
         fuelWorkSpin = cfg.getDouble("reactor.fuel_work_spin", 95000);
         fuelOverSpin = cfg.getDouble("reactor.fuel_over_spin", 100000);
