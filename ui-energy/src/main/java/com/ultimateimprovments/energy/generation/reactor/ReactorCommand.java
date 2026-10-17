@@ -132,9 +132,11 @@ public final class ReactorCommand {
     // NBT TEMPLATE VALIDATION
     // =========================
     /**
-     * Validate the reactor against the full NBT template (every solid AND air cell).
-     * Falls back to the legacy key-blocks validator when the template is not loaded
-     * or contains no cells.
+     * Validate the reactor against the full NBT template (every solid cell,
+     * plus air cells inside the core chamber — a foreign block outside the
+     * core chamber is ignored as harmless decoration).
+     * Falls back to the legacy key-blocks validator when the template is not
+     * loaded or contains no cells.
      */
     private static java.util.List<String> validateReactorByTemplate(Location center) {
         com.ultimateimprovments.util.StructureTemplate tmpl =

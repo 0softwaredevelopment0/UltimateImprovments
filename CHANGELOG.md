@@ -77,6 +77,17 @@ in this file.
   and the automatic shutdown now starts 5 seconds after it, together with
   the "Operator Incompetence" advancement (previously both fired instantly
   at the 0 C* crossing, one shutdown-length before the stall itself).
+- **DFC assembly ignores foreign blocks outside the core chamber** — the
+  NBT template check no longer fails on blocks standing in template air
+  cells (interior decor space, the space above the roof): outside the
+  functional core they cannot interfere. The core chamber is still
+  enforced — a sphere of 3 blocks around the core center (the same
+  (0.5, −4.5, 0.5) point the particle systems use): a foreign block
+  inside it fails the assembly with the usual break instruction.
+  Implemented as per-template air-enforcement zones in
+  `StructureTemplate.checkAt` (templates without zones keep the full
+  air matching); the zones also apply to the SHIFT+RMB structure scan
+  and the closest-match hints.
 - **DFC aux shield integrity warnings** — the draining auxiliary shield
   broadcasts once per downward threshold crossing at 75 / 50 / 25 / 10%:
   "Warning! Auxiliary shield integrity at N%!".
