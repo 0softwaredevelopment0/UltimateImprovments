@@ -39,7 +39,13 @@ import org.bukkit.util.Vector;
  */
 public class ReactorShield {
 
-    public enum State { OFFLINE, CREATING, WORKING, FAILED, SHUTDOWN }
+    /**
+     * Shield states. {@code AUXILIARY} is the meltdown restabilization
+     * emergency shield: a pure countdown owned by the manager's meltdown
+     * machine (no integrity, no stress — it just holds the core for the
+     * T-3m restabilization window).
+     */
+    public enum State { OFFLINE, CREATING, WORKING, AUXILIARY, FAILED, SHUTDOWN }
 
     private final ReactorManager reactor;
 
@@ -79,7 +85,7 @@ public class ReactorShield {
         ReactorConfig cfg = ReactorConfig.getInstance();
 
         switch (state) {
-            case OFFLINE -> { /* nothing until startup */ }
+            case OFFLINE, AUXILIARY -> { /* nothing until startup / the manager owns the aux countdown */ }
 
             case CREATING -> {
                 // Build-up to 100% at a fixed 10%/sec; the core ignites later,
@@ -101,7 +107,11 @@ public class ReactorShield {
                         integrity -= whole;
                         if (integrity <= 0) {
                             integrity = 0;
-                            startFailure(cfg);
+                            // The shield just died: the meltdown restabilization
+                            // protocol takes over (or, during a self-destruct
+                            // finale, the old direct T-10s failure — the
+                            // manager decides)
+                            reactor.onShieldDepleted();
                         }
                     }
                 } else {
@@ -215,8 +225,17 @@ public class ReactorShield {
     private static final double STALL_SHUTDOWN_RATE = 10.0;
     private double shutdownRemainder;
 
-    /** Enters the smooth controlled shutdown (stall procedure). */
+    /**
+     * Enters the smooth controlled shutdown (stall procedure).
+     * The auxiliary shield (meltdown restabilization) dissolves instantly —
+     * its integrity is already 0, there is nothing to ramp.
+     */
     public void beginShutdown() {
+        if (state == State.AUXILIARY) {
+            state = State.OFFLINE;
+            integrity = 0;
+            return;
+        }
         if (state == State.OFFLINE || state == State.FAILED) return;
         state = State.SHUTDOWN;
         decayRemainder = 0;
@@ -252,8 +271,11 @@ public class ReactorShield {
         double stab = lasers.getPower(ReactorLasers.LASER_STAB);
         double valve = lasers.getPower(ReactorLasers.LASER_ABSORBER);
         boolean anyLaser = p1 > 0 || p2 > 0 || stab > 0;
-        // Stall shutdown: the reactor is powering down — all laser effects off
-        if (state != State.WORKING || reactor.isStallShutdownActive() || (!anyLaser && valve <= 0)) return;
+        // Stall shutdown: the reactor is powering down — all laser effects off.
+        // AUXILIARY (meltdown restabilization): the stabilizers stay cranked —
+        // the ring beams and the hot core dust keep showing.
+        if ((state != State.WORKING && state != State.AUXILIARY)
+                || reactor.isStallShutdownActive() || (!anyLaser && valve <= 0)) return;
 
         ReactorConfig cfg = ReactorConfig.getInstance();
 
@@ -360,11 +382,27 @@ public class ReactorShield {
     // FAILURE & DETONATION
     // =========================
     private void startFailure(ReactorConfig cfg) {
+        fail(true);
+    }
+
+    /**
+     * Forces the shield into the FAILED state with the T-10s detonation
+     * countdown (meltdown restabilization: the aux shield expired or the
+     * restabilization attempt failed). {@code announce} adds the standard
+     * shield-failure broadcast — the failed restabilization attempt skips it
+     * because it already reported its own total-failure message.
+     * 🏆 detonation_irreversible registers here: this is the point where the
+     * blast becomes unavoidable.
+     */
+    public void fail(boolean announce) {
+        if (state == State.FAILED) return;
         state = State.FAILED;
-        failCountdown = cfg.getShieldFailureCountdown() * 20;
-        reactor.broadcastRaw(StructuresMessages.get(
-                "shield_failure",
-                "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
+        failCountdown = ReactorConfig.getInstance().getShieldFailureCountdown() * 20;
+        if (announce) {
+            reactor.broadcastRaw(StructuresMessages.get(
+                    "shield_failure",
+                    "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
+        }
         reactor.onShieldFailureCountdown();
     }
 
@@ -421,6 +459,7 @@ public class ReactorShield {
         return switch (state) {
             case CREATING -> StructuresMessages.get("signs.status_creating", "Creating");
             case WORKING -> StructuresMessages.get("signs.status_working", "Working");
+            case AUXILIARY -> StructuresMessages.get("signs.status_auxiliary", "Auxiliary");
             case FAILED -> StructuresMessages.get("signs.status_failed", "Failed");
             case SHUTDOWN -> StructuresMessages.get("signs.status_shutting_down", "Shutting down");
             case OFFLINE -> StructuresMessages.get("signs.status_offline", "Offline");

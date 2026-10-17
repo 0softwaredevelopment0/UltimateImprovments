@@ -1066,6 +1066,39 @@ stall_absorber = "<white>Закрытие клапана сборщика сод
 stall_shield = "<white>Отключение щита реактора..."
 # Default: <white>Ядро помечено как отключённое, ожидается стартап.
 stall_offline = "<white>Ядро помечено как отключённое, ожидается стартап."
+# Meltdown restabilization — отказ щита запускает вспомогательную оболочку (T-3м) и попытку рестабилизации.
+# Default: <red>Отказ оболочки реактора, анализ систем ядра...
+meltdown_analyzing = "<red>Отказ оболочки реактора, анализ систем ядра..."
+# Default: <white>Создание вспомогательной оболочки, требуется ручное отключение.
+meltdown_aux_creating = "<white>Создание вспомогательной оболочки, требуется ручное отключение."
+# Default: <gold>ВНИМАНИЕ!!!
+meltdown_warn_1 = "<gold>ВНИМАНИЕ!!!"
+# Default: <white>Аварийная последовательность терминации реактора
+meltdown_warn_2 = "<white>Аварийная последовательность терминации реактора"
+# Default: <white>теперь <gold>доступна<white>, отказ вспомогательной
+meltdown_warn_3 = "<white>теперь <gold>доступна<white>, отказ вспомогательной"
+# Default: <red>оболочки ожидается через T-3м<white>, немедленно отключите реактор.
+meltdown_warn_4 = "<red>оболочки ожидается через T-3м<white>, немедленно отключите реактор."
+# Default: <gray>Положите незеритовые слитки в бочку контента (по 1 на слот) и используйте ключ запуска.
+meltdown_warn_5 = "<gray>Положите незеритовые слитки в бочку контента (по 1 на слот) и используйте ключ запуска."
+# Default: <gold>Это не учения, повторяю, это не учения!
+meltdown_warn_6 = "<gold>Это не учения, повторяю, это не учения!"
+# Default: <white>Попытка отключения реактора...
+meltdown_attempt = "<white>Попытка отключения реактора..."
+# Default: <white>Перекалибровка стабилизационных лазеров...
+meltdown_recalibrating = "<white>Перекалибровка стабилизационных лазеров..."
+# Default: <white>Попытка воссоздания оболочки...
+meltdown_recreation = "<white>Попытка воссоздания оболочки..."
+# Default: <white>Расчётный шанс успеха: <yellow>%chance%%<white>.
+meltdown_chance = "<white>Расчётный шанс успеха: <yellow>%chance%%<white>."
+# Default: <green>Рестабилизация реактора успешна, выполняется отключение реактора...
+meltdown_success = "<green>Рестабилизация реактора успешна, выполняется отключение реактора..."
+# Default: <red>Истекло время ожидания ответа систем реактора...
+meltdown_fail_timeout = "<red>Истекло время ожидания ответа систем реактора..."
+# Default: <red>Целостность вспомогательной оболочки критическая, отказ неизбежен.
+meltdown_fail_critical = "<red>Целостность вспомогательной оболочки критическая, отказ неизбежен."
+# Default: <red>Обнаружен отказ вспомогательной оболочки, полный отказ системы через T-10s.
+meltdown_fail_total = "<red>Обнаружен отказ вспомогательной оболочки, полный отказ системы через T-10s."
 # Startup sequence — кинематичный запуск по пульсу лампы стартапа.
 # Default: <white>Запуск ядра по ручному триггеру, пожалуйста, подождите.
 startup_initiated = "<white>Запуск ядра по ручному триггеру, пожалуйста, подождите."
@@ -1226,6 +1259,8 @@ status_creating = "Создание"
 status_working = "Работает"
 # Default: Отказ
 status_failed = "Отказ"
+# Default: Вспомогательная
+status_auxiliary = "Вспомогательная"
 # Default: Оффлайн
 status_offline = "Оффлайн"
 # Default: Есть топливо
@@ -1381,6 +1416,39 @@ stall_absorber = "<white>Closing content absorber valve..."
 stall_shield = "<white>Shutting down reactor shield..."
 # Default: <white>Core marked as offline, awaiting for startup.
 stall_offline = "<white>Core marked as offline, awaiting for startup."
+# Meltdown restabilization — a depleted shield starts the aux shield (T-3m) and the restabilization attempt.
+# Default: <red>Reactor shield failue, analyzing core systems...
+meltdown_analyzing = "<red>Reactor shield failue, analyzing core systems..."
+# Default: <white>Auxiliary shield creation in progress, manual shutdown required.
+meltdown_aux_creating = "<white>Auxiliary shield creation in progress, manual shutdown required."
+# Default: <gold>WARNING!!!
+meltdown_warn_1 = "<gold>WARNING!!!"
+# Default: <white>Reactor <gold>Emergency Termination Seqence
+meltdown_warn_2 = "<white>Reactor <gold>Emergency Termination Seqence"
+# Default: <white>is now <gold>available<white>, auxiliary shield
+meltdown_warn_3 = "<white>is now <gold>available<white>, auxiliary shield"
+# Default: <red>failue estimated in T-3m<white>, shut down reactor immediately.
+meltdown_warn_4 = "<red>failue estimated in T-3m<white>, shut down reactor immediately."
+# Default: <gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key.
+meltdown_warn_5 = "<gray>Put netherite ingots in a contents barrel (1 per slot) and use startup key."
+# Default: <gold>This is not a drill, I repeat, this is not a drill!
+meltdown_warn_6 = "<gold>This is not a drill, I repeat, this is not a drill!"
+# Default: <white>Attempting reactor shutdown...
+meltdown_attempt = "<white>Attempting reactor shutdown..."
+# Default: <white>Recalibrating stabilization lasers...
+meltdown_recalibrating = "<white>Recalibrating stabilization lasers..."
+# Default: <white>Attempting shiteld re-creation...
+meltdown_recreation = "<white>Attempting shiteld re-creation..."
+# Default: <white>Estimated chance of success: <yellow>%chance%%<white>.
+meltdown_chance = "<white>Estimated chance of success: <yellow>%chance%%<white>."
+# Default: <green>Reactor re-stabilization successfull, performing reactor shutdown...
+meltdown_success = "<green>Reactor re-stabilization successfull, performing reactor shutdown..."
+# Default: <red>Timed out waiting reactor systems to response...
+meltdown_fail_timeout = "<red>Timed out waiting reactor systems to response..."
+# Default: <red>Auxiliary shield integrity critical, failure imminent.
+meltdown_fail_critical = "<red>Auxiliary shield integrity critical, failure imminent."
+# Default: <red>Auxiliary shield failure detected, total system failure in T-10s.
+meltdown_fail_total = "<red>Auxiliary shield failure detected, total system failure in T-10s."
 # Startup sequence — cinematic startup driven by the startup lamp pulse.
 # Default: <white>Core startup initiated due to a manual trigger, please wait.
 startup_initiated = "<white>Core startup initiated due to a manual trigger, please wait."
@@ -1541,6 +1609,8 @@ status_creating = "Creating"
 status_working = "Working"
 # Default: Failed
 status_failed = "Failed"
+# Default: Auxiliary
+status_auxiliary = "Auxiliary"
 # Default: Offline
 status_offline = "Offline"
 # Default: Fueled

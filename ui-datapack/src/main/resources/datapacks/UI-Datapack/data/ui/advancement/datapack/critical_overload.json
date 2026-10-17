@@ -1,0 +1,47 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:heart_of_the_sea",
+      "count": 1
+    },
+    "title": {
+      "text": "Critical overload",
+      "type": "text",
+      "color": "red",
+      "bold": false,
+      "italic": false,
+      "underlined": false,
+      "strikethrough": false,
+      "obfuscated": false
+    },
+    "description": {
+      "text": "Bring the DFC to a meltdown restabilization phase.",
+      "type": "text",
+      "color": "gray",
+      "bold": false,
+      "italic": false,
+      "underlined": false,
+      "strikethrough": false,
+      "obfuscated": false
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ui:datapack/dfc_unstable",
+  "criteria": {
+    "1": {
+      "trigger": "minecraft:impossible",
+      "conditions": {}
+    }
+  },
+  "requirements": [
+    [
+      "1"
+    ]
+  ],
+  "rewards": {
+    "experience": 75
+  }
+}

@@ -53,6 +53,12 @@ public class ReactorState {
     // Emergency core shutdown latch (shield integrity below the critical threshold)
     private boolean coreEmergencyStopped;
 
+    // Meltdown restabilization protocol (aux shield + attempt sequence):
+    // full restore — the phase resumes after a restart mid-sequence
+    private String meltdownPhase = "NONE"; // NONE / AUX_ANALYZING / ... / RESTAB_FAIL
+    private int meltdownTicks;
+    private double restabChance;       // success chance captured at the attempt start
+
     // Stall shutdown (reaction lost its heat → auto shutdown at −273 C*):
     // full restore — the procedure resumes after a restart mid-sequence
     private String stallPhase = "NONE"; // NONE / WAIT_POWER / ... / SHIELD_RAMP
@@ -89,6 +95,9 @@ public class ReactorState {
         selfdestructDone = o.selfdestructDone;
         selfdestructCancelled = o.selfdestructCancelled;
         coreEmergencyStopped = o.coreEmergencyStopped;
+        meltdownPhase = o.meltdownPhase;
+        meltdownTicks = o.meltdownTicks;
+        restabChance = o.restabChance;
         stallPhase = o.stallPhase;
         stallTicks = o.stallTicks;
         coreOffline = o.coreOffline;
@@ -197,6 +206,16 @@ public class ReactorState {
 
     public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
     public void setCoreEmergencyStopped(boolean val) { coreEmergencyStopped = val; }
+
+    // =========================
+    // MELTDOWN RESTABILIZATION
+    // =========================
+    public String getMeltdownPhase() { return meltdownPhase; }
+    public void setMeltdownPhase(String val) { meltdownPhase = val == null ? "NONE" : val; }
+    public int getMeltdownTicks() { return meltdownTicks; }
+    public void setMeltdownTicks(int val) { meltdownTicks = Math.max(0, val); }
+    public double getRestabChance() { return restabChance; }
+    public void setRestabChance(double val) { restabChance = Math.max(0, val); }
 
     // =========================
     // STALL SHUTDOWN

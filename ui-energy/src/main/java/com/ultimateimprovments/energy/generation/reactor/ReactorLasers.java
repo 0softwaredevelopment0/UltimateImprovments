@@ -248,13 +248,16 @@ public class ReactorLasers {
 
     /**
      * Lasers actually heat/cool only when operational: after the startup pulse
-     * with a fully formed shield (WORKING) and no stall shutdown in progress.
-     * Power ramping works regardless (control is not blocked, just inert).
+     * with a fully formed shield (WORKING) and no stall shutdown or meltdown
+     * restabilization in progress. Power ramping works regardless (control is
+     * not blocked, just inert); during a meltdown the cranked stabilizers are
+     * visual only.
      */
     private boolean isOperational() {
         return started
                 && reactor.getShield().getState() == ReactorShield.State.WORKING
-                && !reactor.isStallShutdownActive();
+                && !reactor.isStallShutdownActive()
+                && !reactor.isMeltdownActive();
     }
 
     /** True while operational, any Power Laser has positive power and the reactor has fuel. */

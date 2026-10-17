@@ -37,6 +37,7 @@ public class ReactorPersistence {
                  shield_state, shield_integrity, shield_fail_countdown,
                  selfdestruct_phase, selfdestruct_ticks, selfdestruct_done, selfdestruct_cancelled,
                  core_emergency_stopped,
+                 meltdown_phase, meltdown_ticks, restab_chance,
                  stall_phase, stall_ticks, core_offline,
                  startup_phase, startup_ticks)
                  VALUES (?, ?, ?, ?, ?,
@@ -49,6 +50,7 @@ public class ReactorPersistence {
                          ?, ?, ?,
                          ?, ?, ?, ?,
                          ?,
+                         ?, ?, ?,
                          ?, ?, ?,
                          ?, ?)
             """)) {
@@ -85,11 +87,14 @@ public class ReactorPersistence {
             ps.setInt(27, state.isSelfdestructDone() ? 1 : 0);
             ps.setInt(28, state.isSelfdestructCancelled() ? 1 : 0);
             ps.setInt(29, state.isCoreEmergencyStopped() ? 1 : 0);
-            ps.setString(30, state.getStallPhase());
-            ps.setInt(31, state.getStallTicks());
-            ps.setInt(32, state.isCoreOffline() ? 1 : 0);
-            ps.setString(33, state.getStartupPhase());
-            ps.setInt(34, state.getStartupTicks());
+            ps.setString(30, state.getMeltdownPhase());
+            ps.setInt(31, state.getMeltdownTicks());
+            ps.setDouble(32, state.getRestabChance());
+            ps.setString(33, state.getStallPhase());
+            ps.setInt(34, state.getStallTicks());
+            ps.setInt(35, state.isCoreOffline() ? 1 : 0);
+            ps.setString(36, state.getStartupPhase());
+            ps.setInt(37, state.getStartupTicks());
 
             ps.executeUpdate();
 
@@ -202,6 +207,13 @@ public class ReactorPersistence {
                 }
                 try { state.setCoreEmergencyStopped(rs.getInt("core_emergency_stopped") == 1); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load core_emergency_stopped: " + e.getMessage());
+                }
+                try {
+                    state.setMeltdownPhase(rs.getString("meltdown_phase"));
+                    state.setMeltdownTicks(rs.getInt("meltdown_ticks"));
+                    state.setRestabChance(rs.getDouble("restab_chance"));
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load meltdown state: " + e.getMessage());
                 }
                 try {
                     state.setStallPhase(rs.getString("stall_phase"));
