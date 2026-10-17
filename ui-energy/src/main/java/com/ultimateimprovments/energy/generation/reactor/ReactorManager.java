@@ -1588,22 +1588,10 @@ public class ReactorManager {
         }
 
         // =========================
-        // INTEGRITY WARNING (every 10 seconds)
+        // INTEGRITY WARNING — removed (10-second spam while integrity < 100%).
+        // Over-stress degradation is announced once per phase change by
+        // ReactorShield (entering / leaving the degradation phase).
         // =========================
-        int warnTick = display.getIntegrityWarnTick() + 1;
-        display.setIntegrityWarnTick(warnTick);
-        if (warnTick >= 200) {
-            display.setIntegrityWarnTick(0);
-            // Warn only while the shield is actually operating — an OFFLINE
-            // shield (no startup yet, integrity 0) is its normal state and
-            // must not spam "Shield integrity compromised!"
-            var shieldState = shield.getState();
-            // Warn only while the shield is actually operating (WORKING) —
-            // CREATING (forming) and SHUTDOWN (planned shutdown) legitimately
-            // run below 100% and must not raise false alarms.
-            boolean shieldActive = shieldState == ReactorShield.State.WORKING;
-            if (shieldActive && shield.getIntegrity() < 100) broadcast("<dark_red>⚠ <red>Shield integrity compromised!");
-        }
 
         // =========================
         // DAMAGE STATE WARNING — removed (spam). While the structure is damaged

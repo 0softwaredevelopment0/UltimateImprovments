@@ -55,6 +55,7 @@ public class ReactorShield {
     private double stressPress;        // % from pressure
     private double stressSpin;         // % from spin
     private double decayRemainder;     // fractional degradation accumulator
+    private boolean degrading;         // true while over-stress degradation is active (edge-triggered broadcast)
     private int recoveryTick;          // passive recovery counter (ticks)
     private int failCountdown;         // ticks until detonation (0 = none)
 
@@ -146,7 +147,20 @@ public class ReactorShield {
 
             case WORKING -> {
                 updateStress();
-                if (getTotalStress() > 100) {
+                boolean overStressed = getTotalStress() > 100;
+                // Edge-triggered broadcast: one message when the shield enters
+                // the degradation phase (stress crossed above 100%), one when
+                // the stress normalizes — no repeated warnings while it lasts.
+                if (overStressed && !degrading) {
+                    degrading = true;
+                    reactor.broadcastRaw(StructuresMessages.get("shield_stress_degradation_start",
+                            "<gold>Warning! <white>DFC Shield stress critical, integrity degradation will occur."));
+                } else if (!overStressed && degrading) {
+                    degrading = false;
+                    reactor.broadcastRaw(StructuresMessages.get("shield_stress_degradation_end",
+                            "<gold>Warning! <white>DFC Shield stress normalized, integrity degradation no longer occur."));
+                }
+                if (overStressed) {
                     // Degradation: (stress/100) × base %/sec — scales up to per-tick speeds
                     double ratePerTick = (getTotalStress() / 100.0)
                             * (cfg.getShieldDecayBase() / 20.0);
@@ -289,6 +303,7 @@ public class ReactorShield {
         if (state == State.OFFLINE || state == State.FAILED) return;
         state = State.SHUTDOWN;
         decayRemainder = 0;
+        degrading = false;
     }
 
     // =========================
@@ -445,6 +460,7 @@ public class ReactorShield {
     public void fail(boolean announce) {
         if (state == State.FAILED) return;
         state = State.FAILED;
+        degrading = false;
         failCountdown = ReactorConfig.getInstance().getShieldFailureCountdown() * 20;
         if (announce) {
             reactor.broadcastRaw(StructuresMessages.get(
@@ -482,6 +498,7 @@ public class ReactorShield {
         stressPress = 0;
         stressSpin = 0;
         decayRemainder = 0;
+        degrading = false;
         overpowerRemainder = 0;
         shutdownRemainder = 0;
         auxDrainRemainder = 0;
