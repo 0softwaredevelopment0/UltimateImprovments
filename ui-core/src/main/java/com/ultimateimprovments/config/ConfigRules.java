@@ -172,6 +172,11 @@ final class ConfigRules {
             dbl("reactor.temp_limit_offset", -1000000.0, 1000000.0),
             dbl("reactor.temp_limit_biome_multiplier", 0.0, 1000000.0),
             dbl("reactor.temp_limit_biome_fallback", -1000000.0, 1000000.0),
+            dbl("reactor.natural_cool_rate", 0.0, 1000000.0),
+            dbl("reactor.natural_cool_multiplier_offset", -10.0, 10.0),
+            dbl("reactor.natural_cool_biome_fallback", 0.0, 1.0),
+            dbl("reactor.natural_cool_multiplier_min", 0.0, 1.0),
+            dbl("reactor.natural_cool_multiplier_max", 0.0, 10.0),
 
             bool("features.antimatter.enabled"),
             integer("features.antimatter.explosion_radius", 0, 100),

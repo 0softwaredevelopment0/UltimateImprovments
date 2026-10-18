@@ -88,6 +88,18 @@ public class ReactorConfig {
     private double tempLimitBiomeMultiplier; // biome temperature × this (10.0)
     private double tempLimitBiomeFallback;   // biome temperature when the biome has none (1.0)
 
+    // Natural (passive) core cooling — reactor.natural_cool_rate C* per second
+    // (the legacy hardcoded 1 C*/tick = 20 C*/sec), scaled by a humidity
+    // multiplier rolled per reactor at build time from the build-site biome:
+    // multiplier = biome humidity + natural_cool_multiplier_offset, clamped
+    // to [natural_cool_multiplier_min .. natural_cool_multiplier_max].
+    // Biomes with no humidity value use natural_cool_biome_fallback.
+    private double naturalCoolRate;             // C*/sec before the multiplier (20.0)
+    private double naturalCoolMultiplierOffset; // added to the biome humidity (0.0)
+    private double naturalCoolBiomeFallback;    // humidity when the biome has none (0.5)
+    private double naturalCoolMultiplierMin;    // clamp floor for the multiplier (0.0)
+    private double naturalCoolMultiplierMax;    // clamp ceiling for the multiplier (1.0)
+
     // Fuel system — consumption by core spin (100% = 1 gold ingot + 1 diamond / 10s)
     private double fuelSpinMin;              // below this spin nothing is consumed
     private double fuelWorkSpin;             // working point: base rate (95 000 RPS)
@@ -136,6 +148,11 @@ public class ReactorConfig {
     public double getTempLimitOffset() { return tempLimitOffset; }
     public double getTempLimitBiomeMultiplier() { return tempLimitBiomeMultiplier; }
     public double getTempLimitBiomeFallback() { return tempLimitBiomeFallback; }
+    public double getNaturalCoolRate() { return naturalCoolRate; }
+    public double getNaturalCoolMultiplierOffset() { return naturalCoolMultiplierOffset; }
+    public double getNaturalCoolBiomeFallback() { return naturalCoolBiomeFallback; }
+    public double getNaturalCoolMultiplierMin() { return naturalCoolMultiplierMin; }
+    public double getNaturalCoolMultiplierMax() { return naturalCoolMultiplierMax; }
 
     private void load() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -175,6 +192,11 @@ public class ReactorConfig {
         tempLimitOffset = cfg.getDouble("reactor.temp_limit_offset", 0.0);
         tempLimitBiomeMultiplier = Math.max(0.0, cfg.getDouble("reactor.temp_limit_biome_multiplier", 10.0));
         tempLimitBiomeFallback = cfg.getDouble("reactor.temp_limit_biome_fallback", 1.0);
+        naturalCoolRate = Math.max(0.0, cfg.getDouble("reactor.natural_cool_rate", 20.0));
+        naturalCoolMultiplierOffset = cfg.getDouble("reactor.natural_cool_multiplier_offset", 0.0);
+        naturalCoolBiomeFallback = cfg.getDouble("reactor.natural_cool_biome_fallback", 0.5);
+        naturalCoolMultiplierMin = Math.max(0.0, cfg.getDouble("reactor.natural_cool_multiplier_min", 0.0));
+        naturalCoolMultiplierMax = Math.max(0.0, cfg.getDouble("reactor.natural_cool_multiplier_max", 1.0));
         fuelSpinMin = cfg.getDouble("reactor.fuel_spin_min", 1000);
         fuelWorkSpin = cfg.getDouble("reactor.fuel_work_spin", 95000);
         fuelOverSpin = cfg.getDouble("reactor.fuel_over_spin", 100000);

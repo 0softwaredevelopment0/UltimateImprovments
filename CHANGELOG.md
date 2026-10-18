@@ -88,7 +88,22 @@ in this file.
   successful startup consumes the whole buffer. The buffer persists in the
   new `energy_buffer` `reactors` DB column (auto-migration; flushed every
   5s while charging, immediately on startup/disassemble, restored on load).
-  One pulse per second drives the charging (ReactorTask `ENERGY_BUFFER_INTERVAL`).
+   One pulse per second drives the charging (ReactorTask `ENERGY_BUFFER_INTERVAL`).
+- **DFC humidity-scaled natural cooling** — the passive core decay (previously
+  a hardcoded 1 C*/tick = 20 C*/sec) is now configurable and scales with the
+  build-site biome humidity: at assembly the reactor rolls a cooling
+  multiplier = biome humidity (`Block#getHumidity`, live from the climate —
+  datapack/custom biomes work; a biome without a humidity value falls back
+  to the configured default) + offset, clamped to [min .. max]. The
+  multiplier is frozen at build time (a disassemble + rebuild rolls a fresh
+  one) and scales the live-tunable base rate: plains (humidity 0.5) →
+  20 × 0.5 = 10 C*/sec, jungle (0.9) → 18, desert (0.0) → 0. Legacy reactors
+  (built before the mechanic) keep the plain rate until rebuilt. The rolled
+  multiplier persists in the new `natural_cool_mult` `reactors` DB column
+  (auto-migration; −1 = legacy). New config keys (UI-MBS.toml `[reactor]`):
+  `natural_cool_rate` (20.0 C*/sec), `natural_cool_multiplier_offset` (0.0),
+  `natural_cool_biome_fallback` (0.5), `natural_cool_multiplier_min` (0.0),
+  `natural_cool_multiplier_max` (1.0).
 
 ### Changed
 - **Energy network rework (ui-energy)** — the wires/electricity system is

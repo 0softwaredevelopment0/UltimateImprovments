@@ -39,7 +39,8 @@ public class ReactorPersistence {
                  core_emergency_stopped,
                  meltdown_phase, meltdown_ticks, restab_chance,
                  stall_phase, stall_ticks, stall_trigger, core_offline,
-                 startup_phase, startup_ticks, temp_min, energy_buffer)
+                 startup_phase, startup_ticks, temp_min, energy_buffer,
+                 natural_cool_mult)
                  VALUES (?, ?, ?, ?, ?,
                          ?, ?, ?,
                          ?,
@@ -52,7 +53,8 @@ public class ReactorPersistence {
                          ?,
                          ?, ?, ?,
                          ?, ?, ?, ?,
-                         ?, ?, ?, ?)
+                         ?, ?, ?, ?,
+                         ?)
             """)) {
 
             // The legacy core_case_temp/press/int columns (old inner-case stats)
@@ -98,6 +100,7 @@ public class ReactorPersistence {
             ps.setInt(38, state.getStartupTicks());
             ps.setInt(39, state.getTempMin());
             ps.setInt(40, state.getEnergyBuffer());
+            ps.setDouble(41, state.getNaturalCoolMult());
 
             ps.executeUpdate();
 
@@ -243,6 +246,11 @@ public class ReactorPersistence {
                     // Legacy rows pre-date the dynamic limit — the column
                     // default (−273) keeps the old behaviour for them
                     ConsoleLogger.warn("[Reactor] Failed to load temp_min: " + e.getMessage());
+                }
+                try { state.setNaturalCoolMult(rs.getDouble("natural_cool_mult")); } catch (Exception e) {
+                    // Legacy rows pre-date the humidity multiplier — the
+                    // column default (−1) keeps the plain rate for them
+                    ConsoleLogger.warn("[Reactor] Failed to load natural_cool_mult: " + e.getMessage());
                 }
                 try {
                     state.setLaserPowers(new double[] {
