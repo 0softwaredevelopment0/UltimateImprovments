@@ -6,6 +6,7 @@ import com.ultimateimprovments.core.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
@@ -45,6 +46,13 @@ import java.util.Random;
  * breach-scaled rate; a drained core additionally loses fusion speed
  * points proportional to the breach scale — the signs simply show the
  * reduced values.
+ * <p>
+ * Integrity decay above the safe thresholds does not snap panes blindly:
+ * each decay point marks a random intact pane CRITICAL for
+ * {@code case_maintain_window_sec} (ramping CRIT particles) and the players
+ * can save it by right-clicking the pane with an iron ingot. A missed
+ * window snaps the pane and escalates the case — while it is not fully
+ * repaired again, further decay points snap random panes instantly.
  * <p>
  * Case messaging is exactly three events: breach detected (first pane broken),
  * case failure (fully broken, any cause, once per episode), breach restored
@@ -134,6 +142,37 @@ public class ReactorCase {
     private static final int REPAIR_VERDICT_TICKS = 20; // 1 second
     private final java.util.Set<String> failingPanes = new java.util.HashSet<>();
 
+    // =========================
+    // MAINTENANCE — degradation does not snap panes blindly: each decay
+    // point marks ONE random intact pane CRITICAL for case_maintain_window_sec
+    // (CRIT particles at the block ramp 1..10 with each elapsed second) and
+    // the players can save it by right-clicking the pane with an iron ingot
+    // (1 ingot). A pane whose window expires breaks (its integrity point is
+    // spent) and flips the case into ESCALATION mode: while the case is not
+    // fully repaired, further decay points snap random panes instantly, no
+    // maintenance window. Full repair resets the escalation and the crits.
+    // =========================
+    private static final double CRIT_PARTICLE_RADIUS = 0.25;
+    private final java.util.List<CritPane> critPanes = new java.util.ArrayList<>();
+    private boolean escalationMode;
+
+    /** One pane pending its maintenance verdict (transient — not persisted). */
+    private static final class CritPane {
+        final int dx;
+        final int dy;
+        final int dz;
+        final long deadline;  // ms — when the pane snaps if not saved
+        long nextBurst;       // ms — the next CRIT particle burst
+
+        CritPane(int dx, int dy, int dz, long deadline, long now) {
+            this.dx = dx;
+            this.dy = dy;
+            this.dz = dz;
+            this.deadline = deadline;
+            this.nextBurst = now;
+        }
+    }
+
     public ReactorCase(ReactorManager reactor) {
         this.reactor = reactor;
         // Start at the reactor's lower temperature limit (the legacy −273
@@ -180,8 +219,9 @@ public class ReactorCase {
 
         // =========================
         // INTEGRITY — decays above the safe thresholds: every whole 1% of
-        // decay breaks one random intact pane (98 panes = the whole scale),
-        // so the case falls apart gradually instead of shattering at 0%.
+        // decay marks one random intact pane critical (the maintenance
+        // window) or — while in escalation mode — snaps a random pane
+        // instantly (98 panes = the whole scale).
         // =========================
         boolean over = temp >= cfg.getCaseIntDecayTemp()
                 || press >= cfg.getCaseIntDecayPress() * 1000.0; // config MPa → kPa
@@ -191,9 +231,14 @@ public class ReactorCase {
             int whole = (int) caseIntRemainder;
             if (whole > 0) {
                 caseIntRemainder -= whole;
-                breakRandomPanes(base, whole);
+                degradePanes(base, whole, cfg);
             }
         }
+
+        // =========================
+        // MAINTENANCE — crit pane particles and expiry checks (every tick).
+        // =========================
+        tickMaintenance(base, cfg);
     }
 
     /**
@@ -268,6 +313,10 @@ public class ReactorCase {
             // Every pane is back: restored (the last placed pane lands here).
             breachAnnounced = false;
             failureAnnounced = false;
+            // Full repair resets the maintenance escalation: the maintenance
+            // windows return and any pending crits start from scratch.
+            escalationMode = false;
+            critPanes.clear();
             reactor.broadcastRaw(StructuresMessages.get("case_breach_restored",
                     "<gold>Attention! <white>DFC case breach restored."));
         }
@@ -288,11 +337,130 @@ public class ReactorCase {
     }
 
     // =========================
-    // GRADUAL DEGRADATION / REPAIR
+    // GRADUAL DEGRADATION / MAINTENANCE
     // =========================
     /**
+     * One integrity point spent. In escalation mode (a maintenance window
+     * was already missed) the point snaps a random pane instantly; otherwise
+     * it marks a random intact pane critical — the players have
+     * {@code case_maintain_window_sec} to save it with an iron ingot.
+     */
+    private void degradePanes(Location base, int count, ReactorConfig cfg) {
+        for (int i = 0; i < count; i++) {
+            if (escalationMode || !markRandomPaneCritical(base, cfg)) {
+                breakRandomPanes(base, 1);
+            }
+        }
+    }
+
+    /** True while the template cell has a pending maintenance window. */
+    private boolean isCritCell(int dx, int dy, int dz) {
+        for (CritPane pane : critPanes) {
+            if (pane.dx == dx && pane.dy == dy && pane.dz == dz) return true;
+        }
+        return false;
+    }
+
+    /** Removes and returns the crit entry of a cell, or null when it is not critical. */
+    private CritPane removeCritCell(int dx, int dy, int dz) {
+        for (java.util.Iterator<CritPane> it = critPanes.iterator(); it.hasNext(); ) {
+            CritPane pane = it.next();
+            if (pane.dx == dx && pane.dy == dy && pane.dz == dz) {
+                it.remove();
+                return pane;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Marks one random intact (not already critical) pane critical: CRIT
+     * particles ramp at the block for {@code case_maintain_window_sec} and
+     * the maintenance broadcast fires within the normal 30-block audience.
+     * False when there is no pane left to mark.
+     */
+    private boolean markRandomPaneCritical(Location base, ReactorConfig cfg) {
+        java.util.List<int[]> candidates = new java.util.ArrayList<>();
+        for (int[] off : GLASS) {
+            if (!isCritCell(off[0], off[1], off[2])
+                    && base.clone().add(off[0], off[1], off[2]).getBlock().getType() == Material.GLASS) {
+                candidates.add(off);
+            }
+        }
+        if (candidates.isEmpty()) return false;
+
+        int[] off = candidates.get(random.nextInt(candidates.size()));
+        long now = System.currentTimeMillis();
+        long windowMs = cfg.getCaseMaintainWindowSec() * 1000L;
+        critPanes.add(new CritPane(off[0], off[1], off[2], now + windowMs, now));
+
+        reactor.broadcastRaw(StructuresMessages.get("case_maintenance_required",
+                "<gold>Attention! <white>DFC Case requires maintenance."));
+        return true;
+    }
+
+    /**
+     * Maintenance tick: per-second CRIT bursts at every critical pane (the
+     * particle count ramps 1..10 with the elapsed seconds) and the expiry
+     * check — an unsaved pane snaps (its integrity point is spent) and the
+     * case enters escalation mode until fully repaired.
+     */
+    private void tickMaintenance(Location base, ReactorConfig cfg) {
+        if (critPanes.isEmpty()) return;
+        long now = System.currentTimeMillis();
+        int windowSec = cfg.getCaseMaintainWindowSec();
+
+        for (java.util.Iterator<CritPane> it = critPanes.iterator(); it.hasNext(); ) {
+            CritPane pane = it.next();
+
+            if (now >= pane.deadline) {
+                // Not saved in time: the pane snaps and the escalation begins
+                it.remove();
+                breakPaneAt(base, pane.dx, pane.dy, pane.dz);
+                escalationMode = true;
+                continue;
+            }
+
+            if (now >= pane.nextBurst) {
+                pane.nextBurst += 1000L;
+                long remainSec = Math.max(0, (pane.deadline - now + 999) / 1000);
+                int count = (int) Math.min(10, Math.max(1, windowSec - remainSec + 1));
+                Location cell = base.clone().add(pane.dx + 0.5, pane.dy + 0.5, pane.dz + 0.5);
+                base.getWorld().spawnParticle(Particle.CRIT, cell, count,
+                        CRIT_PARTICLE_RADIUS, CRIT_PARTICLE_RADIUS, CRIT_PARTICLE_RADIUS, 0.05);
+            }
+        }
+    }
+
+    /**
+     * A player right-clicked a critical pane with an iron ingot: the pane is
+     * saved (the window closes, no break, no escalation), one ingot is
+     * consumed. False when the cell has no pending maintenance window — the
+     * caller should not cancel the interaction.
+     */
+    public boolean tryFixCriticalPane(Player player, Location base, int dx, int dy, int dz) {
+        if (removeCritCell(dx, dy, dz) == null) return false;
+
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand != null && hand.getType() == Material.IRON_INGOT) {
+            if (hand.getAmount() > 1) {
+                ItemStack rest = hand.clone();
+                rest.setAmount(hand.getAmount() - 1);
+                player.getInventory().setItemInMainHand(rest);
+            } else {
+                player.getInventory().setItemInMainHand(null);
+            }
+        }
+
+        Location cell = base.clone().add(dx + 0.5, dy + 0.5, dz + 0.5);
+        base.getWorld().playSound(cell, Sound.BLOCK_GLASS_PLACE, SoundCategory.MASTER, 1.0f, 1.3f);
+        return true;
+    }
+
+    /**
      * Gradual degradation: breaks up to {@code count} random intact panes
-     * (1 pane = 1 point of the 98-pane integrity scale). The breach tick
+     * (1 pane = 1 point of the 98-pane integrity scale). Critical panes are
+     * never picked — they are pending their own verdict. The breach tick
      * re-derives the integrity from the live counts and runs the vent and
      * the messages — no full shatter, no reset, the case just loses panes
      * one by one while the decay conditions hold.
@@ -300,7 +468,8 @@ public class ReactorCase {
     private void breakRandomPanes(Location base, int count) {
         java.util.List<int[]> intact = new java.util.ArrayList<>();
         for (int[] off : GLASS) {
-            if (base.clone().add(off[0], off[1], off[2]).getBlock().getType() == Material.GLASS) {
+            if (!isCritCell(off[0], off[1], off[2])
+                    && base.clone().add(off[0], off[1], off[2]).getBlock().getType() == Material.GLASS) {
                 intact.add(off);
             }
         }
@@ -315,6 +484,18 @@ public class ReactorCase {
             ReactorDamageTracker.noteCellBroken(base, off[0], off[1], off[2]);
         }
 
+        Location core = base.clone().add(0.5, -5.5, 0.5);
+        base.getWorld().playSound(core, Sound.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 2.0f, 0.8f);
+        reactor.saveToDb();
+    }
+
+    /** Snaps one specific pane (the missed maintenance verdict). */
+    private void breakPaneAt(Location base, int dx, int dy, int dz) {
+        Block block = base.clone().add(dx, dy, dz).getBlock();
+        if (block.getType() != Material.GLASS) return;
+        block.setType(Material.AIR);
+        // setType fires no events — keep the audit cache exact (O(1))
+        ReactorDamageTracker.noteCellBroken(base, dx, dy, dz);
         Location core = base.clone().add(0.5, -5.5, 0.5);
         base.getWorld().playSound(core, Sound.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 2.0f, 0.8f);
         reactor.saveToDb();
@@ -488,6 +669,8 @@ public class ReactorCase {
         caseTempRemainder = 0;
         caseIntRemainder = 0;
         failingPanes.clear(); // pending verdicts no-op (the ignore marks die with resetAudit)
+        critPanes.clear();
+        escalationMode = false;
     }
 
     // =========================

@@ -646,6 +646,38 @@ public class ReactorListener implements Listener {
     }
 
     // =========================
+    // CRITICAL PANE FIX — right-click a pane running its maintenance window
+    // with an iron ingot to save it (1 ingot, the pane does not snap)
+    // =========================
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onCritPaneFix(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND) return;
+
+        Block block = e.getClickedBlock();
+        if (block == null || block.getType() != Material.GLASS) return;
+
+        Player player = e.getPlayer();
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand == null || hand.getType() != Material.IRON_INGOT) return;
+
+        ReactorManager reactor = ReactorManager.getReactorForBlock(block.getLocation());
+        if (reactor == null || !reactor.isValid()) return;
+        Location reactorLoc = reactor.getReactorLocation();
+        if (reactorLoc == null) return;
+
+        int dx = block.getX() - reactorLoc.getBlockX();
+        int dy = block.getY() - reactorLoc.getBlockY();
+        int dz = block.getZ() - reactorLoc.getBlockZ();
+        if (ReactorDamageTracker.categoryOf(dx, dy, dz) != ReactorDamageTracker.Category.GLASS) return;
+
+        // Saved: consume the click (no block place/break side effects)
+        if (reactor.getCase().tryFixCriticalPane(player, reactorLoc, dx, dy, dz)) {
+            e.setCancelled(true);
+        }
+    }
+
+    // =========================
     // IS ANY WALL SIGN
     // =========================
     private boolean isAnyWallSign(Material mat) {

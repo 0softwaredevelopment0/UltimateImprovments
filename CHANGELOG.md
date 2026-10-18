@@ -75,6 +75,18 @@ in this file.
   hand too; `PlayerInteractEvent` fires per hand).
 
 ### Added
+- **DFC case maintenance windows** — integrity decay no longer snaps panes
+  blindly: each decay point marks ONE random intact pane critical for
+  `case_maintain_window_sec` (new key, default 10) — CRIT particles ramp
+  at the block (radius 0.25, the count grows 1..10 with each elapsed
+  second) and the reactor broadcasts "DFC Case requires maintenance."
+  (`case_maintenance_required`, both language tabs) within the normal
+  30-block audience. Saving the pane: right-click it with an iron ingot
+  (main hand) — 1 ingot is consumed, the pane stays, no integrity loss.
+  A pane whose window expires snaps (degradation-style, no drop) and the
+  case ESCALATES: while it is not fully repaired again, further decay
+  points snap random panes instantly, without maintenance windows. Full
+  repair resets the escalation and any pending crits.
 - **DFC case breach bleeds fusion particles** — a breached case lets the
   accumulated fusion particles (P) escape through the broken glass:
   `case_breach_leak_per_pct` particles/sec per 1% of broken case glass
