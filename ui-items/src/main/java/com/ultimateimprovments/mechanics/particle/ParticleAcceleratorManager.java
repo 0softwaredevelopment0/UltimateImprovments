@@ -5,10 +5,7 @@ import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.energy.storage.battery.BatteryManager;
-import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
-import com.ultimateimprovments.energy.transfer.cable.CableNode;
-import com.ultimateimprovments.energy.transfer.cable.NodeType;
+import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -356,84 +353,16 @@ public class ParticleAcceleratorManager implements Listener {
         }
     }
 
-    private static final int PULL_BFS_DEPTH_CAP = 512;
-
     private static int pullFromCables(Location engineLoc, int maxAmount) {
         if (maxAmount <= 0) return 0;
         if (engineLoc == null || engineLoc.getWorld() == null) return 0;
 
-        String worldUid = engineLoc.getWorld().getUID().toString();
-        long engineKey = LocationUtil.toKey(engineLoc);
-
-        // BFS through the cable network from the engine.
-        // In this architecture CABLE nodes themselves do NOT store energy:
-        // CableNode.addEnergy/removeEnergy return no-op for NodeType.CABLE
-        // (see methods and comments in CableLossTask).
-        // They're just «wire» routers between sources (BATTERY/GENERATOR)
-        // and consumers (our accelerator engine). So we traverse the network
-        // and draw energy directly from BATTERY/GENERATOR.
-        Set<Long> visited = new HashSet<>();
-        Queue<Long> queue = new ArrayDeque<>();
-        for (long nearKey : LocationUtil.getNeighborKeys(engineKey)) {
-            CableNode n = CableNetwork.getNodeByKey(worldUid, nearKey);
-            if (n == null) continue;
-            visited.add(nearKey);
-            queue.add(nearKey);
-        }
-
-        int totalPulled = 0;
-        int depth = 0;
-
-        while (!queue.isEmpty() && totalPulled < maxAmount && depth < PULL_BFS_DEPTH_CAP) {
-            depth++;
-            long curKey = queue.poll();
-            CableNode cur = CableNetwork.getNodeByKey(worldUid, curKey);
-            if (cur == null) continue;
-
-            // Energy source — a BATTERY or GENERATOR with energy
-            NodeType type = cur.getType();
-            if ((type == NodeType.BATTERY || type == NodeType.GENERATOR) && cur.getEnergy() > 0) {
-                // Respect the battery mode: only draw from DISCHARGE/CHARGE_DISCHARGE
-                if (type == NodeType.BATTERY) {
-                    BatteryManager.BatteryCluster bc = BatteryManager.getCluster(cur.getLocation());
-                    if (bc != null && !bc.canDischarge()) continue;
-                }
-                int available = cur.getEnergy();
-                int toTake = Math.min(available, maxAmount - totalPulled);
-                cur.removeEnergy(toTake);
-                totalPulled += toTake;
-                CableNetwork.markFlowingKey(worldUid, curKey);
-                cur.addTransferred(toTake);
-                // Don't revisit this source through other paths —
-                // the battery/generator was already «serviced» this tick.
-            }
-
-            // Then traverse both CABLE routers and endpoints (BATTERY/GENERATOR)
-            // to reach any energy source in the network in one pass.
-            // BATTERY↔BATTERY connections are forbidden at the CableNetwork level,
-            // so battery chains still pass through cables.
-            for (long connKey : cur.getConnectionKeys()) {
-                if (visited.contains(connKey)) continue;
-                CableNode next = CableNetwork.getNodeByKey(worldUid, connKey);
-                if (next == null) continue;
-                visited.add(connKey);
-                NodeType nt = next.getType();
-                if (nt == NodeType.CABLE
-                        || nt == NodeType.BATTERY
-                        || nt == NodeType.GENERATOR) {
-                    queue.add(connKey);
-                }
-            }
-        }
-
-        if (depth >= PULL_BFS_DEPTH_CAP && !queue.isEmpty()) {
-            com.ultimateimprovments.util.ConsoleLogger.warn(
-                    "[ParticleAccelerator] BFS depth cap hit (" + PULL_BFS_DEPTH_CAP
-                            + ") while charging engine at " + engineLoc + " — pulled "
-                            + totalPulled + "/" + maxAmount);
-        }
-
-        return totalPulled;
+        // Unified network traversal (EnergyFlow): routes through CABLE
+        // routers, drains BATTERY (respecting the cluster mode) and legacy
+        // GENERATOR buffers, marks the cables along the way. The engine
+        // block itself is not a network node — EnergyFlow seeds the BFS
+        // with the adjacent nodes.
+        return EnergyFlow.pull(engineLoc, maxAmount);
     }
 
     // =========================

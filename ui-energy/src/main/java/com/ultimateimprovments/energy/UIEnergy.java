@@ -8,11 +8,10 @@ import com.ultimateimprovments.energy.generation.reactor.ReactorListener;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;
 import com.ultimateimprovments.energy.generation.reactor.ReactorTask;
 import com.ultimateimprovments.energy.machines.furnace.ElectricFurnaceManager;
-import com.ultimateimprovments.energy.storage.battery.BatteryDrainTask;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
-import com.ultimateimprovments.energy.transfer.cable.CableLossTask;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableVisualTask;
+import com.ultimateimprovments.energy.transfer.cable.EnergyPersistence;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -21,12 +20,11 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
 
     private static UIEnergy instance;
 
-    private BukkitTask cableLossTask;
-    private BukkitTask balancerTask;
-    private BukkitTask cableVisualTask;
-    private BukkitTask batteryTask;
     private BukkitTask generatorTask;
     private BukkitTask reactorTask;
+    private BukkitTask balancerTask;
+    private BukkitTask cableVisualTask;
+    private BukkitTask persistenceTask;
     private BukkitTask lightTask;
     private BukkitTask batteryMultiTickTask;
     private ReactorListener reactorListener;
@@ -65,6 +63,7 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
         }
 
         CableNetwork.init();
+        EnergyPersistence.init();
 
         GeneratorManager.init();
         // Every 40 ticks (2s): the per-second energy rates inside are scaled
@@ -78,15 +77,19 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
 
         ElectricFurnaceManager.init();
 
-        // Every 40 ticks (2s): drain/balancer amounts are scaled by the period,
-        // so the per-second energy rates stay identical — just chunkier steps.
-        batteryTask = new BatteryDrainTask().runTaskTimer(main, 0L, 40L);
+        // Batteries first (their nodes must exist), then the energy restore.
         BatteryManager.init();
+        EnergyPersistence.load();
         batteryMultiTickTask = Bukkit.getScheduler().runTaskTimer(main, BatteryManager::tick, 0L, 1L);
 
-        cableLossTask = new CableLossTask().runTaskTimer(main, 0L, 100L);
+        // The single battery-balancing pass (the old BatteryDrainTask was
+        // merged into it — it was a second balancer with conflicting rules).
+        // Every 40 ticks (2s): amounts are scaled by the period.
         balancerTask = new EnergyBalancerTask().runTaskTimer(main, 0L, 40L);
-        cableVisualTask = new CableVisualTask().runTaskTimer(main, 0L, 40L);
+        // Real-tick blink: off/on_ticks are actual ticks now (5-tick pass).
+        cableVisualTask = new CableVisualTask().runTaskTimer(main, 0L, 5L);
+        // Periodic energy flush (batteries keep their charge across restarts).
+        persistenceTask = Bukkit.getScheduler().runTaskTimer(main, EnergyPersistence::saveAll, 200L, 200L);
 
         LightManager.init();
         lightTask = Bukkit.getScheduler().runTaskTimer(main, LightManager::tick, 0L, 1L);
@@ -98,21 +101,23 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
     }
 
     private void runShutdown() {
-        if (cableLossTask != null) { cableLossTask.cancel(); cableLossTask = null; }
-        if (balancerTask != null) { balancerTask.cancel(); balancerTask = null; }
-        if (cableVisualTask != null) { cableVisualTask.cancel(); cableVisualTask = null; }
-        if (batteryTask != null) { batteryTask.cancel(); batteryTask = null; }
         if (generatorTask != null) { generatorTask.cancel(); generatorTask = null; }
         if (reactorTask != null) { reactorTask.cancel(); reactorTask = null; }
+        if (balancerTask != null) { balancerTask.cancel(); balancerTask = null; }
+        if (cableVisualTask != null) { cableVisualTask.cancel(); cableVisualTask = null; }
+        if (persistenceTask != null) { persistenceTask.cancel(); persistenceTask = null; }
         if (lightTask != null) { lightTask.cancel(); lightTask = null; }
         if (batteryMultiTickTask != null) { batteryMultiTickTask.cancel(); batteryMultiTickTask = null; }
         if (reactorListener != null) {
             org.bukkit.event.HandlerList.unregisterAll(reactorListener);
             reactorListener = null;
         }
+        // Flush the battery charge before the managers drop their nodes.
+        EnergyPersistence.saveAll();
         GeneratorManager.shutdown();
         ReactorManager.shutdown();
         ElectricFurnaceManager.shutdown();
+        BatteryManager.shutdown();
         com.ultimateimprovments.mbs.api.MbsEnergy.unregister();
         org.bukkit.event.HandlerList.unregisterAll(this);
     }

@@ -5,6 +5,43 @@ in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Energy network rework (ui-energy)** — the wires/electricity system is
+  normalized around a single traversal service:
+  - **`EnergyFlow`** (`transfer/cable`) is now the one and only BFS of the
+    cable network. Producers (generator, reactor), consumers (lamp, electric
+    furnace, MBS bridge, particle accelerator) and the balancer all go
+    through its `push`/`pull`/`hasEnergy` — instead of five copy-pasted
+    traversals with conflicting rules. Unified rules: cables are pure
+    routers, the BFS always traverses THROUGH batteries (a full or
+    mode-blocked battery no longer dead-ends the path), battery modes are
+    respected on both ends, traversals are node-capped, and moved energy
+    marks the cables (blink + multimeter readings).
+  - **Battery energy now persists** — new `energy_storage` SQLite table,
+    flushed every 10s and on shutdown/soft-reload, restored at startup.
+    Previously every restart or `/ui reload` silently emptied all batteries.
+  - **The reactor can actually output energy again** — its generation block
+    pushed energy into CABLE nodes, where `CableNode.addEnergy` is a no-op
+    (cables don't store), and the leftover went into a GENERATOR buffer
+    nothing consumed. Output now goes through `EnergyFlow.push` into the
+    network; unaccepted energy is lost visibly instead of vanishing into a
+    dead-end buffer.
+  - **One balancer instead of two** — `BatteryDrainTask` (a second balancer
+    that pushed energy into the first battery with free space, ignoring
+    charge modes, and fought the real balancer) is removed; its job is
+    merged into `EnergyBalancerTask`, which now walks connected components
+    via `EnergyFlow.collectBalanceGroup`.
+- **Battery capacity is consistent** — cluster capacity is
+  `blocks × energy.battery.max_energy` (the same per-block limit the nodes
+  enforce) instead of the contradictory `blocks × 1000` hardcode, so the
+  charge percentage display is correct. New battery nodes get their
+  capacity at creation (previously up to 2s of silently swallowed energy
+  after placement).
+- **Cable blink uses real ticks** — `energy.cable.blink.off_ticks`/
+  `on_ticks` are actual ticks now (the visual pass runs every 5 ticks;
+  before they counted 40-tick task runs). Flow marks auto-expire (50t
+  hold) instead of being force-cleared each visual pass.
+
 ### Added
 - **Structure forbidden blocks** — a general mechanic for ALL NBT structures:
   a material from the forbidden list fails the check no matter where in the
@@ -38,6 +75,13 @@ in this file.
   `temp_limit_biome_fallback` (1.0).
 
 ### Removed
+- **Dead energy config keys** — `energy.cable.enabled`, `energy.cable.max_energy`,
+  `energy.cable.log` (cables no longer store energy; `CableLossTask` deleted),
+  `energy.battery.discharge_per_tick`, `energy.battery.smooth_charge.*`,
+  `energy.battery.visual.particles_enabled`, `energy.battery_drain.*` (the
+  drain task is gone) and `energy.balancer.include_batteries` (never read).
+  Removed from the code, ConfigRules and the UI-Energy.toml template; keys
+  left in live server configs are simply ignored.
 - **Dead config keys `reactor.core_temp_min` and `reactor.case_temp_min`**
   (default −273) — they have never affected anything: the floors were
   hardcoded and are now the dynamic per-reactor lower temperature limit.
