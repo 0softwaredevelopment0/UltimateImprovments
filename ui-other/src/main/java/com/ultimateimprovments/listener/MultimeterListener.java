@@ -39,7 +39,9 @@ public class MultimeterListener implements Listener {
         Player player = e.getPlayer();
         Block block = e.getClickedBlock();
 
-        ItemStack item = player.getInventory().getItemInMainHand();
+        // The item of THIS event's hand (the event fires per hand — with the
+        // multimeter in the off hand the main-hand check would miss it).
+        ItemStack item = e.getItem();
 
         // =========================
         // PDC CHECK (MULTIMETER ONLY)

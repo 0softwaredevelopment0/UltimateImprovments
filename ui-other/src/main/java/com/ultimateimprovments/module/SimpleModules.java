@@ -21,6 +21,7 @@ import com.ultimateimprovments.listener.BlockBreakListener;
 import com.ultimateimprovments.listener.BlockPlaceListener;
 import com.ultimateimprovments.listener.FishingListener;
 import com.ultimateimprovments.listener.MOTDListener;
+import com.ultimateimprovments.listener.MultimeterListener;
 import com.ultimateimprovments.listener.PluginHideListener;
 import com.ultimateimprovments.listener.PowerInterceptListener;
 import com.ultimateimprovments.listener.ServerBrandListener;
@@ -97,6 +98,12 @@ public final class SimpleModules {
                 var pm = main.getServer().getPluginManager();
                 pm.registerEvents(new BlockPlaceListener(), main);
                 pm.registerEvents(new BlockBreakListener(), main);
+                // Multimeter: reading cables/junctions/batteries/generators by
+                // right-clicking them with the multimeter item. This listener
+                // existed but was never registered — the item stayed silent
+                // on every energy block (the reactor sign check used its own
+                // holdsMultimeter and worked, which made it extra confusing).
+                pm.registerEvents(new MultimeterListener(), main);
                 pm.registerEvents(new PluginHideListener(), main);
                 pm.registerEvents(new ServerBrandListener(), main);
                 pm.registerEvents(new ShulkerBulletListener(), main);
