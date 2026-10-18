@@ -59,8 +59,6 @@ public class GeneratorTask extends BukkitRunnable {
         // CALCULATE PER-TICK ENERGY
         // =========================
         int effectiveBurn = Math.max(burnDuration, 1);
-        // Energy per tick (floor division). The remainder is distributed via extraTicks
-        int energyPerTick = totalEnergyPerFuel / effectiveBurn;
 
         // =========================
         // CLEANUP: Remove entries for disassembled/broken generators
@@ -112,6 +110,21 @@ public class GeneratorTask extends BukkitRunnable {
             // =========================
             org.bukkit.block.data.type.Furnace data =
                     (org.bukkit.block.data.type.Furnace) block.getBlockData();
+
+            // =========================
+            // REDSTONE GATE — the generator works ONLY while its furnace
+            // block is powered by redstone. Unpowered: no fuel consumption,
+            // no energy output; the burn timer freezes (the already-burning
+            // fuel resumes where it stopped when power returns). No on/off
+            // messages — the furnace visual (lit/unlit) shows the state.
+            // =========================
+            if (!block.isBlockPowered() && !block.isBlockIndirectlyPowered()) {
+                if (data.isLit()) {
+                    data.setLit(false);
+                    block.setBlockData(data);
+                }
+                continue;
+            }
 
             int timer = fuelTimer.getOrDefault(furnaceLoc, 0);
 
