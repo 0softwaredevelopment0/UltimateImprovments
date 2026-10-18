@@ -10,6 +10,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 
 import com.ultimateimprovments.util.Materials;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Furnace;
@@ -64,15 +65,25 @@ public class GeneratorTask extends BukkitRunnable {
 
         // =========================
         // CLEANUP: Remove entries for disassembled/broken generators
+        // (generators in unloaded chunks are KEPT — touching their blocks
+        // would sync-load the chunk every pass)
         // =========================
         fuelTimer.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
+            World world = loc.getWorld();
+            if (world == null || !world.isChunkLoaded(loc.getBlockX() >> 4, loc.getBlockZ() >> 4)) {
+                return false;
+            }
             return !GeneratorManager.isAssembled(loc)
                     || loc.getBlock().getType() != Materials.BLAST_FURNACE;
         });
 
         energyAccumulator.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
+            World world = loc.getWorld();
+            if (world == null || !world.isChunkLoaded(loc.getBlockX() >> 4, loc.getBlockZ() >> 4)) {
+                return false;
+            }
             return !GeneratorManager.isAssembled(loc)
                     || loc.getBlock().getType() != Materials.BLAST_FURNACE;
         });
@@ -85,6 +96,11 @@ public class GeneratorTask extends BukkitRunnable {
         for (Location furnaceLoc : generators) {
 
             if (furnaceLoc == null) continue;
+
+            World world = furnaceLoc.getWorld();
+            if (world == null || !world.isChunkLoaded(furnaceLoc.getBlockX() >> 4, furnaceLoc.getBlockZ() >> 4)) {
+                continue; // unloaded chunk: the generator resumes when its chunk loads
+            }
 
             Block block = furnaceLoc.getBlock();
             if (block.getType() != Materials.BLAST_FURNACE) continue;
@@ -126,6 +142,52 @@ public class GeneratorTask extends BukkitRunnable {
                     block.setBlockData(data);
                 }
                 continue;
+            }
+
+            // =========================
+            // BUFFER SYNC + BUFFER GATE — the generator's own GENERATOR-typed
+            // node buffers the energy nobody took. Every pass:
+            //   1. Re-offer the buffered energy to the network (batteries get
+            //      it first): while ANY battery in the connected network has
+            //      room, the buffer drains into it — a full-ish buffer does
+            //      not stall the generator when consumers sit behind
+            //      batteries.
+            //   2. Freeze when the buffer still has no room for one more
+            //      production pass: producing more would silently lose the
+            //      surplus AND waste fuel. The burn timer freezes where it
+            //      is (like the redstone gate), the furnace goes unlit, and
+            //      burning resumes the moment a consumer pull (reactor
+            //      junctions, furnace, lamp, accelerator, ...) drains the
+            //      buffer through the network.
+            // =========================
+            GeneratorManager.ensureGeneratorNode(furnaceLoc);
+            CableNode genNode = CableNetwork.getNode(furnaceLoc);
+            if (genNode != null) {
+                int buffered = genNode.getEnergy();
+                if (buffered > 0) {
+                    int moved = EnergyFlow.push(nodeLoc, buffered);
+                    if (moved > 0) {
+                        genNode.removeEnergy(moved);
+                        // Activity trail: the energy moved from the buffer
+                        // into the network — show it on the multimeter.
+                        genNode.addTransferred(moved);
+                    }
+                }
+
+                int maxPerPass = (int) Math.ceil(
+                        (double) totalEnergyPerFuel * TICKS_PER_RUN / effectiveBurn);
+                if (genNode.getMaxEnergy() - genNode.getEnergy() < maxPerPass) {
+                    if (data.isLit()) {
+                        data.setLit(false);
+                        block.setBlockData(data);
+                    }
+                    if (log) {
+                        ConsoleLogger.info("[GENERATOR] Buffer full at " + furnaceLoc
+                                + " (" + genNode.getEnergy() + "/" + genNode.getMaxEnergy()
+                                + " ⚡) — fuel consumption frozen until a consumer pulls");
+                    }
+                    continue;
+                }
             }
 
             int timer = fuelTimer.getOrDefault(furnaceLoc, 0);

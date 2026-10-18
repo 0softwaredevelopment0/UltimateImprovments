@@ -14,24 +14,21 @@ import java.util.Set;
 
 /**
  * Unified energy flow service — the single BFS implementation of the cable
- * network. Every producer (generator, reactor), consumer (lamp, electric
- * furnace, MBS bridge, particle accelerator) and the balancer goes through
- * here, so the network rules exist in exactly one place instead of five
- * copy-pasted traversals:
+ * network and THE contract every machine uses to talk to it. The model:
  * <ul>
- *   <li>{@link NodeType#CABLE} nodes are pure routers: they never store
- *       energy ({@link CableNode} blocks add/remove for CABLE) — the BFS
- *       just passes through them;</li>
- *   <li>{@link NodeType#BATTERY} nodes store energy. Charging respects
- *       {@code BatteryCluster.canCharge()}, discharging respects
- *       {@code canDischarge()}. The BFS always traverses THROUGH batteries
- *       (they are bridges in the graph — battery-to-battery connections are
- *       forbidden, so a cable network crosses batteries), meaning a full or
- *       mode-blocked battery never dead-ends the path;</li>
- *   <li>{@link NodeType#GENERATOR} nodes are legacy energy buffers; pull
- *       drains them like batteries without a mode restriction;</li>
- *   <li>Every traversal is node-capped, so a huge network can't stall a tick.</li>
+ *   <li>any machine <b>pushes</b> energy into the network at its entry node
+ *       or <b>pulls</b> from it at its access node — the network routes the
+ *       energy through {@code CABLE} routers and settles it at storage
+ *       nodes ({@code BATTERY} clusters, {@code GENERATOR} leftover
+ *       buffers);</li>
+ *   <li>sources are the storage nodes: a pull drains batteries and
+ *       generator buffers alike (battery mode restrictions apply); a push
+ *       charges batteries only;</li>
+ *   <li>the reactor is not a special node — it pulls through its case
+ *       junction cells and pushes through an entry node under its base
+ *       (see ReactorManager.tickEnergyBuffer / tickEnergyGeneration).</li>
  * </ul>
+ * Every traversal is node-capped, so a huge network can't stall a tick.
  * Activity trail: when energy actually moves, every CABLE node visited by
  * that traversal is marked flowing (blink visuals) and gets
  * {@link CableNode#addTransferred(int)} (multimeter readings).
