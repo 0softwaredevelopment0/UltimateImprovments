@@ -8,6 +8,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
+import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import com.ultimateimprovments.energy.transfer.cable.NodeType;
 
 import org.bukkit.Bukkit;
@@ -79,7 +80,6 @@ public class BatteryManager implements Listener {
                 sumX += getX(key);
                 sumY += getY(key);
                 sumZ += getZ(key);
-                capacity = blockKeys.size() * 1000;
                 updateCenterFromSums();
             }
         }
@@ -90,7 +90,6 @@ public class BatteryManager implements Listener {
                 sumY -= getY(key);
                 sumZ -= getZ(key);
                 if (!blockKeys.isEmpty()) {
-                    capacity = blockKeys.size() * 1000;
                     updateCenterFromSums();
                 } else {
                     center = null;
@@ -117,7 +116,11 @@ public class BatteryManager implements Listener {
                     (int) Math.round((double) sumX / size),
                     (int) Math.round((double) sumY / size),
                     (int) Math.round((double) sumZ / size));
-            capacity = size * 1000;
+            // Cluster capacity = blocks × per-block capacity (config) —
+            // the same limit CableNode enforces per block, so the charge
+            // percentage is consistent now (previously blocks × 1000 hardcode
+            // contradicted energy.battery.max_energy = 100000).
+            capacity = size * EnergyFlow.batteryCapacity();
         }
 
         boolean contains(Location loc) { return blockKeys.contains(toKey(loc)); }
@@ -330,7 +333,7 @@ public class BatteryManager implements Listener {
         if (player != null) {
             player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Battery assembled! (Marker-based)"));
             player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>Blocks: <white>" + cluster.blockKeys.size() + " <gray>| Capacity: <white>" + cluster.capacity + " <gray>energy"));
-            player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>Apply redstone to any block to discharge"));
+            player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>Shift+RMB a block to switch the charge/discharge mode"));
         }
 
         ConsoleLogger.info("[BatteryMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " blocks");
@@ -573,6 +576,17 @@ public class BatteryManager implements Listener {
                 ConsoleLogger.info("[BatteryMulti] Removed phantom cluster #" + id);
             }
         }
+    }
+
+    // ════════════════════════════════════════
+    // SHUTDOWN — unregister listener + drop caches (soft /ui reload)
+    // ════════════════════════════════════════
+    public static void shutdown() {
+        if (instance != null) {
+            org.bukkit.event.HandlerList.unregisterAll(instance);
+            instance = null;
+        }
+        clearAll();
     }
 
     // ════════════════════════════════════════

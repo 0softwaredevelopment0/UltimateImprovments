@@ -3,8 +3,7 @@ package com.ultimateimprovments.energy.generation.reactor;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
-import com.ultimateimprovments.energy.transfer.cable.CableNode;
-import com.ultimateimprovments.energy.transfer.cable.NodeType;
+import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -1872,57 +1871,16 @@ public class ReactorManager {
                 energyRemainder -= toGenerate;
                 energyGenerated += toGenerate;
 
-                // Optimized: iterate only nodes in the same world, not ALL worlds
-                java.util.Collection<CableNode> worldNodes = CableNetwork.getWorldNodes(base.getWorld().getUID().toString());
-                java.util.List<CableNode> nearbyCables = new java.util.ArrayList<>();
-                for (CableNode node : worldNodes) {
-                    int dx = Math.abs(node.getBlockX() - base.getBlockX());
-                    int dy = Math.abs(node.getBlockY() - base.getBlockY());
-                    int dz = Math.abs(node.getBlockZ() - base.getBlockZ());
-                    if (dx <= 5 && dy <= 9 && dz <= 4) {
-                        nearbyCables.add(node);
-                    }
-                }
-
-                if (!nearbyCables.isEmpty()) {
-                    int remaining = toGenerate;
-                    int perNode = toGenerate / nearbyCables.size();
-                    for (CableNode node : nearbyCables) {
-                        int space = node.getMaxEnergy() - node.getEnergy();
-                        int give = Math.min(perNode, space);
-                        if (give <= 0) continue;
-                        node.addEnergy(give);
-                        remaining -= give;
-                        CableNetwork.saveNode(node);
-                    }
-                    if (remaining > 0) {
-                        Location coreLoc = base.clone().add(0, -1, 0);
-                        CableNode genNode = CableNetwork.getNode(coreLoc);
-                        if (genNode == null) {
-                            CableNetwork.addNode(coreLoc);
-                            genNode = CableNetwork.getNode(coreLoc);
-                        }
-                        if (genNode != null) {
-                            genNode.setType(NodeType.GENERATOR);
-                            genNode.setMaxEnergy(coreWorkTemp * 10);
-                            genNode.addEnergy(remaining);
-                            CableNetwork.saveNode(genNode);
-                        }
-                    }
-                } else {
-                    Location coreLoc = base.clone().add(0, -1, 0);
-                    CableNode genNode = CableNetwork.getNode(coreLoc);
-                    if (genNode == null) {
-                        CableNetwork.addNode(coreLoc);
-                        genNode = CableNetwork.getNode(coreLoc);
-                    }
-                    if (genNode != null) {
-                        genNode.setType(NodeType.GENERATOR);
-                        genNode.setMaxEnergy(coreWorkTemp * 10);
-                        genNode.addEnergy(toGenerate);
-                        CableNetwork.saveNode(genNode);
-                    }
-                }
+                // Normalized output: push into the cable/battery network via
+                // the unified traversal. The node under the reactor base is
+                // the entry point (created on demand; it auto-connects to
+                // adjacent cables). Energy the network can't accept is lost —
+                // the old code silently dropped it into CABLE nodes (a no-op:
+                // cables don't store energy) or a GENERATOR buffer nobody
+                // consumed.
+                Location coreLoc = base.clone().add(0, -1, 0);
+                CableNetwork.addNode(coreLoc);
+                EnergyFlow.push(coreLoc, toGenerate);
             }
         }
     }

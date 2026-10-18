@@ -7,7 +7,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
-import com.ultimateimprovments.energy.storage.battery.BatteryManager;
+import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -404,14 +404,14 @@ public class LightManager {
     private static void chargeClusterBuffer(LightCluster cluster) {
         if (cluster == null || cluster.buffer >= cluster.getBufferCapacity()) return;
 
-        // Find the first cluster block with a cable nearby
+        // Find the first cluster block with a network node nearby
         for (long key : cluster.blockKeys) {
             Location blockLoc = new Location(cluster.world, getX(key), getY(key), getZ(key));
             CableNode start = findAdjacentCableNode(blockLoc);
             if (start == null) continue;
 
             int needed = cluster.getBufferCapacity() - cluster.buffer;
-            int pulled = pullEnergyFromNetwork(start, needed);
+            int pulled = EnergyFlow.pull(start.getLocation(), needed);
             if (pulled > 0) {
                 cluster.buffer += pulled;
             }
@@ -425,46 +425,6 @@ public class LightManager {
             if (node != null) return node;
         }
         return null;
-    }
-
-    private static int pullEnergyFromNetwork(CableNode start, int amount) {
-        if (start == null || amount <= 0) return 0;
-
-        String worldUid = start.getWorld().getUID().toString();
-        Set<Long> visited = new HashSet<>();
-        Queue<CableNode> queue = new LinkedList<>();
-        queue.add(start);
-        visited.add(start.getKey());
-
-        int remaining = amount;
-
-        while (!queue.isEmpty() && remaining > 0) {
-            CableNode node = queue.poll();
-            if (node == null) continue;
-
-            // Respect the battery mode: take only from DISCHARGE/CHARGE_DISCHARGE
-            BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
-            if (bc != null && !bc.canDischarge()) continue;
-
-            int energy = node.getEnergy();
-            if (energy > 0) {
-                int take = Math.min(energy, remaining);
-                node.removeEnergy(take);
-                remaining -= take;
-            }
-
-            if (remaining <= 0) break;
-
-            for (long connKey : node.getConnectionKeys()) {
-                if (visited.contains(connKey)) continue;
-                CableNode next = CableNetwork.getNodeByKey(worldUid, connKey);
-                if (next == null) continue;
-                visited.add(connKey);
-                queue.add(next);
-            }
-        }
-
-        return amount - remaining;
     }
 
     // ════════════════════════════════════════

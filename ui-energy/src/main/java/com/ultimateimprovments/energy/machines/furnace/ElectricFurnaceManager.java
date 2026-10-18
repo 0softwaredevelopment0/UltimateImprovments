@@ -2,13 +2,10 @@ package com.ultimateimprovments.energy.machines.furnace;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.Materials;
-import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
-import com.ultimateimprovments.energy.transfer.cable.CableNode;
+import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
-
-import com.ultimateimprovments.energy.transfer.cable.NodeType;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -229,10 +226,11 @@ public class ElectricFurnaceManager implements Listener {
         Recipe cooked = findCookingRecipe(stack);
         if (cooked == null) return false;
 
-        // Check and consume energy
+        // Check and consume energy — check-then-take, so a low network never
+        // loses partial energy on a failed smelt.
         int energyCost = getEnergyCost();
-        if (!hasNetworkEnergy(belowFurnace, energyCost)) return false;
-        if (!takeNetworkEnergy(belowFurnace, energyCost)) return false;
+        if (!EnergyFlow.hasEnergy(belowFurnace, energyCost)) return false;
+        EnergyFlow.pull(belowFurnace, energyCost);
 
         cookingCooldowns.put(furnaceLoc, now);
 
@@ -267,90 +265,10 @@ public class ElectricFurnaceManager implements Listener {
     }
 
     // =========================
-    // NETWORK ENERGY CHECK (BFS to batteries)
-    // Cables don't store energy — only batteries have it.
+    // NETWORK ENERGY — delegated to EnergyFlow (hasEnergy + pull).
+    // Cables don't store energy; the unified traversal reaches the
+    // batteries behind them and respects the battery modes.
     // =========================
-    private static boolean hasNetworkEnergy(Location cableLoc, int amount) {
-        CableNode start = CableNetwork.getNode(LocationUtil.normalize(cableLoc));
-        if (start == null) return false;
-
-        Set<Long> visited = new HashSet<>();
-        Queue<CableNode> queue = new LinkedList<>();
-        queue.add(start);
-        visited.add(start.getKey());
-
-        int total = 0;
-        while (!queue.isEmpty()) {
-            CableNode node = queue.poll();
-            if (node == null) continue;
-
-            // Mark cable as flowing
-            if (node.getType() == NodeType.CABLE) {
-                CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
-            }
-
-            // Only batteries have energy
-            if (node.getType() == NodeType.BATTERY) {
-                total += node.getEnergy();
-                if (total >= amount) return true;
-            }
-
-            for (long connKey : node.getConnectionKeys()) {
-                if (visited.contains(connKey)) continue;
-                CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
-                if (next == null) continue;
-                visited.add(connKey);
-                queue.add(next);
-            }
-        }
-        return total >= amount;
-    }
-
-    // =========================
-    // NETWORK ENERGY CONSUME (BFS to batteries)
-    // =========================
-    private static boolean takeNetworkEnergy(Location cableLoc, int amount) {
-        CableNode start = CableNetwork.getNode(LocationUtil.normalize(cableLoc));
-        if (start == null) return false;
-
-        Set<Long> visited = new HashSet<>();
-        Queue<CableNode> queue = new LinkedList<>();
-        queue.add(start);
-        visited.add(start.getKey());
-
-        int remaining = amount;
-        while (!queue.isEmpty() && remaining > 0) {
-            CableNode node = queue.poll();
-            if (node == null) continue;
-
-            // Mark cable as flowing
-            if (node.getType() == NodeType.CABLE) {
-                CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
-            }
-
-            // Consume from batteries only
-            if (node.getType() == NodeType.BATTERY) {
-                // Check the mode: take energy only from DISCHARGE/CHARGE_DISCHARGE
-                BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
-                if (bc != null && !bc.canDischarge()) continue;
-                int energy = node.getEnergy();
-                if (energy > 0) {
-                    int take = Math.min(energy, remaining);
-                    node.setEnergy(energy - take);
-                    remaining -= take;
-                }
-            }
-
-            for (long connKey : node.getConnectionKeys()) {
-                if (visited.contains(connKey)) continue;
-                CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
-                if (next == null) continue;
-                visited.add(connKey);
-                queue.add(next);
-            }
-        }
-        return remaining <= 0;
-    }
 
     // =========================
     // CONFIG

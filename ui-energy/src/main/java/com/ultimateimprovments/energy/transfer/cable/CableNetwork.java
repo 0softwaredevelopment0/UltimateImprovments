@@ -17,8 +17,13 @@ public class CableNetwork {
     // Internal storage keyed by world UID -> (block key -> CableNode)
     private static final Map<String, Map<Long, CableNode>> nodesByWorld = new ConcurrentHashMap<>();
 
-    // Flowing tracking (world UID -> Set of block keys)
-    private static final Map<String, Set<Long>> flowingByWorld = new ConcurrentHashMap<>();
+    // Flowing tracking (world UID -> (block key -> tick of the last mark)).
+    // Marks auto-expire (see FLOW_HOLD_TICKS) instead of being force-cleared,
+    // so visuals stay correct no matter when the producers ran last.
+    private static final Map<String, Map<Long, Long>> flowingByWorld = new ConcurrentHashMap<>();
+
+    /** How long a flow mark stays "hot" after the last transfer (ticks). */
+    private static final long FLOW_HOLD_TICKS = 50;
 
     // =========================
     // INIT
@@ -110,6 +115,11 @@ public class CableNetwork {
 
         CableNode node = new CableNode(loc);
         if (type != null) node.setType(type);
+        if (type == NodeType.BATTERY) {
+            // Capacity immediately at creation — otherwise the node can't
+            // accept energy until the first balancer pass clamps it in.
+            node.setMaxEnergy(EnergyFlow.batteryCapacity());
+        }
         worldNodes.put(key, node);
 
         // Auto-connect to existing neighbors
@@ -205,44 +215,60 @@ public class CableNetwork {
     }
 
     // =========================
-    // FLOWING TRACKING
+    // FLOWING TRACKING (auto-expiring marks)
     // =========================
     public static void markFlowing(Location loc) {
         loc = LocationUtil.normalize(loc);
         if (loc == null) return;
         long key = LocationUtil.toKey(loc);
         String worldUid = loc.getWorld().getUID().toString();
-        flowingByWorld.computeIfAbsent(worldUid, k -> ConcurrentHashMap.newKeySet()).add(key);
+        flowingByWorld.computeIfAbsent(worldUid, k -> new ConcurrentHashMap<>())
+                .put(key, currentTick());
     }
 
     public static void markFlowingKey(String worldUid, long key) {
         if (worldUid == null || key == 0) return;
-        flowingByWorld.computeIfAbsent(worldUid, k -> ConcurrentHashMap.newKeySet()).add(key);
+        flowingByWorld.computeIfAbsent(worldUid, k -> new ConcurrentHashMap<>())
+                .put(key, currentTick());
     }
 
     public static boolean isFlowing(Location loc) {
         loc = LocationUtil.normalize(loc);
         if (loc == null) return false;
-        long key = LocationUtil.toKey(loc);
-        String worldUid = loc.getWorld().getUID().toString();
-        Set<Long> flowing = flowingByWorld.get(worldUid);
-        return flowing != null && flowing.contains(key);
+        return isFlowingKey(loc.getWorld().getUID().toString(), LocationUtil.toKey(loc));
     }
 
     public static boolean isFlowingKey(String worldUid, long key) {
         if (worldUid == null || key == 0) return false;
-        Set<Long> flowing = flowingByWorld.get(worldUid);
-        return flowing != null && flowing.contains(key);
+        Map<Long, Long> flowing = flowingByWorld.get(worldUid);
+        if (flowing == null) return false;
+        Long marked = flowing.get(key);
+        return marked != null && currentTick() - marked <= FLOW_HOLD_TICKS;
+    }
+
+    /** Drops expired flow marks (called from the visual pass to bound memory). */
+    public static void pruneFlowing() {
+        long now = currentTick();
+        for (Map<Long, Long> flowing : flowingByWorld.values()) {
+            flowing.values().removeIf(marked -> now - marked > FLOW_HOLD_TICKS);
+        }
     }
 
     public static void clearFlowing() {
         flowingByWorld.clear();
     }
 
+    private static long currentTick() {
+        try {
+            return org.bukkit.Bukkit.getCurrentTick();
+        } catch (NoSuchMethodError | NoClassDefFoundError e) {
+            return System.currentTimeMillis() / 50L; // fallback, non-Paper
+        }
+    }
+
     // =========================
-    // SAVE / DELETE — no-op (nodes are persisted immediately in structure_markers)
+    // SAVE / DELETE — no-op (nodes are persisted immediately in structure_markers;
+    // node energy is persisted separately by EnergyPersistence)
     // =========================
     public static void save() { /* no-op */ }
-    public static void saveNode(CableNode node) { /* no-op */ }
-    public static void deleteNode(Location loc) { /* no-op */ }
 }

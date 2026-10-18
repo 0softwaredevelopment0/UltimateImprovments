@@ -91,29 +91,16 @@ final class ConfigRules {
             integer("energy.electric_furnace.energy_per_smelt", 0, Integer.MAX_VALUE),
             integer("energy.electric_furnace.cooldown_ms", 0, 3600000),
 
-            bool("energy.cable.enabled"),
-            integer("energy.cable.max_energy", 0, Integer.MAX_VALUE, "Максимальная энергия кабеля (0 = не хранит)"),
-            bool("energy.cable.log"),
-
+            // Blink intervals are REAL ticks (a 5-tick visual pass reads them).
             bool("energy.cable.blink.enabled"),
             integer("energy.cable.blink.off_ticks", 1, 200),
             integer("energy.cable.blink.on_ticks", 1, 200),
 
-            integer("energy.battery.max_energy", 1, Integer.MAX_VALUE, "Макс. энергия батареи"),
-            integer("energy.battery.discharge_per_tick", 0, Integer.MAX_VALUE),
-
-            bool("energy.battery.smooth_charge.enabled"),
-            dbl("energy.battery.smooth_charge.charge_multiplier", 0, 1000),
-            dbl("energy.battery.smooth_charge.discharge_multiplier", 0, 1000),
-
-            bool("energy.battery.visual.particles_enabled"),
-
-            bool("energy.battery_drain.enabled"),
-            integer("energy.battery_drain.transfer_per_tick", 0, Integer.MAX_VALUE),
-            bool("energy.battery_drain.log"),
+            // Per-block battery capacity — also defines the cluster capacity
+            // (blocks × this value) and the CableNode charge limit.
+            integer("energy.battery.max_energy", 1, Integer.MAX_VALUE, "Ёмкость одного блока батареи"),
 
             bool("energy.balancer.enabled"),
-            bool("energy.balancer.include_batteries"),
             integer("energy.balancer.max_transfer", 0, Integer.MAX_VALUE),
             bool("energy.balancer.log"),
 

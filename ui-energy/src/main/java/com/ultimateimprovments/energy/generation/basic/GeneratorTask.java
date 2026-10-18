@@ -1,8 +1,8 @@
 package com.ultimateimprovments.energy.generation.basic;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
+import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 
@@ -15,16 +15,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.ultimateimprovments.energy.storage.battery.BatteryManager;
-import com.ultimateimprovments.energy.transfer.cable.NodeType;
-
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 public class GeneratorTask extends BukkitRunnable {
 
@@ -142,11 +135,7 @@ public class GeneratorTask extends BukkitRunnable {
                 }
 
                 if (toAdd > 0) {
-                    addEnergyToBatteryNetwork(nodeLoc, toAdd);
-                    // Track transfer on the connected cable node
-                    if (node.getType() == NodeType.CABLE) {
-                        node.addTransferred(toAdd);
-                    }
+                    EnergyFlow.push(nodeLoc, toAdd);
                 }
                 energyAccumulator.put(furnaceLoc, acc);
 
@@ -193,11 +182,7 @@ public class GeneratorTask extends BukkitRunnable {
                     int firstAdd = (int) Math.floor(firstEnergy);
                     double rem = firstEnergy - firstAdd;
                     if (firstAdd > 0) {
-                        addEnergyToBatteryNetwork(nodeLoc, firstAdd);
-                        // Track transfer on the connected cable node
-                        if (node.getType() == NodeType.CABLE) {
-                            node.addTransferred(firstAdd);
-                        }
+                        EnergyFlow.push(nodeLoc, firstAdd);
                     }
                     if (rem > 0) {
                         energyAccumulator.put(furnaceLoc, rem);
@@ -228,47 +213,10 @@ public class GeneratorTask extends BukkitRunnable {
     }
 
     // =========================
-    // BFS TO FIND BATTERY AND ADD ENERGY
-    // Cables don't store energy — we pathfind through them to find
-    // the first battery and add energy there, marking cables as flowing.
+    // Energy delivery is delegated to EnergyFlow.push() — the unified
+    // network traversal. It routes energy to the chargeable batteries,
+    // traverses THROUGH full/mode-blocked batteries (no dead ends) and
+    // marks the cables along the way (blink + multimeter).
     // =========================
-    private void addEnergyToBatteryNetwork(Location startCable, int amount) {
-        CableNode start = CableNetwork.getNode(startCable);
-        if (start == null || amount <= 0) return;
-
-        Set<Long> visited = new HashSet<>();
-        Queue<CableNode> queue = new LinkedList<>();
-        queue.add(start);
-        visited.add(start.getKey());
-
-        while (!queue.isEmpty()) {
-            CableNode node = queue.poll();
-            if (node == null) continue;
-
-            // Mark cable as flowing (energy is passing through)
-            if (node.getType() == NodeType.CABLE) {
-                CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
-            }
-
-            // Found a battery — add energy here (only if the mode allows charging)
-            if (node.getType() == NodeType.BATTERY) {
-                BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
-                if ((bc == null || bc.canCharge()) && node.getEnergy() < node.getMaxEnergy()) {
-                    node.addEnergy(amount);
-                    return;
-                }
-                // If the battery is in DISCHARGE mode or full — continue BFS to other batteries
-                continue;
-            }
-
-            for (long connKey : node.getConnectionKeys()) {
-                if (visited.contains(connKey)) continue;
-                CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
-                if (next == null) continue;
-                visited.add(connKey);
-                queue.add(next);
-            }
-        }
-    }
 
 }

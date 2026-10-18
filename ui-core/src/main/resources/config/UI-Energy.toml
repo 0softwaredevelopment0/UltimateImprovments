@@ -37,69 +37,30 @@ energy_per_smelt = 100
 # Default: 1000
 cooldown_ms = 1000
 
-# cable section.
-[energy.cable]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Maximum value.
-# Default: 0
-max_energy = 0
-# Default: false
-log = false
-
-# blink section.
+# cable section — cables are pure routers, they don't store energy.
 [energy.cable.blink]
-# Master switch (true = feature on).
+# Master switch (true = blink while energy flows).
 # Default: true
 enabled = true
+# Off-phase length in REAL ticks (a 5-tick visual pass reads them).
 # Default: 10
 off_ticks = 10
+# On-phase length in REAL ticks.
 # Default: 10
 on_ticks = 10
 
 # battery section.
 [energy.battery]
-# Maximum value.
+# Capacity of ONE battery block; cluster capacity = blocks × this value.
 # Default: 100000
 max_energy = 100000
-# Default: 10
-discharge_per_tick = 10
 
-# smooth charge section.
-[energy.battery.smooth_charge]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Default: 2.0
-charge_multiplier = 2.0
-# Default: 0.5
-discharge_multiplier = 0.5
-
-# visual section.
-[energy.battery.visual]
-# Master switch (true = feature on).
-# Default: true
-particles_enabled = true
-
-# battery drain section.
-[energy.battery_drain]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Default: 5
-transfer_per_tick = 5
-# Default: false
-log = false
-
-# balancer section.
+# balancer section — equalizes the charge of batteries in one network.
 [energy.balancer]
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Default: false
-include_batteries = false
-# Maximum value.
+# Maximum transfer per battery per balancing pass (the task runs every 2s).
 # Default: 25
 max_transfer = 25
 # Default: false
