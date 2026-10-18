@@ -71,6 +71,28 @@ public class DatabaseInit {
             """);
 
             // =========================
+            // ⚛ REACTOR PANEL SIGNS — the control-panel DATA signs registered
+            // per reactor at assembly (cleared at disassembly). Only these
+            // signs demand the multimeter on click; every other sign of the
+            // structure (lamp labels, etc.) keeps its normal behavior.
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS reactor_panel_signs (
+                    reactor_id TEXT NOT NULL,
+                    world TEXT NOT NULL,
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    z INTEGER NOT NULL,
+                    PRIMARY KEY (world, x, y, z)
+                );
+            """);
+
+            st.execute("""
+                CREATE INDEX IF NOT EXISTS idx_reactor_panel_signs_reactor
+                ON reactor_panel_signs(reactor_id);
+            """);
+
+            // =========================
             // ⚛ ENERGY GENERATED COLUMN MIGRATION (for old DBs)
             // =========================
             try {
