@@ -128,6 +128,8 @@ public class ReactorConfig {
     private double caseIntDecayRate;       // %/sec decay while over thresholds
     private int caseRepairMaxTemp;         // pane repairs refused above this case temp (1000)
     private int caseRepairIronCost;        // iron ingots (off-hand) one pane repair costs (1)
+    private double caseBreachLeakPerPct;   // fusion particles/sec leaked per 1% broken glass (10)
+    private double caseBreachSpeedPenalty; // fusion speed points lost per 1% broken when dry (1)
 
     // =========================
     // LASERS (roof controls)
@@ -222,6 +224,8 @@ public class ReactorConfig {
         caseIntDecayRate = cfg.getDouble("reactor.case_int_decay_rate", 1.0);
         caseRepairMaxTemp = cfg.getInt("reactor.case_repair_max_temp", 1000);
         caseRepairIronCost = Math.max(0, cfg.getInt("reactor.case_repair_iron_cost", 1));
+        caseBreachLeakPerPct = Math.max(0, cfg.getDouble("reactor.case_breach_leak_per_pct", 10.0));
+        caseBreachSpeedPenalty = Math.max(0, cfg.getDouble("reactor.case_breach_speed_penalty", 1.0));
     }
 
     // =========================
@@ -275,4 +279,6 @@ public class ReactorConfig {
     public double getCaseIntDecayRate() { return caseIntDecayRate; }
     public int getCaseRepairMaxTemp() { return caseRepairMaxTemp; }
     public int getCaseRepairIronCost() { return caseRepairIronCost; }
+    public double getCaseBreachLeakPerPct() { return caseBreachLeakPerPct; }
+    public double getCaseBreachSpeedPenalty() { return caseBreachSpeedPenalty; }
 }

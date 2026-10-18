@@ -141,6 +141,15 @@ case_repair_max_temp = 1000
 # fails the same way as a too-hot one (pane pops off after 1 second).
 # Default: 1
 case_repair_iron_cost = 1
+# Fusion particles (P) escaping through a breached case per second, per
+# 1% of broken case glass (e.g. 1% broken = 10 particles/sec leak).
+# Default: 10.0
+case_breach_leak_per_pct = 10.0
+# Fusion speed points lost per 1% of broken case glass while the core has
+# no particles left to leak (e.g. 1% broken = -1% fusion strength; a fully
+# broken case grinds fusion to 0). Shown plainly on the signs.
+# Default: 1.0
+case_breach_speed_penalty = 1.0
 # Radius in blocks.
 # Default: 10
 meltdown_explosion_radius = 10

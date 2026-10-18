@@ -31,12 +31,20 @@ import java.util.Random;
  *       back raises the integrity by one point. No passive recovery.</li>
  * </ul>
  * A breach (any missing pane) vents the case: every missing cell drains the
- * pressure at (broken/total) × 100% of the max per second and the temperature
- * at half that rate (floor = the reactor's lower temperature limit) — the
- * fusion heat rise never outruns the
- * drain, so a breached case trends to ambient and stays there until repaired.
+ * pressure at (broken/total) × 100% of the max per second, while the
+ * temperature follows at a 10× slower rate as long as ANY pane remains (the
+ * surviving glass insulates — the fusion heat rise can outpace a small
+ * breach's temp drain, so a lightly holed case keeps heating); a completely
+ * broken case has no containment at all and the temperature drains at the
+ * full rate (floor = the reactor's lower temperature limit).
  * There is NO hard shatter and NO reset: a fully broken case is just every
  * pane gone, venting at full scale.
+ * <p>
+ * While the case is breached, fusion particles escape through the broken
+ * glass (see ReactorFusion): with particles in the core they leak out at a
+ * breach-scaled rate; a drained core additionally loses fusion speed
+ * points proportional to the breach scale — the signs simply show the
+ * reduced values.
  * <p>
  * Case messaging is exactly three events: breach detected (first pane broken),
  * case failure (fully broken, any cause, once per episode), breach restored
@@ -141,8 +149,10 @@ public class ReactorCase {
 
         // =========================
         // TEMPERATURE — rises only from fusion (speed-scaled). A breached
-        // case loses it faster than fusion can add (see tickBreach), so a
-        // holed case trends to ambient on its own — no state switch needed.
+        // case vents it slowly while any pane remains (see tickBreach) —
+        // a small breach's drain can lose to the heat rise, so a lightly
+        // holed case keeps heating; a fully broken one trends to ambient
+        // on its own — no state switch needed.
         // =========================
         double fusionSpeed = reactor.getFusion().getSpeedPct();
         if (fusionSpeed > 0) {
@@ -214,12 +224,15 @@ public class ReactorCase {
         integrity = (int) Math.round(glass[0] * 100.0 / total);
         state = broken >= total ? State.BROKEN : State.OK;
 
-        // Vent physics — proportional to the breach scale, at ANY breach
-        // size: pressure drains at (broken/total) × 100% of max per second,
-        // the temperature at half that rate (floor = the reactor's dynamic
-        // lower temperature limit). A fully open
-        // case vents out within a second or two and stays ambient until
-        // repaired — no hard reset, the vent replaces the old shatter snap.
+        // Vent physics — proportional to the breach scale. The PRESSURE is
+        // what should drop hard: (broken/total) × 100% of max per second at
+        // any breach size. The TEMPERATURE follows at a 10× slower rate
+        // while any pane remains (the surviving glass still insulates — a
+        // small breach's temp drain can even lose to the fusion heat rise),
+        // while a COMPLETELY broken case has no containment at all —
+        // full-rate drain, the temp trends back to the dynamic lower
+        // temperature limit within a second or two (no hard reset, the vent
+        // replaces the old shatter snap).
         if (broken > 0) {
             double frac = broken / (double) total;
 
@@ -228,7 +241,9 @@ public class ReactorCase {
             ventPressRemainder -= pressDrain;
             if (pressDrain > 0) press = Math.max(0, press - pressDrain);
 
-            ventTempRemainder += frac * cfg.getCaseTempMax() * 0.5 / 20.0;
+            double tempDrainPerSec = frac * cfg.getCaseTempMax()
+                    * (broken >= total ? 0.5 : 0.5 / 10.0);
+            ventTempRemainder += tempDrainPerSec / 20.0;
             int tempDrain = (int) ventTempRemainder;
             ventTempRemainder -= tempDrain;
             if (tempDrain > 0) temp = Math.max(reactor.getTempMin(), temp - tempDrain);

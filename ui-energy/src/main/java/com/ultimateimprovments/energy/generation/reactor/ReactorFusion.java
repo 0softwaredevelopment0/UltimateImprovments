@@ -28,6 +28,14 @@ import com.ultimateimprovments.util.StructuresMessages;
  * 100% valve power. Every {@code fusion_debris_per} collected particles one
  * ancient debris is deposited into the floor barrel; when that barrel is full
  * the fusion status shows Full and collection pauses.
+ * <p>
+ * A breached case bleeds the core: while particles remain, they escape
+ * through the broken glass at {@code case_breach_leak_per_pct} particles/sec
+ * per 1% of broken case glass (END_ROD burst at a random breach cell); a
+ * core drained dry loses fusion speed instead —
+ * {@code case_breach_speed_penalty} points per 1% broken, floor 0. The
+ * effective speed replaces the raw one everywhere (case heating, spawn
+ * rate, signs), so the displays simply show the reduced values.
  */
 public class ReactorFusion {
 
@@ -50,6 +58,10 @@ public class ReactorFusion {
     private double radAccumulator;
     /** One-shot latch: the deposit is failing (floor barrel missing or full). */
     private boolean depositStalled;
+    /** Fractional particle leak accumulator (breach escape budget). */
+    private double leakRemainder;
+    /** Random source for the breach-cell leak visuals. */
+    private final java.util.Random random = new java.util.Random();
 
     public ReactorFusion(ReactorManager reactor) {
         this.reactor = reactor;
@@ -63,6 +75,30 @@ public class ReactorFusion {
 
         // 1. Speed from temperature
         speedPct = speedForTemp(reactor.getCoreTemp(), cfg);
+
+        // =========================
+        // 1a. CASE BREACH — fusion particles escape through the broken case
+        // glass: while the core still HAS particles, they leak out at
+        // breach_leak_per_pct × broken% per second (visual burst at a
+        // random breach cell); a drained core gets its fusion throttled
+        // instead — speed − breach_speed_penalty × broken% points, floor 0.
+        // The effective speed lands in the same field, so the case heating
+        // and the signs simply show the reduced values.
+        // =========================
+        double brokenPct = caseBreachPct();
+        if (brokenPct > 0) {
+            if (particles > 0) {
+                leakRemainder += brokenPct * cfg.getCaseBreachLeakPerPct() / 20.0;
+                int leaked = (int) leakRemainder;
+                if (leaked > 0) {
+                    leakRemainder -= leaked;
+                    particles = Math.max(0, particles - leaked);
+                    spawnLeakBurst(base);
+                }
+            } else {
+                speedPct = Math.max(0, speedPct - brokenPct * cfg.getCaseBreachSpeedPenalty());
+            }
+        }
 
         // 2. Spawn particles (smooth, fractional)
         if (speedPct > 0) {
@@ -161,6 +197,29 @@ public class ReactorFusion {
                 0.3, 0.3, 0.3, 0.02);
     }
 
+    /**
+     * % of the case glass currently broken (0 when intact or untracked) —
+     * the breach scale for the particle leak and the fusion speed penalty.
+     */
+    private double caseBreachPct() {
+        Location reactorLoc = reactor.getReactorLocation();
+        if (reactorLoc == null || !ReactorDamageTracker.isTracked()) return 0;
+        int[] glass = ReactorDamageTracker.cachedCount(reactorLoc, ReactorDamageTracker.Category.GLASS);
+        int total = glass[1];
+        if (total <= 0) return 0;
+        return Math.max(0, total - glass[0]) * 100.0 / total;
+    }
+
+    /** Visual: escaped particles stream out through a random breach cell. */
+    private void spawnLeakBurst(Location base) {
+        int[][] cells = ReactorCase.GLASS;
+        if (cells.length == 0 || base.getWorld() == null) return;
+        int[] off = cells[random.nextInt(cells.length)];
+        Location cell = base.clone().add(off[0] + 0.5, off[1] + 0.5, off[2] + 0.5);
+        if (cell.getBlock().getType() != Material.AIR) return; // pane intact — no leak point
+        base.getWorld().spawnParticle(Particle.END_ROD, cell, 2, 0.15, 0.15, 0.15, 0.08);
+    }
+
     // =========================
     // FLOOR BARREL — ancient debris deposit
     // =========================
@@ -218,6 +277,7 @@ public class ReactorFusion {
         coolRemainder = 0;
         radAccumulator = 0;
         depositStalled = false;
+        leakRemainder = 0;
     }
 
     // =========================
