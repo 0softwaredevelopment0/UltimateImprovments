@@ -6,6 +6,16 @@ in this file.
 ## [Unreleased]
 
 ### Fixed
+- **A bloated config file stalled the whole server startup** — a runaway
+  writer could grow a TOML (observed: 9 MB) and toml4j ground through it on
+  the main thread for minutes. Every config read (salvage health check +
+  per-addon load) now runs under `config.read_timeout_sec` (new key in
+  UI-Core.toml `[config]`, default 5s, clamp 1..300): a read that exceeds
+  the budget is abandoned on a daemon worker, the file is treated as
+  broken — backed up as `UI-<Addon>-broken-<N>.toml` and regenerated from
+  the bundled template — and startup proceeds. The first read of
+  UI-Core.toml itself always uses the built-in 5s default (the configured
+  value applies from that file onwards, including `/ui reload`).
 - **Energy never flowed in a generator → wires → consumer network without
   a battery** — cables are pure routers, the generator pushed into
   batteries only and consumers (the reactor's case junctions included)

@@ -82,6 +82,8 @@ final class ConfigRules {
     // VALIDATION RULES
     // =========================
     static final List<Rule> ALL = List.of(
+            integer("config.read_timeout_sec", 1, 300, "Таймаут чтения одного конфиг-TOML, сек (медленный файл = бэкап + регенерация)"),
+
             bool("energy.generator.enabled"),
             integer("energy.generator.energy_per_fuel", 0, Integer.MAX_VALUE, "Энергия за тик горения"),
             integer("energy.generator.fuel_burn_ticks", 1, 72000, "Длительность горения топлива"),

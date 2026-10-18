@@ -20,6 +20,13 @@ plugin_version = "1.8.4-alpha.9"
 [config]
 # Default: false
 commands_enabled = false
+# Maximum time in seconds to read/parse one config TOML file. A file that
+# takes longer (e.g. bloated to megabytes by a runaway writer) is treated as
+# broken: backed up as UI-<Addon>-broken-<N>.toml and regenerated from the
+# bundled template. The very first read of UI-Core.toml itself always uses
+# the built-in default (5s).
+# Default: 5
+read_timeout_sec = 5
 
 # API version compatibility check: warns in the console when the running server's
 # API version is older than the minimum required by the plugin. The check reads the

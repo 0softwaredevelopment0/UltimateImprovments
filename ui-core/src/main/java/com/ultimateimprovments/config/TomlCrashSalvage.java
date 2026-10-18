@@ -34,6 +34,9 @@ public final class TomlCrashSalvage {
     private static final java.util.regex.Pattern LINE_IN_MESSAGE =
             java.util.regex.Pattern.compile("(?i)line\\s+(\\d+)");
 
+    /** Marker returned by {@link #lastParseError} when the read timed out. */
+    private static final String READ_TIMEOUT = "read timed out";
+
     private TomlCrashSalvage() {}
 
     /** Result of a salvage operation. */
@@ -88,6 +91,15 @@ public final class TomlCrashSalvage {
             }
 
             String error = lastParseError(tomlFile);
+
+            if (READ_TIMEOUT.equals(error)) {
+                // The file is too large/slow to parse — commenting out lines
+                // cannot help; give up and let the loader back it up and
+                // regenerate from the bundled template.
+                return new Result(false, commented,
+                        "read timed out — the file is too large/slow to parse; it will be backed up and regenerated");
+            }
+
             Integer line = extractLine(error);
 
             if (line == null || !commentOutLine(tomlFile, line)) {
@@ -109,13 +121,19 @@ public final class TomlCrashSalvage {
         return lastParseError(file) == null;
     }
 
-    /** @return null if the file parses, otherwise the exception message. */
+    /** @return null if the file parses, otherwise the exception message or {@link #READ_TIMEOUT}. */
     private static String lastParseError(File file) {
-        try (FileInputStream in = new FileInputStream(file)) {
-            new Toml().read(new InputStreamReader(in, StandardCharsets.UTF_8));
-            return null;
-        } catch (Exception e) {
-            return e.getMessage();
+        try {
+            return ConfigReadGuard.read(file, () -> {
+                try (FileInputStream in = new FileInputStream(file)) {
+                    new Toml().read(new InputStreamReader(in, StandardCharsets.UTF_8));
+                    return null;
+                } catch (Exception e) {
+                    return e.getMessage();
+                }
+            });
+        } catch (ConfigReadGuard.ReadTimeoutException e) {
+            return READ_TIMEOUT;
         }
     }
 
