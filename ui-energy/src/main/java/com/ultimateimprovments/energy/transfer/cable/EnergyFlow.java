@@ -26,9 +26,18 @@ import java.util.Set;
  *       charges batteries only;</li>
  *   <li>the reactor is not a special node — it pulls through its case
  *       junction cells and pushes through an entry node under its base
- *       (see ReactorManager.tickEnergyBuffer / tickEnergyGeneration).</li>
+ *       (see ReactorManager.tickEnergyBuffer / tickEnergyGeneration);</li>
+ *   <li>wire losses: every pull delivers 1 ⚡ less per network block the
+ *       traversal had to touch — the sources lose the drained amount in
+ *       full, the distance eats the difference (push is lossless).</li>
  * </ul>
  * Every traversal is node-capped, so a huge network can't stall a tick.
+ * <p>
+ * Threading: every method runs on the main server thread only — the BFS
+ * touches Bukkit worlds, live blocks and battery clusters, none of which
+ * are thread-safe, so there is nothing to move async. The node cap bounds
+ * the worst-case cost of a single pass.
+ * <p>
  * Activity trail: when energy actually moves, every CABLE node visited by
  * that traversal is marked flowing (blink visuals) and gets
  * {@link CableNode#addTransferred(int)} (multimeter readings).
@@ -64,25 +73,35 @@ public final class EnergyFlow {
      */
     public static int push(Location origin, int amount) {
         if (amount <= 0) return 0;
-        return flow(origin, amount, true);
+        return flow(origin, amount, true).moved();
     }
 
     /**
      * Pulls energy from the network: takes up to {@code amount} from the
      * dischargeable batteries (and legacy generator buffers) reachable from
-     * {@code origin}. Returns what was actually taken — a value below
-     * {@code amount} means the network is low on energy.
+     * {@code origin}. Returns what was actually DELIVERED to the caller —
+     * wire losses subtract 1 ⚡ per network block the traversal had to touch
+     * (cables, junctions, storage nodes), so a far-away source delivers less
+     * than it loses. A value below {@code amount} means losses ate into the
+     * request or the network is low on energy.
      */
     public static int pull(Location origin, int amount) {
         if (amount <= 0) return 0;
-        return flow(origin, amount, false);
+        FlowResult result = flow(origin, amount, false);
+        int loss = Math.min(result.moved(), result.hops());
+        return result.moved() - loss;
     }
+
+    /** One traversal outcome: energy settled at storage nodes + hops touched. */
+    private record FlowResult(int moved, int hops) {}
 
     /**
      * Availability check without mutation: is at least {@code amount} of
      * energy reachable from {@code origin}? Call this before {@link #pull}
      * when a partial take would lose energy (check-then-take is safe — the
-     * server runs these on the main thread).
+     * server runs these on the main thread). Raw availability: the actual
+     * {@link #pull} delivery is reduced by wire losses (1 ⚡ per network
+     * block the traversal touches).
      */
     public static boolean hasEnergy(Location origin, int amount) {
         if (amount <= 0) return true;
@@ -145,9 +164,9 @@ public final class EnergyFlow {
     // =========================
 
     /** One pass over the network — charges (push) or drains (pull) batteries. */
-    private static int flow(Location origin, int amount, boolean charging) {
+    private static FlowResult flow(Location origin, int amount, boolean charging) {
         Location norm = LocationUtil.normalize(origin);
-        if (norm == null) return 0;
+        if (norm == null) return new FlowResult(0, 0);
         String worldUid = norm.getWorld().getUID().toString();
 
         Set<Long> visited = new HashSet<>();
@@ -156,9 +175,11 @@ public final class EnergyFlow {
         seed(norm, queue, visited);
 
         int remaining = amount;
+        int hops = 0;
         while (!queue.isEmpty() && remaining > 0 && visited.size() <= MAX_NODES) {
             CableNode node = queue.poll();
             if (node == null) continue;
+            hops++;
 
             if (node.getType() == NodeType.CABLE) {
                 cables.add(node);
@@ -184,7 +205,7 @@ public final class EnergyFlow {
                 cable.addTransferred(transferred);
             }
         }
-        return transferred;
+        return new FlowResult(transferred, hops);
     }
 
     /** Energy this node can accept right now (charging side). */

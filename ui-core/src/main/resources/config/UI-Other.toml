@@ -1195,6 +1195,46 @@ assembled = "<green>✔ Генератор собран!</green>"
 assembled_hint = "<dark_gray>Положите топливо в плавильную печь — энергия пойдёт в сеть!</dark_gray>"
 # Default: <yellow>⚡ Генератор демонтирован!</yellow>
 dismantled = "<yellow>⚡ Генератор демонтирован!</yellow>"
+# Слово в префиксе мультиметр-показаний: [<yellow>слово<dark_gray>].
+# Default: GEN
+prefix = "GEN"
+# Default: <red>Для чтения данных нужен мультиметр!</red>
+multimeter_required = "<red>Для чтения данных нужен мультиметр!</red>"
+# Placeholders: %prefix%
+# Default: <gold>=== %prefix% ===</gold>
+meter_header = "<gold>=== %prefix% ===</gold>"
+# Placeholders: %coords%
+# Default: <aqua>Позиция: </aqua><white>%coords%</white>
+meter_position = "<aqua>Позиция: </aqua><white>%coords%</white>"
+# Placeholders: %power% (подставляются power_on/power_off)
+# Default: <aqua>Редстоун: </aqua>%power%
+meter_power = "<aqua>Редстоун: </aqua>%power%"
+# Default: <gray>нет</gray>
+fuel_none = "<gray>нет</gray>"
+# Placeholders: %fuel%
+# Default: <aqua>Топливо: </aqua>%fuel%
+meter_fuel = "<aqua>Топливо: </aqua>%fuel%"
+# Placeholders: %ticks%
+# Default: <aqua>Горение: </aqua><white>осталось %ticks% тиков</white>
+meter_burn = "<aqua>Горение: </aqua><white>осталось %ticks% тиков</white>"
+# Placeholders: %energy%, %max%
+# Default: <aqua>Буфер: </aqua><white>%energy%/%max% ⚡</white>
+meter_buffer = "<aqua>Буфер: </aqua><white>%energy%/%max% ⚡</white>"
+# Placeholders: %rate%
+# Default: <aqua>Выработка: </aqua><white>%rate% ⚡/2с</white>
+meter_output = "<aqua>Выработка: </aqua><white>%rate% ⚡/2с</white>"
+# Placeholders: %state% (подставляются status_*/state_*)
+# Default: <aqua>Состояние: </aqua>%state%
+meter_state = "<aqua>Состояние: </aqua>%state%"
+# Default: <aqua>❄ Заморожен (буфер полон — ждём потребителя)</aqua>
+state_frozen = "<aqua>❄ Заморожен (буфер полон — ждём потребителя)</aqua>"
+# Default: <gray>Простой (нет топлива)</gray>
+state_idle = "<gray>Простой (нет топлива)</gray>"
+# Default: <green>✔ Готов (есть топливо)</green>
+state_ready = "<green>✔ Готов (есть топливо)</green>"
+# Placeholders: %count%
+# Default: <aqua>Подключений: </aqua><white>%count%</white>
+meter_connections = "<aqua>Подключений: </aqua><white>%count%</white>"
 
 # names section.
 [messages.structures.names]
@@ -1565,6 +1605,32 @@ info_hint = "<dark_gray>Put fuel into the furnace — energy goes to the network
 assembled = "<green>✔ Generator assembled!</green>"
 assembled_hint = "<dark_gray>Put fuel into the blast furnace — energy goes to the network!</dark_gray>"
 dismantled = "<yellow>⚡ Generator dismantled!</yellow>"
+# The word inside the multimeter readout prefix: [<yellow>word<dark_gray>].
+# Default: GEN
+prefix = "GEN"
+multimeter_required = "<red>A multimeter is required to read the data!</red>"
+# Placeholders: %prefix%
+meter_header = "<gold>=== %prefix% ===</gold>"
+# Placeholders: %coords%
+meter_position = "<aqua>Position: </aqua><white>%coords%</white>"
+# Placeholders: %power% (power_on/power_off)
+meter_power = "<aqua>Redstone: </aqua>%power%"
+fuel_none = "<gray>none</gray>"
+# Placeholders: %fuel%
+meter_fuel = "<aqua>Fuel: </aqua>%fuel%"
+# Placeholders: %ticks%
+meter_burn = "<aqua>Burn: </aqua><white>%ticks% ticks left</white>"
+# Placeholders: %energy%, %max%
+meter_buffer = "<aqua>Buffer: </aqua><white>%energy%/%max% ⚡</white>"
+# Placeholders: %rate%
+meter_output = "<aqua>Output: </aqua><white>%rate% ⚡/2s</white>"
+# Placeholders: %state% (status_*/state_*)
+meter_state = "<aqua>State: </aqua>%state%"
+state_frozen = "<aqua>❄ Frozen (buffer full — waiting for a consumer)</aqua>"
+state_idle = "<gray>Idle (no fuel)</gray>"
+state_ready = "<green>✔ Ready (has fuel)</green>"
+# Placeholders: %count%
+meter_connections = "<aqua>Connections: </aqua><white>%count%</white>"
 
 # names section.
 [messages_en.structures.names]

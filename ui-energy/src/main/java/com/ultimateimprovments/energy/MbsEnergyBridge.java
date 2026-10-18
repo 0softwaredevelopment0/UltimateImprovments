@@ -16,6 +16,11 @@ import org.bukkit.Location;
  * a plain cable next to the machine meant "no energy"), battery modes are
  * respected, and the check-then-take pattern guarantees a low network never
  * loses partial energy on a failed consume.
+ * <p>
+ * Wire losses: the raw-availability pre-check gates obviously dead networks;
+ * the pull itself delivers what the wires leave (1 ⚡ per network block) and
+ * the attempt is paid — a consume never re-rolls on a loss-shorted delivery
+ * (that would drain the sources twice for one operation).
  */
 public class MbsEnergyBridge implements MbsEnergy.Consumer {
 
@@ -23,6 +28,7 @@ public class MbsEnergyBridge implements MbsEnergy.Consumer {
     public boolean tryConsume(Location energyInputLoc, int amount) {
         if (energyInputLoc == null || amount <= 0) return false;
         if (!EnergyFlow.hasEnergy(energyInputLoc, amount)) return false;
-        return EnergyFlow.pull(energyInputLoc, amount) >= amount;
+        EnergyFlow.pull(energyInputLoc, amount);
+        return true;
     }
 }

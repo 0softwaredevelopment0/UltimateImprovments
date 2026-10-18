@@ -140,6 +140,140 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
+    // MULTIMETER READOUT — SHIFT+RMB on an assembled generator's furnace.
+    // The full data pack: position, redstone gate, fuel, burn, buffer,
+    // output rate, state, connections. The readout opens ONLY on SHIFT+RMB —
+    // every other click does nothing plugin-side (plain RMB keeps the
+    // vanilla furnace GUI). Without a multimeter in either hand the readout
+    // refuses with a localized hint. Prefix word + every line live in
+    // messages[_en].structures.generator.* (UI-Other.toml).
+    // =========================
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onGeneratorMeterClick(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND) return; // once per click
+        if (!e.getPlayer().isSneaking()) return;       // SHIFT+RMB only
+
+        Block block = e.getClickedBlock();
+        if (block == null || block.getType() != Materials.BLAST_FURNACE) return;
+        Location loc = LocationUtil.normalize(block.getLocation());
+        if (loc == null || !isAssembled(loc)) return;  // plain furnaces untouched
+
+        Player player = e.getPlayer();
+        // The measurement owns the click: no furnace GUI on SHIFT+RMB
+        e.setCancelled(true);
+
+        if (!holdsMultimeter(player)) {
+            player.sendMessage(MessageUtil.parse(prefix() + msg("multimeter_required",
+                    "<red>A multimeter is required to read the data!")));
+            return;
+        }
+
+        sendReadout(player, block, loc);
+    }
+
+    /** The [GEN] chat prefix — the word is configurable (structures.generator.prefix). */
+    private static String prefix() {
+        return "<dark_gray>[<yellow>" + msg("prefix", "GEN") + "<dark_gray>] ";
+    }
+
+    private static boolean holdsMultimeter(Player player) {
+        return isMultimeter(player.getInventory().getItemInMainHand())
+                || isMultimeter(player.getInventory().getItemInOffHand());
+    }
+
+    private static boolean isMultimeter(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        Byte val = meta.getPersistentDataContainer().get(Keys.MULTIMETER, PersistentDataType.BYTE);
+        return val != null && val == (byte) 1;
+    }
+
+    /** Full generator data pack (localized, GEN-prefixed). */
+    private static void sendReadout(Player player, Block block, Location loc) {
+        String prefixWord = msg("prefix", "GEN");
+
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_header",
+                "<gold>=== %prefix% ===</gold>").replace("%prefix%", prefixWord)));
+
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_position",
+                "<aqua>Position: </aqua><white>%coords%</white>")
+                .replace("%coords%", loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ())));
+
+        boolean powered = block.isBlockPowered() || block.isBlockIndirectlyPowered();
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_power",
+                "<aqua>Redstone: </aqua>%power%")
+                .replace("%power%", powered ? msg("power_on", "<green>✔ On</green>")
+                        : msg("power_off", "<red>✘ Off</red>"))));
+
+        org.bukkit.block.Furnace furnace =
+                block.getState() instanceof org.bukkit.block.Furnace f ? f : null;
+        String fuelText = msg("fuel_none", "<gray>none</gray>");
+        boolean hasFuel = false;
+        if (furnace != null) {
+            ItemStack fuel = furnace.getInventory().getFuel();
+            if (fuel != null && !fuel.getType().isAir()) {
+                hasFuel = true;
+                fuelText = "<white>" + fuel.getType().name().toLowerCase(java.util.Locale.ROOT)
+                        .replace('_', ' ') + " ×" + fuel.getAmount() + "</white>";
+            }
+        }
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_fuel",
+                "<aqua>Fuel: </aqua>%fuel%").replace("%fuel%", fuelText)));
+
+        int burnTicks = GeneratorTask.burnTicksLeft(loc);
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_burn",
+                "<aqua>Burn: </aqua><white>%ticks% ticks left</white>")
+                .replace("%ticks%", String.valueOf(burnTicks))));
+
+        // Buffer + state — the same gates the task itself uses
+        ensureGeneratorNode(loc);
+        CableNode node = CableNetwork.getNode(loc);
+        int energy = node != null ? node.getEnergy() : 0;
+        int cap = node != null ? node.getMaxEnergy() : 0;
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_buffer",
+                "<aqua>Buffer: </aqua><white>%energy%/%max% ⚡</white>")
+                .replace("%energy%", String.valueOf(energy))
+                .replace("%max%", String.valueOf(cap))));
+
+        boolean hasCable = findConnectedNode(loc) != null;
+        int rate = 0;
+        if (hasCable) {
+            int perFuel = Math.max(1, Main.getInstance().getConfig()
+                    .getInt("energy.generator.energy_per_fuel", 100));
+            int burnDuration = Math.max(1, Main.getInstance().getConfig()
+                    .getInt("energy.generator.fuel_burn_ticks", 100));
+            rate = (int) Math.ceil((double) perFuel * GeneratorTask.PASS_TICKS / burnDuration);
+        }
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_output",
+                "<aqua>Output: </aqua><white>%rate% ⚡/2s</white>")
+                .replace("%rate%", String.valueOf(rate))));
+
+        String state;
+        if (!hasCable) {
+            state = msg("status_no_cable", "<yellow>⚠ No cable</yellow>");
+        } else if (!powered) {
+            state = msg("status_no_power", "<yellow>⚠ No redstone</yellow>");
+        } else if (cap > 0 && cap - energy < rate) {
+            state = msg("state_frozen",
+                    "<aqua>❄ Frozen (buffer full — waiting for a consumer)</aqua>");
+        } else if (burnTicks > 0) {
+            state = msg("status_working", "<green>✔ Working</green>");
+        } else if (!hasFuel) {
+            state = msg("state_idle", "<gray>Idle (no fuel)</gray>");
+        } else {
+            state = msg("state_ready", "<green>✔ Ready (has fuel)</green>");
+        }
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_state",
+                "<aqua>State: </aqua>%state%").replace("%state%", state)));
+
+        player.sendMessage(MessageUtil.parse(prefix() + msg("meter_connections",
+                "<aqua>Connections: </aqua><white>%count%</white>")
+                .replace("%count%", String.valueOf(node != null ? node.getConnectionKeys().size() : 0))));
+    }
+
+    // =========================
     // REGISTER ON PLACE (called from BlockPlaceListener)
     // =========================
     public static void onGeneratorPlaced(Location loc) {

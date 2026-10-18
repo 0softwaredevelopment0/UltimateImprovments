@@ -25,20 +25,39 @@ import java.util.Map;
 public class GeneratorTask extends BukkitRunnable {
 
     /**
-     * The task runs every 40 ticks (2s). All burn/energy math below is
-     * scaled by this period, so the per-second fuel burn and energy output
-     * stay exactly the same as with the old per-tick schedule.
+     * The task runs every {@value #PASS_TICKS} ticks (2s). All burn/energy
+     * math below is scaled by this period, so the per-second fuel burn and
+     * energy output stay exactly the same as with the old per-tick schedule.
      */
-    private static final int TICKS_PER_RUN = 40;
+    public static final int PASS_TICKS = 40;
 
     // =========================
     // BURN TRACKING (per furnace location)
-    // fuelTimer: how many ticks the current fuel has left to burn (decrements every run, by up to TICKS_PER_RUN)
+    // fuelTimer: how many ticks the current fuel has left to burn (decrements every run, by up to PASS_TICKS)
     // energyAccumulator: accumulated fractional energy (>= 1 → added to the battery)
     // Generator works independently of furnace smelting state.
     // =========================
     private final Map<Location, Integer> fuelTimer = new HashMap<>();
     private final Map<Location, Double> energyAccumulator = new HashMap<>();
+
+    /** Live task instance (re-created on every UIEnergy startup/soft reload). */
+    private static GeneratorTask instance;
+
+    public GeneratorTask() {
+        instance = this;
+    }
+
+    /**
+     * Burn ticks left on the currently burning fuel item at this generator
+     * (0 when idle). Frozen while the redstone gate or the buffer gate holds
+     * the generator — the value does not decay during a freeze.
+     */
+    public static int burnTicksLeft(Location furnaceLoc) {
+        GeneratorTask task = instance;
+        if (task == null || furnaceLoc == null) return 0;
+        Integer timer = task.fuelTimer.get(LocationUtil.normalize(furnaceLoc));
+        return timer != null ? Math.max(0, timer) : 0;
+    }
 
     @Override
     public void run() {
@@ -175,7 +194,7 @@ public class GeneratorTask extends BukkitRunnable {
                 }
 
                 int maxPerPass = (int) Math.ceil(
-                        (double) totalEnergyPerFuel * TICKS_PER_RUN / effectiveBurn);
+                        (double) totalEnergyPerFuel * PASS_TICKS / effectiveBurn);
                 if (genNode.getMaxEnergy() - genNode.getEnergy() < maxPerPass) {
                     if (data.isLit()) {
                         data.setLit(false);
@@ -196,7 +215,7 @@ public class GeneratorTask extends BukkitRunnable {
             // CASE 1: BURNING — generate energy continuously each run
             // =========================
             if (timer > 0) {
-                int burnedNow = Math.min(TICKS_PER_RUN, timer);
+                int burnedNow = Math.min(PASS_TICKS, timer);
                 // Accumulate fractional energy for the ticks burned this run
                 double energyPerTickDouble = (double) totalEnergyPerFuel / effectiveBurn;
                 double acc = energyAccumulator.getOrDefault(furnaceLoc, 0.0) + energyPerTickDouble * burnedNow;
@@ -248,8 +267,8 @@ public class GeneratorTask extends BukkitRunnable {
                         furnace.getInventory().setFuel(newFuel);
                     }
 
-                    // Reset timer and accumulator (the first run burns up to TICKS_PER_RUN ticks)
-                    int firstBurn = Math.min(TICKS_PER_RUN, burnDuration);
+                    // Reset timer and accumulator (the first run burns up to PASS_TICKS ticks)
+                    int firstBurn = Math.min(PASS_TICKS, burnDuration);
                     fuelTimer.put(furnaceLoc, burnDuration - firstBurn);
                     energyAccumulator.put(furnaceLoc, 0.0);
 
