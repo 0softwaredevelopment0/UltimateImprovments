@@ -9,6 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.Random;
 
@@ -38,8 +40,10 @@ import java.util.Random;
  * <p>
  * Case messaging is exactly three events: breach detected (first pane broken),
  * case failure (fully broken, any cause, once per episode), breach restored
- * (fully repaired). Players repair pane by pane; {@link #repair(Location,
- * boolean)} is the instant full-repair path (DB load / admin).
+ * (fully repaired). Players repair pane by pane — a placement must pass the
+ * repair-failure gate (case cool enough + an iron ingot in the off hand,
+ * see {@link #onPaneRepairFailed}); {@link #repair(Location,
+ * boolean)} is the instant full-repair path (DB load / admin), ungated.
  */
 public class ReactorCase {
 
@@ -108,15 +112,19 @@ public class ReactorCase {
     private double ventTempRemainder;  // fractional temperature vent accumulator (C*)
 
     // =========================
-    // HOT-REPAIR GATE — a pane placed into a case hotter than
-    // case_repair_max_temp does NOT count as a repair: the cell is ignored
-    // by the damage tracker for 1 second, then the verdict fires — still
-    // hot → the pane pops off naturally (breakNaturally, loot-table drop);
-    // cooled below the threshold in time → it holds and counts as a real
-    // repair. Hot panes are keyed per template cell ("dx,dy,dz").
+    // REPAIR FAILURE GATE — a pane placed into the case without passing the
+    // repair conditions (case hotter than case_repair_max_temp, or no iron
+    // ingot in the off hand) does NOT count as a repair: the cell is ignored
+    // by the damage tracker for 1 second, then the verdict re-checks the
+    // conditions — still failing → the pane pops off naturally
+    // (breakNaturally, loot-table drop); cleared in time (grace window) →
+    // it holds, the ingot is taken and it counts as a real repair. Failing
+    // panes are keyed per template cell ("dx,dy,dz"). Player placements
+    // only — event-blind placements (plugins/commands) are caught by the
+    // rotating audit as plain repairs, ungated by design.
     // =========================
-    private static final int HOT_REPAIR_VERDICT_TICKS = 20; // 1 second
-    private final java.util.Set<String> hotPanes = new java.util.HashSet<>();
+    private static final int REPAIR_VERDICT_TICKS = 20; // 1 second
+    private final java.util.Set<String> failingPanes = new java.util.HashSet<>();
 
     public ReactorCase(ReactorManager reactor) {
         this.reactor = reactor;
@@ -352,35 +360,63 @@ public class ReactorCase {
     }
 
     // =========================
-    // HOT-REPAIR GATE
+    // REPAIR FAILURE GATE
     // =========================
     /** True while the case is too hot for pane repairs (temp > case_repair_max_temp). */
     public boolean isRepairBlocked() {
         return temp > ReactorConfig.getInstance().getCaseRepairMaxTemp();
     }
 
+    /** Iron ingots (off hand) one pane repair costs (0 = repairs are free). */
+    public static int repairIronCost() {
+        return ReactorConfig.getInstance().getCaseRepairIronCost();
+    }
+
+    /** True when the player holds enough iron ingots in the OFF hand (the main hand has the glass). */
+    public static boolean hasRepairIngot(Player player) {
+        ItemStack off = player.getInventory().getItemInOffHand();
+        return off != null && off.getType() == Material.IRON_INGOT
+                && off.getAmount() >= repairIronCost();
+    }
+
+    /** Takes one repair's worth of iron ingots from the off-hand stack. */
+    public static void consumeRepairIngot(Player player) {
+        int cost = repairIronCost();
+        ItemStack off = player.getInventory().getItemInOffHand();
+        if (off == null || off.getType() != Material.IRON_INGOT) return;
+        if (off.getAmount() > cost) {
+            ItemStack rest = off.clone();
+            rest.setAmount(off.getAmount() - cost);
+            player.getInventory().setItemInOffHand(rest);
+        } else {
+            player.getInventory().setItemInOffHand(null);
+        }
+    }
+
     /**
-     * A glass pane was placed into the template cell while the case was too
-     * hot to accept it (the caller did NOT count the pane). The cell is
-     * marked ignored and its verdict runs after 1 second: still hot → the
-     * pane breaks naturally (loot-table drop per the datapack); cooled below
-     * the threshold in time → the pane holds and is counted as a real repair.
+     * A glass pane was placed into the template cell without passing the
+     * repair conditions (case too hot, or no iron ingot in the off hand) —
+     * the caller did NOT count the pane. The cell is marked ignored and its
+     * verdict runs after 1 second: conditions still failing → the pane pops
+     * off naturally (loot-table drop per the datapack); cleared in time
+     * (grace window) → the pane holds, the ingot is consumed and the pane
+     * counts as a real repair.
      */
-    public void onPanePlacedHot(Location base, int dx, int dy, int dz) {
-        hotPanes.add(dx + "," + dy + "," + dz);
+    public void onPaneRepairFailed(Player player, Location base, int dx, int dy, int dz) {
+        failingPanes.add(dx + "," + dy + "," + dz);
         ReactorDamageTracker.setCellIgnored(base, dx, dy, dz, true);
-        scheduleHotVerdict(base, dx, dy, dz);
+        scheduleRepairVerdict(player, base, dx, dy, dz);
     }
 
-    private void scheduleHotVerdict(Location base, int dx, int dy, int dz) {
+    private void scheduleRepairVerdict(Player player, Location base, int dx, int dy, int dz) {
         Bukkit.getScheduler().runTaskLater(Main.getInstance(),
-                () -> verdictHotPane(base, dx, dy, dz), HOT_REPAIR_VERDICT_TICKS);
+                () -> verdictRepairFailure(player, base, dx, dy, dz), REPAIR_VERDICT_TICKS);
     }
 
-    /** The 1-second verdict for one hot pane (see {@link #onPanePlacedHot}). */
-    private void verdictHotPane(Location base, int dx, int dy, int dz) {
+    /** The 1-second verdict for one failed pane (see {@link #onPaneRepairFailed}). */
+    private void verdictRepairFailure(Player player, Location base, int dx, int dy, int dz) {
         String key = dx + "," + dy + "," + dz;
-        if (!hotPanes.remove(key)) {
+        if (!failingPanes.remove(key)) {
             // Superseded (reset/reassembly) — just drop the ignore mark
             ReactorDamageTracker.setCellIgnored(base, dx, dy, dz, false);
             return;
@@ -391,26 +427,33 @@ public class ReactorCase {
                 || !base.getWorld().isChunkLoaded(blockLoc.getBlockX() >> 4, blockLoc.getBlockZ() >> 4)) {
             // Chunk unloaded mid-verdict — defer; the pane stays ignored
             // until the world around it is readable again.
-            hotPanes.add(key);
-            scheduleHotVerdict(base, dx, dy, dz);
+            failingPanes.add(key);
+            scheduleRepairVerdict(player, base, dx, dy, dz);
             return;
         }
         ReactorDamageTracker.setCellIgnored(base, dx, dy, dz, false);
 
+        // The verdict re-checks the conditions (heat first): still failing →
+        // the pane does not hold — natural break with the glass loot-table
+        // drop (the datapack overrides it to drop glass).
+        boolean conditionsMet = !isRepairBlocked()
+                && player != null && player.isOnline()
+                && (repairIronCost() <= 0 || hasRepairIngot(player));
         Block block = blockLoc.getBlock();
-        if (isRepairBlocked()) {
-            // Still hot: the pane does not hold — natural break with the
-            // glass loot-table drop (the datapack overrides it to drop glass)
+        if (!conditionsMet || block.getType() != Material.GLASS) {
+            if (conditionsMet) return; // pane gone by itself — nothing to accept
             if (block.getType() == Material.GLASS) {
                 block.breakNaturally();
                 base.getWorld().playSound(blockLoc.clone().add(0.5, 0.5, 0.5),
                         Sound.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 1.2f, 0.9f);
             }
-        } else if (block.getType() == Material.GLASS) {
-            // Cooled in time — the pane holds and counts as a real repair
-            ReactorDamageTracker.noteCellRepaired(base, dx, dy, dz);
-            onGlassPlaced();
+            return;
         }
+
+        // Grace won: the pane holds, the ingot is taken, the repair counts
+        if (repairIronCost() > 0) consumeRepairIngot(player);
+        ReactorDamageTracker.noteCellRepaired(base, dx, dy, dz);
+        onGlassPlaced();
     }
 
     // =========================
@@ -429,7 +472,7 @@ public class ReactorCase {
         ventTempRemainder = 0;
         caseTempRemainder = 0;
         caseIntRemainder = 0;
-        hotPanes.clear(); // pending verdicts no-op (the ignore marks die with resetAudit)
+        failingPanes.clear(); // pending verdicts no-op (the ignore marks die with resetAudit)
     }
 
     // =========================
