@@ -223,15 +223,32 @@ public class ReactorListener implements Listener {
             if (cat == null) {
                 return; // not a tracked structure cell — ignore silently
             }
-            // Case glass into a HOT case: the pane is placed but NOT counted —
-            // after 1 second it pops off naturally unless the case cools in
-            // time (see ReactorCase.onPanePlacedHot)
-            if (cat == ReactorDamageTracker.Category.GLASS && reactor.getCase().isRepairBlocked()) {
-                reactor.getCase().onPanePlacedHot(reactorLoc, dx, dy, dz);
-                e.getPlayer().sendMessage(MessageUtil.parse(dfcPrefix()
-                        + msg("case_repair_too_hot",
-                                "<red>⚠ <white>Case too hot to repair (above %max% C*) — the pane will not hold!")
-                                .replace("%max%", String.valueOf(ReactorConfig.getInstance().getCaseRepairMaxTemp()))));
+            if (cat == ReactorDamageTracker.Category.GLASS) {
+                // Case glass repairs are gated (player path only): heat wins
+                // the message priority, then the off-hand iron ingot. A
+                // failed pane is placed but NOT counted — after 1 second it
+                // pops off naturally unless the conditions clear in the
+                // grace window (see ReactorCase.onPaneRepairFailed).
+                ReactorCase kase = reactor.getCase();
+                Player repairer = e.getPlayer();
+                if (kase.isRepairBlocked()) {
+                    kase.onPaneRepairFailed(repairer, reactorLoc, dx, dy, dz);
+                    repairer.sendMessage(MessageUtil.parse(dfcPrefix()
+                            + msg("case_repair_too_hot",
+                                    "<red>⚠ <white>Case too hot to repair (above %max% C*) — the pane will not hold!")
+                                    .replace("%max%", String.valueOf(ReactorConfig.getInstance().getCaseRepairMaxTemp()))));
+                    return;
+                }
+                if (ReactorCase.repairIronCost() > 0 && !ReactorCase.hasRepairIngot(repairer)) {
+                    kase.onPaneRepairFailed(repairer, reactorLoc, dx, dy, dz);
+                    repairer.sendMessage(MessageUtil.parse(dfcPrefix()
+                            + msg("case_repair_no_iron",
+                                    "<red>⚠ <white>Repair requires an iron ingot in the off-hand (×%cost%) — the pane will not hold!")
+                                    .replace("%cost%", String.valueOf(ReactorCase.repairIronCost()))));
+                    return;
+                }
+                if (ReactorCase.repairIronCost() > 0) ReactorCase.consumeRepairIngot(repairer);
+                reactor.addRepair(dx, dy, dz, cat);
                 return;
             }
             reactor.addRepair(dx, dy, dz, cat);
@@ -614,8 +631,15 @@ public class ReactorListener implements Listener {
         ReactorManager reactor = ReactorManager.getReactorForBlock(e.getBlockPlaced().getLocation());
         if (reactor == null || !reactor.isValid()) return;
 
-        // Hot pane: not a repair (the hot-repair gate owns its verdict) — no persist
-        if (reactor.getCase().isRepairBlocked()) return;
+        // Failing pane (too hot / no iron): not a repair yet — the gate's
+        // verdict persists the progress if the grace window is won
+        Location reactorLoc = reactor.getReactorLocation();
+        if (reactorLoc != null) {
+            int dx = e.getBlockPlaced().getX() - reactorLoc.getBlockX();
+            int dy = e.getBlockPlaced().getY() - reactorLoc.getBlockY();
+            int dz = e.getBlockPlaced().getZ() - reactorLoc.getBlockZ();
+            if (ReactorDamageTracker.isCellIgnored(reactorLoc, dx, dy, dz)) return;
+        }
 
         // Persist the pane-by-pane repair progress
         reactor.getCase().onGlassPlaced();

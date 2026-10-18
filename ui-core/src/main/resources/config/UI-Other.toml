@@ -1163,6 +1163,9 @@ reactor_info_fuel = "<dark_gray>┃ <gray>Топливо: <aqua>алмазные
 # Placeholders: %max%
 # Default: <red>⚠ <white>Кейс слишком горячий для ремонта (выше %max% C*) — панель не удержится!
 case_repair_too_hot = "<red>⚠ <white>Кейс слишком горячий для ремонта (выше %max% C*) — панель не удержится!"
+# Placeholders: %cost%
+# Default: <red>⚠ <white>Для ремонта нужен железный слиток в левой руке (×%cost%) — панель не удержится!
+case_repair_no_iron = "<red>⚠ <white>Для ремонта нужен железный слиток в левой руке (×%cost%) — панель не удержится!"
 
 # generator section — the fuel generator (blast furnace with PDC).
 [messages.structures.generator]
@@ -1591,6 +1594,9 @@ reactor_info_fuel = "<dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ l
 # Placeholders: %max%
 # Default: <red>⚠ <white>Case too hot to repair (above %max% C*) — the pane will not hold!
 case_repair_too_hot = "<red>⚠ <white>Case too hot to repair (above %max% C*) — the pane will not hold!"
+# Placeholders: %cost%
+# Default: <red>⚠ <white>Repair requires an iron ingot in the off-hand (×%cost%) — the pane will not hold!
+case_repair_no_iron = "<red>⚠ <white>Repair requires an iron ingot in the off-hand (×%cost%) — the pane will not hold!"
 
 # generator section — the fuel generator (blast furnace with PDC).
 [messages_en.structures.generator]

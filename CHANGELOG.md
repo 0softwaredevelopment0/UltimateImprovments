@@ -75,6 +75,19 @@ in this file.
   hand too; `PlayerInteractEvent` fires per hand).
 
 ### Added
+- **DFC case repair costs an iron ingot** — a pane placed into a cold case
+  is only counted when the player holds an iron ingot in the OFF hand
+  (the main hand holds the glass): one ingot per pane is consumed on
+  placement (`reactor.case_repair_iron_cost`, new key, default 1; 0 =
+  free repairs). Without the ingot the pane lands but does NOT count —
+  after 1 second it pops off naturally (datapack loot table drops the
+  glass back), unless the ingot appears in the off hand within the grace
+  window, then it is consumed and the repair counts. The heat gate keeps
+  priority: a hot case reports the heat first and never consumes ingots.
+  The former hot-repair gate is generalized into the repair-failure gate
+  (`ReactorCase.onPaneRepairFailed`, verdict re-checks heat first, then
+  the ingot); only player placements are gated — event-blind placements
+  (plugins/commands) remain plain audit-tracked repairs.
 - **DFC case hot-repair gate** — a glass pane placed into the case while it
   is hotter than `reactor.case_repair_max_temp` (new key, default 1000 C*)
   no longer counts as a repair: the cell is ignored by the damage tracker

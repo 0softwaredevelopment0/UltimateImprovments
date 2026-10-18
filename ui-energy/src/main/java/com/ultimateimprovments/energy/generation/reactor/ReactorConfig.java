@@ -127,6 +127,7 @@ public class ReactorConfig {
     private double caseIntDecayPress;      // integrity decays above this MPa
     private double caseIntDecayRate;       // %/sec decay while over thresholds
     private int caseRepairMaxTemp;         // pane repairs refused above this case temp (1000)
+    private int caseRepairIronCost;        // iron ingots (off-hand) one pane repair costs (1)
 
     // =========================
     // LASERS (roof controls)
@@ -220,6 +221,7 @@ public class ReactorConfig {
         caseIntDecayPress = cfg.getDouble("reactor.case_int_decay_press", 12.0);
         caseIntDecayRate = cfg.getDouble("reactor.case_int_decay_rate", 1.0);
         caseRepairMaxTemp = cfg.getInt("reactor.case_repair_max_temp", 1000);
+        caseRepairIronCost = Math.max(0, cfg.getInt("reactor.case_repair_iron_cost", 1));
     }
 
     // =========================
@@ -272,4 +274,5 @@ public class ReactorConfig {
     public double getCaseIntDecayPress() { return caseIntDecayPress; }
     public double getCaseIntDecayRate() { return caseIntDecayRate; }
     public int getCaseRepairMaxTemp() { return caseRepairMaxTemp; }
+    public int getCaseRepairIronCost() { return caseRepairIronCost; }
 }
