@@ -5,6 +5,22 @@ in this file.
 
 ## [Unreleased]
 
+### Added
+- **DFC startup energy buffer** — the reactor now has its own internal
+  energy buffer (`reactor.startup_energy`, default 5000 ⚡) charged through
+  the case junctions: every `WAXED_CHISELED_COPPER` case cell connected to
+  the cable network (the block itself registers as a network junction when
+  placed; verified against `darkfusionreactor.nbt` — the whole case wall is
+  waxed chiseled copper, the copper bars are not) pulls energy into the
+  buffer at 250 ⚡/s via the unified `EnergyFlow`. A startup (Trigger Action
+  lamp pulse on a fresh core) requires a FULL buffer: otherwise the startup
+  is blocked with a "Not enough energy to start the reactor! Buffer:
+  %have%/%need% ⚡" broadcast (new `startup_no_energy` message key). A
+  successful startup consumes the whole buffer. The buffer persists in the
+  new `energy_buffer` `reactors` DB column (auto-migration; flushed every
+  5s while charging, immediately on startup/disassemble, restored on load).
+  One pulse per second drives the charging (ReactorTask `ENERGY_BUFFER_INTERVAL`).
+
 ### Changed
 - **Energy network rework (ui-energy)** — the wires/electricity system is
   normalized around a single traversal service:

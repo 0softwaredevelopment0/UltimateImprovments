@@ -39,7 +39,7 @@ public class ReactorPersistence {
                  core_emergency_stopped,
                  meltdown_phase, meltdown_ticks, restab_chance,
                  stall_phase, stall_ticks, stall_trigger, core_offline,
-                 startup_phase, startup_ticks, temp_min)
+                 startup_phase, startup_ticks, temp_min, energy_buffer)
                  VALUES (?, ?, ?, ?, ?,
                          ?, ?, ?,
                          ?,
@@ -52,7 +52,7 @@ public class ReactorPersistence {
                          ?,
                          ?, ?, ?,
                          ?, ?, ?, ?,
-                         ?, ?, ?)
+                         ?, ?, ?, ?)
             """)) {
 
             // The legacy core_case_temp/press/int columns (old inner-case stats)
@@ -97,6 +97,7 @@ public class ReactorPersistence {
             ps.setString(37, state.getStartupPhase());
             ps.setInt(38, state.getStartupTicks());
             ps.setInt(39, state.getTempMin());
+            ps.setInt(40, state.getEnergyBuffer());
 
             ps.executeUpdate();
 
@@ -185,6 +186,9 @@ public class ReactorPersistence {
 
                 try { state.setEnergyGenerated(rs.getLong("energy_generated")); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load energy_generated: " + e.getMessage());
+                }
+                try { state.setEnergyBuffer(rs.getInt("energy_buffer")); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load energy_buffer: " + e.getMessage());
                 }
                 try { state.setLaserStarted(rs.getInt("laser_started") == 1); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load laser_started: " + e.getMessage());

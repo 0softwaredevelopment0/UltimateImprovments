@@ -41,6 +41,9 @@ public class ReactorConfig {
     private double pressFollowRate; // how fast shield pressure follows its temperature target
     private double spinFollowRate;  // how fast core spin follows its temperature target
     private int energyRate;         // energy per tick at working temperature
+    // Startup energy: the internal buffer capacity charged through the case
+    // junctions; a startup requires a full buffer and consumes it (5000)
+    private int startupEnergy;
     private int meltdownExplosionRadius;
     private double shieldBuildRate;       // shield integrity build-up %/sec (Creating state)
     private double shieldStressHeatPer;   // C* per 1% temperature stress
@@ -144,6 +147,7 @@ public class ReactorConfig {
         pressFollowRate = cfg.getDouble("reactor.press_follow_rate", 0.02);
         spinFollowRate = cfg.getDouble("reactor.spin_follow_rate", 0.01);
         energyRate = cfg.getInt("reactor.energy_rate", 100);
+        startupEnergy = cfg.getInt("reactor.startup_energy", 5000);
         meltdownExplosionRadius = cfg.getInt("reactor.meltdown_explosion_radius", 128);
         laserRampRate = cfg.getDouble("reactor.laser_ramp_rate", 5.0);
         powerLaserHeatRate = cfg.getInt("reactor.power_laser_heat_rate", 5000);
@@ -204,6 +208,7 @@ public class ReactorConfig {
     public double getPressFollowRate() { return pressFollowRate; }
     public double getSpinFollowRate() { return spinFollowRate; }
     public int getEnergyRate() { return energyRate; }
+    public int getStartupEnergy() { return startupEnergy; }
     public int getMeltdownExplosionRadius() { return meltdownExplosionRadius; }
     public double getLaserRampRate() { return laserRampRate; }
     public int getPowerLaserHeatRate() { return powerLaserHeatRate; }

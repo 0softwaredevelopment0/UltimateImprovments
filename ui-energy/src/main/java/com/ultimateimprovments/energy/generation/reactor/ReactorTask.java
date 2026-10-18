@@ -19,6 +19,7 @@ public class ReactorTask extends BukkitRunnable {
     private static final int SOUND_INTERVAL = 10;           // 0.5s
     private static final int STRUCTURE_CHECK_INTERVAL = 40; // 2s
     private static final int FUEL_INTERVAL = 20;            // 1s
+    private static final int ENERGY_BUFFER_INTERVAL = 20;   // 1s (junction charging)
 
     // =========================
     // TICK COUNTERS
@@ -91,6 +92,13 @@ public class ReactorTask extends BukkitRunnable {
             // =========================
             if (tick % FUEL_INTERVAL == 0) {
                 reactor.tickFuel();
+            }
+
+            // =========================
+            // ENERGY BUFFER TICK (every 1s — junction charging)
+            // =========================
+            if (tick % ENERGY_BUFFER_INTERVAL == 0) {
+                reactor.tickEnergyBuffer();
             }
         }
     }
