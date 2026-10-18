@@ -157,6 +157,12 @@ case_breach_speed_penalty = 1.0
 # fully repaired again.
 # Default: 10
 case_maintain_window_sec = 10
+# Cooldown after a critical pane is SAVED by maintenance: no new pane is
+# marked critical for this many seconds. Decay waves arriving during the
+# cooldown wait it out (no marks and no breaks until it expires).
+# 0 = no cooldown.
+# Default: 10
+case_maintain_cooldown_sec = 10
 # Radius in blocks.
 # Default: 10
 meltdown_explosion_radius = 10

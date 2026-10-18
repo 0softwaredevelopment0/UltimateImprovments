@@ -131,6 +131,7 @@ public class ReactorConfig {
     private double caseBreachLeakPerPct;   // fusion particles/sec leaked per 1% broken glass (10)
     private double caseBreachSpeedPenalty; // fusion speed points lost per 1% broken when dry (1)
     private int caseMaintainWindowSec;     // seconds to save a critical pane via maintenance (10)
+    private int caseMaintainCooldownSec;   // cooldown after a saved pane before a new maintenance window (10)
 
     // =========================
     // LASERS (roof controls)
@@ -228,6 +229,7 @@ public class ReactorConfig {
         caseBreachLeakPerPct = Math.max(0, cfg.getDouble("reactor.case_breach_leak_per_pct", 10.0));
         caseBreachSpeedPenalty = Math.max(0, cfg.getDouble("reactor.case_breach_speed_penalty", 1.0));
         caseMaintainWindowSec = Math.max(1, cfg.getInt("reactor.case_maintain_window_sec", 10));
+        caseMaintainCooldownSec = Math.max(0, cfg.getInt("reactor.case_maintain_cooldown_sec", 10));
     }
 
     // =========================
@@ -284,4 +286,5 @@ public class ReactorConfig {
     public double getCaseBreachLeakPerPct() { return caseBreachLeakPerPct; }
     public double getCaseBreachSpeedPenalty() { return caseBreachSpeedPenalty; }
     public int getCaseMaintainWindowSec() { return caseMaintainWindowSec; }
+    public int getCaseMaintainCooldownSec() { return caseMaintainCooldownSec; }
 }
