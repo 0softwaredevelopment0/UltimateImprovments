@@ -145,3 +145,21 @@ temp_limit_biome_multiplier = 10.0
 # Biome temperature used when the biome has no temperature value.
 # Default: 1.0
 temp_limit_biome_fallback = 1.0
+# Natural (passive) core cooling rate, C* per second, before the
+# build-site humidity multiplier (rolled at assembly: multiplier =
+# biome humidity + natural_cool_multiplier_offset, clamped by
+# natural_cool_multiplier_min/max).
+# Default: 20.0
+natural_cool_rate = 20.0
+# Added to the biome humidity multiplier rolled at assembly.
+# Default: 0.0
+natural_cool_multiplier_offset = 0.0
+# Humidity used when the biome has no humidity value.
+# Default: 0.5
+natural_cool_biome_fallback = 0.5
+# Clamp (floor) for the rolled humidity multiplier.
+# Default: 0.0
+natural_cool_multiplier_min = 0.0
+# Clamp (ceiling) for the rolled humidity multiplier.
+# Default: 1.0
+natural_cool_multiplier_max = 1.0

@@ -228,7 +228,10 @@ public class DatabaseInit {
                 {"startup_ticks", "INTEGER DEFAULT 0"},
                 // Dynamic lower temperature limit rolled from the build-site
                 // biome; -273 = legacy reactors built before the mechanic
-                {"temp_min", "INTEGER DEFAULT -273"}
+                {"temp_min", "INTEGER DEFAULT -273"},
+                // Natural cooling multiplier rolled from the build-site biome
+                // humidity; -1 = legacy reactors built before the mechanic
+                {"natural_cool_mult", "REAL DEFAULT -1"}
             };
             for (String[] col : reactorCols) {
                 try {

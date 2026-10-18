@@ -23,6 +23,10 @@ public class ReactorState {
     // at assembly (biome temperature × multiplier + offset, rounded). -273 =
     // legacy reactors built before the mechanic.
     private int tempMin = -273;
+    // Natural cooling multiplier rolled from the build-site biome humidity
+    // at assembly (scales reactor.natural_cool_rate). -1 = legacy reactors
+    // built before the mechanic (plain rate).
+    private double naturalCoolMult = -1.0;
 
     // Fusion
     private double fusionParticles;
@@ -106,6 +110,7 @@ public class ReactorState {
         selfdestructCancelled = o.selfdestructCancelled;
         coreEmergencyStopped = o.coreEmergencyStopped;
         tempMin = o.tempMin;
+        naturalCoolMult = o.naturalCoolMult;
         meltdownPhase = o.meltdownPhase;
         meltdownTicks = o.meltdownTicks;
         restabChance = o.restabChance;
@@ -149,6 +154,8 @@ public class ReactorState {
     public void setCoreTemp(int val) { coreTemp = val; }
     public int getTempMin() { return tempMin; }
     public void setTempMin(int val) { tempMin = val; }
+    public double getNaturalCoolMult() { return naturalCoolMult; }
+    public void setNaturalCoolMult(double val) { naturalCoolMult = val; }
     public void addCoreTemp(int val) { coreTemp += val; }
     public void subtractCoreTemp(int val) { coreTemp -= val; }
 

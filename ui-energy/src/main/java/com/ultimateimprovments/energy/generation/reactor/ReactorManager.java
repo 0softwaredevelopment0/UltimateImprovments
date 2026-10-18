@@ -1194,6 +1194,18 @@ public class ReactorManager {
      * reactors keep −273 until rebuilt).
      */
     private int tempMin = TEMP_MIN;
+    /**
+     * Natural cooling multiplier — rolled from the build-site biome humidity
+     * at assembly (a disassemble + rebuild rolls a fresh one). Scales the
+     * {@code reactor.natural_cool_rate} passive cooling: rate × this per
+     * second. The rate itself stays live-tunable in the config; only the
+     * multiplier is frozen at build time. LEGACY sentinel (−1) = reactors
+     * built before the mechanic keep the plain rate.
+     */
+    public static final double NATURAL_COOL_LEGACY = -1.0;
+    private double naturalCoolMult = NATURAL_COOL_LEGACY;
+    /** Fractional C* remainder for the smooth natural cooling decay. */
+    private double naturalCoolRemainder;
     private double shieldPress;     // Shield pressure, MPa — follows (T/10M) × 10.01
     private double spin;            // Core spin, RPS — follows 95 000 × (T/10M)
 
@@ -1368,6 +1380,7 @@ public class ReactorManager {
         s.setReactorLocation(r.reactorLocation);
         s.setCoreTemp(r.coreTemp);
         s.setTempMin(r.tempMin);
+        s.setNaturalCoolMult(r.naturalCoolMult);
         s.setShieldPress(r.shieldPress);
         s.setSpin(r.spin);
         s.setFusionParticles(r.fusion.getParticles());
@@ -1436,6 +1449,7 @@ public class ReactorManager {
         reactorId = state.getReactorId();
         coreTemp = state.getCoreTemp();
         tempMin = state.getTempMin();
+        naturalCoolMult = state.getNaturalCoolMult();
         shieldPress = state.getShieldPress();
         spin = state.getSpin();
         fusion.setParticles(state.getFusionParticles());
@@ -1688,6 +1702,10 @@ public class ReactorManager {
             this.tempMin = rollTempLimit(normalized);
             if (coreTemp < tempMin) coreTemp = tempMin;
             if (caseSys.getTemp() < tempMin) caseSys.setTemp(tempMin);
+            // Roll the natural cooling multiplier from the build-site biome
+            // humidity — a disassemble + rebuild rolls a fresh one.
+            this.naturalCoolMult = rollNaturalCoolMultiplier(normalized);
+            this.naturalCoolRemainder = 0;
             saveToDb();
         } else {
             if (reactorLocation != null) {
@@ -1734,6 +1752,33 @@ public class ReactorManager {
         double raw = biomeTemp * c.getTempLimitBiomeMultiplier() + c.getTempLimitOffset();
         return (int) Math.round(raw);
     }
+
+    /**
+     * Rolls the natural cooling multiplier from the build-site biome:
+     * biome humidity + reactor.natural_cool_multiplier_offset, clamped to
+     * [reactor.natural_cool_multiplier_min .. reactor.natural_cool_multiplier_max].
+     * The value is read live from the block's climate (Block#getHumidity),
+     * so datapack/custom biomes work; a biome without a humidity value falls
+     * back to reactor.natural_cool_biome_fallback. The rate itself
+     * (reactor.natural_cool_rate, C* per second) stays live-tunable — this
+     * multiplier only scales it.
+     */
+    private double rollNaturalCoolMultiplier(Location base) {
+        ReactorConfig c = cfg != null ? cfg : ReactorConfig.getInstance();
+        double humidity;
+        try {
+            double h = base.getBlock().getHumidity();
+            humidity = Double.isFinite(h) ? h : c.getNaturalCoolBiomeFallback();
+        } catch (Exception e) {
+            humidity = c.getNaturalCoolBiomeFallback();
+        }
+        double mult = humidity + c.getNaturalCoolMultiplierOffset();
+        return Math.max(c.getNaturalCoolMultiplierMin(),
+                Math.min(c.getNaturalCoolMultiplierMax(), mult));
+    }
+
+    /** The rolled natural cooling multiplier (see {@link #NATURAL_COOL_LEGACY}). */
+    public double getNaturalCoolMult() { return naturalCoolMult; }
 
     /** The reactor's dynamic lower temperature limit (C*), shared by every lower-limit check. */
     public int getTempMin() { return tempMin; }
@@ -1932,12 +1977,20 @@ public class ReactorManager {
         }
 
         // =========================
-        // NATURAL TEMP DECAY — passive cooling 1 C*/tick (always, even with
-        // a damaged structure: the core coasts on its own decay), down to
-        // the reactor's dynamic lower temperature limit
+        // NATURAL TEMP DECAY — passive cooling (reactor.natural_cool_rate
+        // C*/sec scaled by the build-site humidity multiplier rolled at
+        // assembly; the legacy plain rate was 1 C*/tick = 20 C*/sec), always
+        // on, even with a damaged structure: the core coasts on its own
+        // decay, down to the reactor's dynamic lower temperature limit
         // =========================
         if (coreTemp > tempMin) {
-            coreTemp = Math.max(tempMin, coreTemp - 1);
+            double mult = naturalCoolMult < 0 ? 1.0 : naturalCoolMult;
+            double v = cfg.getNaturalCoolRate() * mult / 20.0 + naturalCoolRemainder;
+            int whole = (int) v;
+            naturalCoolRemainder = v - whole;
+            if (whole > 0) {
+                coreTemp = Math.max(tempMin, coreTemp - whole);
+            }
         }
 
         // =========================
@@ -2178,6 +2231,8 @@ public class ReactorManager {
     private void resetReactorState() {
         coreTemp = 0;
         tempMin = TEMP_MIN;
+        naturalCoolMult = NATURAL_COOL_LEGACY;
+        naturalCoolRemainder = 0;
         shieldPress = 0;
         spin = 0;
         lasers.reset();
@@ -2300,6 +2355,8 @@ public class ReactorManager {
     private void resetAll() {
         coreTemp = 0;
         tempMin = TEMP_MIN;
+        naturalCoolMult = NATURAL_COOL_LEGACY;
+        naturalCoolRemainder = 0;
         shieldPress = 0;
         spin = 0;
         lasers.reset();
