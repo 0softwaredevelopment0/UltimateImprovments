@@ -5,6 +5,16 @@ in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Multimeter was silent on every energy block** — `MultimeterListener`
+  (reading cables, junctions, batteries, generators and the accelerator
+  engine by right-clicking them with the multimeter) existed but was never
+  registered by any plugin: dead code, the item did nothing outside the
+  reactor sign check (which has its own hand check and worked). Registered
+  in SimpleModules next to the other general listeners, and the item check
+  is now hand-aware (`e.getItem()` — the multimeter works from the off
+  hand too; `PlayerInteractEvent` fires per hand).
+
 ### Added
 - **DFC startup energy buffer** — the reactor now has its own internal
   energy buffer (`reactor.startup_energy`, default 5000 ⚡) charged through
