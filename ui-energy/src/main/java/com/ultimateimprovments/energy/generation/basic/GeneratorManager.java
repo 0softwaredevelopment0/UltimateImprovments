@@ -6,6 +6,8 @@ import org.bukkit.block.TileState;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
+import com.ultimateimprovments.energy.transfer.cable.NodeType;
+import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -114,10 +116,9 @@ public class GeneratorManager implements Listener {
                 org.bukkit.block.BlockState state = furnaceLoc.getBlock().getState();
                 if (!(state instanceof TileState tileState)) continue;
                 if (!tileState.getPersistentDataContainer().has(Keys.GENERATOR, PersistentDataType.BYTE)) continue;
-                if (hasNearbyCable(furnaceLoc)) {
-                    activeGenerators.put(furnaceLoc, true);
-                    count++;
-                }
+                activeGenerators.put(furnaceLoc, true);
+                ensureGeneratorNode(furnaceLoc);
+                count++;
                 break;
             }
         }
@@ -146,13 +147,13 @@ public class GeneratorManager implements Listener {
         if (loc == null) return;
 
         if (activeGenerators.containsKey(loc)) return;
-        if (!hasNearbyCable(loc)) {
-            ConsoleLogger.info("[Generator] Placed at " + loc + " but no cable nearby — not activating.");
-            return;
-        }
 
+        // No cable requirement here: registration is harmless, generation
+        // itself skips generators without a connected node (the task checks
+        // it every run). A cable placed later connects the node automatically.
         activeGenerators.put(loc, true);
         StructureMarker.place(loc, "generator", UUID.randomUUID());
+        ensureGeneratorNode(loc);
 
         World world = loc.getWorld();
         if (world != null) {
@@ -234,6 +235,7 @@ public class GeneratorManager implements Listener {
 
         activeGenerators.put(furnaceLoc, true);
         StructureMarker.place(furnaceLoc, "generator", UUID.randomUUID());
+        ensureGeneratorNode(furnaceLoc);
 
         World world = furnaceLoc.getWorld();
         if (world != null) {
@@ -266,6 +268,30 @@ public class GeneratorManager implements Listener {
             }
         }
         return false;
+    }
+
+    // =========================
+    // GENERATOR NODE — the furnace itself is a GENERATOR-typed network node
+    // holding a small leftover buffer. EnergyFlow.push charges batteries
+    // first; whatever no battery takes lands here, and any consumer pulling
+    // through the network (reactor junctions, accelerator, ...) drains it —
+    // direct generator → consumer flow works without a battery. The node is
+    // RAM-only (rebuilt lazily by the task after a restart).
+    // =========================
+    public static void ensureGeneratorNode(Location furnaceLoc) {
+        Location norm = LocationUtil.normalize(furnaceLoc);
+        if (norm == null) return;
+        CableNetwork.ensureNode(norm, NodeType.GENERATOR);
+        CableNode node = CableNetwork.getNode(norm);
+        if (node != null) {
+            node.setMaxEnergy(bufferCapacity());
+        }
+    }
+
+    /** Leftover buffer capacity of one generator (config: energy.generator.buffer_capacity). */
+    public static int bufferCapacity() {
+        return Math.max(1, Main.getInstance().getConfig()
+                .getInt("energy.generator.buffer_capacity", 2000));
     }
 
     // =========================

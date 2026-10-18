@@ -6,6 +6,27 @@ in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Energy never flowed in a generator → wires → consumer network without
+  a battery** — cables are pure routers, the generator pushed into
+  batteries only and consumers (the reactor's case junctions included)
+  pulled from batteries only: with no battery in the network nothing
+  worked end to end (the generator "produced nothing", the reactor
+  "did not accept energy"). The generator's furnace is now a
+  GENERATOR-typed network node with a small leftover buffer
+  (`energy.generator.buffer_capacity`, default 2000): `push` charges
+  batteries first, the rest lands in the buffer, and any consumer pulling
+  through the network drains it — a direct generator → wires → reactor
+  setup works without a battery. The node is RAM-only and rebuilt lazily;
+  the multimeter/blink show the transfer even when energy lands in the
+  buffer.
+- **Generator placement required a cable in place** — a generator placed
+  before its cable stayed inactive forever (until a restart re-scan).
+  Registration no longer requires a nearby cable: generation itself skips
+  generators without a connected node, and a cable placed later connects
+  the node automatically.
+- **The generator dismantled message was hardcoded Russian** — routed
+  through `StructuresMessages` with an English default
+  (`generator.dismantled`, configurable in both language tabs).
 - **The generator ignored redstone** — it burned fuel and produced energy
   around the clock. Now the generator works ONLY while its blast furnace
   block is powered by redstone: unpowered means no fuel consumption and no

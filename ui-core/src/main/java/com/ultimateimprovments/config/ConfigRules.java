@@ -85,6 +85,7 @@ final class ConfigRules {
             bool("energy.generator.enabled"),
             integer("energy.generator.energy_per_fuel", 0, Integer.MAX_VALUE, "Энергия за тик горения"),
             integer("energy.generator.fuel_burn_ticks", 1, 72000, "Длительность горения топлива"),
+            integer("energy.generator.buffer_capacity", 1, Integer.MAX_VALUE, "Ёмкость буфера генератора (энергия без батарей в сети)"),
             bool("energy.generator.log"),
 
             bool("energy.electric_furnace.enabled"),

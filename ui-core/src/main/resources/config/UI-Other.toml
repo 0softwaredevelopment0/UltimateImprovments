@@ -1193,6 +1193,8 @@ info_hint = "<dark_gray>Положите топливо в печь — энер
 assembled = "<green>✔ Генератор собран!</green>"
 # Default: <dark_gray>Положите топливо в плавильную печь — энергия пойдёт в сеть!</dark_gray>
 assembled_hint = "<dark_gray>Положите топливо в плавильную печь — энергия пойдёт в сеть!</dark_gray>"
+# Default: <yellow>⚡ Генератор демонтирован!</yellow>
+dismantled = "<yellow>⚡ Генератор демонтирован!</yellow>"
 
 # names section.
 [messages.structures.names]
@@ -1562,6 +1564,7 @@ power_off = "<red>✘ Off</red>"
 info_hint = "<dark_gray>Put fuel into the furnace — energy goes to the network.</dark_gray>"
 assembled = "<green>✔ Generator assembled!</green>"
 assembled_hint = "<dark_gray>Put fuel into the blast furnace — energy goes to the network!</dark_gray>"
+dismantled = "<yellow>⚡ Generator dismantled!</yellow>"
 
 # names section.
 [messages_en.structures.names]

@@ -1,8 +1,10 @@
 package com.ultimateimprovments.energy.generation.basic;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
+import com.ultimateimprovments.energy.transfer.cable.NodeType;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 
@@ -148,7 +150,7 @@ public class GeneratorTask extends BukkitRunnable {
                 }
 
                 if (toAdd > 0) {
-                    EnergyFlow.push(nodeLoc, toAdd);
+                    deliverEnergy(furnaceLoc, nodeLoc, toAdd);
                 }
                 energyAccumulator.put(furnaceLoc, acc);
 
@@ -195,7 +197,7 @@ public class GeneratorTask extends BukkitRunnable {
                     int firstAdd = (int) Math.floor(firstEnergy);
                     double rem = firstEnergy - firstAdd;
                     if (firstAdd > 0) {
-                        EnergyFlow.push(nodeLoc, firstAdd);
+                        deliverEnergy(furnaceLoc, nodeLoc, firstAdd);
                     }
                     if (rem > 0) {
                         energyAccumulator.put(furnaceLoc, rem);
@@ -226,10 +228,36 @@ public class GeneratorTask extends BukkitRunnable {
     }
 
     // =========================
-    // Energy delivery is delegated to EnergyFlow.push() — the unified
-    // network traversal. It routes energy to the chargeable batteries,
-    // traverses THROUGH full/mode-blocked batteries (no dead ends) and
-    // marks the cables along the way (blink + multimeter).
+    // ENERGY DELIVERY — batteries first, then the generator's own buffer.
+    // EnergyFlow.push routes energy to the chargeable batteries through the
+    // network (traverses THROUGH full/mode-blocked batteries, marks the
+    // cables along the way). Whatever no battery takes is deposited into
+    // the generator's own GENERATOR-typed node (a small leftover buffer):
+    // any consumer pulling through the network — the reactor's case
+    // junctions, the accelerator, ... — drains it, so a direct
+    // generator → wires → consumer setup works WITHOUT a battery.
     // =========================
+    private void deliverEnergy(Location furnaceLoc, Location cableLoc, int amount) {
+        int accepted = EnergyFlow.push(cableLoc, amount);
+        int leftover = amount - accepted;
+        if (leftover <= 0) return;
+
+        // The node is RAM-only — recreate it lazily (idempotent, a map
+        // lookup when it already exists).
+        GeneratorManager.ensureGeneratorNode(furnaceLoc);
+        CableNode genNode = CableNetwork.getNode(furnaceLoc);
+        if (genNode == null || genNode.getType() != NodeType.GENERATOR) return;
+
+        genNode.addEnergy(leftover); // clamped to the buffer capacity
+
+        // Activity trail: the energy DID move (into the buffer) — show it
+        // on the multimeter and the blink even when no battery took it.
+        genNode.addTransferred(leftover);
+        CableNode cable = CableNetwork.getNode(cableLoc);
+        if (cable != null) {
+            CableNetwork.markFlowingKey(cableLoc.getWorld().getUID().toString(), cable.getKey());
+            cable.addTransferred(leftover);
+        }
+    }
 
 }
