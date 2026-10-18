@@ -85,6 +85,20 @@ in this file.
   hand too; `PlayerInteractEvent` fires per hand).
 
 ### Added
+- **DFC case passive cooling** — the case no longer traps heat forever: it
+  sheds `case_cool_rate` C*/sec (new key in UI-MBS.toml `[reactor]`, default
+  3.0) scaled by the build-site humidity multiplier — the same roll as the
+  core's natural cooling (legacy reactors multiply by 1.0; plains 0.5 →
+  1.5 C*/sec, jungle 0.9 → 2.7). The cooling runs even with the reactor
+  off: a hot case now coasts down to the lower temperature limit instead of
+  freezing above the decay threshold until the next fusion run. The base
+  rate is auto-clamped in the config loader so that even at the max
+  humidity multiplier the cooling stays below the working-point (100%)
+  fusion heat (`case_heat_rate` × ⅔): a running reactor at ≥100% speed
+  always nets heating and the decay/maintenance loop stays reachable
+  (breakeven with the defaults: fusion below ~30% speed loses to max-
+  humidity cooling). Breach venting is unchanged — broken panes still vent
+  far faster than passive cooling.
 - **DFC post-maintenance cooldown** — saving a critical pane now starts a
   cooldown before a new pane can be marked critical:
   `case_maintain_cooldown_sec` (new key in UI-MBS.toml `[reactor]`, default

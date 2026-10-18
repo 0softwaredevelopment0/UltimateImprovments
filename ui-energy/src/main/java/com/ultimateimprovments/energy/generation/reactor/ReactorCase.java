@@ -22,7 +22,10 @@ import java.util.Random;
  * <ul>
  *   <li><b>Temperature (T)</b>, C*: lower limit..10 000 (the reactor's dynamic
  *       lower temperature limit, −273 C* legacy). Rises only while fusion is
- *       running (+15 C* per sec at 150% speed, scaled by the speed).</li>
+ *       running (+15 C* per sec at 150% speed, scaled by the speed); passively
+ *       cools at case_cool_rate C* per second scaled by the build-site humidity
+ *       multiplier (the core's roll) — clamped below the working-point heat,
+ *       so a reactor at ≥100% always nets heating.</li>
  *   <li><b>Pressure (P)</b>, MPa: 0..15, follows the case temperature the same
  *       way the shield pressure follows the core temperature.</li>
  *   <li><b>Integrity (I)</b>, %: <b>the live glass count</b> — every one of the
@@ -198,6 +201,25 @@ public class ReactorCase {
     // =========================
     public void tick(Location base) {
         ReactorConfig cfg = ReactorConfig.getInstance();
+
+        // =========================
+        // PASSIVE COOLING — the case sheds heat to the environment exactly
+        // like the core: case_cool_rate C*/sec scaled by the build-site
+        // humidity multiplier (the same roll as the core's natural cooling;
+        // legacy reactors multiply by 1). Config-clamped so even at the max
+        // multiplier it stays below the working-point (100%) fusion heat —
+        // a running reactor at >=100% always nets heating. Floor = the
+        // reactor's dynamic lower temperature limit.
+        // =========================
+        if (temp > reactor.getTempMin()) {
+            double mult = reactor.getNaturalCoolMult() < 0 ? 1.0 : reactor.getNaturalCoolMult();
+            double v = cfg.getCaseCoolRate() * mult / 20.0 + caseCoolRemainder;
+            int whole = (int) v;
+            caseCoolRemainder = v - whole;
+            if (whole > 0) {
+                temp = Math.max(reactor.getTempMin(), temp - whole);
+            }
+        }
 
         // =========================
         // TEMPERATURE — rises only from fusion (speed-scaled). A breached
@@ -695,6 +717,7 @@ public class ReactorCase {
         ventTempRemainder = 0;
         caseTempRemainder = 0;
         caseIntRemainder = 0;
+        caseCoolRemainder = 0;
         failingPanes.clear(); // pending verdicts no-op (the ignore marks die with resetAudit)
         critPanes.clear();
         escalationMode = false;
@@ -735,4 +758,5 @@ public class ReactorCase {
 
     private double caseTempRemainder;
     private double caseIntRemainder;
+    private double caseCoolRemainder;
 }

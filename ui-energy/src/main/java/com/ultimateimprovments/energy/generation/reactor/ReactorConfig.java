@@ -120,6 +120,7 @@ public class ReactorConfig {
 
     // Case system — outer glass protection (T/pressure/integrity)
     private int caseHeatRate;              // C*/sec at 150% fusion speed (15)
+    private double caseCoolRate;           // passive cooling C*/sec before the humidity multiplier (3.0)
     private int caseTempMax;               // glass melts at this temp (10 000)
     private double casePressMax;           // glass bursts at this MPa (15)
     private double casePressFollowRate;    // how fast pressure follows the temp (0..1/tick)
@@ -218,6 +219,18 @@ public class ReactorConfig {
         fusionAbsorbRate = cfg.getDouble("reactor.fusion_absorb_rate", 21.0);
         fusionDebrisPer = cfg.getInt("reactor.fusion_debris_per", 4000);
         caseHeatRate = cfg.getInt("reactor.case_heat_rate", 15);
+        // Passive case cooling, scaled by the build-site humidity multiplier
+        // (the same roll as the core's natural cooling). Invariant: even at
+        // the MAX multiplier it must stay below the working-point (100%)
+        // fusion heat (case_heat_rate × 100/150) so a running reactor always
+        // nets heating and the decay/maintenance loop stays reachable —
+        // clamp the base rate to 90% of that heat, divided by the max
+        // multiplier (with the defaults: 15 × ⅔ × 0.9 = 9.0).
+        caseCoolRate = Math.max(0, cfg.getDouble("reactor.case_cool_rate", 3.0));
+        double caseCoolCap = naturalCoolMultiplierMax > 0
+                ? caseHeatRate * (100.0 / 150.0) * 0.9 / naturalCoolMultiplierMax
+                : Double.MAX_VALUE;
+        caseCoolRate = Math.min(caseCoolRate, caseCoolCap);
         caseTempMax = cfg.getInt("reactor.case_temp_max", 10000);
         casePressMax = cfg.getDouble("reactor.case_press_max", 15.0);
         casePressFollowRate = cfg.getDouble("reactor.case_press_follow_rate", 0.02);
@@ -275,6 +288,7 @@ public class ReactorConfig {
     public double getFusionAbsorbRate() { return fusionAbsorbRate; }
     public int getFusionDebrisPer() { return fusionDebrisPer; }
     public int getCaseHeatRate() { return caseHeatRate; }
+    public double getCaseCoolRate() { return caseCoolRate; }
     public int getCaseTempMax() { return caseTempMax; }
     public double getCasePressMax() { return casePressMax; }
     public double getCasePressFollowRate() { return casePressFollowRate; }
