@@ -2229,6 +2229,8 @@ public class ReactorManager {
         energyGenerated = 0;
         energyBuffer = 0;
         energyRemainder = 0;
+        junctionSaveCounter = 0;
+        broadcastCooldowns.clear();
         prevShInt = 100;
         prevCaseInt = 100;
 
@@ -2405,6 +2407,11 @@ public class ReactorManager {
         }
         // The startup consumes the whole buffer ("после стартапа она тратится")
         energyBuffer = 0;
+        // Latch the laser system now that the startup is accepted: pulses
+        // route to the manual-shutdown handler until a shutdown resets it
+        // (the latch used to be set before this method — a rejected pulse
+        // wedged the reactor: every next pulse was silently ignored).
+        lasers.setStarted(true);
 
         // The shield starts forming later, at the "Forming reactor shield..." step
         startupPhase = StartupPhase.WAIT_ANNOUNCE;
@@ -2430,8 +2437,19 @@ public class ReactorManager {
 
     // =========================
     // HELPER: BROADCAST
+    // Messages within a 30-block radius (same audience as the advancement
+    // grants). Identical messages are throttled (3s cooldown) so a lever
+    // flickering or a rapid pulse train can't spam the chat.
     // =========================
+    private static final long BROADCAST_COOLDOWN_MS = 3000;
+    private final Map<String, Long> broadcastCooldowns = new HashMap<>();
+
     private void broadcast(String message) {
+        long now = System.currentTimeMillis();
+        Long last = broadcastCooldowns.get(message);
+        if (last != null && now - last < BROADCAST_COOLDOWN_MS) return;
+        broadcastCooldowns.put(message, now);
+
         String prefix = MessageUtil.PREFIX + "<dark_gray>[<yellow>DFC<dark_gray>] ";
         Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
         for (Player player : online) {

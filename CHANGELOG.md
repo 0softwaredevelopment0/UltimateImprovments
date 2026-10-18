@@ -6,6 +6,20 @@ in this file.
 ## [Unreleased]
 
 ### Fixed
+- **DFC went mute after one rejected startup pulse** — the laser latch
+  (`started`) was set in `ReactorLasers.tick()` BEFORE calling
+  `onTriggerPulse()`, unconditionally. With the startup energy gate, a
+  rejected pulse (empty buffer) left `started = true` with no startup and
+  no shutdown running, so every following Trigger Action pulse was routed
+  to `tryManualShutdownTrigger()` — which silently ignores a non-WORKING
+  shield. The reactor stopped reacting entirely: no gate message, no
+  startup. The latch now moves into `onTriggerPulse()` and is set only
+  when the startup is actually accepted; a rejected pulse keeps
+  `started = false`, so every retry reaches the gate and its message.
+- **DFC broadcasts had no anti-spam** — identical messages are now
+  throttled per reactor with a 3-second cooldown (keyed by the final
+  message text, so a changing value like the buffer charge readout still
+  updates). The cooldown map is cleared on reset.
 - **Multimeter was silent on every energy block** — `MultimeterListener`
   (reading cables, junctions, batteries, generators and the accelerator
   engine by right-clicking them with the multimeter) existed but was never

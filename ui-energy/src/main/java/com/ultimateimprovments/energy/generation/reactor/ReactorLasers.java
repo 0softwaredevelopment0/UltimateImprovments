@@ -94,8 +94,12 @@ public class ReactorLasers {
         // =========================
         boolean triggerPowered = isLampPowered(base, LAMP_TRIGGER);
         if (triggerPowered && !prevTriggerPowered && !started) {
-            started = true;
-            // Context action begins (startup sequence / self-destruct roll)
+            // Context action begins (startup sequence / self-destruct roll).
+            // The `started` latch is NOT set here: onTriggerPulse may REJECT
+            // the pulse (the startup energy gate) — then the next pulse must
+            // reach the startup handler again, not the manual-shutdown one
+            // (which silently ignores a non-WORKING core). The latch is set
+            // by onTriggerPulse when the startup is actually accepted.
             reactor.onTriggerPulse();
         } else if (triggerPowered && !prevTriggerPowered && started) {
             reactor.tryManualShutdownTrigger();
