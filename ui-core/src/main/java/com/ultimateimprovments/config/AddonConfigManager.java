@@ -69,11 +69,23 @@ public final class AddonConfigManager {
                 generateFromBundle(addon, toml);
             }
             loaded.put(addon, loadAddonToml(addon, toml));
+            if (addon.equals(AddonCatalog.CORE)) {
+                // The core file is loaded — its read budget applies to the rest
+                applyTimeoutFromCore();
+            }
         }
 
         ConsoleLogger.info("[Config] Addon configs in " + UltimateDirs.CONFIGS + ": "
                 + files.size() + " file(s)");
         initialized = true;
+    }
+
+    /** Applies {@code config.read_timeout_sec} from the core view (default 5s, clamp 1..300). */
+    private static void applyTimeoutFromCore() {
+        FileConfiguration core = loaded.get(AddonCatalog.CORE);
+        if (core != null) {
+            ConfigReadGuard.setTimeoutSec(core.getInt("config.read_timeout_sec", 5));
+        }
     }
 
     /** Whether {@link #init()} has run (composite config layer is active). */
@@ -85,6 +97,9 @@ public final class AddonConfigManager {
     public static synchronized void reloadAll() {
         for (PerAddonFile f : files) {
             loaded.put(f.addon, loadAddonToml(f.addon, f.toml));
+            if (f.addon.equals(AddonCatalog.CORE)) {
+                applyTimeoutFromCore();
+            }
         }
         ConsoleLogger.info("[Config] Addon configs reloaded (" + files.size() + " file(s))");
     }
@@ -178,34 +193,23 @@ public final class AddonConfigManager {
     // ========================================================================
 
     /**
-     * Loads (or creates) the in-memory view of one addon TOML. When the file is
-     * unreadable its contents are salvaged ({@link TomlCrashSalvage}); if it still
-     * cannot be parsed the file is backed up and regenerated from the bundled
-     * commented TOML template. Comments in the file are preserved on every write
-     * (see {@link CommentedTomlTemplate}).
+     * Loads (or creates) the in-memory view of one addon TOML. When the file
+     * is unreadable (or the read exceeds {@code config.read_timeout_sec}) its
+     * contents are salvaged ({@link TomlCrashSalvage}); if it still cannot be
+     * parsed the file is backed up and regenerated from the bundled commented
+     * TOML template. Comments in the file are preserved on every write (see
+     * {@link CommentedTomlTemplate}).
      */
     private static FileConfiguration loadAddonToml(String addon, File toml) {
         TomlCrashSalvage.salvageFile(toml, m -> ConsoleLogger.warn("[ConfigSalvage/" + addon + "] " + m));
         YamlConfiguration view = new YamlConfiguration();
         if (toml.exists()) {
-            try (InputStream in = new java.io.FileInputStream(toml)) {
-                com.moandjiezana.toml.Toml parsed = new com.moandjiezana.toml.Toml()
-                        .read(new InputStreamReader(in, StandardCharsets.UTF_8));
-                Map<String, Object> map = parsed.toMap();
-                if (map != null) flattenInto(map, "", view);
-            } catch (Exception e) {
-                ConsoleLogger.warn("[Config/" + addon + "] unreadable (" + e.getMessage()
-                        + ") — backing up and regenerating from the commented TOML template");
+            if (!parseIntoView(toml, view)) {
+                ConsoleLogger.warn("[Config/" + addon + "] unreadable — backing up and regenerating from the commented TOML template");
                 backupFile(toml);
                 generateFromBundle(addon, toml);
                 if (toml.exists()) {
-                    try (InputStream in = new java.io.FileInputStream(toml)) {
-                        com.moandjiezana.toml.Toml parsed = new com.moandjiezana.toml.Toml()
-                                .read(new InputStreamReader(in, StandardCharsets.UTF_8));
-                        Map<String, Object> map = parsed.toMap();
-                        if (map != null) flattenInto(map, "", view);
-                    } catch (Exception ignored) {
-                    }
+                    parseIntoView(toml, view);
                 }
             }
         }
@@ -216,6 +220,29 @@ public final class AddonConfigManager {
             writeAddonToml(addon, toml, view);
         }
         return view;
+    }
+
+    /**
+     * Parses one TOML file into the view under the read timeout
+     * ({@code config.read_timeout_sec}). False when the file is broken OR too
+     * slow to read — both recover through the backup + regenerate path.
+     */
+    private static boolean parseIntoView(File toml, YamlConfiguration view) {
+        try {
+            Map<String, Object> map = ConfigReadGuard.read(toml, () -> {
+                try (InputStream in = new java.io.FileInputStream(toml)) {
+                    return new com.moandjiezana.toml.Toml()
+                            .read(new InputStreamReader(in, StandardCharsets.UTF_8)).toMap();
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(e.getMessage(), e);
+                }
+            });
+            if (map != null) flattenInto(map, "", view);
+            return true;
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Config] read failed: " + e.getMessage());
+            return false;
+        }
     }
 
     /** Fills missing keys from the bundled commented TOML template. @return number of added keys. */
