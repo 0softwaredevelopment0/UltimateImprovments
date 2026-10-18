@@ -1543,6 +1543,50 @@ public class ReactorManager {
             lasers.setPower(ReactorLasers.LASER_STAB, lp[2]);
             lasers.setPower(ReactorLasers.LASER_ABSORBER, lp[3]);
         }
+
+        // =========================
+        // CONTROL LATCH REPAIR — the persisted started latch must describe a
+        // live core. A row saved by the old rejected-pulse bug (the latch was
+        // set BEFORE the startup energy gate) carries laser_started=1 with a
+        // non-WORKING shield and no active sequence: every Trigger Action
+        // pulse was routed into the silent manual-shutdown handler forever
+        // and the reactor could never start again. Release the latch — the
+        // next pulse reaches the startup handler (the energy gate re-checks
+        // the buffer as usual).
+        // =========================
+        repairStaleStartedLatch(true);
+    }
+
+    /**
+     * Consistency guard for the laser started latch: it may only stay set
+     * while a live core (WORKING shield) or an owning chain (startup
+     * sequence, stall shutdown, meltdown restabilization, self-destruct
+     * protocol) is active. Any other combination is a corrupt state — the
+     * latch is released so the next Trigger Action pulse reaches the
+     * startup handler instead of being silently swallowed by the
+     * manual-shutdown one.
+     *
+     * @param quiet {@code true} on load: log only, no chat broadcast.
+     */
+    private void repairStaleStartedLatch(boolean quiet) {
+        if (!lasers.isStarted()
+                || shield.getState() == ReactorShield.State.WORKING
+                || startupPhase != StartupPhase.NONE
+                || stallPhase != StallPhase.NONE
+                || isMeltdownActive()
+                || isSelfdestructActive()) {
+            return;
+        }
+        lasers.setStarted(false);
+        if (quiet) {
+            ConsoleLogger.info("[Reactor] " + (reactorId != null ? reactorId : "?")
+                    + " — repaired a stale started latch (legacy rejected-pulse wedge);"
+                    + " the next trigger pulse will start the core");
+        } else {
+            broadcast(StructuresMessages.get("latch_repaired",
+                    "<gray>Core control systems reset — pulse the Trigger Action lamp to start the reactor."));
+        }
+        saveToDb();
     }
 
     public static void deleteFromDb(String reactorId) {
@@ -1720,6 +1764,15 @@ public class ReactorManager {
 
         Location base = reactorLocation;
         int prevTemp = coreTemp;
+
+        // =========================
+        // CONTROL LATCH SELF-HEAL — belt and braces for the load repair: a
+        // crash window between the latch and its save could still persist a
+        // started latch without a live core. Repair it live (one broadcast,
+        // throttled by the common 3s cooldown) so the operator sees the
+        // reactor respond to the next pulse.
+        // =========================
+        repairStaleStartedLatch(false);
 
         // West tower bulb = heater, east tower bulb = cooler (DFC 10×11×9 geometry)
         // =========================
