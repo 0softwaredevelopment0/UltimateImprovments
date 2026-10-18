@@ -75,6 +75,17 @@ in this file.
   hand too; `PlayerInteractEvent` fires per hand).
 
 ### Added
+- **DFC case breach bleeds fusion particles** — a breached case lets the
+  accumulated fusion particles (P) escape through the broken glass:
+  `case_breach_leak_per_pct` particles/sec per 1% of broken case glass
+  (new key, default 10 — a 1% breach leaks 10 P/sec, a fully broken case
+  drains the core in moments), with a small END_ROD burst streaming out
+  of a random breach cell. A core drained dry gets its fusion throttled
+  instead: fusion speed loses `case_breach_speed_penalty` points per 1%
+  broken glass (new key, default 1 — e.g. a 1% breach runs fusion at
+  −1%), floor 0; a fully broken case grinds fusion to a stop. The
+  effective speed replaces the raw one everywhere — case heating, spawn
+  rate and the signs/stats simply show the reduced values.
 - **DFC case repair costs an iron ingot** — a pane placed into a cold case
   is only counted when the player holds an iron ingot in the OFF hand
   (the main hand holds the glass): one ingot per pane is consumed on
@@ -129,6 +140,15 @@ in this file.
   `natural_cool_multiplier_max` (1.0).
 
 ### Changed
+- **DFC case vent: temperature drains 10× slower on a partial breach** —
+  only the pressure should drop hard when a pane pops: while ANY pane
+  remains, the case temperature vents at a tenth of the former rate
+  (0.05 × case_temp_max per second at a 100% breach fraction, down from
+  0.5), so the fusion heat rise now outpaces a small breach's drain — a
+  lightly holed case keeps heating instead of free-cooling to ambient
+  (that free cooling was the exploit). A COMPLETELY broken case has no
+  containment at all: its temperature drains at the former full rate and
+  trends back to the lower limit within a second or two.
 - **Energy network rework (ui-energy)** — the wires/electricity system is
   normalized around a single traversal service:
   - **`EnergyFlow`** (`transfer/cable`) is now the one and only BFS of the
