@@ -6,6 +6,19 @@ in this file.
 ## [Unreleased]
 
 ### Fixed
+- **The generator ignored redstone** — it burned fuel and produced energy
+  around the clock. Now the generator works ONLY while its blast furnace
+  block is powered by redstone: unpowered means no fuel consumption and no
+  energy output, the burn timer freezes (the burning fuel resumes where it
+  stopped when power returns) and the furnace shows the state visually
+  (lit/unlit). No on/off chat messages, by design. The SHIFT+RMB info now
+  shows the power state as a separate line.
+- **Generator messages were hardcoded Russian** — every player-facing
+  string (item name/lore, SHIFT+RMB info, assembly) now goes through
+  `StructuresMessages` with hardcoded ENGLISH defaults and is configurable
+  in the composite config under
+  `messages.structures.generator.*` / `messages_en.structures.generator.*`
+  (UI-Other.toml: RU and EN tabs).
 - **Every reactor sign demanded the multimeter** — `onSignClick` intercepted
   ANY wall sign inside the reactor footprint (including the roof lamp
   labels like "Trigger Action") and demanded a multimeter. Per the design:

@@ -1161,6 +1161,39 @@ reactor_info_shield = "<dark_gray>┃ <gray>Целостность оболоч�
 # Default: <dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бо…
 reactor_info_fuel = "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"
 
+# generator section — the fuel generator (blast furnace with PDC).
+[messages.structures.generator]
+# Default: <!italic><gold>✦ Генератор ✦</gold>
+item_name = "<!italic><gold>✦ Генератор ✦</gold>"
+# Default: <!italic><gray>Сжигает топливо для выработки энергии</gray>
+item_lore_1 = "<!italic><gray>Сжигает топливо для выработки энергии</gray>"
+# Default: <!italic><gray>Поставьте и подключите кабель</gray>
+item_lore_2 = "<!italic><gray>Поставьте и подключите кабель</gray>"
+# Default: <gold>=== Генератор ===</gold>
+info_header = "<gold>=== Генератор ===</gold>"
+# Placeholders: %status%
+# Default: <aqua>Status: </aqua>%status%
+info_status = "<aqua>Status: </aqua>%status%"
+# Default: <green>✔ Работает</green>
+status_working = "<green>✔ Работает</green>"
+# Default: <yellow>⚠ Нет редстоуна</yellow>
+status_no_power = "<yellow>⚠ Нет редстоуна</yellow>"
+# Default: <yellow>⚠ Нет кабеля</yellow>
+status_no_cable = "<yellow>⚠ Нет кабеля</yellow>"
+# Placeholders: %power%
+# Default: <aqua>Power: </aqua>%power%
+info_power = "<aqua>Power: </aqua>%power%"
+# Default: <green>✔ Вкл</green>
+power_on = "<green>✔ Вкл</green>"
+# Default: <red>✘ Выкл</red>
+power_off = "<red>✘ Выкл</red>"
+# Default: <dark_gray>Положите топливо в печь — энергия пойдёт в сеть.</dark_gray>
+info_hint = "<dark_gray>Положите топливо в печь — энергия пойдёт в сеть.</dark_gray>"
+# Default: <green>✔ Генератор собран!</green>
+assembled = "<green>✔ Генератор собран!</green>"
+# Default: <dark_gray>Положите топливо в плавильную печь — энергия пойдёт в сеть!</dark_gray>
+assembled_hint = "<dark_gray>Положите топливо в плавильную печь — энергия пойдёт в сеть!</dark_gray>"
+
 # names section.
 [messages.structures.names]
 # Default: <red>Реактор тёмного синтеза</red>
@@ -1510,6 +1543,25 @@ reactor_startup = "<gold>⚡ <yellow>Core startup complete! Lasers are active."
 reactor_info_shield = "<dark_gray>┃ <gray>Shell integrity: <white>%shield%%"
 # Default: <dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel
 reactor_info_fuel = "<dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel"
+
+# generator section — the fuel generator (blast furnace with PDC).
+[messages_en.structures.generator]
+item_name = "<!italic><gold>✦ Generator ✦</gold>"
+item_lore_1 = "<!italic><gray>Burns fuel to produce energy</gray>"
+item_lore_2 = "<!italic><gray>Place it and connect a cable</gray>"
+info_header = "<gold>=== Generator ===</gold>"
+# Placeholders: %status%
+info_status = "<aqua>Status: </aqua>%status%"
+status_working = "<green>✔ Working</green>"
+status_no_power = "<yellow>⚠ No redstone</yellow>"
+status_no_cable = "<yellow>⚠ No cable</yellow>"
+# Placeholders: %power%
+info_power = "<aqua>Power: </aqua>%power%"
+power_on = "<green>✔ On</green>"
+power_off = "<red>✘ Off</red>"
+info_hint = "<dark_gray>Put fuel into the furnace — energy goes to the network.</dark_gray>"
+assembled = "<green>✔ Generator assembled!</green>"
+assembled_hint = "<dark_gray>Put fuel into the blast furnace — energy goes to the network!</dark_gray>"
 
 # names section.
 [messages_en.structures.names]

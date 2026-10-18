@@ -9,6 +9,7 @@ import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.StructuresMessages;
 
 import java.util.UUID;
 
@@ -76,14 +77,19 @@ public class GeneratorManager implements Listener {
     public static ItemStack createGeneratorItem() {
         ItemStack item = new ItemStack(Materials.BLAST_FURNACE);
         item.editMeta(meta -> {
-            meta.displayName(MessageUtil.parse("<!italic><gold>✦ Генератор ✦</gold>"));
+            meta.displayName(MessageUtil.parse(msg("item_name", "<!italic><gold>✦ Generator ✦</gold>")));
             meta.lore(List.of(
-                    MessageUtil.parse("<!italic><gray>Сжигает топливо для выработки энергии</gray>"),
-                    MessageUtil.parse("<!italic><gray>Поставьте и подключите кабель</gray>")
+                    MessageUtil.parse(msg("item_lore_1", "<!italic><gray>Burns fuel to produce energy</gray>")),
+                    MessageUtil.parse(msg("item_lore_2", "<!italic><gray>Place it and connect a cable</gray>"))
             ));
             meta.getPersistentDataContainer().set(Keys.GENERATOR, PersistentDataType.BYTE, (byte) 1);
         });
         return item;
+    }
+
+    /** Localized {@code structures.generator.*} message with a hardcoded EN fallback. */
+    private static String msg(String key, String def) {
+        return StructuresMessages.get("generator." + key, def);
     }
 
     // =========================
@@ -199,9 +205,21 @@ public class GeneratorManager implements Listener {
         // If it's a generator — show info, don't cancel the event (let GUI open)
         if (activeGenerators.containsKey(loc)) {
             boolean hasCable = hasNearbyCable(loc);
-            player.sendMessage(MessageUtil.parse("<gold>=== Генератор ===</gold>"));
-            player.sendMessage(MessageUtil.parse("<aqua>Status: </aqua>" + (hasCable ? "<green>✔ Работает</green>" : "<yellow>⚠ Нет кабеля</yellow>")));
-            player.sendMessage(MessageUtil.parse("<dark_gray>Положите топливо в печь — энергия пойдёт в сеть.</dark_gray>"));
+            boolean powered = clicked.isBlockPowered() || clicked.isBlockIndirectlyPowered();
+            String status = hasCable
+                    ? (powered ? msg("status_working", "<green>✔ Working</green>")
+                               : msg("status_no_power", "<yellow>⚠ No redstone</yellow>"))
+                    : msg("status_no_cable", "<yellow>⚠ No cable</yellow>");
+            String power = powered
+                    ? msg("power_on", "<green>✔ On</green>")
+                    : msg("power_off", "<red>✘ Off</red>");
+            player.sendMessage(MessageUtil.parse(msg("info_header", "<gold>=== Generator ===</gold>")));
+            player.sendMessage(MessageUtil.parse(msg("info_status", "<aqua>Status: </aqua>%status%")
+                    .replace("%status%", status)));
+            player.sendMessage(MessageUtil.parse(msg("info_power", "<aqua>Power: </aqua>%power%")
+                    .replace("%power%", power)));
+            player.sendMessage(MessageUtil.parse(msg("info_hint",
+                    "<dark_gray>Put fuel into the furnace — energy goes to the network.</dark_gray>")));
             // Don't cancel — let the furnace GUI open
             return;
         }
@@ -226,9 +244,10 @@ public class GeneratorManager implements Listener {
             world.playSound(furnaceLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
         }
 
-        player.sendMessage(MessageUtil.parse("<green>✔ Генератор собран!</green>"
+        player.sendMessage(MessageUtil.parse(msg("assembled", "<green>✔ Generator assembled!</green>")
                 + " <dark_gray>[" + furnaceLoc.getBlockX() + " " + furnaceLoc.getBlockY() + " " + furnaceLoc.getBlockZ() + "]</dark_gray>"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>Положите топливо в плавильную печь — энергия пойдёт в сеть!</dark_gray>"));
+        player.sendMessage(MessageUtil.parse(msg("assembled_hint",
+                "<dark_gray>Put fuel into the blast furnace — energy goes to the network!</dark_gray>")));
 
         ConsoleLogger.info("[Generator] Assembled via frame at " + furnaceLoc + " by " + player.getName());
     }
