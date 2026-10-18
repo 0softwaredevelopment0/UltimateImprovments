@@ -6,6 +6,17 @@ in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Every reactor sign demanded the multimeter** — `onSignClick` intercepted
+  ANY wall sign inside the reactor footprint (including the roof lamp
+  labels like "Trigger Action") and demanded a multimeter. Per the design:
+  at assembly the reactor now registers exactly the 8 control-panel DATA
+  signs (ReactorDisplay offsets, DB table `reactor_panel_signs`, RAM cache)
+  and clears the registration at disassembly (`setReactorLocation(null)`);
+  the registry is rebuilt from the live reactors at startup (stale rows of
+  reactors removed while the server was down are wiped, reactors built
+  before the registry self-heal on load). Only registered signs cancel the
+  click and demand the multimeter now; all other signs keep their normal
+  vanilla behavior.
 - **DFC went mute after one rejected startup pulse** — the laser latch
   (`started`) was set in `ReactorLasers.tick()` BEFORE calling
   `onTriggerPulse()`, unconditionally. With the startup energy gate, a

@@ -1131,6 +1131,11 @@ public class ReactorManager {
         ReactorConfig.init();
         instance.cfg = ReactorConfig.getInstance();
         instance.copyConfig();
+        // The panel-sign registry is fully derived from the live reactors:
+        // stale rows (a reactor disassembled while the server was down) are
+        // wiped and every loaded reactor re-registers its panel signs.
+        panelSignRegistry.clear();
+        ReactorPersistence.clearPanelSigns();
         loadAll();
     }
 
@@ -1228,6 +1233,42 @@ public class ReactorManager {
     private static final double SENIOR_OPS_BAND_MAX = 10.0;
 
     private static final Map<UUID, Map<String, PendingAssembly>> pendingAssemblies = new HashMap<>();
+
+    // =========================
+    // PANEL SIGN REGISTRY — the control-panel DATA signs registered per
+    // reactor at assembly (DB: reactor_panel_signs) and cleared at
+    // disassembly. ONLY these signs demand the multimeter on click; every
+    // other sign of the structure (roof lamp labels, etc.) keeps its normal
+    // behavior. Key: StructureMarker.fullKey (worldUid:x,y,z) → reactorId.
+    // =========================
+    private static final Map<String, String> panelSignRegistry = new ConcurrentHashMap<>();
+
+    /** Whether this position is a registered control-panel data sign. */
+    public static boolean isPanelSign(Location loc) {
+        Location norm = LocationUtil.normalize(loc);
+        if (norm == null || norm.getWorld() == null) return false;
+        return panelSignRegistry.containsKey(StructureMarker.fullKey(norm));
+    }
+
+    /** Registers (idempotent rewrite) this reactor's 8 panel signs — DB + RAM cache. */
+    private void registerPanelSigns(Location base) {
+        if (base == null || base.getWorld() == null || reactorId == null) return;
+        ReactorPersistence.registerPanelSigns(reactorId, base);
+        for (int[] off : ReactorDisplay.PANEL_SIGN_OFFSETS) {
+            Location signLoc = new Location(base.getWorld(),
+                    base.getBlockX() + off[0],
+                    base.getBlockY() + off[1],
+                    base.getBlockZ() + off[2]);
+            panelSignRegistry.put(StructureMarker.fullKey(signLoc), reactorId);
+        }
+    }
+
+    /** Removes one reactor's panel signs — DB + RAM cache. */
+    private static void unregisterPanelSigns(String reactorId) {
+        if (reactorId == null) return;
+        ReactorPersistence.unregisterPanelSigns(reactorId);
+        panelSignRegistry.values().removeIf(reactorId::equals);
+    }
 
     public record PendingAssembly(Location center, org.bukkit.entity.ItemFrame frame, String type) {}
 
@@ -1382,6 +1423,9 @@ public class ReactorManager {
             r.copyConfig();
             reactors.add(r);
             r.applyLoadedState(st);
+            // Self-heal: (re-)register the panel signs for every loaded
+            // reactor — covers reactors built before the registry existed.
+            r.registerPanelSigns(loc);
         }
     }
 
@@ -1590,6 +1634,9 @@ public class ReactorManager {
             // periodic 10s pass would heal them too, but a fresh build
             // should show the white labels right away
             display.updateLampSigns(normalized);
+            // Register the control-panel DATA signs (the only signs that
+            // demand the multimeter); cleared at disassembly
+            registerPanelSigns(normalized);
             // Roll the dynamic lower temperature limit from the build-site
             // biome — a disassemble + rebuild rolls a fresh one. Nothing in
             // this reactor may sit below its new limit (a fresh core starts
@@ -1612,6 +1659,8 @@ public class ReactorManager {
             Location oldLoc = this.reactorLocation;
             if (oldId != null) {
                 deleteFromDb(oldId);
+                // The panel signs stop demanding the multimeter
+                unregisterPanelSigns(oldId);
             }
             this.reactorLocation = null;
             this.valid = false;

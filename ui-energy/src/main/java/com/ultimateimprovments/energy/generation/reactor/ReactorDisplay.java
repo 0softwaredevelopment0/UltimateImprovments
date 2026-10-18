@@ -34,6 +34,16 @@ public class ReactorDisplay {
     private static final int[] SIGN_CORE   = { -5, -7,  0 };
     private static final int[] SIGN_CASE   = { -5, -7,  1 };
 
+    /**
+     * Anchor-relative offsets of the 8 control-panel DATA signs. Only these
+     * signs are registered per reactor (DB: reactor_panel_signs) and demand
+     * the multimeter on click — every other sign of the structure (the roof
+     * lamp labels, etc.) keeps its normal behavior.
+     */
+    public static final int[][] PANEL_SIGN_OFFSETS = {
+            SIGN_POWER, SIGN_SHIELD, SIGN_FUEL, SIGN_FUSION,
+            SIGN_ABSORBER, SIGN_STRESS, SIGN_CORE, SIGN_CASE };
+
     // =========================
     // SMOOTHED DISPLAY VALUES (interpolated toward actual values)
     // =========================

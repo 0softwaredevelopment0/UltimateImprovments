@@ -531,8 +531,14 @@ public class ReactorListener implements Listener {
 
         Player player = e.getPlayer();
 
-        // Multi-reactor: find the reactor whose structure contains this sign
+        // Only the registered control-panel DATA signs demand the multimeter
+        // (registered at assembly, cleared at disassembly). Lamp label signs
+        // and any other signs of the structure keep their normal behavior —
+        // no intercept, no multimeter demand.
         Location signLoc = block.getLocation();
+        if (!ReactorManager.isPanelSign(signLoc)) return;
+
+        // Multi-reactor: find the reactor whose structure contains this sign
         ReactorManager reactor = ReactorManager.getReactorForBlock(signLoc);
         if (reactor == null || !reactor.isValid()) return;
         Location reactorLoc = reactor.getReactorLocation();

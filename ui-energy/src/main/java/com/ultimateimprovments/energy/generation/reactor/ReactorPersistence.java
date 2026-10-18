@@ -285,4 +285,69 @@ public class ReactorPersistence {
         if (state == null || !state.isValid() || state.getReactorLocation() == null) return;
         saveToDb(state);
     }
+
+    // =========================
+    // PANEL SIGNS REGISTRY (reactor_panel_signs)
+    // The 8 control-panel DATA signs of a reactor, registered at assembly
+    // and cleared at disassembly. Only registered signs demand the
+    // multimeter on click (see ReactorListener).
+    // =========================
+
+    /** Registers (idempotent rewrite) the 8 panel signs of a reactor. */
+    public static void registerPanelSigns(String reactorId, Location base) {
+        if (reactorId == null || base == null || base.getWorld() == null) return;
+        try (Connection con = DatabaseManager.getConnection()) {
+            boolean oldAutoCommit = con.getAutoCommit();
+            try {
+                con.setAutoCommit(false);
+                try (PreparedStatement del = con.prepareStatement(
+                        "DELETE FROM reactor_panel_signs WHERE reactor_id = ?")) {
+                    del.setString(1, reactorId);
+                    del.executeUpdate();
+                }
+                try (PreparedStatement ins = con.prepareStatement(
+                        "INSERT OR REPLACE INTO reactor_panel_signs (reactor_id, world, x, y, z) VALUES (?, ?, ?, ?, ?)")) {
+                    for (int[] off : ReactorDisplay.PANEL_SIGN_OFFSETS) {
+                        ins.setString(1, reactorId);
+                        ins.setString(2, base.getWorld().getUID().toString());
+                        ins.setInt(3, base.getBlockX() + off[0]);
+                        ins.setInt(4, base.getBlockY() + off[1]);
+                        ins.setInt(5, base.getBlockZ() + off[2]);
+                        ins.addBatch();
+                    }
+                    ins.executeBatch();
+                }
+                con.commit();
+            } catch (Exception e) {
+                try { con.rollback(); } catch (Exception ignored) {}
+                throw e;
+            } finally {
+                try { con.setAutoCommit(oldAutoCommit); } catch (Exception ignored) {}
+            }
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Reactor] Failed to register panel signs for " + reactorId + ": " + e.getMessage());
+        }
+    }
+
+    /** Removes all panel sign rows of one reactor. */
+    public static void unregisterPanelSigns(String reactorId) {
+        if (reactorId == null) return;
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM reactor_panel_signs WHERE reactor_id = ?")) {
+            ps.setString(1, reactorId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Reactor] Failed to unregister panel signs for " + reactorId + ": " + e.getMessage());
+        }
+    }
+
+    /** Wipes the whole registry (startup: it is rebuilt from the live reactors). */
+    public static void clearPanelSigns() {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM reactor_panel_signs")) {
+            ps.executeUpdate();
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Reactor] Failed to clear panel signs: " + e.getMessage());
+        }
+    }
 }
