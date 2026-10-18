@@ -85,6 +85,14 @@ in this file.
   hand too; `PlayerInteractEvent` fires per hand).
 
 ### Added
+- **DFC post-maintenance cooldown** — saving a critical pane now starts a
+  cooldown before a new pane can be marked critical:
+  `case_maintain_cooldown_sec` (new key in UI-MBS.toml `[reactor]`, default
+  10, 0 = off). Decay waves arriving while the cooldown runs wait it out —
+  held exactly like the one-window-at-a-time rule: no new marks and no
+  breaks until it expires, then the next wave starts a fresh window. The
+  cooldown restarts on every successful save and is transient (not
+  persisted, cleared on reset).
 - **DFC case maintenance windows** — integrity decay no longer snaps panes
   blindly: a decay wave marks ONE random intact pane critical for
   `case_maintain_window_sec` (new key, default 10) — CRIT particles ramp

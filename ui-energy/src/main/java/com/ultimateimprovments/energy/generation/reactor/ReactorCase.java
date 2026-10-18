@@ -51,7 +51,9 @@ import java.util.Random;
  * a decay wave marks a random intact pane CRITICAL for
  * {@code case_maintain_window_sec} (ramping CRIT particles) and the players
  * can save it by right-clicking the pane with an iron ingot — one window
- * at a time, further decay is held while a window runs. A missed
+ * at a time, further decay is held while a window runs. A saved pane
+ * starts a {@code case_maintain_cooldown_sec} cooldown before the next
+ * window can be marked — decay arriving during it waits. A missed
  * window snaps the pane and escalates the case — while it is not fully
  * repaired again, further decay points snap random panes instantly.
  * <p>
@@ -154,10 +156,18 @@ public class ReactorCase {
     // ESCALATION mode: while the case is not fully repaired, further decay
     // points snap random panes instantly, no maintenance window. Full
     // repair resets the escalation and the crits.
+    //
+    // POST-FIX COOLDOWN — a successfully saved pane starts a
+    // case_maintain_cooldown_sec cooldown (0 = off) before a new window can
+    // be marked. Decay waves arriving during the cooldown wait it out
+    // (held, same as the one-window-at-a-time rule) — no marks and no
+    // breaks until it expires. Transient like the crit panes (not
+    // persisted).
     // =========================
     private static final double CRIT_PARTICLE_RADIUS = 0.25;
     private final java.util.List<CritPane> critPanes = new java.util.ArrayList<>();
     private boolean escalationMode;
+    private long maintainCooldownUntil; // ms — earliest time a new window may be marked (0 = none)
 
     /** One pane pending its maintenance verdict (transient — not persisted). */
     private static final class CritPane {
@@ -345,12 +355,15 @@ public class ReactorCase {
     /**
      * Decay wave handling. While a maintenance window is already pending,
      * the wave is HELD — no new marks and no breaks (one window at a time).
-     * Escalation mode (a window was already missed) snaps panes instantly;
-     * otherwise exactly one random intact pane is marked critical — the
-     * players have {@code case_maintain_window_sec} to save it.
+     * The same hold applies while the post-fix maintenance cooldown runs —
+     * decay arriving during it waits for the cooldown to expire. Escalation
+     * mode (a window was already missed) snaps panes instantly; otherwise
+     * exactly one random intact pane is marked critical — the players have
+     * {@code case_maintain_window_sec} to save it.
      */
     private void degradePanes(Location base, int count, ReactorConfig cfg) {
         if (!critPanes.isEmpty()) return; // a window is pending — decay is held
+        if (System.currentTimeMillis() < maintainCooldownUntil) return; // post-fix cooldown — decay waits it out
         if (escalationMode) {
             breakRandomPanes(base, count);
         } else {
@@ -440,11 +453,20 @@ public class ReactorCase {
     /**
      * A player right-clicked a critical pane with an iron ingot: the pane is
      * saved (the window closes, no break, no escalation), one ingot is
-     * consumed. False when the cell has no pending maintenance window — the
-     * caller should not cancel the interaction.
+     * consumed and the post-fix maintenance cooldown starts
+     * ({@code case_maintain_cooldown_sec} — new decay waves wait it out).
+     * False when the cell has no pending maintenance window — the caller
+     * should not cancel the interaction.
      */
     public boolean tryFixCriticalPane(Player player, Location base, int dx, int dy, int dz) {
         if (removeCritCell(dx, dy, dz) == null) return false;
+
+        int cooldownSec = ReactorConfig.getInstance().getCaseMaintainCooldownSec();
+        if (cooldownSec > 0) {
+            maintainCooldownUntil = System.currentTimeMillis() + cooldownSec * 1000L;
+        } else {
+            maintainCooldownUntil = 0L;
+        }
 
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand != null && hand.getType() == Material.IRON_INGOT) {
@@ -676,6 +698,7 @@ public class ReactorCase {
         failingPanes.clear(); // pending verdicts no-op (the ignore marks die with resetAudit)
         critPanes.clear();
         escalationMode = false;
+        maintainCooldownUntil = 0L;
     }
 
     // =========================
