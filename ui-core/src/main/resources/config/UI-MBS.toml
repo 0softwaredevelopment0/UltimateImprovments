@@ -131,6 +131,11 @@ case_int_decay_temp = 8000
 case_int_decay_press = 12.0
 # Default: 1.0
 case_int_decay_rate = 1.0
+# Pane repairs are refused above this case temperature (C*): the pane is
+# placed but not counted and pops off naturally after 1 second — unless the
+# case cools below the threshold in time, then it counts as a repair.
+# Default: 1000
+case_repair_max_temp = 1000
 # Radius in blocks.
 # Default: 10
 meltdown_explosion_radius = 10

@@ -223,6 +223,17 @@ public class ReactorListener implements Listener {
             if (cat == null) {
                 return; // not a tracked structure cell — ignore silently
             }
+            // Case glass into a HOT case: the pane is placed but NOT counted —
+            // after 1 second it pops off naturally unless the case cools in
+            // time (see ReactorCase.onPanePlacedHot)
+            if (cat == ReactorDamageTracker.Category.GLASS && reactor.getCase().isRepairBlocked()) {
+                reactor.getCase().onPanePlacedHot(reactorLoc, dx, dy, dz);
+                e.getPlayer().sendMessage(MessageUtil.parse(dfcPrefix()
+                        + msg("case_repair_too_hot",
+                                "<red>⚠ <white>Case too hot to repair (above %max% C*) — the pane will not hold!")
+                                .replace("%max%", String.valueOf(ReactorConfig.getInstance().getCaseRepairMaxTemp()))));
+                return;
+            }
             reactor.addRepair(dx, dy, dz, cat);
             return;
         }
@@ -602,6 +613,9 @@ public class ReactorListener implements Listener {
         }
         ReactorManager reactor = ReactorManager.getReactorForBlock(e.getBlockPlaced().getLocation());
         if (reactor == null || !reactor.isValid()) return;
+
+        // Hot pane: not a repair (the hot-repair gate owns its verdict) — no persist
+        if (reactor.getCase().isRepairBlocked()) return;
 
         // Persist the pane-by-pane repair progress
         reactor.getCase().onGlassPlaced();

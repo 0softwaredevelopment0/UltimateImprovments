@@ -1160,6 +1160,9 @@ reactor_startup = "<gold>⚡ <yellow>Стартап ядра выполнен! �
 reactor_info_shield = "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%"
 # Default: <dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бо…
 reactor_info_fuel = "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"
+# Placeholders: %max%
+# Default: <red>⚠ <white>Кейс слишком горячий для ремонта (выше %max% C*) — панель не удержится!
+case_repair_too_hot = "<red>⚠ <white>Кейс слишком горячий для ремонта (выше %max% C*) — панель не удержится!"
 
 # generator section — the fuel generator (blast furnace with PDC).
 [messages.structures.generator]
@@ -1585,6 +1588,9 @@ reactor_startup = "<gold>⚡ <yellow>Core startup complete! Lasers are active."
 reactor_info_shield = "<dark_gray>┃ <gray>Shell integrity: <white>%shield%%"
 # Default: <dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel
 reactor_info_fuel = "<dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel"
+# Placeholders: %max%
+# Default: <red>⚠ <white>Case too hot to repair (above %max% C*) — the pane will not hold!
+case_repair_too_hot = "<red>⚠ <white>Case too hot to repair (above %max% C*) — the pane will not hold!"
 
 # generator section — the fuel generator (blast furnace with PDC).
 [messages_en.structures.generator]

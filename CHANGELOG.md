@@ -75,6 +75,16 @@ in this file.
   hand too; `PlayerInteractEvent` fires per hand).
 
 ### Added
+- **DFC case hot-repair gate** — a glass pane placed into the case while it
+  is hotter than `reactor.case_repair_max_temp` (new key, default 1000 C*)
+  no longer counts as a repair: the cell is ignored by the damage tracker
+  (no integrity gain, no breach-message flicker) and its verdict runs after
+  1 second — still hot → the pane pops off naturally
+  (`breakNaturally`, datapack loot table → the glass item drops back out);
+  cooled below the threshold in time → the pane holds and is counted as a
+  real repair. The player is told on placement
+  (`case_repair_too_hot`, both language tabs). Repairs into a cold case are
+  unaffected; the admin/DB `repair()` path bypasses the gate as before.
 - **DFC startup energy buffer** — the reactor now has its own internal
   energy buffer (`reactor.startup_energy`, default 5000 ⚡) charged through
   the case junctions: every `WAXED_CHISELED_COPPER` case cell connected to
