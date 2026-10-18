@@ -150,6 +150,13 @@ case_breach_leak_per_pct = 10.0
 # broken case grinds fusion to 0). Shown plainly on the signs.
 # Default: 1.0
 case_breach_speed_penalty = 1.0
+# Maintenance window: how many seconds a pane marked critical by integrity
+# decay keeps warning (CRIT particles ramp 1..10) before it snaps. Save it
+# by right-clicking the pane with an iron ingot (1 ingot). After one pane
+# is lost, further decay snaps random panes instantly until the case is
+# fully repaired again.
+# Default: 10
+case_maintain_window_sec = 10
 # Radius in blocks.
 # Default: 10
 meltdown_explosion_radius = 10

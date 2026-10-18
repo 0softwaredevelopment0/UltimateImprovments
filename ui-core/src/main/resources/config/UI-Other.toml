@@ -1166,6 +1166,8 @@ case_repair_too_hot = "<red>⚠ <white>Кейс слишком горячий д
 # Placeholders: %cost%
 # Default: <red>⚠ <white>Для ремонта нужен железный слиток в левой руке (×%cost%) — панель не удержится!
 case_repair_no_iron = "<red>⚠ <white>Для ремонта нужен железный слиток в левой руке (×%cost%) — панель не удержится!"
+# Default: <gold>Attention! <white>DFC Case requires maintenance.
+case_maintenance_required = "<gold>Attention! <white>DFC Case requires maintenance."
 
 # generator section — the fuel generator (blast furnace with PDC).
 [messages.structures.generator]
@@ -1597,6 +1599,8 @@ case_repair_too_hot = "<red>⚠ <white>Case too hot to repair (above %max% C*) �
 # Placeholders: %cost%
 # Default: <red>⚠ <white>Repair requires an iron ingot in the off-hand (×%cost%) — the pane will not hold!
 case_repair_no_iron = "<red>⚠ <white>Repair requires an iron ingot in the off-hand (×%cost%) — the pane will not hold!"
+# Default: <gold>Attention! <white>DFC Case requires maintenance.
+case_maintenance_required = "<gold>Attention! <white>DFC Case requires maintenance."
 
 # generator section — the fuel generator (blast furnace with PDC).
 [messages_en.structures.generator]
