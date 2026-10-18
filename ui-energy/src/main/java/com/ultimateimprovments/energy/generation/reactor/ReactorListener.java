@@ -409,8 +409,10 @@ public class ReactorListener implements Listener {
             // Check for a cable nearby
             if (GeneratorManager.hasNearbyCable(generatorLoc)) {
                 if (GeneratorManager.isAssembled(generatorLoc)) {
-                    player.sendMessage(MessageUtil.parse(msg("generator_already_active",
-                            "<yellow>A generator is already assembled at this place!")));
+                    // Already assembled — silence. The full data readout moved
+                    // to the multimeter interaction (SHIFT+RMB on the furnace
+                    // itself, see GeneratorManager) — the frame click must not
+                    // spam "already assembled" on every sneaky pass.
                     return;
                 }
                 GeneratorManager.assembleFromFrame(player, generatorLoc);

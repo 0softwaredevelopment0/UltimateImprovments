@@ -1,6 +1,5 @@
 package com.ultimateimprovments.listener;
 
-import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.transfer.cable.*;
 import com.ultimateimprovments.core.hooks.CoreHooks;
@@ -15,7 +14,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Furnace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
@@ -106,38 +104,11 @@ public class MultimeterListener implements Listener {
         }
 
         // =========================
-        // ⚡ GENERATOR (BLAST_FURNACE)
+        // ⚡ GENERATOR (BLAST_FURNACE) — handled by GeneratorManager's
+        // SHIFT+RMB multimeter readout (full data pack, GEN prefix). Here the
+        // generator stays SILENT: other clicks do nothing plugin-side.
         // =========================
         if (type == Materials.BLAST_FURNACE) {
-            boolean assembled = GeneratorManager.isAssembled(block.getLocation());
-
-            player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
-            player.sendMessage(MessageUtil.parse("<aqua>Type: </aqua><white>Генератор</white>"));
-            player.sendMessage(MessageUtil.parse("<aqua>Registered: </aqua><white>" + (assembled ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
-
-            if (block.getState() instanceof Furnace furnace) {
-                ItemStack fuel = furnace.getInventory().getFuel();
-                boolean hasFuel = fuel != null && !fuel.getType().isAir();
-                player.sendMessage(MessageUtil.parse("<aqua>Fuel: </aqua><white>" + (hasFuel ? fuel.getType().name().toLowerCase().replace('_', ' ') + " x" + fuel.getAmount() : "<gray>none</gray>") + "</white>"));
-
-                boolean isLit = false;
-                if (block.getBlockData() instanceof org.bukkit.block.data.type.Furnace furnaceData) {
-                    isLit = furnaceData.isLit();
-                }
-                player.sendMessage(MessageUtil.parse("<aqua>Burning: </aqua><white>" + (isLit ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
-
-                int cookTime = furnace.getCookTime();
-                int cookTimeTotal = furnace.getCookTimeTotal();
-                if (cookTimeTotal > 0) {
-                    int progress = (cookTime * 100) / cookTimeTotal;
-                    player.sendMessage(MessageUtil.parse("<aqua>Progress: </aqua><white>" + Math.min(progress, 100) + "%</white>"));
-                }
-            }
-
-            // Redstone status
-            boolean hasRedstone = block.isBlockPowered() || block.isBlockIndirectlyPowered();
-            player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
-
             return;
         }
 
