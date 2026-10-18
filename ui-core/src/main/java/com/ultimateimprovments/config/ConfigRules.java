@@ -123,6 +123,7 @@ final class ConfigRules {
             dbl("reactor.press_follow_rate", 0.0, 1.0),
             dbl("reactor.spin_follow_rate", 0.0, 1.0),
             integer("reactor.energy_rate", 0, 1000000),
+            integer("reactor.startup_energy", 0, 2000000000, "Буфер энергии на стартап (заряжается через Junction корпуса)"),
             dbl("reactor.laser_ramp_rate", 0.0, 100.0),
             integer("reactor.power_laser_heat_rate", 0, 2000000000),
             integer("reactor.stab_cool_rate", 0, 2000000000),

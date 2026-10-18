@@ -7,6 +7,7 @@ import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.StructuresMessages;
 
@@ -1197,6 +1198,16 @@ public class ReactorManager {
     private long energyGenerated;
     private double energyRemainder;
 
+    // =========================
+    // ENERGY BUFFER (startup cost, charged through the case junctions)
+    // The reactor's own WAXED_CHISELED_COPPER case blocks double as network
+    // junctions ("Junction" in the energy code): every case cell adjacent to
+    // the cable network pulls energy into this buffer. A startup requires a
+    // full buffer (reactor.startup_energy, default 5000) and consumes it.
+    // =========================
+    private int energyBuffer;
+    private int junctionSaveCounter;
+
     // Previous integrity values for threshold warnings
     private int prevShInt = 100;
     private int prevCaseInt = 100;
@@ -1325,6 +1336,7 @@ public class ReactorManager {
         s.setCasePress(r.caseSys.getPress());
         s.setCaseIntegrity(r.caseSys.getIntegrity());
         s.setEnergyGenerated(r.energyGenerated);
+        s.setEnergyBuffer(r.energyBuffer);
         s.setLaserStarted(r.lasers.isStarted());
         s.setStructureDamaged(r.structureDamaged);
         s.setShieldState(r.shield.getState().name());
@@ -1393,6 +1405,7 @@ public class ReactorManager {
         // repair; the panes stay broken until players place them back.
         caseSys.setBreachAnnounced(state.isCaseBroken());
         energyGenerated = state.getEnergyGenerated();
+        energyBuffer = Math.max(0, state.getEnergyBuffer());
         lasers.setStarted(state.isLaserStarted());
         structureDamaged = state.isStructureDamaged();
         coreEmergencyStopped = state.isCoreEmergencyStopped();
@@ -1886,6 +1899,84 @@ public class ReactorManager {
     }
 
     // =========================
+    // ENERGY BUFFER — JUNCTION CHARGING (every 1s, from ReactorTask)
+    // The case (WAXED_CHISELED_COPPER — the same material the energy code
+    // calls a "Junction") accepts energy wherever it touches the cable
+    // network: the block itself is registered as a network node when the
+    // player places it, and a cable run against the wall makes its wall
+    // cells network-adjacent. Verified against darkfusionreactor.nbt: the
+    // whole case wall is waxed_chiseled_copper (the palette also has
+    // waxed_copper_bars — bars are NOT junctions).
+    // =========================
+    private static final int JUNCTION_CHARGE_PER_PASS = 250; // ⚡/s into the buffer
+
+    /** Called by {@link ReactorTask} once per second. */
+    public void tickEnergyBuffer() {
+        if (!enabled || !valid || reactorLocation == null) return;
+
+        int max = startupEnergy();
+        if (energyBuffer >= max) return;
+
+        World world = reactorLocation.getWorld();
+        int bx = reactorLocation.getBlockX(), by = reactorLocation.getBlockY(), bz = reactorLocation.getBlockZ();
+        if (!world.isChunkLoaded(bx >> 4, bz >> 4)) return;
+
+        int pulled = 0;
+        for (Location junction : findJunctions(world, bx, by, bz)) {
+            if (pulled >= JUNCTION_CHARGE_PER_PASS) break;
+            pulled += EnergyFlow.pull(junction,
+                    Math.min(JUNCTION_CHARGE_PER_PASS - pulled, max - energyBuffer - pulled));
+        }
+
+        if (pulled <= 0) return;
+        energyBuffer = Math.min(max, energyBuffer + pulled);
+
+        // Persist at most every 5s while charging (the row is small, but
+        // there is no reason to rewrite it every second).
+        if (++junctionSaveCounter >= 5) {
+            junctionSaveCounter = 0;
+            saveToDb();
+        }
+    }
+
+    /**
+     * Case cells (dx −5..4, dy −9..1, dz −4..4 — the exact template bounds)
+     * that are waxed_chiseled_copper AND connected to the cable network:
+     * either the cell itself is a network node (placing the block registers
+     * it) or a network node is right next to it.
+     */
+    private java.util.List<Location> findJunctions(World world, int bx, int by, int bz) {
+        java.util.List<Location> junctions = new java.util.ArrayList<>();
+        for (int dx = -5; dx <= 4; dx++) {
+            for (int dy = -9; dy <= 1; dy++) {
+                for (int dz = -4; dz <= 4; dz++) {
+                    Location loc = new Location(world, bx + dx, by + dy, bz + dz);
+                    if (loc.getBlock().getType() != Materials.WAXED_CHISELED_COPPER) continue;
+                    if (CableNetwork.getNode(loc) != null) {
+                        junctions.add(loc);
+                        continue;
+                    }
+                    for (Location near : LocationUtil.getNeighbors(loc)) {
+                        if (CableNetwork.getNode(near) != null) {
+                            junctions.add(loc);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return junctions;
+    }
+
+    /** Startup energy requirement = the buffer capacity (config, default 5000). */
+    private int startupEnergy() {
+        ReactorConfig config = ReactorConfig.getInstance();
+        return Math.max(0, config != null ? config.getStartupEnergy() : 5000);
+    }
+
+    public int getEnergyBuffer() { return energyBuffer; }
+
+    // =========================
     // PRESSURE TICK (every 5s)
     // =========================
     public void tickPressure() {
@@ -1993,6 +2084,7 @@ public class ReactorManager {
         prevShInt = 100;
         prevCaseInt = 100;
         energyGenerated = 0;
+        energyBuffer = 0;
         energyRemainder = 0;
         structureDamaged = false;
         damageWarnTick = 0;
@@ -2047,6 +2139,7 @@ public class ReactorManager {
     private void meltdown() {
         energyRemainder = 0;
         energyGenerated = 0;
+        energyBuffer = 0;
 
         if (reactorLocation == null) return;
 
@@ -2134,6 +2227,7 @@ public class ReactorManager {
         igniteRampRate = 0;
         igniteRampRemainder = 0;
         energyGenerated = 0;
+        energyBuffer = 0;
         energyRemainder = 0;
         prevShInt = 100;
         prevCaseInt = 100;
@@ -2292,6 +2386,26 @@ public class ReactorManager {
             // aborted before it begins (the protocol replaces it)
             return;
         }
+
+        // =========================
+        // ENERGY GATE — the startup is only possible with a full energy
+        // buffer (charged through the case junctions from the cable
+        // network). Not enough → the startup is blocked and the charge
+        // is announced out of the requirement.
+        // =========================
+        int required = startupEnergy();
+        if (energyBuffer < required) {
+            broadcast(StructuresMessages.get("startup_no_energy",
+                            "<red>⚡ <white>Not enough energy to start the reactor!"
+                                    + " <gray>Buffer: <yellow>%have%<gray>/<white>%need% ⚡"
+                                    + " <dark_gray>(charge through the case junctions)")
+                    .replace("%have%", String.valueOf(energyBuffer))
+                    .replace("%need%", String.valueOf(required)));
+            return;
+        }
+        // The startup consumes the whole buffer ("после стартапа она тратится")
+        energyBuffer = 0;
+
         // The shield starts forming later, at the "Forming reactor shield..." step
         startupPhase = StartupPhase.WAIT_ANNOUNCE;
         startupTicks = 0;

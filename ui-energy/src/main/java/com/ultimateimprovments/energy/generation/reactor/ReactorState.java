@@ -36,6 +36,9 @@ public class ReactorState {
 
     // Energy
     private long energyGenerated;
+    // Internal startup buffer (charged through the case junctions; a startup
+    // requires the full capacity and consumes it)
+    private int energyBuffer;
 
     // Lasers: startup latch + powers P1, P2 (0..100), Stab (0..200), Absorber valve (0..100)
     private boolean laserStarted;
@@ -90,6 +93,7 @@ public class ReactorState {
         casePress = o.casePress;
         caseIntegrity = o.caseIntegrity;
         energyGenerated = o.energyGenerated;
+        energyBuffer = o.energyBuffer;
         laserStarted = o.laserStarted;
         laserPowers = o.laserPowers == null ? new double[4] : o.laserPowers.clone();
         structureDamaged = o.structureDamaged;
@@ -176,6 +180,9 @@ public class ReactorState {
     // =========================
     public long getEnergyGenerated() { return energyGenerated; }
     public void setEnergyGenerated(long val) { energyGenerated = val; }
+
+    public int getEnergyBuffer() { return energyBuffer; }
+    public void setEnergyBuffer(int val) { energyBuffer = Math.max(0, val); }
 
     // =========================
     // LASERS

@@ -30,6 +30,11 @@ spin_follow_rate = 0.01
 # Energy amount.
 # Default: 100
 energy_rate = 100
+# Startup energy buffer: the reactor's case junctions (waxed chiseled
+# copper touching the cable network) charge it at 250 ⚡/s; a startup
+# requires a FULL buffer and consumes it.
+# Default: 5000
+startup_energy = 5000
 # Default: 5.0
 laser_ramp_rate = 5.0
 # Power.

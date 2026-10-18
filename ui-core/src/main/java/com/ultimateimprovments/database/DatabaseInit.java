@@ -80,6 +80,17 @@ public class DatabaseInit {
             }
 
             // =========================
+            // ⚡ ENERGY BUFFER COLUMN MIGRATION (for old DBs)
+            // The internal startup buffer charged through the case junctions
+            // (a startup requires the full buffer and consumes it).
+            // =========================
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN energy_buffer INTEGER DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+
+            // =========================
             // ⚛ DFC T/P/S STATS COLUMN MIGRATIONS (for old DBs)
             // shield_press — MPa (≈10.01 at the 10M C* working point)
             // spin — core rotation, RPS (0.95x of the ten-million multiplier)
