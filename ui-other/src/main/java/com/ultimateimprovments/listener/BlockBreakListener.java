@@ -46,7 +46,9 @@ public class BlockBreakListener implements Listener {
         if (e.getBlock().getType() == Materials.BLAST_FURNACE && GeneratorManager.isAssembled(loc)) {
             GeneratorManager.removeGenerator(loc);
             if (breaker != null) {
-                breaker.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<yellow>⚡ Генератор демонтирован!</yellow>"
+                breaker.sendMessage(com.ultimateimprovments.util.MessageUtil.parse(
+                        com.ultimateimprovments.util.StructuresMessages.get("generator.dismantled",
+                                "<yellow>⚡ Generator dismantled!</yellow>")
                         + " <dark_gray>[" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "]</dark_gray>"));
             }
         }
