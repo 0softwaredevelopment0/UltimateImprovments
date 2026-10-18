@@ -24,7 +24,9 @@ energy_per_fuel = 100
 fuel_burn_ticks = 100
 # Leftover buffer of one generator: when no battery in the network takes
 # the produced energy, it waits here until a consumer pulls it (a direct
-# generator → wires → consumer setup works without a battery).
+# generator → wires → consumer setup works without a battery). A full
+# buffer pauses fuel burning until someone pulls — fuel is not wasted
+# while nobody consumes.
 # Default: 2000
 buffer_capacity = 2000
 # Default: false
