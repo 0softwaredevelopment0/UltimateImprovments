@@ -48,9 +48,10 @@ import java.util.Random;
  * reduced values.
  * <p>
  * Integrity decay above the safe thresholds does not snap panes blindly:
- * each decay point marks a random intact pane CRITICAL for
+ * a decay wave marks a random intact pane CRITICAL for
  * {@code case_maintain_window_sec} (ramping CRIT particles) and the players
- * can save it by right-clicking the pane with an iron ingot. A missed
+ * can save it by right-clicking the pane with an iron ingot — one window
+ * at a time, further decay is held while a window runs. A missed
  * window snaps the pane and escalates the case — while it is not fully
  * repaired again, further decay points snap random panes instantly.
  * <p>
@@ -143,14 +144,16 @@ public class ReactorCase {
     private final java.util.Set<String> failingPanes = new java.util.HashSet<>();
 
     // =========================
-    // MAINTENANCE — degradation does not snap panes blindly: each decay
-    // point marks ONE random intact pane CRITICAL for case_maintain_window_sec
+    // MAINTENANCE — degradation does not snap panes blindly: a decay wave
+    // marks ONE random intact pane CRITICAL for case_maintain_window_sec
     // (CRIT particles at the block ramp 1..10 with each elapsed second) and
     // the players can save it by right-clicking the pane with an iron ingot
-    // (1 ingot). A pane whose window expires breaks (its integrity point is
-    // spent) and flips the case into ESCALATION mode: while the case is not
-    // fully repaired, further decay points snap random panes instantly, no
-    // maintenance window. Full repair resets the escalation and the crits.
+    // (1 ingot). While a window is pending, further decay is HELD — no new
+    // marks and no breaks, one maintenance at a time. A pane whose window
+    // expires breaks (its integrity point is spent) and flips the case into
+    // ESCALATION mode: while the case is not fully repaired, further decay
+    // points snap random panes instantly, no maintenance window. Full
+    // repair resets the escalation and the crits.
     // =========================
     private static final double CRIT_PARTICLE_RADIUS = 0.25;
     private final java.util.List<CritPane> critPanes = new java.util.ArrayList<>();
@@ -218,10 +221,10 @@ public class ReactorCase {
         tickBreach(base, cfg);
 
         // =========================
-        // INTEGRITY — decays above the safe thresholds: every whole 1% of
-        // decay marks one random intact pane critical (the maintenance
-        // window) or — while in escalation mode — snaps a random pane
-        // instantly (98 panes = the whole scale).
+        // INTEGRITY — decays above the safe thresholds: a decay wave either
+        // marks one random intact pane critical (the single maintenance
+        // window — further decay is held while it runs) or, in escalation
+        // mode, snaps random panes instantly (98 panes = the whole scale).
         // =========================
         boolean over = temp >= cfg.getCaseIntDecayTemp()
                 || press >= cfg.getCaseIntDecayPress() * 1000.0; // config MPa → kPa
@@ -340,16 +343,18 @@ public class ReactorCase {
     // GRADUAL DEGRADATION / MAINTENANCE
     // =========================
     /**
-     * One integrity point spent. In escalation mode (a maintenance window
-     * was already missed) the point snaps a random pane instantly; otherwise
-     * it marks a random intact pane critical — the players have
-     * {@code case_maintain_window_sec} to save it with an iron ingot.
+     * Decay wave handling. While a maintenance window is already pending,
+     * the wave is HELD — no new marks and no breaks (one window at a time).
+     * Escalation mode (a window was already missed) snaps panes instantly;
+     * otherwise exactly one random intact pane is marked critical — the
+     * players have {@code case_maintain_window_sec} to save it.
      */
     private void degradePanes(Location base, int count, ReactorConfig cfg) {
-        for (int i = 0; i < count; i++) {
-            if (escalationMode || !markRandomPaneCritical(base, cfg)) {
-                breakRandomPanes(base, 1);
-            }
+        if (!critPanes.isEmpty()) return; // a window is pending — decay is held
+        if (escalationMode) {
+            breakRandomPanes(base, count);
+        } else {
+            markRandomPaneCritical(base, cfg);
         }
     }
 
