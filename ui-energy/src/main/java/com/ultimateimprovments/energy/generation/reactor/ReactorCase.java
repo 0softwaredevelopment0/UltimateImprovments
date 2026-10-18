@@ -2,6 +2,8 @@ package com.ultimateimprovments.energy.generation.reactor;
 
 import com.ultimateimprovments.util.StructuresMessages;
 
+import com.ultimateimprovments.core.Main;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -104,6 +106,17 @@ public class ReactorCase {
     private int ventGraceTicks;       // post-repair holdoff while the audit catches up
     private double ventPressRemainder; // fractional pressure vent accumulator (kPa)
     private double ventTempRemainder;  // fractional temperature vent accumulator (C*)
+
+    // =========================
+    // HOT-REPAIR GATE — a pane placed into a case hotter than
+    // case_repair_max_temp does NOT count as a repair: the cell is ignored
+    // by the damage tracker for 1 second, then the verdict fires — still
+    // hot → the pane pops off naturally (breakNaturally, loot-table drop);
+    // cooled below the threshold in time → it holds and counts as a real
+    // repair. Hot panes are keyed per template cell ("dx,dy,dz").
+    // =========================
+    private static final int HOT_REPAIR_VERDICT_TICKS = 20; // 1 second
+    private final java.util.Set<String> hotPanes = new java.util.HashSet<>();
 
     public ReactorCase(ReactorManager reactor) {
         this.reactor = reactor;
@@ -339,6 +352,68 @@ public class ReactorCase {
     }
 
     // =========================
+    // HOT-REPAIR GATE
+    // =========================
+    /** True while the case is too hot for pane repairs (temp > case_repair_max_temp). */
+    public boolean isRepairBlocked() {
+        return temp > ReactorConfig.getInstance().getCaseRepairMaxTemp();
+    }
+
+    /**
+     * A glass pane was placed into the template cell while the case was too
+     * hot to accept it (the caller did NOT count the pane). The cell is
+     * marked ignored and its verdict runs after 1 second: still hot → the
+     * pane breaks naturally (loot-table drop per the datapack); cooled below
+     * the threshold in time → the pane holds and is counted as a real repair.
+     */
+    public void onPanePlacedHot(Location base, int dx, int dy, int dz) {
+        hotPanes.add(dx + "," + dy + "," + dz);
+        ReactorDamageTracker.setCellIgnored(base, dx, dy, dz, true);
+        scheduleHotVerdict(base, dx, dy, dz);
+    }
+
+    private void scheduleHotVerdict(Location base, int dx, int dy, int dz) {
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(),
+                () -> verdictHotPane(base, dx, dy, dz), HOT_REPAIR_VERDICT_TICKS);
+    }
+
+    /** The 1-second verdict for one hot pane (see {@link #onPanePlacedHot}). */
+    private void verdictHotPane(Location base, int dx, int dy, int dz) {
+        String key = dx + "," + dy + "," + dz;
+        if (!hotPanes.remove(key)) {
+            // Superseded (reset/reassembly) — just drop the ignore mark
+            ReactorDamageTracker.setCellIgnored(base, dx, dy, dz, false);
+            return;
+        }
+
+        Location blockLoc = base.clone().add(dx, dy, dz);
+        if (base.getWorld() == null
+                || !base.getWorld().isChunkLoaded(blockLoc.getBlockX() >> 4, blockLoc.getBlockZ() >> 4)) {
+            // Chunk unloaded mid-verdict — defer; the pane stays ignored
+            // until the world around it is readable again.
+            hotPanes.add(key);
+            scheduleHotVerdict(base, dx, dy, dz);
+            return;
+        }
+        ReactorDamageTracker.setCellIgnored(base, dx, dy, dz, false);
+
+        Block block = blockLoc.getBlock();
+        if (isRepairBlocked()) {
+            // Still hot: the pane does not hold — natural break with the
+            // glass loot-table drop (the datapack overrides it to drop glass)
+            if (block.getType() == Material.GLASS) {
+                block.breakNaturally();
+                base.getWorld().playSound(blockLoc.clone().add(0.5, 0.5, 0.5),
+                        Sound.BLOCK_GLASS_BREAK, SoundCategory.MASTER, 1.2f, 0.9f);
+            }
+        } else if (block.getType() == Material.GLASS) {
+            // Cooled in time — the pane holds and counts as a real repair
+            ReactorDamageTracker.noteCellRepaired(base, dx, dy, dz);
+            onGlassPlaced();
+        }
+    }
+
+    // =========================
     // RESET
     // =========================
     public void reset() {
@@ -354,6 +429,7 @@ public class ReactorCase {
         ventTempRemainder = 0;
         caseTempRemainder = 0;
         caseIntRemainder = 0;
+        hotPanes.clear(); // pending verdicts no-op (the ignore marks die with resetAudit)
     }
 
     // =========================

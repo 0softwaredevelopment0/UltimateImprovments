@@ -156,6 +156,38 @@ public final class ReactorDamageTracker {
     /** Reactor anchor → its audit cache. */
     private static final Map<Location, AuditState> audits = new HashMap<>();
 
+    // =========================
+    // IGNORED CELLS — temporarily excluded template cells ("dx,dy,dz").
+    // Used by the case hot-repair gate: a pane placed into a case hotter
+    // than case_repair_max_temp does not count as a repair for 1 second —
+    // the audit skips it and the note* updates are no-ops, so the counts
+    // never flicker while the pane awaits its verdict.
+    // =========================
+    /** Reactor anchor → its ignored-cell keys. */
+    private static final Map<Location, java.util.Set<String>> ignoredCells = new HashMap<>();
+
+    private static java.util.Set<String> ignoredFor(Location base) {
+        return ignoredCells.computeIfAbsent(base.clone(), k -> new java.util.HashSet<>());
+    }
+
+    /** Marks one template cell as ignored (or clears the mark). */
+    public static synchronized void setCellIgnored(Location base, int dx, int dy, int dz, boolean ignored) {
+        if (base == null) return;
+        String key = dx + "," + dy + "," + dz;
+        if (ignored) ignoredFor(base).add(key);
+        else {
+            java.util.Set<String> set = ignoredCells.get(base);
+            if (set != null) set.remove(key);
+        }
+    }
+
+    /** True while the cell is excluded from counting (hot pane pending its verdict). */
+    public static synchronized boolean isCellIgnored(Location base, int dx, int dy, int dz) {
+        if (base == null) return false;
+        java.util.Set<String> set = ignoredCells.get(base);
+        return set != null && set.contains(dx + "," + dy + "," + dz);
+    }
+
     /** True when the template index is loaded and has tracked cells. */
     public static boolean isTracked() {
         init();
@@ -172,7 +204,10 @@ public final class ReactorDamageTracker {
             int dx = Integer.parseInt(p[0]);
             int dy = Integer.parseInt(p[1]);
             int dz = Integer.parseInt(p[2]);
-            boolean present = matches(dx, dy, dz, e.getValue(), world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
+            // Ignored cells (hot panes pending their 1s verdict) count as
+            // missing — the pane is physically there but NOT accepted yet.
+            boolean present = !ignoredFor(base).contains(e.getKey())
+                    && matches(dx, dy, dz, e.getValue(), world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
             if (present) st.present[e.getValue().ordinal()]++;
             else st.missing.add(e.getKey());
         }
@@ -213,6 +248,9 @@ public final class ReactorDamageTracker {
         for (int i = 0; i < steps; i++) {
             st.cursor = (st.cursor + 1) % st.keys.length;
             String key = st.keys[st.cursor];
+            // Ignored cells (hot panes pending their 1s verdict) are skipped
+            // entirely — no transitions, the counts hold steady.
+            if (ignoredFor(base).contains(key)) continue;
             String[] p = key.split(",");
             int dx = Integer.parseInt(p[0]);
             int dy = Integer.parseInt(p[1]);
@@ -240,7 +278,7 @@ public final class ReactorDamageTracker {
      * No-op when the audit was not initialized yet (the first tick/lookup seeds it).
      */
     public static synchronized void noteCellBroken(Location base, int dx, int dy, int dz) {
-        if (base == null) return;
+        if (base == null || isCellIgnored(base, dx, dy, dz)) return;
         AuditState st = audits.get(base);
         if (st == null) return;
         String key = dx + "," + dy + "," + dz;
@@ -250,7 +288,7 @@ public final class ReactorDamageTracker {
 
     /** O(1) cache update from the place listener: one tracked cell is back. */
     public static synchronized void noteCellRepaired(Location base, int dx, int dy, int dz) {
-        if (base == null) return;
+        if (base == null || isCellIgnored(base, dx, dy, dz)) return;
         AuditState st = audits.get(base);
         if (st == null) return;
         String key = dx + "," + dy + "," + dz;
@@ -273,7 +311,10 @@ public final class ReactorDamageTracker {
 
     /** Drops the audit cache of one base (teardown/reassembly — the next tick re-seeds it). */
     public static synchronized void resetAudit(Location base) {
-        if (base != null) audits.remove(base);
+        if (base != null) {
+            audits.remove(base);
+            ignoredCells.remove(base);
+        }
     }
 
     // =========================

@@ -126,6 +126,7 @@ public class ReactorConfig {
     private int caseIntDecayTemp;          // integrity decays above this temp
     private double caseIntDecayPress;      // integrity decays above this MPa
     private double caseIntDecayRate;       // %/sec decay while over thresholds
+    private int caseRepairMaxTemp;         // pane repairs refused above this case temp (1000)
 
     // =========================
     // LASERS (roof controls)
@@ -218,6 +219,7 @@ public class ReactorConfig {
         caseIntDecayTemp = cfg.getInt("reactor.case_int_decay_temp", 8000);
         caseIntDecayPress = cfg.getDouble("reactor.case_int_decay_press", 12.0);
         caseIntDecayRate = cfg.getDouble("reactor.case_int_decay_rate", 1.0);
+        caseRepairMaxTemp = cfg.getInt("reactor.case_repair_max_temp", 1000);
     }
 
     // =========================
@@ -269,4 +271,5 @@ public class ReactorConfig {
     public int getCaseIntDecayTemp() { return caseIntDecayTemp; }
     public double getCaseIntDecayPress() { return caseIntDecayPress; }
     public double getCaseIntDecayRate() { return caseIntDecayRate; }
+    public int getCaseRepairMaxTemp() { return caseRepairMaxTemp; }
 }
