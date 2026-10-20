@@ -6,6 +6,16 @@ in this file.
 ## [Unreleased]
 
 ### Added
+- **Batteries are real multi-block structures (UI-Energy + UI-Other)** — a
+  waxed copper grate is now inert on its own: placing one creates no network
+  node, no storage and no marker. A battery is assembled like the magnet — put
+  a one-shot item frame on any grate and every copper grate connected to it
+  becomes **one adaptive battery**: capacity `energy.battery.max_energy ×
+  blocks` (100 000 ⚡ per block), the blocks share one charge pool and one
+  operating mode. A redstone pulse on **any** block of the cluster cycles
+  Charge → Charge & Discharge → Discharge (rising edge, so a lever held on does
+  not keep flipping); the mode is persisted in the new `battery_modes` table.
+  The multimeter reads the cluster's energy/capacity, block count and mode.
 - **Compact nuclear reactor (UI-MBS + UI-Energy)** — a 3×3×3 multi-block
   energy generator (`nuclearreactor.nbt`). Assemble it with an item frame on a
   top corner (so the top-center barrel stays reachable), put emeralds and ice
@@ -60,7 +70,30 @@ in this file.
   structure files exported by recent game versions load without a manual
   conversion step.
 
+### Changed
+- **CER balance and heat visuals (UI-Energy + UI-MBS)** — the compact reactor
+  now pushes **100 ⚡/s** instead of 1000 (UI-MBS.toml
+  `nuclear_reactor.energy_per_second`, fallback updated) and the coal
+  generator runs at **10 ⚡/s** (`energy.generator.fuel_burn_ticks` 100 → 200:
+  one fuel item still yields 100 ⚡ but burns for 10 s). Overheat particles
+  emit **8** particles per stage instead of 4/4/2 and use an explicit
+  **0.1** speed, so the plume no longer looks like a fast jet.
+- **CER network gate moved before the redstone gate (UI-Energy)** — the
+  reactor checks the network for free storage **first**
+  (`EnergyFlow.hasSpace`) and reports `OUTPUT_BLOCKED` ("network is full —
+  the reactor is switched off") without touching fuel or the redstone state;
+  the redstone gate on the center block is now the second check. A saturated
+  network therefore stops the reactor (no fuel burn, passive cooldown) and it
+  restarts automatically once a battery has room again.
+
 ### Fixed
+- **Structures vanished from the DB after every restart** — `purgeOrphaned`
+  was called by the battery, lamp and magnet managers with only *their own*
+  UUID set, so each startup deleted the markers of every other structure type
+  (cables, generators, reactors, magnets, lamps) from `structure_markers` and,
+  through the chunk-tracker rewrite, dropped their force-loaded chunks. The
+  purge is now scoped to one marker type (`purgeOrphaned(type, uuids)`), so a
+  battery rebuild no longer wipes the cables or the reactor.
 - **A bloated config file stalled the whole server startup** — a runaway
   writer could grow a TOML (observed: 9 MB) and toml4j ground through it on
   the main thread for minutes. Every config read (salvage health check +

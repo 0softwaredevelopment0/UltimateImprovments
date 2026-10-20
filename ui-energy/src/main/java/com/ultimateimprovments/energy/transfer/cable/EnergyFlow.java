@@ -128,6 +128,37 @@ public final class EnergyFlow {
     }
 
     /**
+     * Space check without mutation: can the network accept at least
+     * {@code amount} energy right now? Mirrors {@link #push} routing exactly
+     * (chargeable battery blocks). Producers use it as a gate: a full network
+     * should switch the machine off instead of letting it run and produce
+     * nothing.
+     */
+    public static boolean hasSpace(Location origin, int amount) {
+        if (amount <= 0) return true;
+
+        Location norm = LocationUtil.normalize(origin);
+        if (norm == null) return false;
+        String worldUid = norm.getWorld().getUID().toString();
+
+        Set<Long> visited = new HashSet<>();
+        Deque<CableNode> queue = new ArrayDeque<>();
+        seed(norm, queue, visited);
+
+        int total = 0;
+        while (!queue.isEmpty() && visited.size() <= MAX_NODES) {
+            CableNode node = queue.poll();
+            if (node == null) continue;
+
+            total += freeSpace(node);
+            if (total >= amount) return true;
+
+            enqueueNeighbors(node, worldUid, queue, visited);
+        }
+        return total >= amount;
+    }
+
+    /**
      * Collects the batteries of one connected component (for the balancer).
      * Marks every visited node key in {@code visited} so the caller never
      * processes the same component twice. Only batteries allowed to both
@@ -234,6 +265,15 @@ public final class EnergyFlow {
     /** Reachable energy at this node (no mutation) — for {@link #hasEnergy}. */
     private static int availableEnergy(CableNode node) {
         return drainNode(node, Integer.MAX_VALUE);
+    }
+
+    /** Free room at this node (no mutation) — for {@link #hasSpace}. */
+    private static int freeSpace(CableNode node) {
+        if (node.getType() != NodeType.BATTERY) return 0;
+        BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
+        if (bc != null && !bc.canCharge()) return 0;
+        int max = Math.max(node.getMaxEnergy(), batteryCapacity());
+        return Math.max(0, max - node.getEnergy());
     }
 
     /** Seeds the traversal with the origin node (if any) + its neighbor nodes. */

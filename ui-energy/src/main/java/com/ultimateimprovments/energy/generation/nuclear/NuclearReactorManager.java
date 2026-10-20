@@ -63,11 +63,13 @@ public final class NuclearReactorManager {
 
     /** Particle thresholds and counts (see the reactor spec). */
     private static final int PARTICLE_SMOKE_TEMP = 640;
-    private static final int PARTICLE_SMOKE_COUNT = 4;
+    private static final int PARTICLE_SMOKE_COUNT = 8;
     private static final int PARTICLE_LARGE_SMOKE_TEMP = 860;
-    private static final int PARTICLE_LARGE_SMOKE_COUNT = 4;
+    private static final int PARTICLE_LARGE_SMOKE_COUNT = 8;
     private static final int PARTICLE_LAVA_TEMP = 960;
-    private static final int PARTICLE_LAVA_COUNT = 2;
+    private static final int PARTICLE_LAVA_COUNT = 8;
+    /** Emission speed (the {@code extra} argument) — same for every stage. */
+    private static final double PARTICLE_SPEED = 0.1;
 
     private static final Map<Location, NuclearReactor> reactors = new ConcurrentHashMap<>();
 
@@ -550,6 +552,8 @@ public final class NuclearReactorManager {
     /**
      * Threshold particles above the center block (1.5 blocks up):
      * signal smoke above 640°, large smoke above 860°, lava sparks above 960°.
+     * Every stage emits the same count (8) with the same speed (0.1), so the
+     * plume stays readable instead of turning into a fast jet.
      */
     public static void spawnHeatParticles(NuclearReactor reactor) {
         if (reactor == null) return;
@@ -562,12 +566,15 @@ public final class NuclearReactorManager {
         if (world == null) return;
 
         if (temp > PARTICLE_LAVA_TEMP) {
-            world.spawnParticle(Particle.LAVA, loc, PARTICLE_LAVA_COUNT);
+            world.spawnParticle(Particle.LAVA, loc, PARTICLE_LAVA_COUNT,
+                    0.0, 0.0, 0.0, PARTICLE_SPEED);
         }
         if (temp > PARTICLE_LARGE_SMOKE_TEMP) {
-            world.spawnParticle(Particle.LARGE_SMOKE, loc, PARTICLE_LARGE_SMOKE_COUNT);
+            world.spawnParticle(Particle.LARGE_SMOKE, loc, PARTICLE_LARGE_SMOKE_COUNT,
+                    0.0, 0.0, 0.0, PARTICLE_SPEED);
         }
-        world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, PARTICLE_SMOKE_COUNT);
+        world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, PARTICLE_SMOKE_COUNT,
+                0.0, 0.0, 0.0, PARTICLE_SPEED);
     }
 
     // =========================
@@ -729,7 +736,7 @@ public final class NuclearReactorManager {
             case UNPOWERED -> msg("status_unpowered", "<red>❌ No redstone signal on the center block");
             case NO_FUEL -> msg("status_no_fuel", "<yellow>⚠ No emeralds in the barrel");
             case NO_CABLE -> msg("status_no_cable", "<yellow>⚠ No cable under the bottom port");
-            case OUTPUT_BLOCKED -> msg("status_output_blocked", "<yellow>⚠ The network cannot accept energy");
+            case OUTPUT_BLOCKED -> msg("status_output_blocked", "<yellow>⚠ The network is full — the reactor is switched off");
             case DAMAGED -> msg("status_damaged", "<dark_red>✖ Structure damaged");
             case MELTDOWN -> msg("status_meltdown",
                             "<dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>")
@@ -773,7 +780,7 @@ public final class NuclearReactorManager {
 
     /** Configured output rate in energy per second. */
     public static int energyPerSecond() {
-        return Math.max(0, cfgInt("energy_per_second", 1000));
+        return Math.max(0, cfgInt("energy_per_second", 100));
     }
 
     /** Working temperature — the point where the reactor starts burning coolant. */

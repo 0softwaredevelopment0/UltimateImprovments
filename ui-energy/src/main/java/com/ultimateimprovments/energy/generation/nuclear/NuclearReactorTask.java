@@ -13,11 +13,12 @@ import org.bukkit.scheduler.BukkitRunnable;
 /**
  * One-second pass over every assembled compact nuclear reactor.
  * <p>
- * Energy gates, in order: chunk loaded → template intact → redstone-powered
- * center block → cable under the bottom port → fuel available → network
- * accepts the energy. Only when all of them are open is energy pushed into the
- * network, and the fuel countdown advances <b>proportionally to the accepted
- * energy</b>: a full or missing network never wastes an emerald.
+ * Energy gates, in order: chunk loaded → template intact → cable under the
+ * bottom port → the network has room for the output (a saturated network
+ * switches the reactor off) → redstone-powered center block → fuel available.
+ * Only when all of them are open is energy pushed into the network, and the
+ * fuel countdown advances <b>proportionally to the accepted energy</b>: a full
+ * or missing network never wastes an emerald.
  * <p>
  * Thermal model (same shape as the DFC):
  * <ul>
@@ -112,25 +113,32 @@ public class NuclearReactorTask extends BukkitRunnable {
                 // Any broken template cell stops the reactor.
                 status = NuclearReactor.Status.DAMAGED;
             } else {
-                // The reinforced deepslate in the center must be powered. A
-                // lever/button on top of the barrel strongly powers the
-                // barrel, which weakly powers the adjacent center; checking
-                // the barrel too keeps the gate working regardless of how the
-                // server maps weak power. (Glass panes cannot hold a lever.)
-                Block center = reactor.getCenterBlock();
-                Block barrel = reactor.getBarrelBlock();
-                boolean powered = center.isBlockPowered()
-                        || center.isBlockIndirectlyPowered()
-                        || barrel.isBlockPowered()
-                        || barrel.isBlockIndirectlyPowered();
+                // The bottom copper port must touch a cable node.
+                CableNode node = NuclearReactorManager.findPortNode(reactor.getEnergyPortLocation());
 
-                if (!powered) {
-                    status = NuclearReactor.Status.UNPOWERED;
+                if (node == null) {
+                    status = NuclearReactor.Status.NO_CABLE;
+                } else if (!EnergyFlow.hasSpace(node.getLocation(), 1)) {
+                    // Gate 1 — the network is saturated: switch the reactor
+                    // OFF before redstone and fuel are even considered. It
+                    // resumes automatically on the first second with free room.
+                    status = NuclearReactor.Status.OUTPUT_BLOCKED;
                 } else {
-                    // The bottom copper port must touch a cable node.
-                    CableNode node = NuclearReactorManager.findPortNode(reactor.getEnergyPortLocation());
-                    if (node == null) {
-                        status = NuclearReactor.Status.NO_CABLE;
+                    // Gate 2 — the reinforced deepslate in the center must be
+                    // powered. A lever/button on top of the barrel strongly
+                    // powers the barrel, which weakly powers the adjacent
+                    // center; checking the barrel too keeps the gate working
+                    // regardless of how the server maps weak power. (Glass
+                    // panes cannot hold a lever.)
+                    Block center = reactor.getCenterBlock();
+                    Block barrel = reactor.getBarrelBlock();
+                    boolean powered = center.isBlockPowered()
+                            || center.isBlockIndirectlyPowered()
+                            || barrel.isBlockPowered()
+                            || barrel.isBlockIndirectlyPowered();
+
+                    if (!powered) {
+                        status = NuclearReactor.Status.UNPOWERED;
                     } else if (!reactor.hasFuel()
                             && !reactor.takeFuelItem(fuel, fuelTicksPerItem)) {
                         status = NuclearReactor.Status.NO_FUEL;

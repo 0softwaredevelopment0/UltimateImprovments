@@ -243,7 +243,7 @@ public class GeneratorManager implements Listener {
             int perFuel = Math.max(1, Main.getInstance().getConfig()
                     .getInt("energy.generator.energy_per_fuel", 100));
             int burnDuration = Math.max(1, Main.getInstance().getConfig()
-                    .getInt("energy.generator.fuel_burn_ticks", 100));
+                    .getInt("energy.generator.fuel_burn_ticks", 200));
             rate = (int) Math.ceil((double) perFuel * GeneratorTask.PASS_TICKS / burnDuration);
         }
         player.sendMessage(MessageUtil.parse(prefix() + msg("meter_output",

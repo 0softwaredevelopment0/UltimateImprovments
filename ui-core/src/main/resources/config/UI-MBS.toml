@@ -210,15 +210,17 @@ natural_cool_multiplier_max = 1.0
 # ==================================================================
 
 # Compact nuclear reactor: emeralds burn in the top barrel, the redstone-
-# powered reinforced deepslate in the center enables it, and 1000 ⚡/s are
+# powered reinforced deepslate in the center enables it, and 100 ⚡/s are
 # pushed into the cable network through the bottom copper port.
 [nuclear_reactor]
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Energy pushed into the network per second while the reactor runs.
-# Default: 1000
-energy_per_second = 1000
+# Energy pushed into the network per second while the reactor runs. Kept
+# deliberately low: the coal generator produces 10 ⚡/s, so a single reactor
+# is worth ten generators, not a hundred.
+# Default: 100
+energy_per_second = 100
 # Seconds one fuel item (one emerald) sustains the reactor. Fuel is only
 # spent while the structure is intact, the center is powered, a cable is
 # connected and the network actually accepts the energy.

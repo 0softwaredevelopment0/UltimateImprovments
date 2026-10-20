@@ -243,7 +243,7 @@ public class MagnetManager extends BukkitRunnable {
             usedUuids.add(group.getKey());
         }
 
-        StructureMarker.purgeOrphaned(usedUuids);
+        StructureMarker.purgeOrphaned("magnet", usedUuids);
         // Log suppressed — too spammy on server start
     }
 

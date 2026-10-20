@@ -217,7 +217,7 @@ public class LightManager {
             usedUuids.add(cluster.uuid);
         }
 
-        StructureMarker.purgeOrphaned(usedUuids);
+        StructureMarker.purgeOrphaned("light", usedUuids);
     }
 
     private static void removeFrameAt(Location blockLoc, Player player) {

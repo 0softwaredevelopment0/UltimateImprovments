@@ -71,9 +71,13 @@ public class UIMBS extends JavaPlugin implements com.ultimateimprovments.core.So
         // Load NBT structure templates from this plugin's resources
         StructureTemplate.initAll();
 
-        // Restore structure markers + tracked chunks from the DB
+        // Restore structure markers + tracked chunks from the DB. The chunk
+        // set is then re-derived from the markers themselves, so a stale/empty
+        // structure_chunks table can no longer hide cables, reactors and
+        // batteries after a restart.
         StructureMarker.loadFromDatabase();
         StructureChunkTracker.load();
+        StructureChunkTracker.rebuildFromCache();
         StructureChunkTracker.loadTrackedChunks();
 
         ConsoleLogger.success("[UI-MBS] Multi-block structures enabled!");

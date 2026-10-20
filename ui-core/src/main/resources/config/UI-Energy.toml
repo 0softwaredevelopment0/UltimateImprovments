@@ -17,11 +17,13 @@
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Energy amount.
+# Energy amount produced per fuel item.
 # Default: 100
 energy_per_fuel = 100
-# Default: 100
-fuel_burn_ticks = 100
+# How long one fuel item burns. 200 ticks = 10 s, so one coal yields
+# 100 ⚡ over 10 s = 10 ⚡/s (the reactor's 100 ⚡/s equals ten generators).
+# Default: 200
+fuel_burn_ticks = 200
 # Leftover buffer of one generator: when no battery in the network takes
 # the produced energy, it waits here until a consumer pulls it (a direct
 # generator → wires → consumer setup works without a battery). A full

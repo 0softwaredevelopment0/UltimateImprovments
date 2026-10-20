@@ -1,6 +1,7 @@
 package com.ultimateimprovments.listener;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.*;
 import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.structure.StructureMarker;
@@ -127,8 +128,16 @@ public class MultimeterListener implements Listener {
         if (type == Materials.WAXED_COPPER_GRATE) {
 
             int transferred = node.getAndResetTransferred();
-            player.sendMessage(MessageUtil.parse("<aqua>Type: Battery</aqua>"));
-            player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + node.getEnergy() + "</white>"));
+            BatteryManager.BatteryCluster cluster = BatteryManager.getCluster(block.getLocation());
+            int capacity = cluster != null ? cluster.capacity : node.getMaxEnergy();
+            int blocks = cluster != null ? cluster.blockKeys.size() : 1;
+            String mode = cluster != null ? cluster.getModeDisplay() : "<gray>?</gray>";
+
+            player.sendMessage(MessageUtil.parse("<aqua>Type: Battery (multiblock)</aqua>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + node.getEnergy() + " / " + capacity + "</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Blocks: </aqua><white>" + blocks
+                    + " <gray>(" + (blocks > 0 ? capacity / blocks : 0) + " ⚡ per block)</gray>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Mode: </aqua><white>" + mode + "</white> <gray>(redstone pulse cycles)</gray>"));
             player.sendMessage(MessageUtil.parse("<aqua>Transfer rate: </aqua><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<aqua>Connections: </aqua><white>" + node.getConnectionKeys().size() + "</white>"));
             return;

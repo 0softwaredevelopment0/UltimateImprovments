@@ -9,7 +9,6 @@ import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.NodeType;
 
-import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.Materials;
 
@@ -21,8 +20,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-
-import java.util.UUID;
 
 public class BlockPlaceListener implements Listener {
 
@@ -51,18 +48,14 @@ public class BlockPlaceListener implements Listener {
         }
 
         // =========================
-        // 🔋 BATTERY MULTIBLOCK (hot expand) — do NOT go through CableNetwork.addNode()
-        // ensureNode already calls autoConnectNode internally
+        // 🔋 BATTERY MULTIBLOCK — a copper grate is INERT until the structure is
+        // assembled with an item frame (ReactorListener). Placing a grate next to
+        // an assembled battery expands that battery; an isolated grate gets no
+        // node, no marker and no capacity. Never fall through to the cable path.
         // =========================
         if (type == Materials.WAXED_COPPER_GRATE) {
             BatteryManager.onBlockPlaced(loc);
-            // If BatteryManager did not add a node (isolated block) — create it ourselves
-            if (!CableNetwork.exists(loc)) {
-                CableNetwork.ensureNode(loc, NodeType.BATTERY);
-                // Create a Marker of type "battery", not "cable"
-                StructureMarker.place(loc, "battery", UUID.randomUUID());
-            }
-            return; // Don't go to CableNetwork.addNode — it would create a "cable" Marker
+            return;
         }
 
         // =========================
