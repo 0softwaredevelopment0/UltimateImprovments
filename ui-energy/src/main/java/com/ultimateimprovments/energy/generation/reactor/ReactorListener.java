@@ -129,13 +129,30 @@ public class ReactorListener implements Listener {
             return;
         }
 
-        // Compact nuclear reactor — status readout (no toggle: redstone controls it).
-        NuclearReactor nuclear = NuclearReactorManager.getForFrame(frame);
-        if (nuclear != null) {
-            NuclearReactorManager.sendStatus(player, nuclear);
-            return;
-        }
+        // The compact nuclear reactor is read with a multimeter on ANY of its
+        // blocks (see onNuclearMeterClick) — the trigger frame is consumed on
+        // assembly, so there is nothing frame-specific to show here.
 
+    }
+
+    // =========================
+    // CER — SHIFT+RMB WITH A MULTIMETER ON ANY REACTOR BLOCK
+    // =========================
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onNuclearMeterClick(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND) return; // once per click
+        if (!e.getPlayer().isSneaking()) return;
+
+        Block block = e.getClickedBlock();
+        if (block == null) return;
+
+        NuclearReactor reactor = NuclearReactorManager.getByBlockLocation(block.getLocation());
+        if (reactor == null) return;
+
+        // The measurement owns the click: no barrel GUI / block interactions.
+        e.setCancelled(true);
+        NuclearReactorManager.sendReadout(e.getPlayer(), reactor);
     }
 
     // =========================
@@ -421,8 +438,11 @@ public class ReactorListener implements Listener {
                     return;
                 }
                 player.sendMessage(MessageUtil.parse(msg("nuclear_reactor.detected",
-                        "<dark_gray>[<aqua>Nuclear reactor<dark_gray>] <gray>Structure detected — assembling...")));
-                NuclearReactorManager.assemble(center, player);
+                        "<dark_gray>[<yellow>CER<dark_gray>] <gray>Structure detected — assembling...")));
+                NuclearReactor assembled = NuclearReactorManager.assemble(center, player);
+                if (assembled != null) {
+                    NuclearReactorManager.dropTriggerFrame(frame);
+                }
                 return;
             }
         }
