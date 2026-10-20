@@ -1,14 +1,11 @@
 package com.ultimateimprovments.energy.generation.nuclear;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import com.ultimateimprovments.util.ConsoleLogger;
-import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.StructureTemplate;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -80,7 +77,7 @@ public class NuclearReactorTask extends BukkitRunnable {
             }
 
             // 3. The bottom copper port must touch a cable node.
-            CableNode node = findCableNode(reactor.getEnergyPortLocation());
+            CableNode node = NuclearReactorManager.findPortNode(reactor.getEnergyPortLocation());
             if (node == null) {
                 apply(reactor, NuclearReactor.Status.NO_CABLE, log);
                 continue;
@@ -112,22 +109,6 @@ public class NuclearReactorTask extends BukkitRunnable {
             reactor.burnFuelTicks(Math.min(PASS_TICKS, burnedTicks));
             apply(reactor, NuclearReactor.Status.RUNNING, log);
         }
-    }
-
-    /** First cable node in the six neighbours of the energy port. */
-    private static CableNode findCableNode(Location port) {
-        if (port == null) return null;
-
-        for (Location near : LocationUtil.getNeighbors(port)) {
-            Location norm = LocationUtil.normalize(near);
-            if (norm == null) continue;
-
-            CableNode node = CableNetwork.getNode(norm);
-            if (node != null && LocationUtil.isFullyConnected(port, norm)) {
-                return node;
-            }
-        }
-        return null;
     }
 
     private static void apply(NuclearReactor reactor, NuclearReactor.Status status, boolean log) {

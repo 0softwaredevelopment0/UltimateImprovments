@@ -1245,24 +1245,56 @@ state_ready = "<green>✔ Готов (есть топливо)</green>"
 meter_connections = "<aqua>Подключений: </aqua><white>%count%</white>"
 
 # Compact nuclear reactor (3×3×3 safe energy generator).
-# Placeholders: %coords%, %status%, %fuel%, %energy%
+# Placeholders: %coords%, %status%, %fuel%, %item%, %sec%, %energy%, %power%, %state%, %prefix%
 [messages.structures.nuclear_reactor]
-# Default: <dark_gray>[<aqua>Ядерный реактор<dark_gray>] <gray>Обнаружена структура — сборка...
-detected = "<dark_gray>[<aqua>Ядерный реактор<dark_gray>] <gray>Обнаружена структура — сборка..."
+# Chat prefix word (the [CER] tag).
+# Default: CER
+prefix = "CER"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gray>Обнаружена структура — сборка...
+detected = "<dark_gray>[<yellow>CER<dark_gray>] <gray>Обнаружена структура — сборка..."
 # Default: <yellow>Ядерный реактор уже активен на этом месте!
 already_active = "<yellow>Ядерный реактор уже активен на этом месте!"
-# Default: <green>✔ <white>Ядерный реактор собран! <dark_gray>(%coords%)
-assembled = "<green>✔ <white>Ядерный реактор собран! <dark_gray>(%coords%)"
-# Default: <yellow>❕ Ядерный реактор демонтирован и отключён! <dark_gray>[<gray>%coords%<dark_gray>]
-disassembled = "<yellow>❕ Ядерный реактор демонтирован и отключён! <dark_gray>[<gray>%coords%<dark_gray>]"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <green>✔ <white>Ядерный реактор собран! <dark_gray>(%coords%)
+assembled = "<dark_gray>[<yellow>CER<dark_gray>] <green>✔ <white>Ядерный реактор собран! <dark_gray>(%coords%)"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <yellow>❕ Ядерный реактор демонтирован и отключён! <dark_gray>[<gray>%coords%<dark_gray>]
+disassembled = "<dark_gray>[<yellow>CER<dark_gray>] <yellow>❕ Ядерный реактор демонтирован и отключён! <dark_gray>[<gray>%coords%<dark_gray>]"
 # Default: <dark_red>❌ <red>Шаблон ядерного реактора не загружен — проверьте консоль!
 no_template = "<dark_red>❌ <red>Шаблон ядерного реактора не загружен — проверьте консоль!"
-# Default: <dark_gray>[<aqua>Ядерный реактор<dark_gray>] <gray>%coords% <dark_gray>| <white>%status%
-status = "<dark_gray>[<aqua>Ядерный реактор<dark_gray>] <gray>%coords% <dark_gray>| <white>%status%"
-# Default: <dark_gray>┃ <gray>Топливо: <white>%fuel%</white> <gray>изумрудов <dark_gray>| <gray>Выход: <white>%energy% ⚡/с
-status_detail = "<dark_gray>┃ <gray>Топливо: <white>%fuel%</white> <gray>изумрудов <dark_gray>| <gray>Выход: <white>%energy% ⚡/с"
-# Default: <dark_gray>┃ <gray>Изумруды — в бочку, редстоун — на центр, кабель — под нижний порт
-status_hint = "<dark_gray>┃ <gray>Изумруды — в бочку, рычаг — сверху на бочку, кабель — под нижний порт"
+# Multimeter gate: the data readout needs the multimeter item.
+# Default: <red>Для чтения данных нужен мультиметр!
+multimeter_required = "<red>Для чтения данных нужен мультиметр!"
+# Default: <gold>=== %prefix% ===</gold>
+meter_header = "<gold>=== %prefix% ===</gold>"
+# Default: <aqua>Позиция: </aqua><white>%coords%</white>
+meter_position = "<aqua>Позиция: </aqua><white>%coords%</white>"
+# Default: <aqua>Состояние: </aqua>%status%
+meter_status = "<aqua>Состояние: </aqua>%status%"
+# Default: <aqua>Редстоун: </aqua>%power%
+meter_power = "<aqua>Редстоун: </aqua>%power%"
+# Default: <green>✔ Вкл</green>
+power_on = "<green>✔ Вкл</green>"
+# Default: <red>✘ Выкл</red>
+power_off = "<red>✘ Выкл</red>"
+# Default: <aqua>Топливо: </aqua><white>%fuel%</white> <gray>%item%</gray>
+meter_fuel = "<aqua>Топливо: </aqua><white>%fuel%</white> <gray>%item%</gray>"
+# Default: <aqua>Текущая порция: </aqua><white>%sec% с</white>
+meter_burn = "<aqua>Текущая порция: </aqua><white>%sec% с</white>"
+# Default: <aqua>Кабель: </aqua>%state%
+meter_cable = "<aqua>Кабель: </aqua>%state%"
+# Default: <green>✔ Подключён</green>
+cable_connected = "<green>✔ Подключён</green>"
+# Default: <red>✘ Нет</red>
+cable_missing = "<red>✘ Нет</red>"
+# Default: <aqua>Выход: </aqua><white>%energy% ⚡/с</white>
+meter_output = "<aqua>Выход: </aqua><white>%energy% ⚡/с</white>"
+# Default: <aqua>Структура: </aqua>%state%
+meter_structure = "<aqua>Структура: </aqua>%state%"
+# Default: <green>✔ Цела</green>
+structure_ok = "<green>✔ Цела</green>"
+# Default: <dark_red>✖ Повреждена</dark_red>
+structure_damaged = "<dark_red>✖ Повреждена</dark_red>"
+# Default: <dark_gray>Изумруды — в бочку, рычаг — сверху на бочку, кабель — под нижний порт</dark_gray>
+meter_hint = "<dark_gray>Изумруды — в бочку, рычаг — сверху на бочку, кабель — под нижний порт</dark_gray>"
 # Default: <green>✔ Работает
 status_running = "<green>✔ Работает"
 # Default: <red>❌ Нет сигнала редстоуна на центральном блоке
@@ -1683,24 +1715,56 @@ state_ready = "<green>✔ Ready (has fuel)</green>"
 meter_connections = "<aqua>Connections: </aqua><white>%count%</white>"
 
 # Compact nuclear reactor (3×3×3 safe energy generator).
-# Placeholders: %coords%, %status%, %fuel%, %energy%
+# Placeholders: %coords%, %status%, %fuel%, %item%, %sec%, %energy%, %power%, %state%, %prefix%
 [messages_en.structures.nuclear_reactor]
-# Default: <dark_gray>[<aqua>Nuclear reactor<dark_gray>] <gray>Structure detected — assembling...
-detected = "<dark_gray>[<aqua>Nuclear reactor<dark_gray>] <gray>Structure detected — assembling..."
+# Chat prefix word (the [CER] tag).
+# Default: CER
+prefix = "CER"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gray>Structure detected — assembling...
+detected = "<dark_gray>[<yellow>CER<dark_gray>] <gray>Structure detected — assembling..."
 # Default: <yellow>A nuclear reactor is already active at this place!
 already_active = "<yellow>A nuclear reactor is already active at this place!"
-# Default: <green>✔ <white>Nuclear reactor assembled! <dark_gray>(%coords%)
-assembled = "<green>✔ <white>Nuclear reactor assembled! <dark_gray>(%coords%)"
-# Default: <yellow>❕ Nuclear reactor dismantled and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]
-disassembled = "<yellow>❕ Nuclear reactor dismantled and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <green>✔ <white>Nuclear reactor assembled! <dark_gray>(%coords%)
+assembled = "<dark_gray>[<yellow>CER<dark_gray>] <green>✔ <white>Nuclear reactor assembled! <dark_gray>(%coords%)"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <yellow>❕ Nuclear reactor dismantled and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]
+disassembled = "<dark_gray>[<yellow>CER<dark_gray>] <yellow>❕ Nuclear reactor dismantled and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]"
 # Default: <dark_red>❌ <red>The nuclear reactor template is not loaded — check the console!
 no_template = "<dark_red>❌ <red>The nuclear reactor template is not loaded — check the console!"
-# Default: <dark_gray>[<aqua>Nuclear reactor<dark_gray>] <gray>%coords% <dark_gray>| <white>%status%
-status = "<dark_gray>[<aqua>Nuclear reactor<dark_gray>] <gray>%coords% <dark_gray>| <white>%status%"
-# Default: <dark_gray>┃ <gray>Fuel: <white>%fuel%</white> <gray>emeralds <dark_gray>| <gray>Output: <white>%energy% ⚡/s
-status_detail = "<dark_gray>┃ <gray>Fuel: <white>%fuel%</white> <gray>emeralds <dark_gray>| <gray>Output: <white>%energy% ⚡/s"
-# Default: <dark_gray>┃ <gray>Emeralds go into the barrel, redstone on the center, cable under the bottom port
-status_hint = "<dark_gray>┃ <gray>Emeralds go into the barrel, a lever goes on top of the barrel, cable under the bottom port"
+# Multimeter gate: the data readout needs the multimeter item.
+# Default: <red>A multimeter is required to read the data!
+multimeter_required = "<red>A multimeter is required to read the data!"
+# Default: <gold>=== %prefix% ===</gold>
+meter_header = "<gold>=== %prefix% ===</gold>"
+# Default: <aqua>Position: </aqua><white>%coords%</white>
+meter_position = "<aqua>Position: </aqua><white>%coords%</white>"
+# Default: <aqua>Status: </aqua>%status%
+meter_status = "<aqua>Status: </aqua>%status%"
+# Default: <aqua>Redstone: </aqua>%power%
+meter_power = "<aqua>Redstone: </aqua>%power%"
+# Default: <green>✔ On</green>
+power_on = "<green>✔ On</green>"
+# Default: <red>✘ Off</red>
+power_off = "<red>✘ Off</red>"
+# Default: <aqua>Fuel: </aqua><white>%fuel%</white> <gray>%item%</gray>
+meter_fuel = "<aqua>Fuel: </aqua><white>%fuel%</white> <gray>%item%</gray>"
+# Default: <aqua>Current fuel: </aqua><white>%sec%s left</white>
+meter_burn = "<aqua>Current fuel: </aqua><white>%sec%s left</white>"
+# Default: <aqua>Cable: </aqua>%state%
+meter_cable = "<aqua>Cable: </aqua>%state%"
+# Default: <green>✔ Connected</green>
+cable_connected = "<green>✔ Connected</green>"
+# Default: <red>✘ Not connected</red>
+cable_missing = "<red>✘ Not connected</red>"
+# Default: <aqua>Output: </aqua><white>%energy% ⚡/s</white>
+meter_output = "<aqua>Output: </aqua><white>%energy% ⚡/s</white>"
+# Default: <aqua>Structure: </aqua>%state%
+meter_structure = "<aqua>Structure: </aqua>%state%"
+# Default: <green>✔ Intact</green>
+structure_ok = "<green>✔ Intact</green>"
+# Default: <dark_red>✖ Damaged</dark_red>
+structure_damaged = "<dark_red>✖ Damaged</dark_red>"
+# Default: <dark_gray>Emeralds go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>
+meter_hint = "<dark_gray>Emeralds go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>"
 # Default: <green>✔ Running
 status_running = "<green>✔ Running"
 # Default: <red>❌ No redstone signal on the center block

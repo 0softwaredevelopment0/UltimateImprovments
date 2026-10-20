@@ -19,7 +19,10 @@ in this file.
   Configured in UI-MBS.toml `[nuclear_reactor]`: `enabled`,
   `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`. Multiple
   reactors per world; anchors persist in the structure marker DB. Breaking the
-  top barrel dismantles the reactor and clears its marker.
+  top barrel dismantles the reactor and clears its marker. The trigger item
+  frame is consumed on assembly and dropped back (glow frames keep their type);
+  SHIFT+RMB with the multimeter on any reactor block shows the `[CER]` data
+  readout, and without a multimeter the player is asked to get one.
 - **NBT templates in the newer palette format** — `StructureTemplate` now
   accepts a palette `id` key as a fallback for the vanilla `Name`, so
   structure files exported by recent game versions load without a manual

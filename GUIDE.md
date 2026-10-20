@@ -413,7 +413,7 @@ Safe 3×3×3 energy generator (chiseled deepslate / copper / glass / reinforced 
 - Power the center **reinforced deepslate** with redstone — a lever on top of the barrel works (glass cannot hold a lever).
 - Connect a cable **under the bottom copper port**.
 - Burns 1 emerald per 10 s and pushes **1000 ⚡/s** into the network. No heat, meltdown or radiation; fuel is spent only while the structure is intact, powered, cabled and the network accepts the energy.
-- Right-click the frame for status; breaking the top barrel dismantles it. Multiple reactors per world.
+- The frame is a one-shot trigger: it breaks and drops after assembly. SHIFT+RMB with the multimeter on **any** reactor block shows the `[CER]` readout; without a multimeter the player is asked for one. Breaking the top barrel dismantles it. Multiple reactors per world.
 - Config: `[nuclear_reactor]` in UI-MBS.toml (`enabled`, `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`).
 
 ### Energy Network

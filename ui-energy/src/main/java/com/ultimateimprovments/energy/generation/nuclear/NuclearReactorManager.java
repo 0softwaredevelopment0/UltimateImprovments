@@ -1,6 +1,9 @@
 package com.ultimateimprovments.energy.generation.nuclear;
 
+import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
+import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.LocationUtil;
@@ -15,8 +18,12 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -141,16 +148,48 @@ public final class NuclearReactorManager {
         return null;
     }
 
-    /** Reactor to which this frame belongs, or {@code null}. */
-    public static NuclearReactor getForFrame(ItemFrame frame) {
-        if (frame == null) return null;
+    /**
+     * Breaks the trigger item frame and drops it (plus any displayed item).
+     * The frame is a one-shot assembly trigger, exactly like on the other
+     * structures — it must not stay behind and block the barrel.
+     */
+    public static void dropTriggerFrame(ItemFrame frame) {
+        if (frame == null || frame.isDead() || !frame.isValid()) return;
 
-        Location frameBlock = LocationUtil.normalize(frame.getLocation());
-        if (frameBlock == null) return null;
+        Location loc = frame.getLocation();
+        World world = frame.getWorld();
+        if (world == null) return;
 
-        Block attached = frameBlock.getBlock()
-                .getRelative(frame.getFacing().getOppositeFace());
-        return getByBlockLocation(attached.getLocation());
+        ItemStack displayed = frame.getItem();
+        if (displayed != null && !displayed.getType().isAir()) {
+            world.dropItemNaturally(loc, displayed);
+        }
+        Material frameItem = frame instanceof org.bukkit.entity.GlowItemFrame
+                ? Material.GLOW_ITEM_FRAME
+                : Material.ITEM_FRAME;
+        world.dropItemNaturally(loc, new ItemStack(frameItem));
+        frame.remove();
+    }
+
+    /**
+     * First cable node in the six neighbours of the bottom energy port.
+     * The port itself is the waxed chiseled copper at {@code (0,−2,0)}; its
+     * bottom face is the only exposed one, so the cable sits directly below
+     * the structure.
+     */
+    public static CableNode findPortNode(Location port) {
+        if (port == null) return null;
+
+        for (Location near : LocationUtil.getNeighbors(port)) {
+            Location norm = LocationUtil.normalize(near);
+            if (norm == null) continue;
+
+            CableNode node = CableNetwork.getNode(norm);
+            if (node != null && LocationUtil.isFullyConnected(port, norm)) {
+                return node;
+            }
+        }
+        return null;
     }
 
     // =========================
@@ -205,27 +244,103 @@ public final class NuclearReactorManager {
     }
 
     // =========================
-    // STATUS (frame right-click)
+    // MULTIMETER READOUT (SHIFT+RMB on any reactor block)
     // =========================
 
-    public static void sendStatus(Player player, NuclearReactor reactor) {
+    /**
+     * Full CER data pack. Requires a multimeter in either hand; without it the
+     * player gets the localized "multimeter required" hint, exactly like the
+     * coal generator and the DFC control signs.
+     */
+    public static void sendReadout(Player player, NuclearReactor reactor) {
         if (player == null || reactor == null) return;
 
-        int energy = energyPerSecond();
-        int fuel = reactor.countFuel(fuelMaterial());
+        if (!holdsMultimeter(player)) {
+            player.sendMessage(MessageUtil.parse(prefix() + msg("multimeter_required",
+                    "<red>A multimeter is required to read the data!")));
+            return;
+        }
 
-        player.sendMessage(MessageUtil.parse(msg("status",
-                        "<dark_gray>[<aqua>Nuclear reactor<dark_gray>] <gray>%coords% <dark_gray>| <white>%status%")
-                .replace("%coords%", coords(reactor.getAnchor()))
+        String p = prefix();
+        Location anchor = reactor.getAnchor();
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_header",
+                        "<gold>=== %prefix% ===</gold>")
+                .replace("%prefix%", prefixWord())));
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_position",
+                        "<aqua>Position: </aqua><white>%coords%</white>")
+                .replace("%coords%", coords(anchor))));
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_status",
+                        "<aqua>Status: </aqua>%status%")
                 .replace("%status%", statusLabel(reactor.getStatus()))));
 
-        player.sendMessage(MessageUtil.parse(msg("status_detail",
-                        "<dark_gray>┃ <gray>Fuel: <white>%fuel%</white> <gray>emeralds <dark_gray>| <gray>Output: <white>%energy% ⚡/s")
-                .replace("%fuel%", String.valueOf(fuel))
-                .replace("%energy%", String.valueOf(energy))));
+        Block center = reactor.getCenterBlock();
+        Block barrel = reactor.getBarrelBlock();
+        boolean powered = center.isBlockPowered()
+                || center.isBlockIndirectlyPowered()
+                || barrel.isBlockPowered()
+                || barrel.isBlockIndirectlyPowered();
+        player.sendMessage(MessageUtil.parse(p + msg("meter_power",
+                        "<aqua>Redstone: </aqua>%power%")
+                .replace("%power%", powered
+                        ? msg("power_on", "<green>✔ On</green>")
+                        : msg("power_off", "<red>✘ Off</red>"))));
 
-        player.sendMessage(MessageUtil.parse(msg("status_hint",
-                "<dark_gray>┃ <gray>Emeralds go into the barrel, redstone on the center, cable under the bottom port")));
+        Material fuel = fuelMaterial();
+        player.sendMessage(MessageUtil.parse(p + msg("meter_fuel",
+                        "<aqua>Fuel: </aqua><white>%fuel%</white> <gray>%item%</gray>")
+                .replace("%fuel%", String.valueOf(reactor.countFuel(fuel)))
+                .replace("%item%", materialName(fuel))));
+
+        int burnSeconds = (int) Math.ceil(reactor.getFuelTicksLeft() / 20.0);
+        player.sendMessage(MessageUtil.parse(p + msg("meter_burn",
+                        "<aqua>Current fuel: </aqua><white>%sec%s left</white>")
+                .replace("%sec%", String.valueOf(burnSeconds))));
+
+        boolean hasCable = findPortNode(reactor.getEnergyPortLocation()) != null;
+        player.sendMessage(MessageUtil.parse(p + msg("meter_cable",
+                        "<aqua>Cable: </aqua>%state%")
+                .replace("%state%", hasCable
+                        ? msg("cable_connected", "<green>✔ Connected</green>")
+                        : msg("cable_missing", "<red>✘ Not connected</red>"))));
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_output",
+                        "<aqua>Output: </aqua><white>%energy% ⚡/s</white>")
+                .replace("%energy%", String.valueOf(energyPerSecond()))));
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_structure",
+                        "<aqua>Structure: </aqua>%state%")
+                .replace("%state%", reactor.getStatus() == NuclearReactor.Status.DAMAGED
+                        ? msg("structure_damaged", "<dark_red>✖ Damaged</dark_red>")
+                        : msg("structure_ok", "<green>✔ Intact</green>"))));
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_hint",
+                "<dark_gray>Emeralds go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>")));
+    }
+
+    /** {@code [CER]} chat prefix — the word is configurable. */
+    private static String prefix() {
+        return "<dark_gray>[<yellow>" + prefixWord() + "<dark_gray>] ";
+    }
+
+    private static String prefixWord() {
+        return msg("prefix", "CER");
+    }
+
+    private static boolean holdsMultimeter(Player player) {
+        return isMultimeter(player.getInventory().getItemInMainHand())
+                || isMultimeter(player.getInventory().getItemInOffHand());
+    }
+
+    /** PDC tag check for the custom multimeter item (base: clock). */
+    private static boolean isMultimeter(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        Byte value = meta.getPersistentDataContainer().get(Keys.MULTIMETER, PersistentDataType.BYTE);
+        return value != null && value == (byte) 1;
     }
 
     private static String statusLabel(NuclearReactor.Status status) {
@@ -238,6 +353,11 @@ public final class NuclearReactorManager {
             case OUTPUT_BLOCKED -> msg("status_output_blocked", "<yellow>⚠ The network cannot accept energy");
             case DAMAGED -> msg("status_damaged", "<dark_red>✖ Structure damaged");
         };
+    }
+
+    private static String materialName(Material material) {
+        if (material == null) return "?";
+        return material.name().toLowerCase(Locale.ROOT).replace('_', ' ');
     }
 
     // =========================
