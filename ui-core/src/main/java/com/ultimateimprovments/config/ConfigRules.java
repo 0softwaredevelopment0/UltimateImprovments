@@ -180,6 +180,13 @@ final class ConfigRules {
             dbl("reactor.natural_cool_multiplier_min", 0.0, 1.0),
             dbl("reactor.natural_cool_multiplier_max", 0.0, 10.0),
 
+            // Compact nuclear reactor (3×3×3 safe energy generator)
+            bool("nuclear_reactor.enabled"),
+            integer("nuclear_reactor.energy_per_second", 0, 1000000, "Compact reactor output (energy per second)"),
+            integer("nuclear_reactor.fuel_interval_seconds", 1, 3600, "Seconds one fuel item lasts"),
+            notBlank("nuclear_reactor.fuel_item", 64),
+            bool("nuclear_reactor.log"),
+
             bool("features.antimatter.enabled"),
             integer("features.antimatter.explosion_radius", 0, 100),
             bool("features.antimatter.break_blocks"),

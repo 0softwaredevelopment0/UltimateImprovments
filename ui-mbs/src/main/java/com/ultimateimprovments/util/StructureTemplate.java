@@ -442,9 +442,15 @@ public class StructureTemplate {
             Material[] palette = new Material[paletteSize];
             for (int i = 0; i < paletteSize; i++) {
                 Map<String, Object> entry = (Map<String, Object>) paletteList.get(i);
+                // Vanilla structure files use "Name"; newer exports (DataVersion
+                // ~5000+) use "id". Accept both so freshly saved templates load
+                // without a manual conversion step.
                 String blockName = (String) entry.get("Name");
                 if (blockName == null) {
-                    throw new IOException("Palette entry " + i + " has no 'Name'");
+                    blockName = (String) entry.get("id");
+                }
+                if (blockName == null) {
+                    throw new IOException("Palette entry " + i + " has neither 'Name' nor 'id'");
                 }
                 // Strip "minecraft:" prefix
                 if (blockName.startsWith("minecraft:")) {

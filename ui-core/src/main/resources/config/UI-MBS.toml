@@ -204,3 +204,29 @@ natural_cool_multiplier_min = 0.0
 # Clamp (ceiling) for the rolled humidity multiplier.
 # Default: 1.0
 natural_cool_multiplier_max = 1.0
+
+# ==================================================================
+# COMPACT NUCLEAR REACTOR (3×3×3 safe energy generator)
+# ==================================================================
+
+# Compact nuclear reactor: emeralds burn in the top barrel, the redstone-
+# powered reinforced deepslate in the center enables it, and 1000 ⚡/s are
+# pushed into the cable network through the bottom copper port.
+[nuclear_reactor]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Energy pushed into the network per second while the reactor runs.
+# Default: 1000
+energy_per_second = 1000
+# Seconds one fuel item (one emerald) sustains the reactor. Fuel is only
+# spent while the structure is intact, the center is powered, a cable is
+# connected and the network actually accepts the energy.
+# Default: 10
+fuel_interval_seconds = 10
+# Fuel item consumed from the barrel.
+# Default: EMERALD
+fuel_item = "EMERALD"
+# Log every operating-state change to the console.
+# Default: false
+log = false

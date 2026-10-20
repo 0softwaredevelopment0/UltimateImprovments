@@ -5,6 +5,26 @@ in this file.
 
 ## [Unreleased]
 
+### Added
+- **Compact nuclear reactor (UI-MBS + UI-Energy)** — a safe 3×3×3 multi-block
+  energy generator (`nuclearreactor.nbt`). Assemble it with an item frame on a
+  top corner (so the top-center barrel stays reachable), put emeralds into that
+  barrel, power the reinforced deepslate center with redstone (a lever on the
+  barrel top powers the adjacent center — glass cannot hold a lever), and
+  connect a cable under the bottom waxed chiseled copper port. It burns
+  1 emerald per 10 seconds and pushes 1000 ⚡/s into the network; there is no
+  heat, meltdown or radiation. Fuel is spent only while the structure is
+  intact, the center is powered, a cable is connected and the network actually
+  accepts the energy (partial acceptance burns proportionally less).
+  Configured in UI-MBS.toml `[nuclear_reactor]`: `enabled`,
+  `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`. Multiple
+  reactors per world; anchors persist in the structure marker DB. Breaking the
+  top barrel dismantles the reactor and clears its marker.
+- **NBT templates in the newer palette format** — `StructureTemplate` now
+  accepts a palette `id` key as a fallback for the vanilla `Name`, so
+  structure files exported by recent game versions load without a manual
+  conversion step.
+
 ### Fixed
 - **A bloated config file stalled the whole server startup** — a runaway
   writer could grow a TOML (observed: 9 MB) and toml4j ground through it on

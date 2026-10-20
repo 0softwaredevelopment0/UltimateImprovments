@@ -4,6 +4,8 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorTask;
+import com.ultimateimprovments.energy.generation.nuclear.NuclearReactorManager;
+import com.ultimateimprovments.energy.generation.nuclear.NuclearReactorTask;
 import com.ultimateimprovments.energy.generation.reactor.ReactorListener;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;
 import com.ultimateimprovments.energy.generation.reactor.ReactorTask;
@@ -22,6 +24,7 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
 
     private BukkitTask generatorTask;
     private BukkitTask reactorTask;
+    private BukkitTask nuclearReactorTask;
     private BukkitTask balancerTask;
     private BukkitTask cableVisualTask;
     private BukkitTask persistenceTask;
@@ -75,6 +78,10 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
         getServer().getPluginManager().registerEvents(reactorListener, main);
         reactorTask = new ReactorTask().runTaskTimer(main, 1L, 1L);
 
+        // Compact nuclear reactors (safe energy generators, 3×3×3 structure).
+        NuclearReactorManager.init();
+        nuclearReactorTask = new NuclearReactorTask().runTaskTimer(main, 20L, 20L);
+
         ElectricFurnaceManager.init();
 
         // Batteries first (their nodes must exist), then the energy restore.
@@ -103,6 +110,7 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
     private void runShutdown() {
         if (generatorTask != null) { generatorTask.cancel(); generatorTask = null; }
         if (reactorTask != null) { reactorTask.cancel(); reactorTask = null; }
+        if (nuclearReactorTask != null) { nuclearReactorTask.cancel(); nuclearReactorTask = null; }
         if (balancerTask != null) { balancerTask.cancel(); balancerTask = null; }
         if (cableVisualTask != null) { cableVisualTask.cancel(); cableVisualTask = null; }
         if (persistenceTask != null) { persistenceTask.cancel(); persistenceTask = null; }
@@ -116,6 +124,7 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
         EnergyPersistence.saveAll();
         GeneratorManager.shutdown();
         ReactorManager.shutdown();
+        NuclearReactorManager.shutdown();
         ElectricFurnaceManager.shutdown();
         BatteryManager.shutdown();
         com.ultimateimprovments.mbs.api.MbsEnergy.unregister();

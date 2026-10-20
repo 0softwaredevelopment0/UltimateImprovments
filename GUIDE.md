@@ -407,6 +407,15 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - States: normal → degradation → self-destruct → meltdown.
 - Emits radiation at high temperatures.
 
+### Compact Nuclear Reactor
+Safe 3×3×3 energy generator (chiseled deepslate / copper / glass / reinforced deepslate, barrel on top):
+- Assemble with an item frame on a **top corner** (keeps the fuel barrel reachable), then put **emeralds** into the top-center barrel.
+- Power the center **reinforced deepslate** with redstone — a lever on top of the barrel works (glass cannot hold a lever).
+- Connect a cable **under the bottom copper port**.
+- Burns 1 emerald per 10 s and pushes **1000 ⚡/s** into the network. No heat, meltdown or radiation; fuel is spent only while the structure is intact, powered, cabled and the network accepts the energy.
+- Right-click the frame for status; breaking the top barrel dismantles it. Multiple reactors per world.
+- Config: `[nuclear_reactor]` in UI-MBS.toml (`enabled`, `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`).
+
 ### Energy Network
 - **Cables** — waxed lightning rod (straight) / waxed chiseled copper (corner).
 - **Batteries** — waxed copper grate (storage).
