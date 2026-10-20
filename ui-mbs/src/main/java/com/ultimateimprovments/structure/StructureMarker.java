@@ -237,6 +237,46 @@ public class StructureMarker {
     }
 
     // ════════════════════════════════════════
+    // PLACE ALL — register a multi-block structure in ONE cache + DB pass
+    // (battery assembly used to call place() per block, and every call
+    // rewrote structure_markers + structure_chunks — O(n²) on a big battery)
+    // ════════════════════════════════════════
+    public static void placeAll(Collection<Location> blocks, String type, UUID uuid) {
+        if (blocks == null || blocks.isEmpty() || type == null || uuid == null) return;
+
+        List<Location> added = new ArrayList<>();
+        java.util.Set<World> worlds = new LinkedHashSet<>();
+        for (Location blockLoc : blocks) {
+            if (blockLoc == null || blockLoc.getWorld() == null) continue;
+            String fk = fullKey(blockLoc);
+            StructureData previous = byPosition.put(fk,
+                    new StructureData(type, uuid, blockLoc.getWorld().getUID().toString()));
+            if (previous != null) {
+                Set<String> oldKeys = byUuid.get(previous.uuid());
+                if (oldKeys != null) {
+                    oldKeys.remove(fk);
+                    if (oldKeys.isEmpty()) byUuid.remove(previous.uuid());
+                }
+            }
+            byUuid.computeIfAbsent(uuid, k -> new HashSet<>()).add(fk);
+            added.add(blockLoc);
+            worlds.add(blockLoc.getWorld());
+        }
+        if (added.isEmpty()) return;
+
+        persistMany(added, type, uuid);
+
+        for (World world : worlds) {
+            for (Location blockLoc : added) {
+                if (world.equals(blockLoc.getWorld())) {
+                    StructureChunkTracker.addTicket(world, blockLoc.getBlockX(), blockLoc.getBlockZ());
+                }
+            }
+        }
+        StructureChunkTracker.rebuildFromCache();
+    }
+
+    // ════════════════════════════════════════
     // GET — get structure data at a position
     // ════════════════════════════════════════
     public static StructureData getAt(Location blockLoc) {
@@ -368,15 +408,21 @@ public class StructureMarker {
     // PURGE ORPHANED — remove from cache AND DB the markers with unknown UUIDs
     // Called after rebuildFromMarkers() to clean up orphaned entries.
     // ════════════════════════════════════════
+    // ⚠️ IMPORTANT: the purge is scoped to ONE marker type. Each manager only
+    // knows the UUIDs of its own structures, so an unscoped purge would delete
+    // every other type's markers (batteries wiped cables/reactors/generators on
+    // every startup). The type filter is what keeps the registry intact.
     // ⚠️ IMPORTANT: entries in UNLOADED worlds are NOT removed — managers build
     // usedUuids only from loaded worlds, and deleting entries of an unloaded world
     // would permanently lose structure data (previously the loss was only temporary
     // — from the RAM cache; now the source of truth is the DB).
-    public static void purgeOrphaned(Set<UUID> usedUuids) {
+    public static void purgeOrphaned(String type, Set<UUID> usedUuids) {
+        if (type == null) return;
         Iterator<Map.Entry<String, StructureData>> it = byPosition.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, StructureData> entry = it.next();
             StructureData data = entry.getValue();
+            if (!type.equals(data.type())) continue;
             if (!usedUuids.contains(data.uuid())) {
                 // Skip entries of unloaded worlds — structures are kept, and when the
                 // world loads the managers rebuild and decide their fate.
@@ -412,6 +458,27 @@ public class StructureMarker {
 
     private static String fullKey(String worldUid, int x, int y, int z) {
         return worldUid + ":" + x + "," + y + "," + z;
+    }
+
+    /** Batched write of a whole structure (one connection, one batch). */
+    private static void persistMany(Collection<Location> blocks, String type, UUID uuid) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "INSERT OR REPLACE INTO structure_markers (world, x, y, z, type, structure_uuid) VALUES (?, ?, ?, ?, ?, ?)")) {
+            for (Location blockLoc : blocks) {
+                st.setString(1, blockLoc.getWorld().getUID().toString());
+                st.setInt(2, blockLoc.getBlockX());
+                st.setInt(3, blockLoc.getBlockY());
+                st.setInt(4, blockLoc.getBlockZ());
+                st.setString(5, type);
+                st.setString(6, uuid.toString());
+                st.addBatch();
+            }
+            st.executeBatch();
+        } catch (Exception e) {
+            ConsoleLogger.warn("[StructureMarker] Failed to persist " + blocks.size()
+                    + " markers: " + e.getMessage());
+        }
     }
 
     /** Immediate write of a single entry (INSERT OR REPLACE). */

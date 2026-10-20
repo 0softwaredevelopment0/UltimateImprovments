@@ -1,6 +1,7 @@
 package com.ultimateimprovments.energy.transfer.cable;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
 
@@ -71,7 +72,8 @@ public class CableNetwork {
                 for (long nearKey : LocationUtil.getNeighborKeys(node.getKey())) {
                     CableNode neighbor = worldEntry.getValue().get(nearKey);
                     if (neighbor == null) continue;
-                    if (node.getType() == NodeType.BATTERY && neighbor.getType() == NodeType.BATTERY) continue;
+                    if (node.getType() == NodeType.BATTERY && neighbor.getType() == NodeType.BATTERY
+                            && !sameBatteryCluster(node, neighbor)) continue;
                     if (!LocationUtil.isFullyConnected(node.getKey(), nearKey)) continue;
                     node.connectKey(nearKey);
                     neighbor.connectKey(node.getKey());
@@ -136,10 +138,41 @@ public class CableNetwork {
         for (long nearKey : LocationUtil.getNeighborKeys(node.getKey())) {
             CableNode neighbor = worldNodes.get(nearKey);
             if (neighbor == null) continue;
-            if (node.getType() == NodeType.BATTERY && neighbor.getType() == NodeType.BATTERY) continue;
+            if (node.getType() == NodeType.BATTERY && neighbor.getType() == NodeType.BATTERY
+                    && !sameBatteryCluster(node, neighbor)) continue;
             if (!LocationUtil.isFullyConnected(node.getKey(), nearKey)) continue;
             node.connectKey(nearKey);
             neighbor.connectKey(node.getKey());
+        }
+    }
+
+    /**
+     * Batteries never route through each other — except inside ONE assembled
+     * battery cluster. The copper-grate blocks of a single multi-block battery
+     * ARE connected, so the whole structure behaves as one storage: capacity is
+     * {@code per-block capacity × blocks} and any block can be reached through
+     * any other block of the same cluster.
+     */
+    private static boolean sameBatteryCluster(CableNode a, CableNode b) {
+        if (a == null || b == null) return false;
+        BatteryManager.BatteryCluster ca = BatteryManager.getCluster(a.getLocation());
+        if (ca == null || ca.uuid == null) return false;
+        BatteryManager.BatteryCluster cb = BatteryManager.getCluster(b.getLocation());
+        return cb != null && ca.uuid.equals(cb.uuid);
+    }
+
+    // =========================
+    // RECONNECT — re-runs the neighbour auto-connect for an existing node
+    // (used after two battery clusters merge, when the same-cluster rule
+    // suddenly allows block-to-block links)
+    // =========================
+    public static void reconnect(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null || loc.getWorld() == null) return;
+
+        CableNode node = getNode(loc);
+        if (node != null) {
+            autoConnectNode(loc.getWorld().getUID().toString(), node);
         }
     }
 

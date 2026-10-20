@@ -72,7 +72,7 @@ public class GeneratorTask extends BukkitRunnable {
                 cfg.getInt("energy.generator.energy_per_fuel", 100);
 
         int burnDuration =
-                cfg.getInt("energy.generator.fuel_burn_ticks", 100);
+                cfg.getInt("energy.generator.fuel_burn_ticks", 200);
 
         boolean log =
                 cfg.getBoolean("energy.generator.log", false);

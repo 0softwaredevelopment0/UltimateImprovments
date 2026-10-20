@@ -1303,8 +1303,8 @@ status_unpowered = "<red>❌ Нет сигнала редстоуна на це�
 status_no_fuel = "<yellow>⚠ В бочке нет изумрудов"
 # Default: <yellow>⚠ Нет кабеля под нижним портом
 status_no_cable = "<yellow>⚠ Нет кабеля под нижним портом"
-# Default: <yellow>⚠ Сеть не принимает энергию
-status_output_blocked = "<yellow>⚠ Сеть не принимает энергию"
+# Default: <yellow>⚠ Сеть заполнена — реактор выключен
+status_output_blocked = "<yellow>⚠ Сеть заполнена — реактор выключен"
 # Default: <dark_red>✖ Структура повреждена
 status_damaged = "<dark_red>✖ Структура повреждена"
 # Structure alerts (broadcast within nuclear_reactor.alert_radius blocks).
@@ -1799,8 +1799,8 @@ status_unpowered = "<red>❌ No redstone signal on the center block"
 status_no_fuel = "<yellow>⚠ No emeralds in the barrel"
 # Default: <yellow>⚠ No cable under the bottom port
 status_no_cable = "<yellow>⚠ No cable under the bottom port"
-# Default: <yellow>⚠ The network cannot accept energy
-status_output_blocked = "<yellow>⚠ The network cannot accept energy"
+# Default: <yellow>⚠ The network is full — the reactor is switched off
+status_output_blocked = "<yellow>⚠ The network is full — the reactor is switched off"
 # Default: <dark_red>✖ Structure damaged
 status_damaged = "<dark_red>✖ Structure damaged"
 # Structure alerts (broadcast within nuclear_reactor.alert_radius blocks).

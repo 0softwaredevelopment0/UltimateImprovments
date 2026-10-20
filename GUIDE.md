@@ -412,7 +412,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - Assemble with an item frame on a **top corner** (keeps the barrel reachable). The top-center barrel takes **emeralds** (fuel) and **ice** (coolant).
 - Power the center **reinforced deepslate** with redstone — a lever on top of the barrel works (glass cannot hold a lever).
 - Connect a cable **under the bottom copper port**.
-- Burns 1 emerald per 10 s and pushes **1000 ⚡/s** into the network; fuel is spent only while the structure is intact, powered, cabled and the network accepts the energy.
+- Burns 1 emerald per 10 s and pushes **100 ⚡/s** into the network; fuel is spent only while the structure is intact, cabled, powered and the network has room for the output. A saturated network (no battery space) switches the reactor **off** — no fuel is burned and the temperature passively drops; it resumes on the first second with free room. The redstone gate on the center block is checked **after** the network gate.
 - **Thermal model**: the temperature starts at the biome floor and heats to **512°** at 20°/s while running; at 512° it holds the point and burns **1% coolant per 8 s**. Without coolant it keeps heating to **1024°**, the center block turns into lava and a **10-second detonation countdown** starts — replace the lava with **reinforced deepslate** in time to cancel the blast (temperature resets to 512°, the reactor keeps running). A stopped reactor passively cools at **1°/s** (scaled by the build-site biome humidity, like the DFC) down to its biome floor.
 - **Coolant**: ice in the barrel is consumed automatically (1 block/s, only while the buffer is below 100%): plain ice **1%**, packed ice **2%**, blue ice **3%**. A full buffer does not eat ice.
 - **Danger**: breaking the center block detonates the reactor (charged creeper, explosion radius 5); breaking every template block dismantles it; any other break marks the structure damaged until it is fully repaired. A DFC-style rotating audit (9 of 27 cells per second, `audit_cells_per_second`) also catches bypasses — explosions, pistons, plugin block changes — and reports/disassembles the same way. Damage / restored / failure / meltdown alerts are broadcast within **30 blocks**.
@@ -422,9 +422,11 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 
 ### Energy Network
 - **Cables** — waxed lightning rod (straight) / waxed chiseled copper (corner).
-- **Batteries** — waxed copper grate (storage).
+- **Batteries** — a multi-block structure, not a single block: put a one-shot item frame on a waxed copper grate and every copper grate connected to it becomes **one adaptive battery**. Capacity is **100 000 ⚡ per block** (config `energy.battery.max_energy`), the whole structure stores/discharges as a unit and shares one mode. A copper grate placed on its own is inert — no node, no storage.
+- **Battery modes** — a redstone pulse on **any** block of the cluster cycles Charge → Charge & Discharge → Discharge (rising edge, a lever held on does not keep flipping). The mode is saved in SQLite and survives a restart; SHIFT+RMB with an empty hand still works as a manual shortcut.
+- **Generator** — blast furnace, redstone-gated, **10 ⚡/s** while it burns fuel (1 item per 10 s, 100 ⚡ per fuel item); a full leftover buffer freezes fuel consumption until a consumer pulls.
 - **Generators**, **electric furnace**, **energy workbench** (custom crafting with energy cost).
-- Background tasks: energy loss, cable tick, battery drain, balancing; SQLite persistence; connection visualization.
+- Background tasks: energy loss, cable tick, battery drain, balancing; SQLite persistence (structure markers + stored energy survive a restart); connection visualization.
 
 ### Radiation
 - Levels: Safe → Mild → Moderate → High → Critical → Deadly → Lethal.
