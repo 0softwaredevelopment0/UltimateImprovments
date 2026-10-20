@@ -87,6 +87,16 @@ in this file.
   restarts automatically once a battery has room again.
 
 ### Fixed
+- **Battery modes no longer flip on their own while charging** — the mode was
+  polled from `Block#isBlockPowered()` / `isBlockIndirectlyPowered()` with a
+  rotating per-tick scan, so indirect/weak power from neighbouring circuits
+  looked like a new rising edge and the cluster cycled Charge → Both →
+  Discharge on every charge cycle (with a chat message each time). Mode
+  cycling is now driven by the real `BlockRedstoneEvent` of the redstone
+  component next to the battery (lever, button, dust, torch, plate): only a
+  genuine 0 → &gt;0 edge counts, and a 10-tick per-cluster debounce collapses
+  the many events of one dust line into a single cycle. Nothing else can
+  change the mode.
 - **Structures vanished from the DB after every restart** — `purgeOrphaned`
   was called by the battery, lamp and magnet managers with only *their own*
   UUID set, so each startup deleted the markers of every other structure type
