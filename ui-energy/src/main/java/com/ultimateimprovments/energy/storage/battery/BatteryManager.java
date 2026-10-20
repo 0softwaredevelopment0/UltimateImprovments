@@ -24,6 +24,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -46,9 +47,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * one cluster id and one operating mode for the whole structure.
  * <p>
  * Modes: a redstone pulse on <b>any</b> block of the cluster cycles
- * Charge → Charge &amp; Discharge → Discharge (rising edge, so a lever held on
- * does not keep flipping). The mode is persisted in {@code battery_modes} and
- * survives a restart.
+ * Charge → Charge &amp; Discharge → Discharge. The pulse is taken from the real
+ * {@link BlockRedstoneEvent} of the redstone component (lever, button, dust,
+ * torch, ...) next to the battery, never from polling block power — polling
+ * also sees indirect/weak power from neighbouring circuits and flipped the
+ * mode on every charge cycle. The mode is persisted in {@code battery_modes}
+ * and survives a restart.
  * <p>
  * Storage — SQLite structure registry ({@code structure_markers}, type "battery"):
  * every block gets a row with its cluster UUID, written immediately on place.
@@ -58,12 +62,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BatteryManager implements Listener {
 
-    /** Cluster blocks re-read for a redstone rising edge per server tick. */
-    private static final int REDSTONE_SCAN_PER_TICK = 8;
+    /**
+     * Minimum gap between two mode cycles of one cluster. A single redstone
+     * pulse fires {@link BlockRedstoneEvent} for every dust block of the line
+     * and for the powered block itself; the debounce collapses them into one
+     * cycle and ignores a held lever re-firing on neighbouring updates.
+     */
+    private static final long PULSE_COOLDOWN_TICKS = 10L;
 
     /** Radius (blocks) of the mode-change chat feedback. */
     private static final double MODE_NOTIFY_RADIUS = 8.0;
-
 
     // ════════════════════════════════════════
     // BATTERY MODES
@@ -98,20 +106,13 @@ public class BatteryManager implements Listener {
         public int capacity;
         public BatteryMode mode = BatteryMode.CHARGE_DISCHARGE;
 
-        /** Last observed redstone state (rising-edge detection, never persisted). */
-        boolean powered;
-        /** Rotating redstone scan cursor (block index inside scanOrder). */
-        int scanCursor;
-        /** Blocks scanned since the last "powered" hit — a full pass clears powered. */
-        int scanProgress;
-        /** Stable iteration order for the rotating redstone scan. */
-        final List<Long> scanOrder = new ArrayList<>();
+        /** Last pulse tick (debounce, never persisted). */
+        long lastPulseTick;
 
         private long sumX, sumY, sumZ;
 
         void addBlock(long key) {
             if (blockKeys.add(key)) {
-                scanOrder.add(key);
                 sumX += getX(key);
                 sumY += getY(key);
                 sumZ += getZ(key);
@@ -121,7 +122,6 @@ public class BatteryManager implements Listener {
 
         void removeBlock(long key) {
             if (blockKeys.remove(key)) {
-                scanOrder.remove(Long.valueOf(key));
                 sumX -= getX(key);
                 sumY -= getY(key);
                 sumZ -= getZ(key);
@@ -137,12 +137,10 @@ public class BatteryManager implements Listener {
         void recalculateCenter() {
             if (blockKeys.isEmpty()) return;
             sumX = 0; sumY = 0; sumZ = 0;
-            scanOrder.clear();
             for (long key : blockKeys) {
                 sumX += getX(key);
                 sumY += getY(key);
                 sumZ += getZ(key);
-                scanOrder.add(key);
             }
             updateCenterFromSums();
         }
@@ -263,9 +261,6 @@ public class BatteryManager implements Listener {
             cluster.recalculateCenter();
             BatteryMode persisted = persistedModes.get(cluster.uuid);
             if (persisted != null) cluster.mode = persisted;
-            // Baseline, not a rising edge: a lever already ON at startup must
-            // not cycle the restored mode.
-            cluster.powered = anyBlockPowered(cluster);
 
             for (long key : group.getValue()) {
                 locationToCluster.put(key, cluster);
@@ -357,7 +352,6 @@ public class BatteryManager implements Listener {
         cluster.world = loc.getWorld();
         cluster.blockKeys = new HashSet<>(connected);
         cluster.recalculateCenter();
-        cluster.powered = anyBlockPowered(cluster);
         saveMode(uuid, cluster.mode);
 
         for (long bk : connected) {
@@ -593,64 +587,52 @@ public class BatteryManager implements Listener {
     // ════════════════════════════════════════
 
     /**
-     * Rotating redstone scan of one cluster. A rising edge (unpowered → powered
-     * on any block of the structure) cycles the whole battery through
-     * Charge → Charge &amp; Discharge → Discharge. Only
-     * {@value #REDSTONE_SCAN_PER_TICK} blocks are read per tick, so even a large
-     * adaptive battery costs almost nothing; a full pass clears the latched
-     * state, so the next pulse is recognized. Chunks that are not loaded are
-     * skipped instead of being sync-loaded.
+     * A redstone pulse next to the battery cycles the whole cluster through
+     * Charge → Charge &amp; Discharge → Discharge.
+     * <p>
+     * The trigger is the real {@link BlockRedstoneEvent} of the redstone
+     * component (lever, button, dust, torch, plate, ...) — a genuine 0 → &gt;0
+     * edge. Polling {@code Block#isBlockPowered()} is deliberately not used:
+     * indirect/weak power from neighbouring circuits made the mode flip on
+     * every charge cycle. Every dust block of a line fires its own event, so a
+     * short per-cluster cooldown collapses one pulse into one cycle.
      */
-    private static void scanRedstone(BatteryCluster cluster) {
-        int size = cluster.scanOrder.size();
-        if (size <= 0) return;
+    @EventHandler(ignoreCancelled = true)
+    public void onRedstonePulse(BlockRedstoneEvent event) {
+        int newPower = event.getNewCurrent();
+        if (newPower <= 0 || newPower <= event.getOldCurrent()) return;
 
-        int step = Math.min(REDSTONE_SCAN_PER_TICK, size);
-        int start = cluster.scanCursor % size;
-        boolean found = false;
-        for (int i = 0; i < step; i++) {
-            long key = cluster.scanOrder.get((start + i) % size);
-            if (isPoweredAt(cluster.world, getX(key), getY(key), getZ(key))) {
-                found = true;
-                break;
-            }
+        Block source = event.getBlock();
+        if (source == null || source.getWorld() == null) return;
+
+        Set<BatteryCluster> touched = new LinkedHashSet<>();
+        collectCluster(source.getLocation(), touched);
+        for (Location near : LocationUtil.getNeighbors(source.getLocation())) {
+            collectCluster(near, touched);
         }
-        cluster.scanCursor = (start + step) % size;
+        if (touched.isEmpty()) return;
 
-        if (found) {
-            cluster.scanProgress = 0;
-            if (!cluster.powered) {
-                cluster.powered = true;
-                cluster.cycleMode();
-                saveMode(cluster.uuid, cluster.mode);
-                notifyMode(cluster);
-            }
-            return;
-        }
-
-        // Nothing found: after a full sweep the structure counts as unpowered,
-        // so the next signal is a fresh rising edge.
-        cluster.scanProgress += step;
-        if (cluster.scanProgress >= size) {
-            cluster.scanProgress = 0;
-            cluster.powered = false;
+        long now = currentTick();
+        for (BatteryCluster cluster : touched) {
+            if (now - cluster.lastPulseTick < PULSE_COOLDOWN_TICKS) continue;
+            cluster.lastPulseTick = now;
+            cluster.cycleMode();
+            saveMode(cluster.uuid, cluster.mode);
+            notifyMode(cluster);
         }
     }
 
-    /** Full (non-rotating) power check — only used for the startup baseline. */
-    private static boolean anyBlockPowered(BatteryCluster cluster) {
-        if (cluster == null || cluster.world == null) return false;
-        for (long key : cluster.blockKeys) {
-            if (isPoweredAt(cluster.world, getX(key), getY(key), getZ(key))) return true;
-        }
-        return false;
+    private static void collectCluster(Location loc, Set<BatteryCluster> out) {
+        BatteryCluster cluster = getCluster(loc);
+        if (cluster != null) out.add(cluster);
     }
 
-    private static boolean isPoweredAt(World world, int x, int y, int z) {
-        if (world == null) return false;
-        if (!world.isChunkLoaded(x >> 4, z >> 4)) return false;
-        Block block = world.getBlockAt(x, y, z);
-        return block.isBlockPowered() || block.isBlockIndirectlyPowered();
+    private static long currentTick() {
+        try {
+            return Bukkit.getCurrentTick();
+        } catch (NoSuchMethodError | NoClassDefFoundError e) {
+            return System.currentTimeMillis() / 50L;
+        }
     }
 
     /** Chat feedback for the cluster's players (8-block radius, no spam). */
@@ -749,9 +731,6 @@ public class BatteryManager implements Listener {
                     toRemove.add(cluster.id);
                     continue;
                 }
-
-                // Redstone mode control (rotating scan, rising edge only).
-                scanRedstone(cluster);
 
                 double pct = getChargePercentage(cluster);
                 int count = Math.max(1, (int) Math.round(pct / 10.0));
