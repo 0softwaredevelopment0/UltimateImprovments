@@ -19,9 +19,12 @@ import org.bukkit.inventory.ItemStack;
  * {@code (0,−1,0)} and the bottom energy port (waxed chiseled copper) at
  * {@code (0,−2,0)}, so the cable connects directly under the structure.
  * <p>
- * The reactor is intentionally safe: no heat, no meltdown, no radiation. It
- * only burns fuel while redstone-powered, the structure is intact and the
- * network actually accepts the energy.
+ * The reactor burns fuel only while redstone-powered, the structure is intact
+ * and the network actually accepts the energy. It also carries a thermal
+ * model: a temperature in {@code [tempMin .. max]} (the lower limit is rolled
+ * from the build-site biome, like the DFC), a cooling buffer fed by ice blocks
+ * in the barrel, and a meltdown countdown once the maximum temperature is
+ * reached.
  */
 public class NuclearReactor {
 
@@ -32,12 +35,44 @@ public class NuclearReactor {
         NO_FUEL,
         NO_CABLE,
         OUTPUT_BLOCKED,
-        DAMAGED
+        DAMAGED,
+        MELTDOWN
     }
 
     private final Location anchor;
     private int fuelTicksLeft;
     private Status status = Status.UNPOWERED;
+
+    // =========================
+    // THERMAL STATE (persisted in the nuclear_reactors table)
+    // =========================
+
+    /** Current temperature in degrees (whole numbers). */
+    private int temperature;
+
+    /** Dynamic lower temperature limit rolled from the build-site biome. */
+    private int tempMin;
+
+    /** Humidity multiplier scaling the passive cooling ({@code -1} = not rolled). */
+    private double naturalCoolMult = -1.0;
+
+    /** Cooling buffer in percent ({@code 0 .. cooling_max}). */
+    private int cooling;
+
+    /** Seconds accumulated toward the next 1% cooling drain. */
+    private int coolDrainSeconds;
+
+    /** Fractional passive-cooling carry (temperature has no fractions). */
+    private double coolRemainder;
+
+    /** Remaining meltdown seconds; {@code 0} = no meltdown. */
+    private int meltdownSeconds;
+
+    /** Structure damage flag — drives the "damaged / restored" broadcasts. */
+    private boolean damaged;
+
+    /** {@code false} until the biome limits were rolled (legacy DB rows). */
+    private boolean thermalReady;
 
     public NuclearReactor(Location anchor) {
         this.anchor = LocationUtil.normalize(anchor);
@@ -99,22 +134,119 @@ public class NuclearReactor {
     }
 
     // =========================
-    // FUEL (the barrel above the core)
+    // THERMAL STATE
     // =========================
 
-    /** Number of matching fuel items currently stored in the barrel. */
-    public int countFuel(Material fuel) {
-        if (fuel == null) return 0;
+    public int getTemperature() {
+        return temperature;
+    }
+
+    public void setTemperature(int temperature) {
+        this.temperature = Math.max(0, temperature);
+    }
+
+    public int getTempMin() {
+        return tempMin;
+    }
+
+    public void setTempMin(int tempMin) {
+        this.tempMin = Math.max(0, tempMin);
+    }
+
+    public double getNaturalCoolMult() {
+        return naturalCoolMult;
+    }
+
+    public void setNaturalCoolMult(double mult) {
+        naturalCoolMult = mult;
+    }
+
+    public int getCooling() {
+        return cooling;
+    }
+
+    public void setCooling(int cooling) {
+        this.cooling = Math.max(0, cooling);
+    }
+
+    public int getCoolDrainSeconds() {
+        return coolDrainSeconds;
+    }
+
+    public void setCoolDrainSeconds(int seconds) {
+        coolDrainSeconds = Math.max(0, seconds);
+    }
+
+    public double getCoolRemainder() {
+        return coolRemainder;
+    }
+
+    public void setCoolRemainder(double remainder) {
+        coolRemainder = remainder;
+    }
+
+    public int getMeltdownSeconds() {
+        return meltdownSeconds;
+    }
+
+    public void setMeltdownSeconds(int seconds) {
+        meltdownSeconds = Math.max(0, seconds);
+    }
+
+    public boolean isMeltdown() {
+        return meltdownSeconds > 0;
+    }
+
+    public boolean isDamaged() {
+        return damaged;
+    }
+
+    public void setDamaged(boolean damaged) {
+        this.damaged = damaged;
+    }
+
+    public boolean isThermalReady() {
+        return thermalReady;
+    }
+
+    public void setThermalReady(boolean ready) {
+        thermalReady = ready;
+    }
+
+    // =========================
+    // BARREL CONTENT
+    // =========================
+
+    /** Number of matching items currently stored in the barrel. */
+    public int countItem(Material material) {
+        if (material == null) return 0;
         Inventory inv = barrelInventory();
         if (inv == null) return 0;
 
         int total = 0;
         for (ItemStack stack : inv.getStorageContents()) {
-            if (stack != null && stack.getType() == fuel) {
+            if (stack != null && stack.getType() == material) {
                 total += stack.getAmount();
             }
         }
         return total;
+    }
+
+    /**
+     * Takes exactly one item of {@code material} from the barrel.
+     *
+     * @return {@code false} when the barrel is missing or holds no such item
+     */
+    public boolean takeOne(Material material) {
+        if (material == null) return false;
+        Inventory inv = barrelInventory();
+        if (inv == null) return false;
+
+        ItemStack one = new ItemStack(material, 1);
+        if (!inv.containsAtLeast(one, 1)) return false;
+
+        inv.removeItem(one);
+        return true;
     }
 
     /**
@@ -124,14 +256,7 @@ public class NuclearReactor {
      * @return {@code false} when the barrel is missing or holds no fuel
      */
     public boolean takeFuelItem(Material fuel, int ticksPerItem) {
-        if (fuel == null) return false;
-        Inventory inv = barrelInventory();
-        if (inv == null) return false;
-
-        ItemStack one = new ItemStack(fuel, 1);
-        if (!inv.containsAtLeast(one, 1)) return false;
-
-        inv.removeItem(one);
+        if (!takeOne(fuel)) return false;
         setFuelTicksLeft(ticksPerItem);
         return true;
     }

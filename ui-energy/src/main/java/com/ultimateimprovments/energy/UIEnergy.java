@@ -5,6 +5,7 @@ import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorTask;
 import com.ultimateimprovments.energy.generation.nuclear.NuclearReactorManager;
+import com.ultimateimprovments.energy.generation.nuclear.NuclearReactorPersistence;
 import com.ultimateimprovments.energy.generation.nuclear.NuclearReactorTask;
 import com.ultimateimprovments.energy.generation.reactor.ReactorListener;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;
@@ -96,7 +97,11 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
         // Real-tick blink: off/on_ticks are actual ticks now (5-tick pass).
         cableVisualTask = new CableVisualTask().runTaskTimer(main, 0L, 5L);
         // Periodic energy flush (batteries keep their charge across restarts).
-        persistenceTask = Bukkit.getScheduler().runTaskTimer(main, EnergyPersistence::saveAll, 200L, 200L);
+        // The same 10s cadence flushes the compact reactors' thermal state.
+        persistenceTask = Bukkit.getScheduler().runTaskTimer(main, () -> {
+            EnergyPersistence.saveAll();
+            NuclearReactorPersistence.saveAll();
+        }, 200L, 200L);
 
         LightManager.init();
         lightTask = Bukkit.getScheduler().runTaskTimer(main, LightManager::tick, 0L, 1L);

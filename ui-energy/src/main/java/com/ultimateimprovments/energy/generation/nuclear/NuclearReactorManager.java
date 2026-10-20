@@ -14,8 +14,10 @@ import com.ultimateimprovments.util.StructuresMessages;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Creeper;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -29,15 +31,18 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Registry, assembly and persistence of the compact nuclear reactors.
+ * Registry, assembly, persistence and player-facing events of the compact
+ * nuclear reactors.
  * <p>
  * A reactor is a 3×3×3 NBT structure ({@code nuclearreactor.nbt}) assembled
  * with an item frame, like every other multi-block structure. One reactor
  * instance exists per anchor (the top-center fuel barrel), so several reactors
  * can coexist in the same world; the anchor is stored in the structure marker
- * registry (SQLite) and restored on startup.
+ * registry (SQLite) and restored on startup, while the thermal state lives in
+ * the {@code nuclear_reactors} table keyed by the same anchor.
  * <p>
- * This class owns no energy logic — {@link NuclearReactorTask} does the tick.
+ * This class owns the structure-level events (damage reports, detonation) and
+ * the config accessors; {@link NuclearReactorTask} does the per-second tick.
  */
 public final class NuclearReactorManager {
 
@@ -46,6 +51,23 @@ public final class NuclearReactorManager {
 
     /** Structure marker type written to the SQLite registry. */
     public static final String MARKER_TYPE = "nuclearreactor";
+
+    /**
+     * Cooling blocks accepted by the barrel, cheapest first — the refill eats
+     * plain ice before packed ice before blue ice, so a nearly full buffer
+     * never wastes the strongest coolant.
+     */
+    private static final Material[] COOLING_BLOCKS = {
+            Material.ICE, Material.PACKED_ICE, Material.BLUE_ICE
+    };
+
+    /** Particle thresholds and counts (see the reactor spec). */
+    private static final int PARTICLE_SMOKE_TEMP = 640;
+    private static final int PARTICLE_SMOKE_COUNT = 4;
+    private static final int PARTICLE_LARGE_SMOKE_TEMP = 860;
+    private static final int PARTICLE_LARGE_SMOKE_COUNT = 4;
+    private static final int PARTICLE_LAVA_TEMP = 960;
+    private static final int PARTICLE_LAVA_COUNT = 2;
 
     private static final Map<Location, NuclearReactor> reactors = new ConcurrentHashMap<>();
 
@@ -88,10 +110,14 @@ public final class NuclearReactorManager {
             reactors.put(anchor, new NuclearReactor(anchor));
         }
 
+        // Thermal state (temperature, cooling, meltdown, fuel) per anchor.
+        NuclearReactorPersistence.loadAll();
+
         ConsoleLogger.info("[NuclearReactor] Restored " + reactors.size() + " reactor(s)");
     }
 
     public static void shutdown() {
+        NuclearReactorPersistence.saveAll();
         reactors.clear();
     }
 
@@ -105,9 +131,9 @@ public final class NuclearReactorManager {
     }
 
     /**
-     * Removes the reactor and its persisted marker — used when the anchor
-     * (the top fuel barrel) is broken, so a dismantled reactor does not leave
-     * a ghost marker behind forever.
+     * Removes the reactor and its persisted state — used when every template
+     * block is gone (or the reactor detonated), so a dismantled reactor does
+     * not leave a ghost marker / stale row behind forever.
      */
     public static void disassemble(Location anchor) {
         Location norm = LocationUtil.normalize(anchor);
@@ -115,6 +141,7 @@ public final class NuclearReactorManager {
 
         NuclearReactor removed = reactors.remove(norm);
         StructureMarker.removeAt(norm);
+        NuclearReactorPersistence.delete(norm);
         if (removed != null) {
             ConsoleLogger.info("[NuclearReactor] Disassembled at " + coords(norm));
         }
@@ -146,6 +173,16 @@ public final class NuclearReactorManager {
             }
         }
         return null;
+    }
+
+    /** @return {@code true} when both locations point at the same block. */
+    private static boolean sameBlock(Location a, Location b) {
+        return a != null && b != null
+                && a.getWorld() != null && b.getWorld() != null
+                && a.getWorld().equals(b.getWorld())
+                && a.getBlockX() == b.getBlockX()
+                && a.getBlockY() == b.getBlockY()
+                && a.getBlockZ() == b.getBlockZ();
     }
 
     /**
@@ -234,6 +271,11 @@ public final class NuclearReactorManager {
         reactors.put(anchor, reactor);
         StructureMarker.place(anchor, MARKER_TYPE, UUID.randomUUID());
 
+        // Biome climate is rolled once, at build time: the temperature limit
+        // becomes the cold floor, the humidity multiplier scales passive
+        // cooling. A disassemble + rebuild rolls a fresh pair.
+        initThermal(reactor);
+
         ConsoleLogger.info("[NuclearReactor] Assembled at " + coords(anchor));
         if (player != null) {
             player.sendMessage(MessageUtil.parse(msg("assembled",
@@ -241,6 +283,279 @@ public final class NuclearReactorManager {
                     .replace("%coords%", coords(anchor))));
         }
         return reactor;
+    }
+
+    /**
+     * Rolls the build-site climate into the reactor: the temperature lower
+     * limit (biome temperature, like the DFC) and the passive-cooling
+     * multiplier (biome humidity). A fresh reactor starts at its cold floor
+     * with an empty cooling buffer.
+     */
+    public static void initThermal(NuclearReactor reactor) {
+        if (reactor == null) return;
+        Location anchor = reactor.getAnchor();
+        if (anchor == null) return;
+
+        reactor.setTempMin(rollTempLimit(anchor));
+        reactor.setNaturalCoolMult(rollNaturalCoolMultiplier(anchor));
+        reactor.setTemperature(reactor.getTempMin());
+        reactor.setCooling(0);
+        reactor.setCoolDrainSeconds(0);
+        reactor.setCoolRemainder(0);
+        reactor.setMeltdownSeconds(0);
+        reactor.setDamaged(false);
+        reactor.setThermalReady(true);
+        NuclearReactorPersistence.save(reactor);
+    }
+
+    /**
+     * Rolls the dynamic lower temperature limit from the build-site biome:
+     * biome temperature × {@code nuclear_reactor.temp_limit_biome_multiplier}
+     * + {@code temp_limit_offset}, rounded to whole degrees. Read live from the
+     * biome holder, so datapack/custom biomes work; a biome without a value
+     * falls back to {@code temp_limit_biome_fallback}.
+     */
+    private static int rollTempLimit(Location base) {
+        double biomeTemp;
+        try {
+            double t = base.getBlock().getTemperature();
+            biomeTemp = Double.isFinite(t) ? t : cfgDouble("temp_limit_biome_fallback", 1.0);
+        } catch (Exception e) {
+            biomeTemp = cfgDouble("temp_limit_biome_fallback", 1.0);
+        }
+        double raw = biomeTemp * cfgDouble("temp_limit_biome_multiplier", 10.0)
+                + cfgDouble("temp_limit_offset", 0.0);
+        return Math.max(0, (int) Math.round(raw));
+    }
+
+    /**
+     * Rolls the passive-cooling multiplier from the build-site biome:
+     * biome humidity + {@code passive_cool_multiplier_offset}, clamped to
+     * [{@code passive_cool_multiplier_min} .. {@code _max}]. The rate itself
+     * ({@code passive_cool_rate}, degrees per second) stays live-tunable —
+     * this multiplier only scales it.
+     */
+    private static double rollNaturalCoolMultiplier(Location base) {
+        double humidity;
+        try {
+            double h = base.getBlock().getHumidity();
+            humidity = Double.isFinite(h) ? h : cfgDouble("passive_cool_biome_fallback", 0.5);
+        } catch (Exception e) {
+            humidity = cfgDouble("passive_cool_biome_fallback", 0.5);
+        }
+        double mult = humidity + cfgDouble("passive_cool_multiplier_offset", 0.0);
+        return Math.max(cfgDouble("passive_cool_multiplier_min", 0.0),
+                Math.min(cfgDouble("passive_cool_multiplier_max", 1.0), mult));
+    }
+
+    // =========================
+    // STRUCTURE DAMAGE / REPAIR
+    // =========================
+
+    /**
+     * Handles a player breaking one block of an active reactor.
+     * <ul>
+     *   <li>the redstone center block detonates the reactor (charged creeper,
+     *       explosion power configured, instant fuse);</li>
+     *   <li>the last remaining template block disassembles the reactor and
+     *       announces the failure;</li>
+     *   <li>any other block flips the structure into the damaged state once
+     *       (the repair flips it back once).</li>
+     * </ul>
+     *
+     * @return {@code true} when the block belonged to a reactor
+     */
+    public static boolean handleBlockBreak(Location loc) {
+        NuclearReactor reactor = getByBlockLocation(loc);
+        if (reactor == null) return false;
+
+        if (sameBlock(loc, reactor.getCenterBlockLocation())) {
+            detonate(reactor);
+            return true;
+        }
+
+        if (countRemainingBlocks(reactor) <= 0) {
+            broadcast(reactor, msg("failure_detected",
+                    "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure failure detected!"));
+            disassemble(reactor.getAnchor());
+            return true;
+        }
+
+        if (!reactor.isDamaged()) {
+            reactor.setDamaged(true);
+            broadcast(reactor, msg("damage_detected",
+                    "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage detected!"));
+            NuclearReactorPersistence.save(reactor);
+        }
+        return true;
+    }
+
+    /**
+     * Handles a player placing a block inside / on an active reactor.
+     * <p>
+     * The meltdown rescue comes first: replacing the lava center with
+     * reinforced deepslate prevents the detonation and resets the reactor to
+     * its working temperature. Otherwise a fully matching template ends the
+     * damaged state.
+     */
+    public static void handleBlockPlace(Block block) {
+        if (block == null) return;
+        Location loc = block.getLocation();
+
+        for (NuclearReactor reactor : reactors.values()) {
+            if (!reactor.isMeltdown()) continue;
+            if (!sameBlock(loc, reactor.getCenterBlockLocation())) continue;
+            if (block.getType() != Material.REINFORCED_DEEPSLATE) continue;
+
+            preventDetonation(reactor);
+            return;
+        }
+
+        NuclearReactor reactor = getByBlockLocation(loc);
+        if (reactor == null) return;
+
+        StructureTemplate template = StructureTemplate.get(TEMPLATE_NAME);
+        if (template == null) return;
+        if (!template.checkAt(reactor.getAnchor()).matched()) return;
+
+        if (reactor.isDamaged()) {
+            reactor.setDamaged(false);
+            broadcast(reactor, msg("damage_restored",
+                    "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage restored!"));
+            NuclearReactorPersistence.save(reactor);
+        }
+    }
+
+    /** Template blocks still standing at their exact expected material. */
+    private static int countRemainingBlocks(NuclearReactor reactor) {
+        StructureTemplate template = StructureTemplate.get(TEMPLATE_NAME);
+        Location anchor = reactor.getAnchor();
+        if (template == null || anchor == null || anchor.getWorld() == null) return 0;
+
+        World world = anchor.getWorld();
+        int cx = anchor.getBlockX(), cy = anchor.getBlockY(), cz = anchor.getBlockZ();
+        int remaining = 0;
+        for (StructureTemplate.BlockEntry entry : template.getBlocks()) {
+            Material actual = world.getBlockAt(
+                    cx + entry.dx(), cy + entry.dy(), cz + entry.dz()).getType();
+            if (actual == entry.material()) {
+                remaining++;
+            }
+        }
+        return remaining;
+    }
+
+    // =========================
+    // MELTDOWN / DETONATION
+    // =========================
+
+    /**
+     * Turns the center block into lava and starts the detonation countdown.
+     * Called by the tick when the temperature reaches the maximum; the
+     * countdown is owned by the tick, so nothing explodes right away.
+     */
+    public static void startMeltdown(NuclearReactor reactor) {
+        if (reactor == null || reactor.isMeltdown()) return;
+
+        Block center = reactor.getCenterBlock();
+        if (center.getType() != Material.LAVA) {
+            center.setType(Material.LAVA, false);
+        }
+
+        int seconds = Math.max(1, cfgInt("meltdown_seconds", 10));
+        reactor.setMeltdownSeconds(seconds);
+        reactor.setTemperature(Math.max(reactor.getTemperature(), maxTemp()));
+        broadcast(reactor, msg("meltdown_detected",
+                "<dark_gray>[<yellow>CER<dark_gray>] <red>Danger! <white>CER meltdown detected, structure detonation will occur in T-%sec%s.")
+                .replace("%sec%", String.valueOf(seconds)));
+        NuclearReactorPersistence.save(reactor);
+    }
+
+    /**
+     * The player replaced the lava center with reinforced deepslate in time:
+     * the detonation is cancelled, the reactor drops to its working
+     * temperature and keeps running.
+     */
+    public static void preventDetonation(NuclearReactor reactor) {
+        if (reactor == null) return;
+
+        reactor.setMeltdownSeconds(0);
+        reactor.setTemperature(workTemp());
+        reactor.setDamaged(false);
+        broadcast(reactor, msg("detonation_prevented",
+                "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure detonation prevented!"));
+        NuclearReactorPersistence.save(reactor);
+    }
+
+    /**
+     * Instant detonation: a charged creeper with a zero fuse and the configured
+     * explosion power (same shot as the DFC meltdown). The reactor is
+     * dismantled before the blast so the explosion cannot re-enter the damage
+     * handlers.
+     */
+    public static void detonate(NuclearReactor reactor) {
+        if (reactor == null) return;
+
+        Location center = reactor.getCenterBlockLocation().add(0.5, 0.5, 0.5);
+        World world = center.getWorld();
+        if (world != null) {
+            Creeper creeper = world.spawn(center, Creeper.class);
+            creeper.setPowered(true);
+            creeper.setExplosionRadius(Math.max(1, cfgInt("explosion_power", 5)));
+            creeper.setMaxFuseTicks(0);
+            creeper.setIgnited(true);
+        }
+
+        ConsoleLogger.info("[NuclearReactor] Detonated at " + coords(reactor.getAnchor()));
+        disassemble(reactor.getAnchor());
+    }
+
+    /**
+     * Threshold particles above the center block (1.5 blocks up):
+     * signal smoke above 640°, large smoke above 860°, lava sparks above 960°.
+     */
+    public static void spawnHeatParticles(NuclearReactor reactor) {
+        if (reactor == null) return;
+
+        int temp = reactor.getTemperature();
+        if (temp <= PARTICLE_SMOKE_TEMP) return;
+
+        Location loc = reactor.getCenterBlockLocation().add(0.5, 1.5, 0.5);
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        if (temp > PARTICLE_LAVA_TEMP) {
+            world.spawnParticle(Particle.LAVA, loc, PARTICLE_LAVA_COUNT);
+        }
+        if (temp > PARTICLE_LARGE_SMOKE_TEMP) {
+            world.spawnParticle(Particle.LARGE_SMOKE, loc, PARTICLE_LARGE_SMOKE_COUNT);
+        }
+        world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, PARTICLE_SMOKE_COUNT);
+    }
+
+    // =========================
+    // BROADCAST (30 blocks by default)
+    // =========================
+
+    /**
+     * Sends one localized alert to every player within
+     * {@code nuclear_reactor.alert_radius} blocks of the reactor. The message
+     * body already carries the {@code [CER]} tag; the global plugin prefix is
+     * prepended here.
+     */
+    public static void broadcast(NuclearReactor reactor, String body) {
+        if (reactor == null || body == null) return;
+        Location anchor = reactor.getAnchor();
+        if (anchor == null || anchor.getWorld() == null) return;
+
+        double radius = Math.max(1, cfgInt("alert_radius", 30));
+        double radiusSq = radius * radius;
+
+        for (Player player : anchor.getWorld().getPlayers()) {
+            if (player.getLocation().distanceSquared(anchor) <= radiusSq) {
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + body));
+            }
+        }
     }
 
     // =========================
@@ -274,7 +589,7 @@ public final class NuclearReactorManager {
 
         player.sendMessage(MessageUtil.parse(p + msg("meter_status",
                         "<aqua>Status: </aqua>%status%")
-                .replace("%status%", statusLabel(reactor.getStatus()))));
+                .replace("%status%", statusLabel(reactor))));
 
         Block center = reactor.getCenterBlock();
         Block barrel = reactor.getBarrelBlock();
@@ -291,13 +606,23 @@ public final class NuclearReactorManager {
         Material fuel = fuelMaterial();
         player.sendMessage(MessageUtil.parse(p + msg("meter_fuel",
                         "<aqua>Fuel: </aqua><white>%fuel%</white> <gray>%item%</gray>")
-                .replace("%fuel%", String.valueOf(reactor.countFuel(fuel)))
+                .replace("%fuel%", String.valueOf(reactor.countItem(fuel)))
                 .replace("%item%", materialName(fuel))));
 
         int burnSeconds = (int) Math.ceil(reactor.getFuelTicksLeft() / 20.0);
         player.sendMessage(MessageUtil.parse(p + msg("meter_burn",
                         "<aqua>Current fuel: </aqua><white>%sec%s left</white>")
                 .replace("%sec%", String.valueOf(burnSeconds))));
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_temp",
+                        "<aqua>Temperature: </aqua><white>%temp% / %max% C*</white>")
+                .replace("%temp%", String.valueOf(reactor.getTemperature()))
+                .replace("%max%", String.valueOf(maxTemp()))));
+
+        player.sendMessage(MessageUtil.parse(p + msg("meter_cooling",
+                        "<aqua>Cooling: </aqua><white>%cool%%</white> <dark_gray>(ice: %ice%)</dark_gray>")
+                .replace("%cool%", String.valueOf(reactor.getCooling()))
+                .replace("%ice%", String.valueOf(countCoolingBlocks(reactor)))));
 
         boolean hasCable = findPortNode(reactor.getEnergyPortLocation()) != null;
         player.sendMessage(MessageUtil.parse(p + msg("meter_cable",
@@ -313,11 +638,18 @@ public final class NuclearReactorManager {
         player.sendMessage(MessageUtil.parse(p + msg("meter_structure",
                         "<aqua>Structure: </aqua>%state%")
                 .replace("%state%", reactor.getStatus() == NuclearReactor.Status.DAMAGED
+                                || reactor.getStatus() == NuclearReactor.Status.MELTDOWN
                         ? msg("structure_damaged", "<dark_red>✖ Damaged</dark_red>")
                         : msg("structure_ok", "<green>✔ Intact</green>"))));
 
+        if (reactor.isMeltdown()) {
+            player.sendMessage(MessageUtil.parse(p + msg("meter_meltdown",
+                            "<dark_red>❌ Detonation in </dark_red><white>%sec%s</white>")
+                    .replace("%sec%", String.valueOf(reactor.getMeltdownSeconds()))));
+        }
+
         player.sendMessage(MessageUtil.parse(p + msg("meter_hint",
-                "<dark_gray>Emeralds go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>")));
+                "<dark_gray>Emeralds and ice go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>")));
     }
 
     /** {@code [CER]} chat prefix — the word is configurable. */
@@ -343,7 +675,17 @@ public final class NuclearReactorManager {
         return value != null && value == (byte) 1;
     }
 
-    private static String statusLabel(NuclearReactor.Status status) {
+    /** How many cooling blocks (any ice type) the barrel currently holds. */
+    private static int countCoolingBlocks(NuclearReactor reactor) {
+        int total = 0;
+        for (Material material : COOLING_BLOCKS) {
+            total += reactor.countItem(material);
+        }
+        return total;
+    }
+
+    private static String statusLabel(NuclearReactor reactor) {
+        NuclearReactor.Status status = reactor.getStatus();
         if (status == null) return "?";
         return switch (status) {
             case RUNNING -> msg("status_running", "<green>✔ Running");
@@ -352,6 +694,9 @@ public final class NuclearReactorManager {
             case NO_CABLE -> msg("status_no_cable", "<yellow>⚠ No cable under the bottom port");
             case OUTPUT_BLOCKED -> msg("status_output_blocked", "<yellow>⚠ The network cannot accept energy");
             case DAMAGED -> msg("status_damaged", "<dark_red>✖ Structure damaged");
+            case MELTDOWN -> msg("status_meltdown",
+                            "<dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>")
+                    .replace("%sec%", String.valueOf(reactor.getMeltdownSeconds()));
         };
     }
 
@@ -363,6 +708,18 @@ public final class NuclearReactorManager {
     // =========================
     // CONFIG HELPERS
     // =========================
+
+    private static int cfgInt(String key, int def) {
+        Main main = Main.getInstance();
+        if (main == null) return def;
+        return main.getConfig().getInt("nuclear_reactor." + key, def);
+    }
+
+    private static double cfgDouble(String key, double def) {
+        Main main = Main.getInstance();
+        if (main == null) return def;
+        return main.getConfig().getDouble("nuclear_reactor." + key, def);
+    }
 
     /** Configured fuel item ({@code nuclear_reactor.fuel_item}, EMERALD fallback). */
     public static Material fuelMaterial() {
@@ -379,9 +736,63 @@ public final class NuclearReactorManager {
 
     /** Configured output rate in energy per second. */
     public static int energyPerSecond() {
+        return Math.max(0, cfgInt("energy_per_second", 1000));
+    }
+
+    /** Working temperature — the point where the reactor starts burning coolant. */
+    public static int workTemp() {
+        return Math.max(1, cfgInt("work_temp", 512));
+    }
+
+    /** Maximum temperature — a meltdown starts here. */
+    public static int maxTemp() {
+        return Math.max(workTemp(), cfgInt("max_temp", 1024));
+    }
+
+    /** Full cooling buffer in percent. */
+    public static int coolingMax() {
+        return Math.max(1, cfgInt("cooling_max", 100));
+    }
+
+    /**
+     * Cooling percent one block of the given ice type adds. Anything else
+     * (including {@code null}) adds nothing.
+     */
+    public static int coolingValue(Material material) {
+        if (material == null) return 0;
+        return switch (material) {
+            case ICE -> Math.max(0, cfgInt("cooling_ice", 1));
+            case PACKED_ICE -> Math.max(0, cfgInt("cooling_packed_ice", 2));
+            case BLUE_ICE -> Math.max(0, cfgInt("cooling_blue_ice", 3));
+            default -> 0;
+        };
+    }
+
+    /** Cooling blocks accepted by the barrel, cheapest first. */
+    public static Material[] coolingBlocks() {
+        return COOLING_BLOCKS.clone();
+    }
+
+    /** Cooling blocks the barrel is allowed to convert per second. */
+    public static int coolingBlocksPerSecond() {
+        return Math.max(0, cfgInt("cooling_blocks_per_second", 1));
+    }
+
+    /** Seconds one cooling percent lasts at the working temperature. */
+    public static int coolingDrainSeconds() {
+        return Math.max(1, cfgInt("cooling_drain_seconds", 8));
+    }
+
+    /** Passive cooling in degrees per second (before the humidity multiplier). */
+    public static double passiveCoolRate() {
         Main main = Main.getInstance();
-        if (main == null) return 1000;
-        return Math.max(0, main.getConfig().getInt("nuclear_reactor.energy_per_second", 1000));
+        if (main == null) return 1.0;
+        return Math.max(0.0, main.getConfig().getDouble("nuclear_reactor.passive_cool_rate", 1.0));
+    }
+
+    /** Heating rate in degrees per second while the reactor runs. */
+    public static int heatRate() {
+        return Math.max(0, cfgInt("heat_rate", 20));
     }
 
     // =========================

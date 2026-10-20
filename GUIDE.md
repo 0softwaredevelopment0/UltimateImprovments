@@ -408,13 +408,16 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - Emits radiation at high temperatures.
 
 ### Compact Nuclear Reactor
-Safe 3×3×3 energy generator (chiseled deepslate / copper / glass / reinforced deepslate, barrel on top):
-- Assemble with an item frame on a **top corner** (keeps the fuel barrel reachable), then put **emeralds** into the top-center barrel.
+3×3×3 energy generator (chiseled deepslate / copper / glass / reinforced deepslate, barrel on top):
+- Assemble with an item frame on a **top corner** (keeps the barrel reachable). The top-center barrel takes **emeralds** (fuel) and **ice** (coolant).
 - Power the center **reinforced deepslate** with redstone — a lever on top of the barrel works (glass cannot hold a lever).
 - Connect a cable **under the bottom copper port**.
-- Burns 1 emerald per 10 s and pushes **1000 ⚡/s** into the network. No heat, meltdown or radiation; fuel is spent only while the structure is intact, powered, cabled and the network accepts the energy.
-- The frame is a one-shot trigger: it breaks and drops after assembly. SHIFT+RMB with the multimeter on **any** reactor block shows the `[CER]` readout; without a multimeter the player is asked for one. Breaking the top barrel dismantles it. Multiple reactors per world.
-- Config: `[nuclear_reactor]` in UI-MBS.toml (`enabled`, `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`).
+- Burns 1 emerald per 10 s and pushes **1000 ⚡/s** into the network; fuel is spent only while the structure is intact, powered, cabled and the network accepts the energy.
+- **Thermal model**: the temperature starts at the biome floor and heats to **512°** at 20°/s while running; at 512° it holds the point and burns **1% coolant per 8 s**. Without coolant it keeps heating to **1024°**, the center block turns into lava and a **10-second detonation countdown** starts — replace the lava with **reinforced deepslate** in time to cancel the blast (temperature resets to 512°, the reactor keeps running). A stopped reactor passively cools at **1°/s** (scaled by the build-site biome humidity, like the DFC) down to its biome floor.
+- **Coolant**: ice in the barrel is consumed automatically (1 block/s, only while the buffer is below 100%): plain ice **1%**, packed ice **2%**, blue ice **3%**. A full buffer does not eat ice.
+- **Danger**: breaking the center block detonates the reactor (charged creeper, explosion radius 5); breaking every template block dismantles it; any other break marks the structure damaged until it is fully repaired. Damage / restored / failure / meltdown alerts are broadcast within **30 blocks**.
+- The frame is a one-shot trigger: it breaks and drops after assembly. SHIFT+RMB with the multimeter on **any** reactor block shows the `[CER]` readout (temperature, cooling, meltdown countdown); without a multimeter the player is asked for one. Multiple reactors per world; anchors and full thermal state persist in SQLite.
+- Config: `[nuclear_reactor]` in UI-MBS.toml (`enabled`, `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`, `heat_rate`, `work_temp`, `max_temp`, `passive_cool_rate`, `passive_cool_*`, `temp_limit_*`, `cooling_*`, `meltdown_seconds`, `explosion_power`, `alert_radius`).
 
 ### Energy Network
 - **Cables** — waxed lightning rod (straight) / waxed chiseled copper (corner).

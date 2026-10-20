@@ -6,23 +6,45 @@ in this file.
 ## [Unreleased]
 
 ### Added
-- **Compact nuclear reactor (UI-MBS + UI-Energy)** — a safe 3×3×3 multi-block
+- **Compact nuclear reactor (UI-MBS + UI-Energy)** — a 3×3×3 multi-block
   energy generator (`nuclearreactor.nbt`). Assemble it with an item frame on a
-  top corner (so the top-center barrel stays reachable), put emeralds into that
-  barrel, power the reinforced deepslate center with redstone (a lever on the
-  barrel top powers the adjacent center — glass cannot hold a lever), and
-  connect a cable under the bottom waxed chiseled copper port. It burns
-  1 emerald per 10 seconds and pushes 1000 ⚡/s into the network; there is no
-  heat, meltdown or radiation. Fuel is spent only while the structure is
-  intact, the center is powered, a cable is connected and the network actually
-  accepts the energy (partial acceptance burns proportionally less).
-  Configured in UI-MBS.toml `[nuclear_reactor]`: `enabled`,
-  `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`. Multiple
-  reactors per world; anchors persist in the structure marker DB. Breaking the
-  top barrel dismantles the reactor and clears its marker. The trigger item
-  frame is consumed on assembly and dropped back (glow frames keep their type);
-  SHIFT+RMB with the multimeter on any reactor block shows the `[CER]` data
-  readout, and without a multimeter the player is asked to get one.
+  top corner (so the top-center barrel stays reachable), put emeralds and ice
+  into that barrel, power the reinforced deepslate center with redstone (a
+  lever on the barrel top powers the adjacent center — glass cannot hold a
+  lever), and connect a cable under the bottom waxed chiseled copper port. It
+  burns 1 emerald per 10 seconds and pushes 1000 ⚡/s into the network; fuel is
+  spent only while the structure is intact, the center is powered, a cable is
+  connected and the network actually accepts the energy (partial acceptance
+  burns proportionally less).
+- **CER thermal model, coolant and meltdown (UI-Energy + UI-MBS)** — the
+  reactor now has a temperature in `[biome floor .. 1024]`. The floor is rolled
+  at assembly from the build-site biome temperature (same formula as the DFC)
+  and the passive cooling is scaled by the biome humidity. A running reactor
+  heats to 512° at 20°/s with passive cooling disabled, then holds the point
+  and drains the cooling buffer (1% per 8s); without coolant it keeps heating
+  to 1024°, the center block turns into lava and a 10-second detonation
+  countdown starts. Putting reinforced deepslate back into the center in time
+  cancels the blast and resets the reactor to 512°; otherwise a charged
+  creeper with explosion radius 5 detonates instantly. The barrel now also
+  accepts ice — consumed automatically 1 block/s while the buffer is below
+  100%, plain ice 1%, packed ice 2%, blue ice 3%. A stopped reactor passively
+  cools at 1°/s × humidity down to its biome floor, and a restored coolant
+  buffer pulls a running reactor back to 512°. Threshold particles (signal
+  smoke above 640°, large smoke above 860°, lava sparks above 960°) and
+  structure alerts (damage / restored / failure / meltdown / detonation
+  prevented) are broadcast within 30 blocks. Breaking the redstone center
+  detonates the reactor; breaking every template block dismantles it; any
+  other break flips the structure into the damaged state until it is fully
+  repaired. All state (temperature, limits, cooling, drain progress, meltdown
+  timer, fuel, damage flag) persists per anchor in the new
+  `nuclear_reactors` table, so a world can host any number of reactors.
+  Configured in UI-MBS.toml `[nuclear_reactor]` (`heat_rate`, `work_temp`,
+  `max_temp`, `passive_cool_*`, `temp_limit_*`, `cooling_*`, `meltdown_seconds`,
+  `explosion_power`, `alert_radius` on top of the previous keys). The trigger
+  item frame is consumed on assembly and dropped back (glow frames keep their
+  type); SHIFT+RMB with the multimeter on any reactor block shows the `[CER]`
+  data readout (temperature, cooling, meltdown countdown), and without a
+  multimeter the player is asked to get one.
 - **NBT templates in the newer palette format** — `StructureTemplate` now
   accepts a palette `id` key as a fallback for the vanilla `Name`, so
   structure files exported by recent game versions load without a manual
