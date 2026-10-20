@@ -142,6 +142,7 @@ public final class NuclearReactorManager {
         NuclearReactor removed = reactors.remove(norm);
         StructureMarker.removeAt(norm);
         NuclearReactorPersistence.delete(norm);
+        NuclearReactorAudit.reset(norm);
         if (removed != null) {
             ConsoleLogger.info("[NuclearReactor] Disassembled at " + coords(norm));
         }
@@ -374,7 +375,11 @@ public final class NuclearReactorManager {
             return true;
         }
 
-        if (countRemainingBlocks(reactor) <= 0) {
+        // The event path updates the audit cache in O(1), so the player action
+        // is reflected instantly — the rotating audit is the bypass net.
+        NuclearReactorAudit.noteBroken(reactor, loc);
+
+        if (NuclearReactorAudit.presentCount(reactor) <= 0) {
             broadcast(reactor, msg("failure_detected",
                     "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure failure detected!"));
             disassemble(reactor.getAnchor());
@@ -395,8 +400,9 @@ public final class NuclearReactorManager {
      * <p>
      * The meltdown rescue comes first: replacing the lava center with
      * reinforced deepslate prevents the detonation and resets the reactor to
-     * its working temperature. Otherwise a fully matching template ends the
-     * damaged state.
+     * its working temperature. Any other block seals the meltdown (the blast
+     * is cancelled) but ruins the reactor — it is dismantled and can be
+     * rebuilt later. Otherwise a completed template ends the damaged state.
      */
     public static void handleBlockPlace(Block block) {
         if (block == null) return;
@@ -405,20 +411,21 @@ public final class NuclearReactorManager {
         for (NuclearReactor reactor : reactors.values()) {
             if (!reactor.isMeltdown()) continue;
             if (!sameBlock(loc, reactor.getCenterBlockLocation())) continue;
-            if (block.getType() != Material.REINFORCED_DEEPSLATE) continue;
 
-            preventDetonation(reactor);
+            if (block.getType() == Material.REINFORCED_DEEPSLATE) {
+                preventDetonation(reactor);
+            } else {
+                abandonMeltdown(reactor);
+            }
             return;
         }
 
         NuclearReactor reactor = getByBlockLocation(loc);
         if (reactor == null) return;
 
-        StructureTemplate template = StructureTemplate.get(TEMPLATE_NAME);
-        if (template == null) return;
-        if (!template.checkAt(reactor.getAnchor()).matched()) return;
+        NuclearReactorAudit.noteRepaired(reactor, loc);
 
-        if (reactor.isDamaged()) {
+        if (NuclearReactorAudit.allPresent(reactor) && reactor.isDamaged()) {
             reactor.setDamaged(false);
             broadcast(reactor, msg("damage_restored",
                     "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage restored!"));
@@ -426,23 +433,35 @@ public final class NuclearReactorManager {
         }
     }
 
-    /** Template blocks still standing at their exact expected material. */
-    private static int countRemainingBlocks(NuclearReactor reactor) {
-        StructureTemplate template = StructureTemplate.get(TEMPLATE_NAME);
-        Location anchor = reactor.getAnchor();
-        if (template == null || anchor == null || anchor.getWorld() == null) return 0;
+    /**
+     * Bypass-proof structure transitions from the rotating audit: a missing
+     * cell flips the reactor into the damaged state once, a fully repaired
+     * template flips it back once, and an empty structure is dismantled with
+     * the failure alert — so explosions, pistons and plugin block changes are
+     * handled exactly like player breaks.
+     */
+    public static void handleStructureAudit(NuclearReactor reactor, NuclearReactorAudit.Result result) {
+        if (reactor == null || result == null) return;
 
-        World world = anchor.getWorld();
-        int cx = anchor.getBlockX(), cy = anchor.getBlockY(), cz = anchor.getBlockZ();
-        int remaining = 0;
-        for (StructureTemplate.BlockEntry entry : template.getBlocks()) {
-            Material actual = world.getBlockAt(
-                    cx + entry.dx(), cy + entry.dy(), cz + entry.dz()).getType();
-            if (actual == entry.material()) {
-                remaining++;
-            }
+        if (result.allMissing()) {
+            broadcast(reactor, msg("failure_detected",
+                    "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure failure detected!"));
+            disassemble(reactor.getAnchor());
+            return;
         }
-        return remaining;
+
+        boolean damaged = !result.intact();
+        if (damaged && !reactor.isDamaged()) {
+            reactor.setDamaged(true);
+            broadcast(reactor, msg("damage_detected",
+                    "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage detected!"));
+            NuclearReactorPersistence.save(reactor);
+        } else if (!damaged && reactor.isDamaged()) {
+            reactor.setDamaged(false);
+            broadcast(reactor, msg("damage_restored",
+                    "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage restored!"));
+            NuclearReactorPersistence.save(reactor);
+        }
     }
 
     // =========================
@@ -482,9 +501,27 @@ public final class NuclearReactorManager {
         reactor.setMeltdownSeconds(0);
         reactor.setTemperature(workTemp());
         reactor.setDamaged(false);
+        // The lava center may have been seeded as a missing cell (a break
+        // during the countdown seeds the audit) — re-seed so the restored
+        // reinforced deepslate counts as present immediately.
+        NuclearReactorAudit.reset(reactor.getAnchor());
         broadcast(reactor, msg("detonation_prevented",
                 "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure detonation prevented!"));
         NuclearReactorPersistence.save(reactor);
+    }
+
+    /**
+     * The player sealed the lava center with a wrong block: the blast is
+     * cancelled (same alert) but the reactor is ruined — it is dismantled so
+     * the player can rebuild it after restoring the reinforced deepslate.
+     */
+    public static void abandonMeltdown(NuclearReactor reactor) {
+        if (reactor == null) return;
+
+        reactor.setMeltdownSeconds(0);
+        broadcast(reactor, msg("detonation_prevented",
+                "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure detonation prevented!"));
+        disassemble(reactor.getAnchor());
     }
 
     /**

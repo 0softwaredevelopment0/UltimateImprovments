@@ -4,7 +4,6 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
 import com.ultimateimprovments.util.ConsoleLogger;
-import com.ultimateimprovments.util.StructureTemplate;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -57,7 +56,10 @@ public class NuclearReactorTask extends BukkitRunnable {
         Material fuel = NuclearReactorManager.fuelMaterial();
         boolean log = cfg.getBoolean("nuclear_reactor.log", false);
 
-        StructureTemplate template = StructureTemplate.get(NuclearReactorManager.TEMPLATE_NAME);
+        // DFC-style lazy audit: this many template cells are re-read per pass
+        // (27 cells / 9 per second = a full sweep every 3 seconds).
+        int auditCellsPerSecond = Math.max(1,
+                cfg.getInt("nuclear_reactor.audit_cells_per_second", 9));
 
         for (NuclearReactor reactor : NuclearReactorManager.getReactors()) {
             if (reactor == null || reactor.getAnchor() == null
@@ -91,11 +93,22 @@ public class NuclearReactorTask extends BukkitRunnable {
             //    buffer the operator fills in advance).
             refillCooling(reactor);
 
-            // 2. Energy gates.
+            // 2. Lazy structural audit (DFC-style). Player breaks/places update
+            //    the cache in O(1); the rotating sweep catches event-blind
+            //    changes (explosions, pistons, plugin setType). Transitions are
+            //    reported through the same damage/failure alerts.
+            NuclearReactorAudit.Result audit =
+                    NuclearReactorAudit.audit(reactor, auditCellsPerSecond);
+            NuclearReactorManager.handleStructureAudit(reactor, audit);
+            if (audit.allMissing()) {
+                continue; // dismantled — the marker and row are gone
+            }
+
+            // 3. Energy gates.
             boolean running = false;
             NuclearReactor.Status status;
 
-            if (template == null || !template.checkAt(reactor.getAnchor()).matched()) {
+            if (!audit.intact()) {
                 // Any broken template cell stops the reactor.
                 status = NuclearReactor.Status.DAMAGED;
             } else {
@@ -145,10 +158,10 @@ public class NuclearReactorTask extends BukkitRunnable {
                 }
             }
 
-            // 3. Thermal step — heating while running, passive cooling otherwise.
+            // 4. Thermal step — heating while running, passive cooling otherwise.
             stepThermal(reactor, running);
 
-            // 4. Heat particles and meltdown ignition at the maximum.
+            // 5. Heat particles and meltdown ignition at the maximum.
             NuclearReactorManager.spawnHeatParticles(reactor);
             if (reactor.getTemperature() >= NuclearReactorManager.maxTemp()) {
                 NuclearReactorManager.startMeltdown(reactor);
