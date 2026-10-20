@@ -12,6 +12,8 @@ import com.ultimateimprovments.util.StructuresMessages;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorStructure;
+import com.ultimateimprovments.energy.generation.nuclear.NuclearReactor;
+import com.ultimateimprovments.energy.generation.nuclear.NuclearReactorManager;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.consumption.light.LightManager;
 
@@ -127,6 +129,13 @@ public class ReactorListener implements Listener {
             return;
         }
 
+        // Compact nuclear reactor — status readout (no toggle: redstone controls it).
+        NuclearReactor nuclear = NuclearReactorManager.getForFrame(frame);
+        if (nuclear != null) {
+            NuclearReactorManager.sendStatus(player, nuclear);
+            return;
+        }
+
     }
 
     // =========================
@@ -157,6 +166,21 @@ public class ReactorListener implements Listener {
                 player.sendMessage(MessageUtil.parse(msg("lightning_broken",
                         "<yellow>⚡ Lightning structure destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]")
                         .replace("%coords%", coords(lightningCenter))));
+            }
+            return;
+        }
+
+        // =========================
+        // ⚛ COMPACT NUCLEAR REACTOR: breaking the top fuel barrel dismantles
+        // the reactor (marker + registry), so it can be rebuilt elsewhere
+        // without a ghost marker keeping its chunk loaded.
+        // =========================
+        if (NuclearReactorManager.getAt(loc) != null) {
+            NuclearReactorManager.disassemble(loc);
+            if (player != null) {
+                player.sendMessage(MessageUtil.parse(msg("nuclear_reactor.disassembled",
+                        "<yellow>❕ Nuclear reactor dismantled and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]")
+                        .replace("%coords%", coords(loc))));
             }
             return;
         }
@@ -294,11 +318,13 @@ public class ReactorListener implements Listener {
         // Check: were there template loading errors
         StructureTemplate lightningTmpl = StructureTemplate.get("lightning");
         StructureTemplate reactorTmpl = StructureTemplate.get("darkfusionreactor");
+        StructureTemplate nuclearTmpl = StructureTemplate.get("nuclearreactor");
 
         String lightningErr = StructureTemplate.getTemplateError("lightning");
         String reactorErr = StructureTemplate.getTemplateError("darkfusionreactor");
+        String nuclearErr = StructureTemplate.getTemplateError("nuclearreactor");
 
-        if (lightningErr != null || reactorErr != null) {
+        if (lightningErr != null || reactorErr != null || nuclearErr != null) {
             player.sendMessage(MessageUtil.parse(msg("template_errors_header",
                     "<dark_red>⚠ <red>Failed to load the structure NBT templates:")));
             if (lightningErr != null)
@@ -311,6 +337,11 @@ public class ReactorListener implements Listener {
                                 "  <dark_gray>• <white>%structure%<dark_gray>: <red>%error%")
                         .replace("%structure%", StructuresMessages.structureName("darkfusionreactor"))
                         .replace("%error%", reactorErr)));
+            if (nuclearErr != null)
+                player.sendMessage(MessageUtil.parse(msg("template_error_line",
+                                "  <dark_gray>• <white>%structure%<dark_gray>: <red>%error%")
+                        .replace("%structure%", StructuresMessages.structureName("nuclearreactor"))
+                        .replace("%error%", nuclearErr)));
             player.sendMessage(MessageUtil.parse(msg("template_errors_hint",
                     "<gray>Check the server console for details.")));
         }
@@ -368,6 +399,30 @@ public class ReactorListener implements Listener {
                 player.sendMessage(MessageUtil.parse(msg("reactor_detected",
                         "<dark_gray>[<red>Reactor<dark_gray>] <gray>Reactor detected — assembling...")));
                 ReactorCommand.assembleDarkSynthesis(player);
+                return;
+            }
+        }
+
+        // =========================
+        // 1c. Compact nuclear reactor template
+        // =========================
+        if (nuclearTmpl != null) {
+            Location center = nuclearTmpl.findMatch(frameLoc, 5);
+            if (center == null) {
+                var best = nuclearTmpl.bestMatch(frameLoc, 5);
+                if (best != null && best.matched()) {
+                    center = best.center();
+                }
+            }
+            if (center != null) {
+                if (NuclearReactorManager.getAt(center) != null) {
+                    player.sendMessage(MessageUtil.parse(msg("nuclear_reactor.already_active",
+                            "<yellow>A nuclear reactor is already active at this place!")));
+                    return;
+                }
+                player.sendMessage(MessageUtil.parse(msg("nuclear_reactor.detected",
+                        "<dark_gray>[<aqua>Nuclear reactor<dark_gray>] <gray>Structure detected — assembling...")));
+                NuclearReactorManager.assemble(center, player);
                 return;
             }
         }

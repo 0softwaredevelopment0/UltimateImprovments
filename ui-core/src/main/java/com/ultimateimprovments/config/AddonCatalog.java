@@ -24,7 +24,7 @@ public final class AddonCatalog {
 
     static {
         // ── UI-MBS ──
-        route("UI-MBS", "reactor");
+        route("UI-MBS", "reactor", "nuclear_reactor");
         // ── UI-Energy ──
         route("UI-Energy", "energy", "energy_crafting");
         // ── UI-Chat ──
