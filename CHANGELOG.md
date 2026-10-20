@@ -45,6 +45,16 @@ in this file.
   type); SHIFT+RMB with the multimeter on any reactor block shows the `[CER]`
   data readout (temperature, cooling, meltdown countdown), and without a
   multimeter the player is asked to get one.
+- **CER structure audit and meltdown escape hatch (UI-Energy)** — the reactor
+  is now watched by a DFC-style rotating audit: 9 of the 27 template cells are
+  re-read per second (`nuclear_reactor.audit_cells_per_second`, 27 = full check
+  each pass), so bypasses that never fire `BlockBreakEvent` — explosions,
+  pistons, plugin `setType` — flip the reactor into the damaged state, restore
+  it, or dismantle it with the failure alert once every block is gone; player
+  breaks/places still update the cache instantly. Sealing the meltdown lava
+  with **any block other than reinforced deepslate** cancels the blast (the
+  same "detonation prevented" alert) and dismantles the reactor, which can be
+  rebuilt afterwards once the reinforced deepslate is back in the center.
 - **NBT templates in the newer palette format** — `StructureTemplate` now
   accepts a palette `id` key as a fallback for the vanilla `Name`, so
   structure files exported by recent game versions load without a manual

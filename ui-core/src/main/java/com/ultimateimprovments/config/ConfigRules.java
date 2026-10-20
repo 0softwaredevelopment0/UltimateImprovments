@@ -206,6 +206,7 @@ final class ConfigRules {
             integer("nuclear_reactor.cooling_blue_ice", 0, 1000, "Cooling percent per blue ice block"),
             integer("nuclear_reactor.cooling_drain_seconds", 1, 3600, "Seconds one cooling percent lasts"),
             // Meltdown and alerts
+            integer("nuclear_reactor.audit_cells_per_second", 1, 4096, "Template cells re-read per second (lazy audit)"),
             integer("nuclear_reactor.meltdown_seconds", 1, 3600, "Detonation countdown in seconds"),
             integer("nuclear_reactor.explosion_power", 1, 500, "Charged creeper explosion radius"),
             integer("nuclear_reactor.alert_radius", 1, 512, "CER alert broadcast radius in blocks"),

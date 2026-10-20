@@ -293,6 +293,18 @@ cooling_blue_ice = 3
 cooling_drain_seconds = 8
 
 # ----------------------------------------------------------------
+# STRUCTURE AUDIT
+# ----------------------------------------------------------------
+
+# DFC-style lazy structure scan: template cells re-read per second (the cube
+# has 27 cells, so the default 9 is a full sweep every 3 seconds). The sweep
+# catches bypasses that never fire BlockBreakEvent — explosions, pistons,
+# plugin block changes. Player breaks/places are processed instantly and do
+# not wait for the sweep.
+# Default: 9
+audit_cells_per_second = 9
+
+# ----------------------------------------------------------------
 # MELTDOWN AND ALERTS
 # ----------------------------------------------------------------
 
