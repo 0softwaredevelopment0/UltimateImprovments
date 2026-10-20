@@ -188,17 +188,12 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // ⚛ COMPACT NUCLEAR REACTOR: breaking the top fuel barrel dismantles
-        // the reactor (marker + registry), so it can be rebuilt elsewhere
-        // without a ghost marker keeping its chunk loaded.
+        // ⚛ COMPACT NUCLEAR REACTOR: a template block of an active reactor.
+        // Breaking the redstone center detonates the reactor; breaking the
+        // last remaining template block dismantles it (failure); any other
+        // block flips the structure into the damaged state once.
         // =========================
-        if (NuclearReactorManager.getAt(loc) != null) {
-            NuclearReactorManager.disassemble(loc);
-            if (player != null) {
-                player.sendMessage(MessageUtil.parse(msg("nuclear_reactor.disassembled",
-                        "<yellow>❕ Nuclear reactor dismantled and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]")
-                        .replace("%coords%", coords(loc))));
-            }
+        if (NuclearReactorManager.handleBlockBreak(loc)) {
             return;
         }
 
@@ -248,6 +243,11 @@ public class ReactorListener implements Listener {
 
         Block block = e.getBlock();
         Location loc = LocationUtil.normalize(block.getLocation());
+
+        // Compact nuclear reactor: the reinforced deepslate placed back into a
+        // melting-down center prevents the detonation; any placement may also
+        // complete the repair of a damaged structure.
+        NuclearReactorManager.handleBlockPlace(block);
 
         // Block inside an ACTIVE reactor → repair report for that reactor.
         // Only template cells count: placing blocks into the air cells (or any

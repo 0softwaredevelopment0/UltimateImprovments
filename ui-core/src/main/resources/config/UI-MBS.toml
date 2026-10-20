@@ -230,3 +230,80 @@ fuel_item = "EMERALD"
 # Log every operating-state change to the console.
 # Default: false
 log = false
+
+# ----------------------------------------------------------------
+# THERMAL MODEL (temperature, coolant and meltdown)
+# ----------------------------------------------------------------
+
+# Heating rate while the reactor runs, in degrees per second. The reactor
+# heats up to work_temp with passive cooling disabled.
+# Default: 20
+heat_rate = 20
+# Working temperature: the reactor holds this point and starts draining the
+# cooling buffer (1% per cooling_drain_seconds). Without coolant it keeps
+# heating to max_temp.
+# Default: 512
+work_temp = 512
+# Maximum temperature: the center block turns into lava and the detonation
+# countdown starts. Detonation is cancelled if the player puts reinforced
+# deepslate back into the center in time.
+# Default: 1024
+max_temp = 1024
+# Passive cooling, in degrees per second, applied to a stopped reactor (down
+# to the biome floor rolled at assembly) and to a running reactor that was
+# cooled back from above work_temp. Scaled by the build-site biome humidity
+# multiplier, exactly like the DFC.
+# Default: 1.0
+passive_cool_rate = 1.0
+# Added to the build-site biome humidity before clamping the multiplier.
+# Default: 0.0
+passive_cool_multiplier_offset = 0.0
+# Humidity value used when the biome has none (custom/datapack biomes).
+# Default: 0.5
+passive_cool_biome_fallback = 0.5
+# Clamp floor / ceiling for the humidity multiplier.
+# Defaults: 0.0 / 1.0
+passive_cool_multiplier_min = 0.0
+passive_cool_multiplier_max = 1.0
+# Dynamic lower temperature limit rolled at assembly from the build-site
+# biome: limit = biome temperature x multiplier + offset, rounded.
+# Defaults: 10.0 / 0.0 / 1.0 (biome without a temperature value)
+temp_limit_biome_multiplier = 10.0
+temp_limit_offset = 0.0
+temp_limit_biome_fallback = 1.0
+
+# ----------------------------------------------------------------
+# COOLANT (ice in the barrel)
+# ----------------------------------------------------------------
+
+# Full cooling buffer in percent; a full buffer stops eating ice.
+# Default: 100
+cooling_max = 100
+# Cooling blocks converted from the barrel per second while the buffer is
+# not full.
+# Default: 1
+cooling_blocks_per_second = 1
+# Cooling percent added by one block of each ice type.
+# Defaults: 1 / 2 / 3
+cooling_ice = 1
+cooling_packed_ice = 2
+cooling_blue_ice = 3
+# Seconds one cooling percent lasts at the working temperature.
+# Default: 8
+cooling_drain_seconds = 8
+
+# ----------------------------------------------------------------
+# MELTDOWN AND ALERTS
+# ----------------------------------------------------------------
+
+# Detonation countdown after the center block turns into lava.
+# Default: 10
+meltdown_seconds = 10
+# Charged-creeper explosion radius used by the detonation and by breaking
+# the redstone center block.
+# Default: 5
+explosion_power = 5
+# Radius in blocks for the CER alert broadcasts (damage / repair / failure /
+# meltdown).
+# Default: 30
+alert_radius = 30

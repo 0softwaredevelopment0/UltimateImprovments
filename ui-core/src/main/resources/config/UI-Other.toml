@@ -1245,7 +1245,7 @@ state_ready = "<green>✔ Готов (есть топливо)</green>"
 meter_connections = "<aqua>Подключений: </aqua><white>%count%</white>"
 
 # Compact nuclear reactor (3×3×3 safe energy generator).
-# Placeholders: %coords%, %status%, %fuel%, %item%, %sec%, %energy%, %power%, %state%, %prefix%
+# Placeholders: %coords%, %status%, %fuel%, %item%, %sec%, %energy%, %power%, %state%, %prefix%, %temp%, %max%, %cool%, %ice%
 [messages.structures.nuclear_reactor]
 # Chat prefix word (the [CER] tag).
 # Default: CER
@@ -1293,8 +1293,8 @@ meter_structure = "<aqua>Структура: </aqua>%state%"
 structure_ok = "<green>✔ Цела</green>"
 # Default: <dark_red>✖ Повреждена</dark_red>
 structure_damaged = "<dark_red>✖ Повреждена</dark_red>"
-# Default: <dark_gray>Изумруды — в бочку, рычаг — сверху на бочку, кабель — под нижний порт</dark_gray>
-meter_hint = "<dark_gray>Изумруды — в бочку, рычаг — сверху на бочку, кабель — под нижний порт</dark_gray>"
+# Default: <dark_gray>Изумруды и лёд — в бочку, рычаг — сверху на бочку, кабель — под нижний порт</dark_gray>
+meter_hint = "<dark_gray>Изумруды и лёд — в бочку, рычаг — сверху на бочку, кабель — под нижний порт</dark_gray>"
 # Default: <green>✔ Работает
 status_running = "<green>✔ Работает"
 # Default: <red>❌ Нет сигнала редстоуна на центральном блоке
@@ -1307,6 +1307,32 @@ status_no_cable = "<yellow>⚠ Нет кабеля под нижним порт�
 status_output_blocked = "<yellow>⚠ Сеть не принимает энергию"
 # Default: <dark_red>✖ Структура повреждена
 status_damaged = "<dark_red>✖ Структура повреждена"
+# Structure alerts (broadcast within nuclear_reactor.alert_radius blocks).
+# The body already carries the [CER] tag; the global plugin prefix is
+# prepended by the code.
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Обнаружено повреждение структуры CER!
+damage_detected = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Обнаружено повреждение структуры CER!"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Структура CER восстановлена!
+damage_restored = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Структура CER восстановлена!"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Обнаружен отказ структуры CER!
+failure_detected = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Обнаружен отказ структуры CER!"
+# Placeholders: %sec%
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <red>Опасно! <white>Обнаружен мелтдаун CER, детонация структуры произойдёт через T-%sec% с.
+meltdown_detected = "<dark_gray>[<yellow>CER<dark_gray>] <red>Опасно! <white>Обнаружен мелтдаун CER, детонация структуры произойдёт через T-%sec% с."
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Детонация структуры CER предотвращена!
+detonation_prevented = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Внимание! <white>Детонация структуры CER предотвращена!"
+# Placeholders: %temp%, %max%
+# Default: <aqua>Температура: </aqua><white>%temp% / %max% C*</white>
+meter_temp = "<aqua>Температура: </aqua><white>%temp% / %max% C*</white>"
+# Placeholders: %cool%, %ice%
+# Default: <aqua>Охлаждение: </aqua><white>%cool%%</white> <dark_gray>(лёд: %ice%)</dark_gray>
+meter_cooling = "<aqua>Охлаждение: </aqua><white>%cool%%</white> <dark_gray>(лёд: %ice%)</dark_gray>"
+# Placeholders: %sec%
+# Default: <dark_red>❌ Детонация через </dark_red><white>%sec% с</white>
+meter_meltdown = "<dark_red>❌ Детонация через </dark_red><white>%sec% с</white>"
+# Placeholders: %sec%
+# Default: <dark_red>✖ МЕЛТДАУН — детонация через %sec% с</dark_red>
+status_meltdown = "<dark_red>✖ МЕЛТДАУН — детонация через %sec% с</dark_red>"
 
 # names section.
 [messages.structures.names]
@@ -1715,7 +1741,7 @@ state_ready = "<green>✔ Ready (has fuel)</green>"
 meter_connections = "<aqua>Connections: </aqua><white>%count%</white>"
 
 # Compact nuclear reactor (3×3×3 safe energy generator).
-# Placeholders: %coords%, %status%, %fuel%, %item%, %sec%, %energy%, %power%, %state%, %prefix%
+# Placeholders: %coords%, %status%, %fuel%, %item%, %sec%, %energy%, %power%, %state%, %prefix%, %temp%, %max%, %cool%, %ice%
 [messages_en.structures.nuclear_reactor]
 # Chat prefix word (the [CER] tag).
 # Default: CER
@@ -1763,8 +1789,8 @@ meter_structure = "<aqua>Structure: </aqua>%state%"
 structure_ok = "<green>✔ Intact</green>"
 # Default: <dark_red>✖ Damaged</dark_red>
 structure_damaged = "<dark_red>✖ Damaged</dark_red>"
-# Default: <dark_gray>Emeralds go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>
-meter_hint = "<dark_gray>Emeralds go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>"
+# Default: <dark_gray>Emeralds and ice go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>
+meter_hint = "<dark_gray>Emeralds and ice go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>"
 # Default: <green>✔ Running
 status_running = "<green>✔ Running"
 # Default: <red>❌ No redstone signal on the center block
@@ -1777,6 +1803,32 @@ status_no_cable = "<yellow>⚠ No cable under the bottom port"
 status_output_blocked = "<yellow>⚠ The network cannot accept energy"
 # Default: <dark_red>✖ Structure damaged
 status_damaged = "<dark_red>✖ Structure damaged"
+# Structure alerts (broadcast within nuclear_reactor.alert_radius blocks).
+# The body already carries the [CER] tag; the global plugin prefix is
+# prepended by the code.
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage detected!
+damage_detected = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage detected!"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage restored!
+damage_restored = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure damage restored!"
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure failure detected!
+failure_detected = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure failure detected!"
+# Placeholders: %sec%
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <red>Danger! <white>CER meltdown detected, structure detonation will occur in T-%sec%s.
+meltdown_detected = "<dark_gray>[<yellow>CER<dark_gray>] <red>Danger! <white>CER meltdown detected, structure detonation will occur in T-%sec%s."
+# Default: <dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure detonation prevented!
+detonation_prevented = "<dark_gray>[<yellow>CER<dark_gray>] <gold>Attention! <white>CER structure detonation prevented!"
+# Placeholders: %temp%, %max%
+# Default: <aqua>Temperature: </aqua><white>%temp% / %max% C*</white>
+meter_temp = "<aqua>Temperature: </aqua><white>%temp% / %max% C*</white>"
+# Placeholders: %cool%, %ice%
+# Default: <aqua>Cooling: </aqua><white>%cool%%</white> <dark_gray>(ice: %ice%)</dark_gray>
+meter_cooling = "<aqua>Cooling: </aqua><white>%cool%%</white> <dark_gray>(ice: %ice%)</dark_gray>"
+# Placeholders: %sec%
+# Default: <dark_red>❌ Detonation in </dark_red><white>%sec%s</white>
+meter_meltdown = "<dark_red>❌ Detonation in </dark_red><white>%sec%s</white>"
+# Placeholders: %sec%
+# Default: <dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>
+status_meltdown = "<dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>"
 
 # names section.
 [messages_en.structures.names]

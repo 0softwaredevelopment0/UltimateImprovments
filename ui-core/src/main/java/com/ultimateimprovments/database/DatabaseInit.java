@@ -242,6 +242,32 @@ public class DatabaseInit {
             }
 
         // =========================
+        // ⚛ NUCLEAR REACTORS — compact reactor (CER) thermal state.
+        // One row per anchor (world + block coordinates), so a world can host
+        // any number of reactors without collisions. Rows are written at
+        // assembly and flushed every 10s / on shutdown; a disassembled or
+        // detonated reactor deletes its row.
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS nuclear_reactors (
+                world TEXT NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                temperature INTEGER DEFAULT 0,
+                temp_min INTEGER DEFAULT 0,
+                natural_cool_mult REAL DEFAULT -1,
+                cooling INTEGER DEFAULT 0,
+                cool_drain_seconds INTEGER DEFAULT 0,
+                cool_remainder REAL DEFAULT 0,
+                meltdown_seconds INTEGER DEFAULT 0,
+                fuel_ticks INTEGER DEFAULT 0,
+                damaged INTEGER DEFAULT 0,
+                PRIMARY KEY(world, x, y, z)
+            );
+        """);
+
+        // =========================
         // 🦅 ELYTRA BOOST DISABLED (persist /ui togglefly state)
         // =========================
         st.execute("""
