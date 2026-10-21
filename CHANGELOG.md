@@ -3,6 +3,43 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.10] - since 1.8.5-alpha.9 (2026-10-21)
+
+> **Alpha channel** — performance fix on top of `1.8.5-alpha.9`.
+
+### Changed
+- **DFC fuel checks no longer take a block-entity snapshot.** `ReactorFuel`
+  read both fuel barrels through `Block#getState()`, which serializes and
+  re-deserializes the barrel NBT on every call (`saveWithFullMetadata` +
+  `loadStatic`). The heat check, `isHeating()` and the Fuel sign asked for it
+  several times per tick, which made `hasBarrelFuel` the single largest
+  consumer of the server tick in the profiler (≈4.6 ms + ≈1.7 ms of
+  `isHeating`). Barrels are now read through `Block#getState(false)` (live
+  state, no snapshot — the returned inventory is still the real one), only
+  for `Material.BARREL` blocks, and the answer is cached for 10 ticks
+  (dropped immediately after a fuel unit is consumed). `ensureNamed` reads
+  the live custom name and only builds a snapshot when the name actually has
+  to be written; the fusion floor barrel uses the live state too.
+- **The rotating structure audit no longer parses strings per cell.** The
+  tracker mirrors its template index into flat int/category/material arrays,
+  so a cell check is three int reads plus one block lookup instead of a
+  `String#split`, three `Integer#parseInt` and a `"dx,dy,dz"` concat +
+  HashMap lookup for the expected material. The ignored-cell set is fetched
+  once per pass instead of once per cell.
+- **Reactor visuals are gated by nearby players.** `ReactorShield.tickParticles`
+  and `ReactorDisplay.tickVisual` return immediately when no player is within
+  `reactor.particle_view_distance` — vanilla drops those particle packets for
+  everyone else anyway, so an unvisited reactor no longer spends ~1 ms/tick
+  spawning particles and ambient sounds.
+- **Smaller hot-path cleanups:** bulb power checks use `World#getBlockAt` with
+  integer offsets instead of a `Location` clone per lamp, and the core
+  radiation scan iterates the online players directly instead of copying them
+  into an array every tick.
+
+### Added
+- `reactor.particle_view_distance` (UI-MBS.toml, default 32.0) — radius of the
+  reactor visual gate (0 = always spawn).
+
 ## [1.8.5-alpha.9] - since 1.8.5-alpha.8 (2026-10-21)
 
 > **Alpha channel** — new feature on top of `1.8.5-alpha.8`.
