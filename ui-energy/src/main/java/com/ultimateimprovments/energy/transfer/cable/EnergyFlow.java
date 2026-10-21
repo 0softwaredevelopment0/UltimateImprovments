@@ -2,13 +2,16 @@ package com.ultimateimprovments.energy.transfer.cable;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
+import com.ultimateimprovments.energy.storage.battery.BatteryPool;
 import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -115,11 +118,12 @@ public final class EnergyFlow {
         seed(norm, queue, visited);
 
         int total = 0;
+        Set<BatteryPool> seenPools = Collections.newSetFromMap(new IdentityHashMap<>());
         while (!queue.isEmpty() && visited.size() <= MAX_NODES) {
             CableNode node = queue.poll();
             if (node == null) continue;
 
-            total += availableEnergy(node);
+            total += availableEnergy(node, seenPools);
             if (total >= amount) return true;
 
             enqueueNeighbors(node, worldUid, queue, visited);
@@ -146,11 +150,12 @@ public final class EnergyFlow {
         seed(norm, queue, visited);
 
         int total = 0;
+        Set<BatteryPool> seenPools = Collections.newSetFromMap(new IdentityHashMap<>());
         while (!queue.isEmpty() && visited.size() <= MAX_NODES) {
             CableNode node = queue.poll();
             if (node == null) continue;
 
-            total += freeSpace(node);
+            total += freeSpace(node, seenPools);
             if (total >= amount) return true;
 
             enqueueNeighbors(node, worldUid, queue, visited);
@@ -164,6 +169,10 @@ public final class EnergyFlow {
      * processes the same component twice. Only batteries allowed to both
      * charge and discharge (CHARGE_DISCHARGE clusters / unclustered nodes)
      * take part in balancing — the same rule as before the rework.
+     * <p>
+     * A multiblock battery is ONE storage unit: only the first reached block
+     * of a cluster is returned (deduplicated by its shared
+     * {@link BatteryPool}), so balancing works on pools, not on blocks.
      */
     public static List<CableNode> collectBalanceGroup(CableNode start, Set<Long> visited) {
         List<CableNode> batteries = new ArrayList<>();
@@ -171,6 +180,7 @@ public final class EnergyFlow {
         String worldUid = start.getWorld().getUID().toString();
 
         Deque<CableNode> queue = new ArrayDeque<>();
+        Set<BatteryPool> seenPools = Collections.newSetFromMap(new IdentityHashMap<>());
         if (!visited.add(start.getKey())) return batteries;
         queue.add(start);
 
@@ -181,7 +191,10 @@ public final class EnergyFlow {
             if (node.getType() == NodeType.BATTERY) {
                 BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
                 if (bc == null || bc.mode == BatteryManager.BatteryMode.CHARGE_DISCHARGE) {
-                    batteries.add(node);
+                    BatteryPool pool = node.getBatteryPool();
+                    if (pool == null || seenPools.add(pool)) {
+                        batteries.add(node);
+                    }
                 }
             }
 
@@ -203,6 +216,7 @@ public final class EnergyFlow {
         Set<Long> visited = new HashSet<>();
         List<CableNode> cables = new ArrayList<>();
         Deque<CableNode> queue = new ArrayDeque<>();
+        Set<BatteryPool> seenPools = Collections.newSetFromMap(new IdentityHashMap<>());
         seed(norm, queue, visited);
 
         int remaining = amount;
@@ -210,16 +224,25 @@ public final class EnergyFlow {
         while (!queue.isEmpty() && remaining > 0 && visited.size() <= MAX_NODES) {
             CableNode node = queue.poll();
             if (node == null) continue;
-            hops++;
 
             if (node.getType() == NodeType.CABLE) {
+                hops++;
                 cables.add(node);
             } else {
-                int moved = charging ? chargeNode(node, remaining) : drainNode(node, remaining);
-                if (moved > 0) {
-                    if (charging) node.addEnergy(moved); else node.removeEnergy(moved);
-                    node.addTransferred(moved);
-                    remaining -= moved;
+                // A multiblock battery is one storage: only the first block
+                // of a pool settles energy and counts as a wire hop. The
+                // remaining blocks are still walked (neighbours are
+                // enqueued below) so cables on the far side stay reachable —
+                // they just don't duplicate the same reserve.
+                BatteryPool pool = node.getBatteryPool();
+                if (pool == null || seenPools.add(pool)) {
+                    hops++;
+                    int moved = charging ? chargeNode(node, remaining) : drainNode(node, remaining);
+                    if (moved > 0) {
+                        if (charging) node.addEnergy(moved); else node.removeEnergy(moved);
+                        node.addTransferred(moved);
+                        remaining -= moved;
+                    }
                 }
             }
 
@@ -263,13 +286,17 @@ public final class EnergyFlow {
     }
 
     /** Reachable energy at this node (no mutation) — for {@link #hasEnergy}. */
-    private static int availableEnergy(CableNode node) {
+    private static int availableEnergy(CableNode node, Set<BatteryPool> seenPools) {
+        BatteryPool pool = node.getBatteryPool();
+        if (pool != null && !seenPools.add(pool)) return 0;
         return drainNode(node, Integer.MAX_VALUE);
     }
 
     /** Free room at this node (no mutation) — for {@link #hasSpace}. */
-    private static int freeSpace(CableNode node) {
+    private static int freeSpace(CableNode node, Set<BatteryPool> seenPools) {
         if (node.getType() != NodeType.BATTERY) return 0;
+        BatteryPool pool = node.getBatteryPool();
+        if (pool != null && !seenPools.add(pool)) return 0;
         BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
         if (bc != null && !bc.canCharge()) return 0;
         int max = Math.max(node.getMaxEnergy(), batteryCapacity());

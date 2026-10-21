@@ -132,11 +132,14 @@ public class MultimeterListener implements Listener {
             int capacity = cluster != null ? cluster.capacity : node.getMaxEnergy();
             int blocks = cluster != null ? cluster.blockKeys.size() : 1;
             String mode = cluster != null ? cluster.getModeDisplay() : "<gray>?</gray>";
+            int stored = node.getEnergy();
+            double pct = capacity > 0 ? (double) stored / capacity * 100.0 : 0.0;
 
             player.sendMessage(MessageUtil.parse("<aqua>Type: Battery (multiblock)</aqua>"));
-            player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + node.getEnergy() + " / " + capacity + "</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + stored + " / " + capacity
+                    + "</white> <gray>(" + String.format("%.1f", Math.min(100.0, pct)) + "% of the whole structure)</gray>"));
             player.sendMessage(MessageUtil.parse("<aqua>Blocks: </aqua><white>" + blocks
-                    + " <gray>(" + (blocks > 0 ? capacity / blocks : 0) + " ⚡ per block)</gray>"));
+                    + " <gray>(one shared pool, " + (blocks > 0 ? capacity / blocks : 0) + " ⚡ per block)</gray>"));
             player.sendMessage(MessageUtil.parse("<aqua>Mode: </aqua><white>" + mode + "</white> <gray>(redstone pulse cycles)</gray>"));
             player.sendMessage(MessageUtil.parse("<aqua>Transfer rate: </aqua><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<aqua>Connections: </aqua><white>" + node.getConnectionKeys().size() + "</white>"));

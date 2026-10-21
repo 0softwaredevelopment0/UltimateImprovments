@@ -2,8 +2,10 @@ package com.ultimateimprovments.energy.generation.reactor;
 
 import com.ultimateimprovments.util.MessageUtil;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Barrel;
 import org.bukkit.inventory.Inventory;
@@ -33,6 +35,19 @@ public class ReactorFuel {
     public static final int[] BARREL_DIAMOND = { 4, -5, 0 };
 
     private final ReactorManager reactor;
+
+    /**
+     * How long a fuel-presence check is reused (ticks). The lasers ask for the
+     * fuel state on every server tick (tick + isHeating + the Fuel sign), but
+     * barrel contents only change on the once-per-second fuel tick or when a
+     * player edits a barrel — half a second of staleness is invisible in game
+     * and saves a double inventory scan per tick.
+     */
+    private static final int FUEL_CACHE_TICKS = 10;
+
+    /** Cached {@link #hasFuel(Location)} result and the tick it stays valid until. */
+    private boolean fuelCached;
+    private int fuelCacheUntilTick = -1;
 
     /** Current consumption in % (100% = 1 gold + 1 diamond per 10s). */
     private double consumptionPct;
@@ -106,10 +121,27 @@ public class ReactorFuel {
     // =========================
     // BARREL ACCESS
     // =========================
-    /** Both barrels contain their fuel item (gold ingot / diamond). */
+    /**
+     * Both barrels contain their fuel item (gold ingot / diamond).
+     * <p>
+     * The result is cached for {@value #FUEL_CACHE_TICKS} ticks: this method is
+     * called several times per server tick (heat check, {@code isHeating}, the
+     * Fuel sign), and a barrel only changes on the one-second fuel tick or on a
+     * player click. The cache is dropped right after a consumption.
+     */
     public boolean hasFuel(Location base) {
-        return countInBarrel(base, BARREL_GOLD, Material.GOLD_INGOT) > 0
+        int now = Bukkit.getCurrentTick();
+        if (now < fuelCacheUntilTick) return fuelCached;
+
+        fuelCached = countInBarrel(base, BARREL_GOLD, Material.GOLD_INGOT) > 0
                 && countInBarrel(base, BARREL_DIAMOND, Material.DIAMOND) > 0;
+        fuelCacheUntilTick = now + FUEL_CACHE_TICKS;
+        return fuelCached;
+    }
+
+    /** Drops the cached fuel check (contents changed right now). */
+    private void invalidateFuelCache() {
+        fuelCacheUntilTick = -1;
     }
 
     /** Average fill % of both barrels (slot count / 27, capped at 100). */
@@ -139,6 +171,7 @@ public class ReactorFuel {
     private boolean consumeUnit(Location base) {
         boolean gold = removeOne(base, BARREL_GOLD, Material.GOLD_INGOT);
         boolean diamond = removeOne(base, BARREL_DIAMOND, Material.DIAMOND);
+        invalidateFuelCache();
         return gold && diamond;
     }
 
@@ -161,10 +194,32 @@ public class ReactorFuel {
         return false;
     }
 
+    /**
+     * Live barrel state at an anchor-relative offset.
+     * <p>
+     * {@code getState(false)} returns the live block entity wrapper: no NBT
+     * snapshot is serialized/copied (a {@code getState()} snapshot costs ~1 ms
+     * per call on a container), and {@link Barrel#getInventory()} still points
+     * at the real inventory. This runs several times per tick, so the snapshot
+     * variant is reserved for writes that need {@code update()}.
+     */
     private Barrel barrelAt(Location base, int[] off) {
-        Block block = base.clone().add(off[0], off[1], off[2]).getBlock();
-        if (block.getState() instanceof Barrel barrel) return barrel;
-        return null;
+        World world = base.getWorld();
+        if (world == null) return null;
+        Block block = world.getBlockAt(base.getBlockX() + off[0],
+                base.getBlockY() + off[1], base.getBlockZ() + off[2]);
+        if (block.getType() != Material.BARREL) return null;
+        return block.getState(false) instanceof Barrel barrel ? barrel : null;
+    }
+
+    /** Snapshot barrel state — only for writes applied through {@code update()}. */
+    private Barrel snapshotBarrelAt(Location base, int[] off) {
+        World world = base.getWorld();
+        if (world == null) return null;
+        Block block = world.getBlockAt(base.getBlockX() + off[0],
+                base.getBlockY() + off[1], base.getBlockZ() + off[2]);
+        if (block.getType() != Material.BARREL) return null;
+        return block.getState() instanceof Barrel barrel ? barrel : null;
     }
 
     // =========================
@@ -177,14 +232,18 @@ public class ReactorFuel {
     }
 
     private void setBarrelName(Location base, int[] off, String miniMessage) {
-        Barrel barrel = barrelAt(base, off);
-        if (barrel == null) return;
-        net.kyori.adventure.text.Component current = barrel.customName();
+        // Read the current name from the live entity first — in the steady state
+        // (the usual case) no snapshot is created at all.
+        Barrel live = barrelAt(base, off);
+        if (live == null) return;
         net.kyori.adventure.text.Component expected = MessageUtil.parse(miniMessage);
-        if (current == null || !current.equals(expected)) {
-            barrel.customName(expected);
-            barrel.update();
-        }
+        net.kyori.adventure.text.Component current = live.customName();
+        if (current != null && current.equals(expected)) return;
+
+        Barrel snapshot = snapshotBarrelAt(base, off);
+        if (snapshot == null) return;
+        snapshot.customName(expected);
+        snapshot.update();
     }
 
     // =========================
@@ -193,6 +252,8 @@ public class ReactorFuel {
     public void reset() {
         consumptionPct = 0;
         fuelRemainder = 0;
+        fuelCached = false;
+        invalidateFuelCache();
     }
 
     // =========================

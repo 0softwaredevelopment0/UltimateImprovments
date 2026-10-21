@@ -361,9 +361,18 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
-    // ASSEMBLE FROM FRAME (called from ReactorListener — kept for compatibility)
+    // ASSEMBLE FROM FRAME (called from ReactorListener)
     // =========================
-    public static void assembleFromFrame(Player player, Location furnaceLoc) {
+    /**
+     * Assembles the generator and consumes the trigger frame.
+     * <p>
+     * The frame is a one-shot assembly trigger on every structure (battery,
+     * lamp, lightning, reactor, CER): it breaks, drops itself (glow variant
+     * included) plus whatever item it displayed, and never stays behind
+     * blocking the furnace. The generator path used to leave it in place.
+     */
+    public static void assembleFromFrame(Player player, Location furnaceLoc,
+                                         org.bukkit.entity.ItemFrame frame) {
         furnaceLoc = LocationUtil.normalize(furnaceLoc);
         if (furnaceLoc == null) return;
 
@@ -380,12 +389,35 @@ public class GeneratorManager implements Listener {
             world.playSound(furnaceLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
         }
 
+        consumeTriggerFrame(frame);
+
         player.sendMessage(MessageUtil.parse(msg("assembled", "<green>✔ Generator assembled!</green>")
                 + " <dark_gray>[" + furnaceLoc.getBlockX() + " " + furnaceLoc.getBlockY() + " " + furnaceLoc.getBlockZ() + "]</dark_gray>"));
         player.sendMessage(MessageUtil.parse(msg("assembled_hint",
                 "<dark_gray>Put fuel into the blast furnace — energy goes to the network!</dark_gray>")));
 
         ConsoleLogger.info("[Generator] Assembled via frame at " + furnaceLoc + " by " + player.getName());
+    }
+
+    /**
+     * Breaks the assembly trigger frame and drops it (plus the displayed
+     * item). Glow item frames drop the glow variant, not a plain frame.
+     */
+    private static void consumeTriggerFrame(org.bukkit.entity.ItemFrame frame) {
+        if (frame == null || frame.isDead() || !frame.isValid()) return;
+        World world = frame.getWorld();
+        if (world == null) return;
+
+        Location frameLoc = frame.getLocation();
+        ItemStack displayed = frame.getItem();
+        if (displayed != null && !displayed.getType().isAir()) {
+            world.dropItemNaturally(frameLoc, displayed);
+        }
+        Material frameItem = frame instanceof org.bukkit.entity.GlowItemFrame
+                ? Material.GLOW_ITEM_FRAME
+                : Material.ITEM_FRAME;
+        world.dropItemNaturally(frameLoc, new ItemStack(frameItem));
+        frame.remove();
     }
 
     // =========================

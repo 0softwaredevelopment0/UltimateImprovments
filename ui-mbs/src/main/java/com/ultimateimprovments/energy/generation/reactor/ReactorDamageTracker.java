@@ -47,6 +47,21 @@ public final class ReactorDamageTracker {
     /** "dx,dy,dz" → expected template material (anchor-relative). */
     private static Map<String, Material> materials;
 
+    // =========================
+    // FLAT CELL INDEX (hot path)
+    // The audit runs 50 cells per server tick; iterating the HashMap with a
+    // per-cell "dx,dy,dz" String split/parse (and a second concat lookup for
+    // the expected material) was the dominant cost of the pass. The same data
+    // is mirrored into parallel arrays in a stable order, so a check is three
+    // int reads, one array read and one block lookup.
+    // =========================
+    private static String[] cellKey = new String[0];
+    private static int[] cellX = new int[0];
+    private static int[] cellY = new int[0];
+    private static int[] cellZ = new int[0];
+    private static Category[] cellCategory = new Category[0];
+    private static Material[] cellMaterial = new Material[0];
+
     private static int glassTotal;
     private static int signTotal;
     private static int bulbTotal;
@@ -103,6 +118,33 @@ public final class ReactorDamageTracker {
         structTotal = rest;
         materials = mats;
         index = map;
+
+        // Flat mirror of the index for the per-tick audit (see the field docs).
+        int cells = map.size();
+        String[] keys = new String[cells];
+        int[] xs = new int[cells];
+        int[] ys = new int[cells];
+        int[] zs = new int[cells];
+        Category[] cats = new Category[cells];
+        Material[] matsArr = new Material[cells];
+        int i = 0;
+        for (Map.Entry<String, Category> e : map.entrySet()) {
+            String key = e.getKey();
+            String[] p = key.split(",");
+            keys[i] = key;
+            xs[i] = Integer.parseInt(p[0]);
+            ys[i] = Integer.parseInt(p[1]);
+            zs[i] = Integer.parseInt(p[2]);
+            cats[i] = e.getValue();
+            matsArr[i] = mats.get(key);
+            i++;
+        }
+        cellKey = keys;
+        cellX = xs;
+        cellY = ys;
+        cellZ = zs;
+        cellCategory = cats;
+        cellMaterial = matsArr;
     }
 
     /** Any kind of sign (standing or wall, any wood type). */
@@ -149,7 +191,6 @@ public final class ReactorDamageTracker {
     private static final class AuditState {
         final int[] present = new int[CATEGORIES.length];
         final java.util.Set<String> missing = new java.util.HashSet<>();
-        String[] keys;
         int cursor;
     }
 
@@ -199,19 +240,16 @@ public final class ReactorDamageTracker {
         AuditState st = new AuditState();
         World world = base.getWorld();
         int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
-        for (Map.Entry<String, Category> e : index.entrySet()) {
-            String[] p = e.getKey().split(",");
-            int dx = Integer.parseInt(p[0]);
-            int dy = Integer.parseInt(p[1]);
-            int dz = Integer.parseInt(p[2]);
+        java.util.Set<String> ignored = ignoredFor(base);
+        for (int i = 0; i < cellKey.length; i++) {
             // Ignored cells (hot panes pending their 1s verdict) count as
             // missing — the pane is physically there but NOT accepted yet.
-            boolean present = !ignoredFor(base).contains(e.getKey())
-                    && matches(dx, dy, dz, e.getValue(), world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
-            if (present) st.present[e.getValue().ordinal()]++;
-            else st.missing.add(e.getKey());
+            boolean present = !ignored.contains(cellKey[i])
+                    && matches(cellCategory[i], cellMaterial[i],
+                            world.getBlockAt(bx + cellX[i], by + cellY[i], bz + cellZ[i]).getType());
+            if (present) st.present[cellCategory[i].ordinal()]++;
+            else st.missing.add(cellKey[i]);
         }
-        st.keys = index.keySet().toArray(new String[0]);
         audits.put(base.clone(), st);
         return st;
     }
@@ -244,21 +282,23 @@ public final class ReactorDamageTracker {
         java.util.List<Category> repaired = new java.util.ArrayList<>();
         World world = base.getWorld();
         int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
-        int steps = Math.min(AUDIT_CELLS_PER_TICK, st.keys.length);
+        int count = cellKey.length;
+        if (count == 0) return new AuditResult(damaged, repaired);
+        java.util.Set<String> ignored = ignoredFor(base);
+        int steps = Math.min(AUDIT_CELLS_PER_TICK, count);
         for (int i = 0; i < steps; i++) {
-            st.cursor = (st.cursor + 1) % st.keys.length;
-            String key = st.keys[st.cursor];
+            st.cursor = (st.cursor + 1) % count;
+            int idx = st.cursor;
+            String key = cellKey[idx];
             // Ignored cells (hot panes pending their 1s verdict) are skipped
             // entirely — no transitions, the counts hold steady.
-            if (ignoredFor(base).contains(key)) continue;
-            String[] p = key.split(",");
-            int dx = Integer.parseInt(p[0]);
-            int dy = Integer.parseInt(p[1]);
-            int dz = Integer.parseInt(p[2]);
+            if (ignored.contains(key)) continue;
+            int dx = cellX[idx], dy = cellY[idx], dz = cellZ[idx];
             if (!world.isChunkLoaded((bx + dx) >> 4, (bz + dz) >> 4)) continue;
 
-            Category cat = index.get(key);
-            boolean present = matches(dx, dy, dz, cat, world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
+            Category cat = cellCategory[idx];
+            boolean present = matches(cat, cellMaterial[idx],
+                    world.getBlockAt(bx + dx, by + dy, bz + dz).getType());
             boolean knownMissing = st.missing.contains(key);
             if (!present && !knownMissing) {
                 st.missing.add(key);
@@ -320,12 +360,12 @@ public final class ReactorDamageTracker {
     // =========================
     // MATCHING
     // =========================
-    private static boolean matches(int dx, int dy, int dz, Category cat, Material actual) {
+    private static boolean matches(Category cat, Material expected, Material actual) {
         return switch (cat) {
             case GLASS -> actual == Material.GLASS;
             case SIGN -> isSign(actual);
             case BULB -> actual == Materials.WAXED_COPPER_BULB;
-            case STRUCTURE -> actual == materials.get(dx + "," + dy + "," + dz);
+            case STRUCTURE -> actual == expected;
         };
     }
 }
