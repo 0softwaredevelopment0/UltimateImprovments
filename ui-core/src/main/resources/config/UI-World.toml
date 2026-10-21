@@ -90,6 +90,30 @@ DEEPSLATE_COPPER_ORE = 1.0
 # Default: 0.989
 BLUE_ICE = 0.989
 
+# Infinitely growing sculk. Every sculk catalyst is pulsed by the plugin on a
+# cooldown, which keeps the vanilla bloom alive: the catalyst converts blocks
+# from the #minecraft:sculk_replaceable tag (stone, deepslate, dirt, gravel,
+# sand, ...), grows veins and occasionally shriekers, forever. Ores, containers,
+# tile entities and builds of other materials are untouched - that is vanilla.
+[sculk]
+# Master switch (true = every loaded catalyst keeps blooming).
+# Default: true
+enabled = true
+# Pulse cooldown in ticks (20 = one second).
+# Default: 20
+interval_ticks = 20
+# Charge added to the catalyst's vanilla spreader per pulse. This is the spread
+# strength: higher = more blocks converted per pulse.
+# Default: 10
+charge_per_pulse = 10
+# Upper bound of catalysts bloomed per pulse (round-robin). A TPS guard for
+# worlds with hundreds of catalysts.
+# Default: 32
+max_catalysts_per_pulse = 32
+# Skip a pulse while the average tick time is above this value (milliseconds).
+# Default: 50.0
+max_mspt = 50.0
+
 # ---- MESSAGES ----
 
 [messages.meteor]

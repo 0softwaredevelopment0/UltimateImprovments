@@ -4,6 +4,8 @@ import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseListener;
 import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseManager;
 import com.ultimateimprovments.mechanics.features.movement.BlockFrictionListener;
+import com.ultimateimprovments.mechanics.features.sculk.SculkGrowthListener;
+import com.ultimateimprovments.mechanics.features.sculk.SculkGrowthManager;
 import com.ultimateimprovments.mechanics.features.world.BeaconManager;
 import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
 import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
@@ -213,6 +215,26 @@ public final class WorldModules {
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 WirelessRedstoneManager.reloadConfig();
+            }
+        });
+
+        // SculkGrowth — the plugin pulses every loaded sculk catalyst, so the
+        // vanilla bloom keeps converting sculk-replaceable blocks forever.
+        mm.register(new PluginModule("SculkGrowth", "mechanics/features/sculk", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                SculkGrowthManager.init((Main) plugin);
+                plugin.getServer().getPluginManager().registerEvents(new SculkGrowthListener(), plugin);
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                SculkGrowthManager.shutdown();
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                SculkGrowthManager.reload();
             }
         });
 
