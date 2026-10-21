@@ -518,7 +518,7 @@ public class ReactorListener implements Listener {
                     // spam "already assembled" on every sneaky pass.
                     return;
                 }
-                GeneratorManager.assembleFromFrame(player, generatorLoc);
+                GeneratorManager.assembleFromFrame(player, generatorLoc, frame);
                 return;
             } else {
                 player.sendMessage(MessageUtil.parse(msg("generator_no_cable",

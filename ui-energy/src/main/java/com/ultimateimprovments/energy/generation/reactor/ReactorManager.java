@@ -1949,8 +1949,7 @@ public class ReactorManager {
         if (coreTemp >= 100000) {
             int radiationAmount = Math.min(coreTemp / 500000, 10);
             int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
-            Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
-            for (Player player : online) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!player.getWorld().equals(base.getWorld())) continue;
                 Location ploc = player.getLocation();
                 int px = ploc.getBlockX(), py = ploc.getBlockY(), pz = ploc.getBlockZ();

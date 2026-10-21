@@ -3,6 +3,271 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.10] - since 1.8.5-alpha.9 (2026-10-21)
+
+> **Alpha channel** — performance fix on top of `1.8.5-alpha.9`.
+
+### Changed
+- **DFC fuel checks no longer take a block-entity snapshot.** `ReactorFuel`
+  read both fuel barrels through `Block#getState()`, which serializes and
+  re-deserializes the barrel NBT on every call (`saveWithFullMetadata` +
+  `loadStatic`). The heat check, `isHeating()` and the Fuel sign asked for it
+  several times per tick, which made `hasBarrelFuel` the single largest
+  consumer of the server tick in the profiler (≈4.6 ms + ≈1.7 ms of
+  `isHeating`). Barrels are now read through `Block#getState(false)` (live
+  state, no snapshot — the returned inventory is still the real one), only
+  for `Material.BARREL` blocks, and the answer is cached for 10 ticks
+  (dropped immediately after a fuel unit is consumed). `ensureNamed` reads
+  the live custom name and only builds a snapshot when the name actually has
+  to be written; the fusion floor barrel uses the live state too.
+- **The rotating structure audit no longer parses strings per cell.** The
+  tracker mirrors its template index into flat int/category/material arrays,
+  so a cell check is three int reads plus one block lookup instead of a
+  `String#split`, three `Integer#parseInt` and a `"dx,dy,dz"` concat +
+  HashMap lookup for the expected material. The ignored-cell set is fetched
+  once per pass instead of once per cell.
+- **Reactor visuals are gated by nearby players.** `ReactorShield.tickParticles`
+  and `ReactorDisplay.tickVisual` return immediately when no player is within
+  `reactor.particle_view_distance` — vanilla drops those particle packets for
+  everyone else anyway, so an unvisited reactor no longer spends ~1 ms/tick
+  spawning particles and ambient sounds.
+- **Smaller hot-path cleanups:** bulb power checks use `World#getBlockAt` with
+  integer offsets instead of a `Location` clone per lamp, and the core
+  radiation scan iterates the online players directly instead of copying them
+  into an array every tick.
+
+### Added
+- `reactor.particle_view_distance` (UI-MBS.toml, default 32.0) — radius of the
+  reactor visual gate (0 = always spawn).
+
+## [1.8.5-alpha.9] - since 1.8.5-alpha.8 (2026-10-21)
+
+> **Alpha channel** — new feature on top of `1.8.5-alpha.8`.
+
+### Added
+- **Sculk contact hazards** — the `SculkHazards` module (UI-World) makes the
+  grown sculk dangerous to walk on. Every second (`[sculk.hazards]
+  interval_ticks`, 20 ticks) the pulse inspects the block under the player and
+  applies the matching debuff, refreshing it for as long as the player stays
+  there:
+  - **sculk vein** → wither I for 1 s (`offset = 0`: veins have no collision,
+    the player stands inside their block);
+  - **sculk block** → wither I for 1 s (`offset = -1`: the player stands on top
+    of it, i.e. occupies the block above);
+  - **sculk shrieker** → evoker fangs summoned at the centre of the shrieker's
+    block — the fangs have no owner, so they damage the player standing on the
+    half-block (and every mob in the hitbox);
+  - **sculk sensor / calibrated sculk sensor** → slowness 255 for 1 s
+    (`offset = 0`: the sensor is half a block tall);
+  - **sculk catalyst** → mining fatigue 255 for 1 s (`offset = -1`).
+  Every rule has its own table (`[sculk.hazards.vein|block|shrieker|sensor|
+  catalyst]`) with `enabled`, `blocks`, `offset`, `effect`, `duration_ticks`,
+  `amplifier`, `particles`/`ambient`/`icon` — or `fangs`, `fangs_count`,
+  `fangs_attack_delay_ticks` instead of an effect. Creative and spectator
+  players are skipped, `ui.sculk.hazards.bypass` grants immunity, and
+  `use_growth_world_filter = true` makes the hazards follow the
+  `[sculk.worlds]` filter. The module is independent of
+  `/ui sculk start|stop`; `/ui sculk status` now lists the active rules.
+
+## [1.8.5-alpha.8] - since 1.8.5-alpha.7 (2026-10-21)
+
+> **Alpha channel** — behavior change on top of `1.8.5-alpha.7`.
+
+### Changed
+- **Every pulse starts the bloom from a random one of the six face-adjacent
+  blocks** — no pre-checks at all. A solid neighbour simply wastes that pulse
+  (vanilla cannot place a sculk vein inside a solid block), so a walled-in
+  catalyst never spreads, by design. A catalyst with an air/water face above a
+  replaceable surface starts growing within a few pulses, because the random
+  pick eventually lands on a valid face every second.
+
+### Removed
+- `warn_no_origin` and the no-origin console warning — with the random pick
+  there is no "no origin" state any more; every catalyst always has six
+  candidates.
+
+## [1.8.5-alpha.7] - since 1.8.5-alpha.6 (2026-10-21)
+
+> **Alpha channel** — behavior change on top of `1.8.5-alpha.6`.
+
+### Changed
+- **The bloom origin is now looked up only in the six face-adjacent blocks of
+  the catalyst** — the previous build searched a radius around it. A neighbour
+  qualifies only when it is air/water (a space where the vanilla charge can
+  place sculk veins) and has a valid substrate on one of its own six faces: a
+  `#minecraft:sculk_replaceable` block (fresh sculk seed) or an existing sculk
+  block. The first qualifying neighbour is used, preferring a replaceable
+  substrate over existing sculk and a substrate directly below. If none of the
+  six neighbours qualifies, the catalyst is ignored — there is nowhere for the
+  infection to start from.
+
+### Added
+- `warn_no_origin` (default `false`) — when enabled, a catalyst without a
+  valid origin logs one actionable warning (once per catalyst) instead of
+  being silently ignored. The warning is off by default to avoid console spam.
+
+### Removed
+- `bloom_origin_radius` — superseded by the fixed six-neighbour lookup. The key
+  left in an existing config file is harmless and ignored.
+
+## [1.8.5-alpha.6] - since 1.8.5-alpha.5 (2026-10-21)
+
+> **Alpha channel** — bug-fix build on top of `1.8.5-alpha.5`.
+
+### Fixed
+- **A freshly placed sculk catalyst never spread** — the bloom was started at
+  the catalyst block itself. A vanilla sculk charge can only grow from an
+  air/water block space where a sculk vein can attach to a
+  `#minecraft:sculk_replaceable` surface: the solid catalyst block is not such
+  a space, and the default sculk behaviour on a non-sculk block neither grows
+  veins nor converts anything, so every pulse was wasted (this also matches the
+  vanilla rule that a lone catalyst in plain terrain does not spread on its
+  own). The manager now searches for an air/water cell directly above a
+  replaceable surface (or an existing sculk block) within
+  `bloom_origin_radius` — new key, default 2, clamped to 1..8 — and starts the
+  bloom from that cell, exactly like a mob death at that spot. A catalyst with
+  no such surface within range now logs one actionable warning (once per
+  catalyst) instead of silently doing nothing.
+- `/ui sculk status` now also shows the origin search radius in the pulse line.
+
+## [1.8.5-alpha.5] - since 1.8.5-alpha.4 (2026-10-21)
+
+> **Alpha channel** — control surface for the sculk growth on top of `1.8.5-alpha.4`.
+
+### Added
+- **World filter for the sculk growth** — the new `[sculk.worlds]` section has
+  an independently switchable whitelist and blacklist that may be enabled at
+  the same time: the whitelist (when on) restricts growth to its worlds, then
+  the blacklist (when on) removes worlds from the remaining set, so the
+  blacklist always wins. Names are case-insensitive server world names
+  (`world`, `world_nether`, ...). Catalysts in filtered-out worlds are not even
+  registered, so they cost nothing; changing the filter and running `/ui
+  reload` rebuilds the registry from the loaded chunks. An enabled-but-empty
+  whitelist means "no growth anywhere", which is the safe way to scope the
+  mechanic to one world before enabling it.
+- **`/ui sculk status`** — prints the effective state (config master switch AND
+  the runtime switch), how many catalysts are active right now (loaded chunk,
+  valid block, allowed world) versus how many are tracked in total, the world
+  filter in effect, and the pulse settings (interval, charge, per-pulse cap,
+  MSPT gate).
+- **`/ui sculk start|stop`** — turns the growth on/off at runtime and writes the
+  switch to the `ui_state` table (`namespace = sculk`, `key = growth_enabled`),
+  so it survives restarts. The config `[sculk] enabled` key remains the master
+  switch and cannot be overridden by the command; `start` refuses to run while
+  the master switch is off. If the database is unavailable the command still
+  changes the in-memory state and says so instead of pretending it was saved.
+- **Separate permissions** — `ui.command.sculk.status` (read-only),
+  `ui.command.sculk.start` and `ui.command.sculk.stop`, so staff can watch the
+  infection without being allowed to pause it (or the reverse). All three are
+  registered in `Permissions` with default FALSE; tab-completion only offers
+  the actions the sender may run.
+
+## [1.8.5-alpha.4] - since 1.8.5-alpha.3 (2026-10-21)
+
+> **Alpha channel** — new mechanic on top of `1.8.5-alpha.3`.
+
+### Added
+- **Infinitely growing sculk** — a sculk catalyst in vanilla only blooms when
+  a mob dies nearby, because the death's XP becomes the bloom "charge" of its
+  `SculkSpreader`; without deaths the patch stops growing. The new
+  **SculkGrowth** module (UI-World) pulses every loaded catalyst on its own
+  cooldown (`interval_ticks`, 20 = 1 s) through Paper's
+  `SculkCatalyst#bloom(Block, int)` API, adding `charge_per_pulse` (default 10)
+  each time. The spread itself is the real vanilla mechanic, not an emulation:
+  only blocks from `#minecraft:sculk_replaceable` (stone, deepslate, dirt,
+  gravel, sand, ...) are converted, sculk veins grow on surfaces, shriekers
+  appear occasionally, and the vanilla sound/particles play. Ores, containers,
+  tile entities and builds of other materials stay untouched. Because charge
+  is never allowed to run out, the patch expands without a limit — it spreads
+  like a virus.
+- Catalysts are discovered automatically: loaded chunks are scanned for
+  catalyst tile entities on chunk load and once at startup, player-placed
+  catalysts are tracked from `BlockPlaceEvent`, broken ones are pruned. Only
+  loaded chunks are processed (no force-loading), at most
+  `max_catalysts_per_pulse` (default 32) catalysts bloom per pulse in a
+  round-robin, and a pulse is skipped while the average tick time exceeds
+  `max_mspt` (default 50 ms) — a TPS guard for worlds with hundreds of
+  catalysts. Settings live in the new `[sculk]` section of
+  `configs/UI-World.toml`.
+
+### Fixed
+- **Built JARs advertised a stale plugin version** — `processResources` expands
+  `${project.version}` into `paper-plugin.yml`, but Gradle did not treat the
+  version as an input of that task, so after a version-only bump the task was
+  considered up-to-date and every jar kept the version of the last full
+  rebuild (`1.8.4-alpha.2` through the whole `1.8.5-alpha.x` line). The version
+  is now an explicit `processResources` input, so each release embeds the
+  version it is built as.
+
+## [1.8.5-alpha.3] - since 1.8.5-alpha.2 (2026-10-21)
+
+> **Alpha channel** — bug-fix build on top of `1.8.5-alpha.2`.
+
+### Fixed
+- **The generator left its trigger frame behind** — assembling the blast
+  furnace generator registered the structure but never touched the item
+  frame, so the frame (and any item inside it) stayed on top of the furnace
+  instead of breaking and dropping. Every other structure already consumes
+  its one-shot trigger frame (battery, lamp, lightning, DFC, CER). The frame
+  is now removed after a successful assembly and drops as an item frame —
+  `GLOW_ITEM_FRAME` for glow frames — together with the displayed item.
+  `GeneratorManager.assembleFromFrame` takes the frame reference from
+  `ReactorListener`, so no coordinate guessing is involved.
+- **Battery charge of a late-loaded world was never restored (and its rows
+  were wiped)** — the energy rewrite deleted the WHOLE `energy_storage`
+  table and re-inserted only what the currently loaded worlds reported, so a
+  battery in a world loaded later (Multiverse, delayed world load) lost its
+  saved charge within one save interval (10 s). The rewrite is now scoped to
+  the UIDs of the worlds loaded at that moment; rows of other worlds survive.
+  In addition, stored energy is restored for the pools that a rebuild
+  actually created (`BatteryManager.rebuildFromMarkers` →
+  `EnergyPersistence.load(Collection<BatteryPool>)`), so a world that loads
+  after startup gets its batteries back instead of starting empty, while
+  already running batteries are never rolled back to an older DB snapshot by
+  the 5/30/120 s rebuild passes.
+
+## [1.8.5-alpha.2] - since 1.8.5-alpha.1 (2026-10-21)
+
+> **Alpha channel** — bug-fix build on top of `1.8.5-alpha.1`.
+
+### Fixed
+- **A battery multiblock now really is ONE battery** — every copper-grate
+  block kept its own private charge (`CableNode.energy`), so charging one
+  face filled only the blocks the traversal happened to reach and the
+  multimeter showed a different value on every block; the far side of the
+  same structure looked empty and refused to give energy. The cluster now
+  owns a single `BatteryPool` (new class in UI-Energy) and every block's
+  network node delegates its get/add/remove/set calls to that one instance:
+  charge through any face = the whole structure charges, discharge through
+  any face = the same reserve is drained, and the tooltip is identical on
+  every block. Capacity is still `energy.battery.max_energy × blocks`, but
+  as one shared cap instead of `blocks` independent caps.
+- **Energy reached through a battery counted once per block** — the
+  availability/space checks summed the same reserve for every block of the
+  cluster (a 20-block battery with 100 000 ⚡ could "pay" 2 000 000 ⚡), and
+  the balancer treated the blocks of one structure as separate batteries.
+  Traversals now deduplicate by pool (identity), the pool is settled once,
+  and a battery reached from the far side of the cluster is still walked
+  through so cables behind it stay reachable.
+- **Balancing mixed-size batteries destroyed charge** — the pass equalized
+  absolute values, so a 100-block battery and a single-block one "leveled"
+  to the same number of joules and the large one was emptied almost to
+  zero. Balancing now targets the same CHARGE PERCENTAGE for every storage
+  unit, capped per unit by `energy.balancer.max_transfer`.
+- **Stored energy could be lost on a delayed rebuild** — `BatteryManager`
+  recreated clusters (and now their pools) on every world-load/delayed
+  rebuild pass without carrying the charge over. The pool object is reused
+  for a surviving cluster UUID, so the scheduled rebuilds at 5/30/120 s
+  after startup no longer wipe a charged battery.
+- **Merging two clusters threw one charge away** — placing a block that
+  bridges two assembled batteries now adds both pools and clamps to the new
+  capacity, so no energy disappears in the merge.
+- **Legacy saved energy is migrated, not dropped** — the per-block
+  `energy_storage` rows written by previous builds are summed per cluster on
+  load (the old per-block values were the cluster's split charge), and new
+  saves write one row per storage unit instead of duplicating the total on
+  every block.
+
 ## [1.8.5-alpha.1] - since 1.8.3-release.1 (2026-10-21)
 
 > **Alpha channel** — first 1.8.5 build. Everything below landed after

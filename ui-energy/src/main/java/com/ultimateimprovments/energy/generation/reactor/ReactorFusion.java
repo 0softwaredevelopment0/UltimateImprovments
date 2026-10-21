@@ -223,10 +223,19 @@ public class ReactorFusion {
     // =========================
     // FLOOR BARREL — ancient debris deposit
     // =========================
+    /**
+     * Live floor-barrel state. {@code getState(false)} skips the NBT snapshot
+     * (this is queried once per second by the displays and on every deposit),
+     * while {@link Barrel#getInventory()} still returns the real inventory —
+     * items added to it are applied immediately.
+     */
     private Barrel floorBarrel(Location base) {
-        Block block = base.clone().add(BARREL_FLOOR[0], BARREL_FLOOR[1], BARREL_FLOOR[2]).getBlock();
-        if (block.getState() instanceof Barrel barrel) return barrel;
-        return null;
+        org.bukkit.World world = base.getWorld();
+        if (world == null) return null;
+        Block block = world.getBlockAt(base.getBlockX() + BARREL_FLOOR[0],
+                base.getBlockY() + BARREL_FLOOR[1], base.getBlockZ() + BARREL_FLOOR[2]);
+        if (block.getType() != Material.BARREL) return null;
+        return block.getState(false) instanceof Barrel barrel ? barrel : null;
     }
 
     /** True when the floor barrel has no free slot left (status Full). */

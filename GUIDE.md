@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.3-alpha.5
+**Version:** 1.8.5-alpha.10
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -195,6 +195,8 @@ tab-completion for all subcommands.
 /ui menu                          — admin GUI
 /ui toggleautocraft               — autocraft toggle
 /ui togglebind                    — wireless redstone toggle
+/ui sculk status                  — active sculk catalysts, growth state, world filter
+/ui sculk start|stop              — enable/disable sculk growth (persisted in the DB)
 ```
 
 ### Economy & Server
@@ -409,6 +411,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - Wear system — the reactor degrades over time.
 - States: normal → degradation → self-destruct → meltdown.
 - Emits radiation at high temperatures.
+- **Runtime cost**: barrels are read through live block states (no NBT snapshot) with a 10-tick fuel cache, the structure audit works on a flat pre-parsed cell index, and particles/ambient sounds are skipped while no player is within `reactor.particle_view_distance` (default 32) of the reactor.
 
 ### Compact Nuclear Reactor
 3×3×3 energy generator (chiseled deepslate / copper / glass / reinforced deepslate, barrel on top):
@@ -425,9 +428,9 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 
 ### Energy Network
 - **Cables** — waxed lightning rod (straight) / waxed chiseled copper (corner).
-- **Batteries** — a multi-block structure, not a single block: put a one-shot item frame on a waxed copper grate and every copper grate connected to it becomes **one adaptive battery**. Capacity is **100 000 ⚡ per block** (config `energy.battery.max_energy`), the whole structure stores/discharges as a unit and shares one mode. A copper grate placed on its own is inert — no node, no storage.
+- **Batteries** — a multi-block structure, not a single block: put a one-shot item frame on a waxed copper grate and every copper grate connected to it becomes **one adaptive battery**. Capacity is **100 000 ⚡ per block** (config `energy.battery.max_energy`), stored in **one shared pool** for the whole structure: charging through any face charges the battery, discharging through any face drains the same reserve, and the multimeter shows the same charge on every block. The structure shares one mode. A copper grate placed on its own is inert — no node, no storage.
 - **Battery modes** — a redstone pulse on **any** block of the cluster cycles Charge → Charge & Discharge → Discharge. Only a real redstone event counts (lever, button, dust, torch, plate changing 0 → powered); indirect power from neighbouring circuits and the charging process itself are ignored, and a short debounce collapses a whole dust line into one cycle. The mode is saved in SQLite and survives a restart; SHIFT+RMB with an empty hand still works as a manual shortcut.
-- **Generator** — blast furnace, redstone-gated, **10 ⚡/s** while it burns fuel (1 item per 10 s, 100 ⚡ per fuel item); a full leftover buffer freezes fuel consumption until a consumer pulls.
+- **Generator** — blast furnace, redstone-gated, **10 ⚡/s** while it burns fuel (1 item per 10 s, 100 ⚡ per fuel item); a full leftover buffer freezes fuel consumption until a consumer pulls. Assembled by putting a one-shot item frame on top of the furnace (a cable must touch it) — the frame breaks and drops after assembly, like on every other structure.
 - **Generators**, **electric furnace**, **energy workbench** (custom crafting with energy cost).
 - Background tasks: energy loss, cable tick, battery drain, balancing; SQLite persistence (structure markers + stored energy survive a restart); connection visualization.
 
@@ -456,6 +459,8 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - **Minecart speed** — acceleration on powered rails, collision damage = speed × 20, particles.
 - **Omniscanner** — admin scanner with strict whitelists (blocks/items/entities); also finds items inside entity inventories (minecarts with chests, chested horses, villagers, ...).
 - **Meteor showers**, **auto-broadcast** (conditions: is-op, is-gamemode, height, health, hunger, is-group, online-*, xp-lvl-*), **death bell**, **glass breaking**, **shield slowness**, **terracotta speed**, **boosted cobweb**, **entity locator**, **exp bottle upgrade**, **netherite upgrade**.
+- **Infinitely growing sculk** — every loaded sculk catalyst is pulsed by the plugin once per second, so the vanilla bloom never runs out of charge and keeps converting `#minecraft:sculk_replaceable` blocks (stone, deepslate, dirt, gravel, sand, ...) forever, veins and occasional shriekers included. Each pulse starts the bloom from a **random one of the six face-adjacent blocks** (vanilla death-spot semantics): solid neighbours waste the pulse, so a walled-in catalyst never spreads, while an air/water face above a replaceable surface starts the infection. Vanilla rules only: ores, containers, tile entities and builds of other materials stay untouched. World whitelist/blacklist (each independently on/off, blacklist wins), `/ui sculk status|start|stop` with separate permissions; the start/stop switch is persisted in the DB. Tuned in `[sculk]` (`interval_ticks`, `charge_per_pulse`, `max_catalysts_per_pulse`, `max_mspt`, `[sculk.worlds]`).
+- **Sculk contact hazards** — the sculk fights back: once per second (configurable) the `SculkHazards` module inspects the block the player stands in/on and applies a debuff. Sculk vein → wither I for 1 s (`offset = 0`, veins have no collision), sculk block → wither I for 1 s (`offset = -1`, you stand on top of it), sculk shrieker → evoker fangs summoned at the shrieker's block (ownerless, so they hit whoever stands on the half-block), sculk sensor (incl. calibrated) → slowness 255 for 1 s, sculk catalyst → mining fatigue 255 for 1 s. Every rule lives in `[sculk.hazards.<rule>]` with its own `enabled`, `blocks`, `offset`, `effect`, `duration_ticks`, `amplifier`, rendering flags — or `fangs`, `fangs_count`, `fangs_attack_delay_ticks` for the shrieker. Creative/spectator players are skipped, `ui.sculk.hazards.bypass` grants immunity, the hazards work independently of `/ui sculk start|stop`, and `/ui sculk status` lists the active rules.
 - **World clock / timelines** — `/time` works correctly in all dimensions.
 
 ---
@@ -468,6 +473,10 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 | `ui.command.<name>` | Access to `/ui <name>` |
 | `ui.command.*` | All commands |
 | `ui.command.radview` | Admin radiation overlay (default FALSE) |
+| `ui.command.sculk.status` | `/ui sculk status` — growth state, active catalyst count, world filter (default FALSE) |
+| `ui.command.sculk.start` | `/ui sculk start` — enable sculk growth, persisted in the DB (default FALSE) |
+| `ui.command.sculk.stop` | `/ui sculk stop` — disable sculk growth, persisted in the DB (default FALSE) |
+| `ui.sculk.hazards.bypass` | Ignore the sculk contact hazards — wither, evoker fangs, slowness, mining fatigue (default FALSE) |
 | `ui.command.configregen` / `ui.command.configreset` | Config regen/reset commands (default FALSE, additionally gated by `config.commands_enabled`) |
 | `ui.enchant.itemstealing.steal` | Allows Item Stealing to trigger (default FALSE) |
 | `ui.chat.filter.bypass` | Bypass the chat filter |

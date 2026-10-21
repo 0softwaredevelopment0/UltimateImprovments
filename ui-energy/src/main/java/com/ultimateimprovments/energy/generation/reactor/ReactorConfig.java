@@ -58,6 +58,7 @@ public class ReactorConfig {
     private int shieldParticleRodCount;      // total END_ROD particles per tick
     private int shieldIntegrityShutdownPercent; // emergency core shutdown threshold
     private int shieldParticleDustCount;     // DUST particles in the core per tick
+    private double particleViewDistance;      // skip visuals when nobody is this close (0 = always)
 
     // Self-destruct protocol — 1% chance on startup, 5s of dead sensors (No
     // signal), a timed countdown with locked control bulbs, then the overpower
@@ -189,6 +190,7 @@ public class ReactorConfig {
         shieldParticleRodCount = cfg.getInt("reactor.shield_particle_rod_count", 16);
         shieldIntegrityShutdownPercent = cfg.getInt("reactor.shield_integrity_shutdown_percent", 25);
         shieldParticleDustCount = cfg.getInt("reactor.shield_particle_dust_count", 16);
+        particleViewDistance = Math.max(0.0, cfg.getDouble("reactor.particle_view_distance", 32.0));
         selfdestructChance = cfg.getDouble("reactor.selfdestruct_chance", 1.0);
         selfdestructNoSignalSec = cfg.getInt("reactor.selfdestruct_no_signal_sec", 5);
         selfdestructTimedSec = cfg.getInt("reactor.selfdestruct_timed_sec", 60);
@@ -273,6 +275,8 @@ public class ReactorConfig {
     public int getShieldParticleRodCount() { return shieldParticleRodCount; }
     public int getShieldIntegrityShutdownPercent() { return shieldIntegrityShutdownPercent; }
     public int getShieldParticleDustCount() { return shieldParticleDustCount; }
+    /** Radius in blocks for the reactor visual gate (0 = always spawn). */
+    public double getParticleViewDistance() { return particleViewDistance; }
     public double getFuelSpinMin() { return fuelSpinMin; }
     public double getFuelWorkSpin() { return fuelWorkSpin; }
     public double getFuelOverSpin() { return fuelOverSpin; }

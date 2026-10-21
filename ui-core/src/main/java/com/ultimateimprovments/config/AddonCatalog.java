@@ -62,7 +62,7 @@ public final class AddonCatalog {
                 "check", "codepanel", "sudo", "maintenance", "console_lockdown",
                 "server_lockdown", "command_policy", "stresstest");
         // ── UI-World ──
-        route("UI-World", "wireless_redstone", "meteor", "block_friction");
+        route("UI-World", "wireless_redstone", "meteor", "block_friction", "sculk");
         // ── UI-Items ──
         route("UI-Items", "netherite_upgrade", "particle_accelerator");
         // ── UI-Other (features umbrella + mechanics) ──
