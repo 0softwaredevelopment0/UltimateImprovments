@@ -1,6 +1,7 @@
 package com.ultimateimprovments.energy.transfer.cable;
 
 import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.energy.storage.battery.BatteryPool;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
@@ -10,7 +11,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * SQLite persistence for stored node energy (batteries).
@@ -59,6 +64,12 @@ public final class EnergyPersistence {
      */
     public static void load() {
         int restored = 0;
+        // One multiblock battery = one pool. Old rows were written per block
+        // (each block kept its own charge), so the values are SUMMED per pool
+        // and clamped to the cluster capacity — that migrates an existing
+        // world without losing a single volt. New saves write one row per
+        // pool, which the same sum handles unchanged.
+        Map<BatteryPool, Integer> pooledEnergy = new IdentityHashMap<>();
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement st = con.prepareStatement("SELECT world, x, y, z, energy FROM energy_storage");
              ResultSet rs = st.executeQuery()) {
@@ -74,9 +85,22 @@ public final class EnergyPersistence {
                 CableNode node = CableNetwork.getNodeByKey(worldUid, LocationUtil.toKey(x, y, z));
                 if (node == null || node.getType() != NodeType.BATTERY) continue;
 
+                BatteryPool pool = node.getBatteryPool();
+                if (pool != null) {
+                    pooledEnergy.merge(pool, energy,
+                            (a, b) -> (int) Math.min(Integer.MAX_VALUE, (long) a + b));
+                    restored++;
+                    continue;
+                }
+
                 node.setMaxEnergy(Math.max(node.getMaxEnergy(), EnergyFlow.batteryCapacity()));
                 node.setEnergy(Math.min(energy, node.getMaxEnergy()));
                 restored++;
+            }
+
+            for (Map.Entry<BatteryPool, Integer> entry : pooledEnergy.entrySet()) {
+                BatteryPool pool = entry.getKey();
+                pool.setEnergy(Math.min(entry.getValue(), pool.getMaxEnergy()));
             }
 
             if (restored > 0) {
@@ -94,10 +118,16 @@ public final class EnergyPersistence {
         // Snapshot first (node iteration must not hold the DB write).
         record Row(String world, int x, int y, int z, int energy) {}
         List<Row> rows = new ArrayList<>();
+        // One row per storage unit: a whole multiblock battery writes its
+        // pool once (through its first block) instead of duplicating the same
+        // total on every block.
+        Set<BatteryPool> savedPools = Collections.newSetFromMap(new IdentityHashMap<>());
 
         CableNetwork.forEachNode(node -> {
             if (node == null || node.getType() != NodeType.BATTERY) return;
             if (node.getEnergy() <= 0) return;
+            BatteryPool pool = node.getBatteryPool();
+            if (pool != null && !savedPools.add(pool)) return;
             Location loc = node.getLocation();
             if (loc == null || loc.getWorld() == null) return;
             rows.add(new Row(

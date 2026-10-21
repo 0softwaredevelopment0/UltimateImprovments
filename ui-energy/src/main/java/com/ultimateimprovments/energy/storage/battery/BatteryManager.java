@@ -106,6 +106,13 @@ public class BatteryManager implements Listener {
         public int capacity;
         public BatteryMode mode = BatteryMode.CHARGE_DISCHARGE;
 
+        /**
+         * The ONE energy reserve of the whole structure. Every CableNode of
+         * the cluster delegates to this pool, so the battery is monolithic:
+         * charging/discharging through any block works on the same numbers.
+         */
+        public BatteryPool pool = new BatteryPool(0);
+
         /** Last pulse tick (debounce, never persisted). */
         long lastPulseTick;
 
@@ -130,6 +137,7 @@ public class BatteryManager implements Listener {
                 } else {
                     center = null;
                     capacity = 0;
+                    pool.setMaxEnergy(0);
                 }
             }
         }
@@ -147,16 +155,20 @@ public class BatteryManager implements Listener {
 
         private void updateCenterFromSums() {
             int size = blockKeys.size();
-            if (size == 0) { center = null; capacity = 0; return; }
+            if (size == 0) { center = null; capacity = 0; pool.setMaxEnergy(0); return; }
             center = new Location(world,
                     (int) Math.round((double) sumX / size),
                     (int) Math.round((double) sumY / size),
                     (int) Math.round((double) sumZ / size));
-            // Cluster capacity = blocks × per-block capacity (config) —
-            // the same limit CableNode enforces per block, so the charge
+            // Cluster capacity = blocks × per-block capacity (config) — the
+            // same limit CableNode enforces per block, so the charge
             // percentage is consistent now (previously blocks × 1000 hardcode
             // contradicted energy.battery.max_energy = 100000).
             capacity = size * EnergyFlow.batteryCapacity();
+            // The shared pool cap follows the structure: a battery that grew
+            // by a block accepts that much more, and no block ever holds a
+            // private value that could drift from the rest.
+            pool.setMaxEnergy(capacity);
         }
 
         boolean contains(Location loc) { return blockKeys.contains(toKey(loc)); }
@@ -211,6 +223,15 @@ public class BatteryManager implements Listener {
      * and rebuilds the clusters. After creation — cleans up orphaned Markers.
      */
     public static void rebuildFromMarkers() {
+        // Keep the live charge of clusters that survive the rebuild (world
+        // load, delayed startup passes): reusing the POOL OBJECT means the
+        // already-bound CableNodes keep reading the same reserve instead of
+        // falling back to a fresh empty one and silently losing the energy.
+        Map<UUID, BatteryPool> existingPools = new HashMap<>();
+        for (BatteryCluster cluster : clustersById.values()) {
+            if (cluster.uuid != null) existingPools.put(cluster.uuid, cluster.pool);
+        }
+
         locationToCluster.clear();
         clustersById.clear();
         nextId = 1;
@@ -258,6 +279,7 @@ public class BatteryManager implements Listener {
             cluster.uuid = group.getKey();
             cluster.world = world;
             cluster.blockKeys = new HashSet<>(group.getValue());
+            cluster.pool = existingPools.getOrDefault(cluster.uuid, new BatteryPool(0));
             cluster.recalculateCenter();
             BatteryMode persisted = persistedModes.get(cluster.uuid);
             if (persisted != null) cluster.mode = persisted;
@@ -266,7 +288,7 @@ public class BatteryManager implements Listener {
                 locationToCluster.put(key, cluster);
                 // Create a CableNode with BATTERY type (without a "cable" marker)
                 Location blockLoc = new Location(world, getX(key), getY(key), getZ(key));
-                CableNetwork.ensureNode(blockLoc, NodeType.BATTERY);
+                bindBatteryNode(blockLoc, cluster);
             }
             clustersById.put(cluster.id, cluster);
             usedUuids.add(cluster.uuid);
@@ -306,6 +328,18 @@ public class BatteryManager implements Listener {
             }
         }
         return visited;
+    }
+
+    /**
+     * Creates (if needed) the network node of one battery block and binds it
+     * to the cluster's shared pool. Every block of a structure MUST end up
+     * bound to the same {@link BatteryPool}, otherwise that block keeps a
+     * private charge and the battery stops being monolithic.
+     */
+    private static void bindBatteryNode(Location blockLoc, BatteryCluster cluster) {
+        CableNetwork.ensureNode(blockLoc, NodeType.BATTERY);
+        CableNode node = CableNetwork.getNode(blockLoc);
+        if (node != null) node.bindBatteryPool(cluster.pool);
     }
 
     private static void removeFrameAt(Location blockLoc, Player player) {
@@ -356,9 +390,9 @@ public class BatteryManager implements Listener {
 
         for (long bk : connected) {
             locationToCluster.put(bk, cluster);
-            // Create a CableNode with BATTERY type
+            // Create a CableNode with BATTERY type and bind it to the ONE pool
             Location blockLoc = new Location(cluster.world, getX(bk), getY(bk), getZ(bk));
-            CableNetwork.ensureNode(blockLoc, NodeType.BATTERY);
+            bindBatteryNode(blockLoc, cluster);
         }
         clustersById.put(cluster.id, cluster);
 
@@ -445,13 +479,17 @@ public class BatteryManager implements Listener {
             if (c.uuid != null) {
                 StructureMarker.place(loc, "battery", c.uuid);
             }
-            // Create a CableNode with BATTERY type
-            CableNetwork.ensureNode(loc, NodeType.BATTERY);
+            // Create a CableNode with BATTERY type on the shared pool
+            bindBatteryNode(loc, c);
         } else {
             Iterator<BatteryCluster> it = adj.iterator();
             BatteryCluster primary = it.next();
+            // The merged structure keeps every volt: the pools are added up
+            // and clamped to the new (bigger) cluster capacity.
+            long mergedEnergy = primary.pool.getEnergy();
             while (it.hasNext()) {
                 BatteryCluster other = it.next();
+                mergedEnergy += other.pool.getEnergy();
                 for (long bk : other.blockKeys) {
                     locationToCluster.put(bk, primary);
                     primary.addBlock(bk);
@@ -461,6 +499,9 @@ public class BatteryManager implements Listener {
                     if (primary.uuid != null) {
                         StructureMarker.place(blockLoc, "battery", primary.uuid);
                     }
+                    // Re-bind the block to the surviving pool AFTER its old
+                    // charge has been captured above, so nothing is lost.
+                    bindBatteryNode(blockLoc, primary);
                 }
                 // The merged cluster's blocks may now link to each other.
                 for (long bk : other.blockKeys) {
@@ -474,8 +515,9 @@ public class BatteryManager implements Listener {
             if (primary.uuid != null) {
                 StructureMarker.place(loc, "battery", primary.uuid);
             }
-            // Create a CableNode with BATTERY type
-            CableNetwork.ensureNode(loc, NodeType.BATTERY);
+            // Create a CableNode with BATTERY type on the shared pool
+            bindBatteryNode(loc, primary);
+            primary.pool.setEnergy((int) Math.min(mergedEnergy, primary.pool.getMaxEnergy()));
         }
     }
 
@@ -571,15 +613,9 @@ public class BatteryManager implements Listener {
     // ════════════════════════════════════════
     public static double getChargePercentage(BatteryCluster cluster) {
         if (cluster == null || cluster.capacity <= 0) return 0.0;
-        int totalEnergy = 0;
-        for (long key : cluster.blockKeys) {
-            Location bl = new Location(cluster.world, getX(key), getY(key), getZ(key));
-            CableNode node = CableNetwork.getNode(bl);
-            if (node != null) {
-                totalEnergy += node.getEnergy();
-            }
-        }
-        return Math.min(100.0, (double) totalEnergy / cluster.capacity * 100.0);
+        // ONE pool for the whole structure — no per-block summing, so a block
+        // that never saw the energy itself still reports the real charge.
+        return Math.min(100.0, (double) cluster.pool.getEnergy() / cluster.capacity * 100.0);
     }
 
     // ════════════════════════════════════════
