@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.5-alpha.4
+**Version:** 1.8.5-alpha.5
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -195,6 +195,8 @@ tab-completion for all subcommands.
 /ui menu                          — admin GUI
 /ui toggleautocraft               — autocraft toggle
 /ui togglebind                    — wireless redstone toggle
+/ui sculk status                  — active sculk catalysts, growth state, world filter
+/ui sculk start|stop              — enable/disable sculk growth (persisted in the DB)
 ```
 
 ### Economy & Server
@@ -456,7 +458,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - **Minecart speed** — acceleration on powered rails, collision damage = speed × 20, particles.
 - **Omniscanner** — admin scanner with strict whitelists (blocks/items/entities); also finds items inside entity inventories (minecarts with chests, chested horses, villagers, ...).
 - **Meteor showers**, **auto-broadcast** (conditions: is-op, is-gamemode, height, health, hunger, is-group, online-*, xp-lvl-*), **death bell**, **glass breaking**, **shield slowness**, **terracotta speed**, **boosted cobweb**, **entity locator**, **exp bottle upgrade**, **netherite upgrade**.
-- **Infinitely growing sculk** — every loaded sculk catalyst is pulsed by the plugin once per second, so the vanilla bloom never runs out of charge and keeps converting `#minecraft:sculk_replaceable` blocks (stone, deepslate, dirt, gravel, sand, ...) forever, veins and occasional shriekers included. Vanilla rules only: ores, containers, tile entities and builds of other materials stay untouched. Tuned in `[sculk]` (`interval_ticks`, `charge_per_pulse`, `max_catalysts_per_pulse`, `max_mspt`).
+- **Infinitely growing sculk** — every loaded sculk catalyst is pulsed by the plugin once per second, so the vanilla bloom never runs out of charge and keeps converting `#minecraft:sculk_replaceable` blocks (stone, deepslate, dirt, gravel, sand, ...) forever, veins and occasional shriekers included. Vanilla rules only: ores, containers, tile entities and builds of other materials stay untouched. World whitelist/blacklist (each independently on/off, blacklist wins), `/ui sculk status|start|stop` with separate permissions; the start/stop switch is persisted in the DB. Tuned in `[sculk]` (`interval_ticks`, `charge_per_pulse`, `max_catalysts_per_pulse`, `max_mspt`, `[sculk.worlds]`).
 - **World clock / timelines** — `/time` works correctly in all dimensions.
 
 ---
@@ -469,6 +471,9 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 | `ui.command.<name>` | Access to `/ui <name>` |
 | `ui.command.*` | All commands |
 | `ui.command.radview` | Admin radiation overlay (default FALSE) |
+| `ui.command.sculk.status` | `/ui sculk status` — growth state, active catalyst count, world filter (default FALSE) |
+| `ui.command.sculk.start` | `/ui sculk start` — enable sculk growth, persisted in the DB (default FALSE) |
+| `ui.command.sculk.stop` | `/ui sculk stop` — disable sculk growth, persisted in the DB (default FALSE) |
 | `ui.command.configregen` / `ui.command.configreset` | Config regen/reset commands (default FALSE, additionally gated by `config.commands_enabled`) |
 | `ui.enchant.itemstealing.steal` | Allows Item Stealing to trigger (default FALSE) |
 | `ui.chat.filter.bypass` | Bypass the chat filter |

@@ -3,6 +3,38 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.5] - since 1.8.5-alpha.4 (2026-10-21)
+
+> **Alpha channel** — control surface for the sculk growth on top of `1.8.5-alpha.4`.
+
+### Added
+- **World filter for the sculk growth** — the new `[sculk.worlds]` section has
+  an independently switchable whitelist and blacklist that may be enabled at
+  the same time: the whitelist (when on) restricts growth to its worlds, then
+  the blacklist (when on) removes worlds from the remaining set, so the
+  blacklist always wins. Names are case-insensitive server world names
+  (`world`, `world_nether`, ...). Catalysts in filtered-out worlds are not even
+  registered, so they cost nothing; changing the filter and running `/ui
+  reload` rebuilds the registry from the loaded chunks. An enabled-but-empty
+  whitelist means "no growth anywhere", which is the safe way to scope the
+  mechanic to one world before enabling it.
+- **`/ui sculk status`** — prints the effective state (config master switch AND
+  the runtime switch), how many catalysts are active right now (loaded chunk,
+  valid block, allowed world) versus how many are tracked in total, the world
+  filter in effect, and the pulse settings (interval, charge, per-pulse cap,
+  MSPT gate).
+- **`/ui sculk start|stop`** — turns the growth on/off at runtime and writes the
+  switch to the `ui_state` table (`namespace = sculk`, `key = growth_enabled`),
+  so it survives restarts. The config `[sculk] enabled` key remains the master
+  switch and cannot be overridden by the command; `start` refuses to run while
+  the master switch is off. If the database is unavailable the command still
+  changes the in-memory state and says so instead of pretending it was saved.
+- **Separate permissions** — `ui.command.sculk.status` (read-only),
+  `ui.command.sculk.start` and `ui.command.sculk.stop`, so staff can watch the
+  infection without being allowed to pause it (or the reverse). All three are
+  registered in `Permissions` with default FALSE; tab-completion only offers
+  the actions the sender may run.
+
 ## [1.8.5-alpha.4] - since 1.8.5-alpha.3 (2026-10-21)
 
 > **Alpha channel** — new mechanic on top of `1.8.5-alpha.3`.

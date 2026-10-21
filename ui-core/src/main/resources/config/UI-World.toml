@@ -114,6 +114,25 @@ max_catalysts_per_pulse = 32
 # Default: 50.0
 max_mspt = 50.0
 
+# World filter. The whitelist and the blacklist are independent: each can be
+# switched on or off, they can be active at the same time, and the blacklist
+# wins (whitelist picks the allowed set, blacklist removes worlds from it).
+# World names are case-insensitive and must match the server's world folders
+# (e.g. "world", "world_nether", "world_the_end").
+[sculk.worlds]
+# Restrict growth to the whitelisted worlds only.
+# Default: false
+whitelist_enabled = false
+# Worlds where sculk is allowed (used only when whitelist_enabled = true).
+# Default: [] (empty whitelist + enabled = no growth anywhere)
+whitelist = []
+# Forbid growth in the blacklisted worlds (wins over the whitelist).
+# Default: false
+blacklist_enabled = false
+# Worlds where sculk must NOT grow (used only when blacklist_enabled = true).
+# Default: []
+blacklist = []
+
 # ---- MESSAGES ----
 
 [messages.meteor]
