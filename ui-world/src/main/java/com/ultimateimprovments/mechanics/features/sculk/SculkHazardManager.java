@@ -73,9 +73,11 @@ import java.util.Set;
  * <b>Safety.</b> Each rule has its own {@code enabled} switch and the whole
  * module has a master switch. Creative/spectator players are skipped by default
  * and {@code bypass_permission} (default {@code ui.sculk.hazards.bypass}) makes
- * a player immune — note that a wildcard grant such as {@code ui.*} also matches
- * it, so an admin testing the mechanic can silently be immune; the skip is
- * logged once per player and {@link #describeAt(Player)} shows the flag for
+ * a player immune. Immunity requires an <b>explicit</b> grant of that node
+ * ({@link Permissions#isExplicitlyGranted}): a wildcard such as {@code *} or
+ * {@code ui.*} — what an admin normally holds on a LuckPerms server — does not
+ * count, so testing the mechanic as OP still hurts. The skip is logged once per
+ * player and {@link #describeAt(Player)} shows the flag for
  * {@code /ui sculk status}. The module is independent of the growth start/stop
  * switch: stopping the spread does not disarm the blocks that already exist,
  * and {@code use_growth_world_filter = true} makes the hazards follow the
@@ -334,7 +336,8 @@ public final class SculkHazardManager extends BukkitRunnable {
         if (player == null) return "<dark_gray>(console)</dark_gray>";
         Block feet = player.getLocation().getBlock();
         Block below = feet.getRelative(BlockFace.DOWN);
-        boolean bypass = !bypassPermission.isEmpty() && player.hasPermission(bypassPermission);
+        boolean bypass = !bypassPermission.isEmpty()
+                && Permissions.isExplicitlyGranted(player, bypassPermission);
 
         StringBuilder matched = new StringBuilder();
         for (HazardRule rule : rules) {
@@ -373,12 +376,13 @@ public final class SculkHazardManager extends BukkitRunnable {
         GameMode mode = player.getGameMode();
         if (ignoreSpectator && mode == GameMode.SPECTATOR) return false;
         if (ignoreCreative && mode == GameMode.CREATIVE) return false;
-        if (!bypassPermission.isEmpty() && player.hasPermission(bypassPermission)) {
-            // Wildcard grants (ui.*, *) silently match this node — say it once,
-            // otherwise "the hazards do nothing" looks like a bug of the pulse.
+        if (!bypassPermission.isEmpty() && Permissions.isExplicitlyGranted(player, bypassPermission)) {
+            // Only an explicit grant counts: `hasPermission` alone also matches
+            // the wildcard (`*`, `ui.*`) an admin usually holds, which made the
+            // hazards look broken for the very players testing them.
             if (bypassReported.add(player.getName().toLowerCase(Locale.ROOT))) {
                 ConsoleLogger.info("[SCULK] Hazards: " + player.getName()
-                        + " is immune (" + bypassPermission + ") — remove the node to be affected.");
+                        + " is immune — " + bypassPermission + " is granted explicitly.");
             }
             return false;
         }
