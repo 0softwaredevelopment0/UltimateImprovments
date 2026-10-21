@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -22,18 +23,33 @@ import java.util.zip.ZipFile;
  * {@code DATAPACK_DISCOVERY} event (runs very early, before UI-Core is loaded, so it
  * cannot use the family's {@code CompositeConfig}).
  * <p>
- * It reads {@code datapack.enabled} / {@code datapack.modules.*} straight from
- * {@code plugins/UltimateImprovments/configs/UI-Datapack.toml} (TOML, via toml4j bundled
- * in this addon), extracts the enabled subset of {@code datapacks/UI-Datapack/**} from
- * the addon JAR into {@code plugins/UltimateImprovments/datapack/UI-Datapack}, and
+ * The addon ships the SAME pack in two language variants:
+ * {@code datapacks/UI-Datapack-en/**} and {@code datapacks/UI-Datapack-ru/**} — the
+ * content is identical, only the displayed names/descriptions are translated. The
+ * variant is selected by {@code datapack.lang} in
+ * {@code plugins/UltimateImprovments/configs/UI-Datapack.toml} ({"en"} or {"ru"};
+ * {@code auto} follows {@code messages.lang} from {@code UI-Core.toml}).
+ * <p>
+ * It also reads {@code datapack.enabled} / {@code datapack.modules.*} from the same
+ * TOML (via toml4j bundled in this addon), extracts the enabled subset of the selected
+ * pack into {@code plugins/UltimateImprovments/datapack/UI-Datapack-<lang>}, and
  * returns that folder (or {@code null} when the master toggle is off).
  */
 final class DatapackPackBootstrap {
 
     private DatapackPackBootstrap() {}
 
-    /** Bundled resource prefix inside the JAR. */
-    private static final String JAR_PREFIX = "datapacks/UI-Datapack/";
+    /** Bundled resource folder prefix inside the JAR (the language suffix follows). */
+    private static final String JAR_PREFIX = "datapacks/UI-Datapack-";
+
+    /** Name prefix of the pack on disk (the language suffix follows). */
+    static final String PACK_PREFIX = "UI-Datapack";
+
+    private static final String EN = "en";
+    private static final String RU = "ru";
+
+    /** Language used when nothing is configured and UI-Core has no preference yet. */
+    private static final String DEFAULT_LANG = EN;
 
     private static final String[] PARTS = {
             "enchantments", "advancements", "custom_recipes", "vanilla_recipes",
@@ -56,6 +72,7 @@ final class DatapackPackBootstrap {
         File configFile = new File(new File(shared, "configs"), "UI-Datapack.toml");
 
         boolean enabled = true;
+        String configuredLang = "auto";
         Map<String, Boolean> parts = new HashMap<>();
         for (String part : PARTS) parts.put(part, true);
 
@@ -63,6 +80,7 @@ final class DatapackPackBootstrap {
             try {
                 Toml toml = new Toml().read(configFile);
                 enabled = !Boolean.FALSE.equals(toml.getBoolean("datapack.enabled", true));
+                configuredLang = toml.getString("datapack.lang", "auto");
                 Toml modules = toml.getTable("datapack.modules");
                 if (modules != null) {
                     for (String part : PARTS) {
@@ -71,11 +89,11 @@ final class DatapackPackBootstrap {
                 }
             } catch (Exception e) {
                 log.warn("Could not read " + configFile + " (" + e.getMessage()
-                        + ") — using defaults (all parts enabled).");
+                        + ") — using defaults (all parts enabled, language auto).");
             }
         } else {
             log.info("Config not found yet (" + configFile
-                    + ") — using defaults (all parts enabled).");
+                    + ") — using defaults (all parts enabled, language auto).");
         }
 
         if (!enabled) {
@@ -83,33 +101,94 @@ final class DatapackPackBootstrap {
             return null;
         }
 
-        File target = new File(new File(shared, "datapack"), "UI-Datapack");
-        deleteRecursively(target.toPath());
+        String lang = resolveLanguage(configuredLang, shared, log);
+
+        File source = locateSource(lang, log);
+        if (source == null) {
+            // The requested variant is not in this JAR (e.g. a stripped build) — the
+            // other one is better than shipping no datapack at all.
+            String fallback = EN.equals(lang) ? RU : EN;
+            source = locateSource(fallback, log);
+            if (source != null) {
+                log.warn("Bundled datapack '" + PACK_PREFIX + "-" + lang + "' was not found — "
+                        + "falling back to '" + PACK_PREFIX + "-" + fallback + "'.");
+                lang = fallback;
+            }
+        }
+        if (source == null) {
+            throw new IOException("UI-Datapack resources not found — no JAR/dir contains '"
+                    + JAR_PREFIX + "<lang>/pack.mcmeta'");
+        }
+
+        log.info("Datapack language: " + lang + " (datapack.lang: " + configuredLang + ")");
+
+        String packName = PACK_PREFIX + "-" + lang;
+        File packRoot = new File(shared, "datapack");
+        deleteStalePacks(packRoot);
+        File target = new File(packRoot, packName);
         if (!target.mkdirs() && !target.isDirectory()) {
             throw new IOException("Cannot create datapack folder: " + target.getAbsolutePath());
         }
 
-        File source = locateSource(log);
-        if (source == null) {
-            throw new IOException("UI-Datapack resources not found — no JAR/dir contains '" + JAR_PREFIX + "'");
-        }
-
+        String jarPrefix = JAR_PREFIX + lang + "/";
         int copied = source.isDirectory()
-                ? copyFromDirectory(source, target, parts, log)
-                : copyFromJar(source, target, parts);
+                ? copyFromDirectory(source, target, parts, log, jarPrefix)
+                : copyFromJar(source, target, parts, jarPrefix);
         if (copied == 0) {
-            throw new IOException("UI-Datapack extraction copied 0 files");
+            throw new IOException(packName + " extraction copied 0 files");
         }
 
-        log.info("Extracted " + copied + " datapack file(s) to " + target.getAbsolutePath());
+        log.info("Extracted " + copied + " datapack file(s) from " + packName
+                + " to " + target.getAbsolutePath());
         return target.toPath();
+    }
+
+    // =========================
+    // LANGUAGE
+    // =========================
+
+    /**
+     * Resolves the datapack variant: an explicit {@code datapack.lang} ("en"/"ru")
+     * wins, anything else ("auto", blank, unknown) follows {@code messages.lang}
+     * from {@code UI-Core.toml}, falling back to English.
+     */
+    private static String resolveLanguage(String configured, File shared, ComponentLogger log) {
+        String wanted = normalize(configured);
+        if (wanted != null) return wanted;
+
+        if (configured != null && !configured.isBlank()
+                && !"auto".equalsIgnoreCase(configured.trim())) {
+            log.warn("Unknown datapack.lang '" + configured
+                    + "' (expected 'en', 'ru' or 'auto') — following messages.lang instead.");
+        }
+        String global = readCoreLanguage(shared);
+        return global == null ? DEFAULT_LANG : global;
+    }
+
+    /** Reads {@code messages.lang} straight from {@code configs/UI-Core.toml} (may not exist yet). */
+    private static String readCoreLanguage(File shared) {
+        File core = new File(new File(shared, "configs"), "UI-Core.toml");
+        if (!core.isFile()) return null;
+        try {
+            Toml messages = new Toml().read(core).getTable("messages");
+            return messages == null ? null : normalize(messages.getString("lang"));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /** @return "en"/"ru" for a valid language value, otherwise {@code null} */
+    private static String normalize(String lang) {
+        if (lang == null) return null;
+        String value = lang.trim().toLowerCase(Locale.ROOT);
+        return EN.equals(value) || RU.equals(value) ? value : null;
     }
 
     // =========================
     // SOURCE LOCATION
     // =========================
 
-    private static File locateSource(ComponentLogger log) {
+    private static File locateSource(String lang, ComponentLogger log) {
         List<File> candidates = new ArrayList<>();
         File self = codeSource(UIDatapackBootstrap.class);
         if (self != null) {
@@ -125,14 +204,14 @@ final class DatapackPackBootstrap {
             }
         }
         for (File candidate : candidates) {
-            if (hasDatapack(candidate)) return candidate;
+            if (hasDatapack(candidate, lang)) return candidate;
         }
         // Last resort: scan the plugins folder for the addon JAR.
         File plugins = new File("plugins");
         File[] jars = plugins.listFiles((d, n) -> n.endsWith(".jar"));
         if (jars != null) {
             for (File jar : jars) {
-                if (hasDatapack(jar)) return jar;
+                if (hasDatapack(jar, lang)) return jar;
             }
         }
         log.warn("Datapack source not found via code source; will rely on discovered pack if any.");
@@ -148,16 +227,17 @@ final class DatapackPackBootstrap {
         }
     }
 
-    private static boolean hasDatapack(File file) {
+    private static boolean hasDatapack(File file, String lang) {
         if (file == null) return false;
+        String entry = JAR_PREFIX + lang + "/pack.mcmeta";
         try {
             if (file.isFile()) {
                 try (ZipFile zip = new ZipFile(file)) {
-                    return zip.getEntry(JAR_PREFIX + "pack.mcmeta") != null;
+                    return zip.getEntry(entry) != null;
                 }
             }
             if (file.isDirectory()) {
-                return new File(file, JAR_PREFIX + "pack.mcmeta").isFile();
+                return new File(file, entry).isFile();
             }
         } catch (Exception ignored) {
         }
@@ -168,14 +248,15 @@ final class DatapackPackBootstrap {
     // EXTRACTION
     // =========================
 
-    private static int copyFromJar(File jar, File target, Map<String, Boolean> parts) throws Exception {
+    private static int copyFromJar(File jar, File target, Map<String, Boolean> parts,
+                                   String jarPrefix) throws Exception {
         int copied = 0;
         try (ZipFile zip = new ZipFile(jar)) {
             var entries = zip.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
-                if (!entry.getName().startsWith(JAR_PREFIX)) continue;
-                String rel = entry.getName().substring(JAR_PREFIX.length());
+                if (!entry.getName().startsWith(jarPrefix)) continue;
+                String rel = entry.getName().substring(jarPrefix.length());
                 if (rel.isEmpty()) continue;
                 if (entry.isDirectory()) {
                     new File(target, rel).mkdirs();
@@ -189,8 +270,8 @@ final class DatapackPackBootstrap {
     }
 
     private static int copyFromDirectory(File root, File target, Map<String, Boolean> parts,
-                                         ComponentLogger log) throws Exception {
-        Path packRoot = root.toPath().resolve(JAR_PREFIX);
+                                         ComponentLogger log, String jarPrefix) throws Exception {
+        Path packRoot = root.toPath().resolve(jarPrefix);
         if (!Files.isDirectory(packRoot)) return 0;
         List<Path> files;
         try (var walk = Files.walk(packRoot)) {
@@ -228,6 +309,21 @@ final class DatapackPackBootstrap {
             }
         }
         return true;
+    }
+
+    /**
+     * Removes every previously extracted pack ({@code UI-Datapack},
+     * {@code UI-Datapack-en}, {@code UI-Datapack-ru}, ...) so switching the language
+     * never leaves a stale copy behind.
+     */
+    private static void deleteStalePacks(File packRoot) {
+        File[] children = packRoot.listFiles();
+        if (children == null) return;
+        for (File child : children) {
+            if (child.isDirectory() && child.getName().startsWith(PACK_PREFIX)) {
+                deleteRecursively(child.toPath());
+            }
+        }
     }
 
     private static void deleteRecursively(Path path) {

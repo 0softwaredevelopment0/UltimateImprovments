@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "trident",
+  "category": "misc",
+  "pattern": [
+    "HSH",
+    " R ",
+    " R "
+  ],
+  "key": {
+    "R": [
+      "minecraft:breeze_rod"
+    ],
+    "S": [
+      "minecraft:nether_star"
+    ],
+    "H": [
+      "minecraft:echo_shard"
+    ]
+  },
+  "result": {
+    "id": "minecraft:trident",
+    "count": 1
+  }
+}

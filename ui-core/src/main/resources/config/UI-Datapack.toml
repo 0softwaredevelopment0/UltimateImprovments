@@ -1,6 +1,7 @@
 # UltimateImprovments — UI-Datapack configuration.
 # This single file holds the addon's settings AND its messages (RU + EN).
 # Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# The bundled datapack language has its own switch: datapack.lang below.
 # Every value can be edited; the file is re-read by /ui reload.
 # Missing keys are auto-repaired from the bundled defaults on startup.
 
@@ -18,6 +19,14 @@
 # Master switch (true = feature on).
 # Default: true
 enabled = true
+
+# Datapack language: "en" or "ru".
+# Both variants carry identical content (enchantments, advancements, recipes,
+# structures, worldgen); only the display names/descriptions are translated.
+# "auto" follows messages.lang from UI-Core.toml.
+# Requires a server restart (the pack is registered once, at startup).
+# Default: "auto"
+lang = "auto"
 
 # modules section.
 [datapack.modules]

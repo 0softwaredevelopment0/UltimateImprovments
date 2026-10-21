@@ -71,6 +71,16 @@ in this file.
   conversion step.
 
 ### Changed
+- **Datapack ships in two languages (UI-Datapack)** — the bundled pack is now
+  built twice: `UI-Datapack-en` and `UI-Datapack-ru`. The content is identical
+  (enchantments, advancements, recipes, structures, worldgen); only the display
+  names and descriptions are translated. The new `datapack.lang` key in
+  `UI-Datapack.toml` (`"en"`, `"ru"` or `"auto"` — follows `messages.lang`)
+  selects which variant the bootstrapper extracts into
+  `plugins/UltimateImprovments/datapack/` and registers before the worlds load;
+  stale variants are deleted, so the pack is never registered twice. Switching
+  the language requires a restart (pack discovery happens at startup), and the
+  active variant is visible in `/datapack list` and the startup log.
 - **CER balance and heat visuals (UI-Energy + UI-MBS)** — the compact reactor
   now pushes **100 ⚡/s** instead of 1000 (UI-MBS.toml
   `nuclear_reactor.energy_per_second`, fallback updated) and the coal

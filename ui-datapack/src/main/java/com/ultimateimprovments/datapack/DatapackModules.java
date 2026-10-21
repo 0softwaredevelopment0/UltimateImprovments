@@ -24,6 +24,12 @@ public final class DatapackModules {
     /** Master toggle: {@code datapack.enabled}. */
     public static final String MASTER_KEY = "datapack.enabled";
 
+    /**
+     * Language of the bundled pack: {@code datapack.lang} ("en", "ru" or "auto").
+     * {@code auto} follows the global {@code messages.lang}.
+     */
+    public static final String LANG_KEY = "datapack.lang";
+
     /** Config root section: {@code datapack.modules}. */
     public static final String CONFIG_ROOT = "datapack.modules";
 
@@ -75,6 +81,7 @@ public final class DatapackModules {
 
     private static final Map<String, Boolean> CACHE = new HashMap<>();
     private static boolean masterEnabled = true;
+    private static String language = "en";
 
     // =========================
     // INIT
@@ -88,13 +95,42 @@ public final class DatapackModules {
         // Single config lives in UI-Core (Main.getInstance().getConfig()).
         FileConfiguration cfg = com.ultimateimprovments.core.Main.getInstance().getConfig();
         masterEnabled = cfg.getBoolean(MASTER_KEY, true);
+        language = resolveLanguage(cfg.getString(LANG_KEY, "auto"),
+                cfg.getString("messages.lang", "en"));
         for (String part : ORDER) {
             boolean enabled = cfg.getBoolean(CONFIG_ROOT + "." + part, true);
             CACHE.put(part, enabled);
         }
         ConsoleLogger.info("[Datapack] " + (isMasterEnabled()
-                ? "Master: ON | Modules: " + describe()
+                ? "Master: ON | Language: " + language + " | Modules: " + describe()
                 : "Master: OFF (datapack.enabled: false) — datapack disabled entirely."));
+    }
+
+    /**
+     * @param configured {@code datapack.lang} ("en", "ru" or "auto")
+     * @param global     {@code messages.lang} used when {@code configured} is "auto"
+     * @return the effective pack language ("en" or "ru")
+     */
+    private static String resolveLanguage(String configured, String global) {
+        String wanted = normalizeLang(configured);
+        if (wanted != null) return wanted;
+        String fallback = normalizeLang(global);
+        return fallback != null ? fallback : "en";
+    }
+
+    /** @return "en"/"ru" for a valid language value, otherwise {@code null} */
+    private static String normalizeLang(String lang) {
+        if (lang == null) return null;
+        String value = lang.trim().toLowerCase(java.util.Locale.ROOT);
+        return "en".equals(value) || "ru".equals(value) ? value : null;
+    }
+
+    /**
+     * The language variant actually registered at startup ({"en"} or {"ru"}).
+     * Mirrors {@code DatapackPackBootstrap}; changing it requires a server restart.
+     */
+    public static String getLanguage() {
+        return language;
     }
 
     /**

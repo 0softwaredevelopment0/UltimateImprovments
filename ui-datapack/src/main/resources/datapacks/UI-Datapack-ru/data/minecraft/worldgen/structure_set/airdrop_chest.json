@@ -1,0 +1,17 @@
+{
+  "structures": [
+    {
+      "structure": "minecraft:airdrop_chest",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 80,
+    "separation": 1,
+    "spread_type": "triangular",
+    "salt": 310403,
+    "frequency_reduction_method": "default",
+    "frequency": 1
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "ambient_light": 0.0,
+  "attributes": {
+    "minecraft:gameplay/bed_rule": {
+      "can_set_spawn": "never",
+      "can_sleep": "always",
+      "explodes": false
+    },
+    "minecraft:gameplay/can_start_raid": true,
+    "minecraft:gameplay/fast_lava": true,
+    "minecraft:gameplay/piglins_zombify": true,
+    "minecraft:gameplay/respawn_anchor_works": true,
+    "minecraft:gameplay/sky_light_level": 0,
+    "minecraft:gameplay/snow_golem_melts": true,
+    "minecraft:gameplay/water_evaporates": true,
+    "minecraft:visual/default_dripstone_particle": {
+      "type": "minecraft:ash"
+    },
+    "minecraft:visual/fog_end_distance": 80,
+    "minecraft:visual/fog_start_distance": 1,
+    "minecraft:visual/sky_light_color": "#000000",
+    "minecraft:visual/sky_light_factor": 0.0
+  },
+  "cardinal_light": "nether",
+  "coordinate_scale": 1,
+  "has_ceiling": false,
+  "has_ender_dragon_fight": false,
+  "has_fixed_time": true,
+  "has_skylight": false,
+  "height": 4064,
+  "infiniburn": "#minecraft:infiniburn_nether",
+  "logical_height": 4064,
+  "min_y": -2032,
+  "monster_spawn_block_light_limit": 15,
+  "monster_spawn_light_level": 7,
+  "skybox": "none",
+  "default_clock": "minecraft:overworld",
+  "timelines": "#minecraft:in_nether"
+}
