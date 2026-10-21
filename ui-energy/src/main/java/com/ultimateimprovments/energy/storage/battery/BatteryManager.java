@@ -10,6 +10,7 @@ import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.EnergyFlow;
+import com.ultimateimprovments.energy.transfer.cable.EnergyPersistence;
 import com.ultimateimprovments.energy.transfer.cable.NodeType;
 
 import org.bukkit.Bukkit;
@@ -221,6 +222,12 @@ public class BatteryManager implements Listener {
      * Scans all loaded chunks for "battery" Markers,
      * groups them by UUID, finds the world from worldUid in StructureData
      * and rebuilds the clusters. After creation — cleans up orphaned Markers.
+     * <p>
+     * Clusters that survive the rebuild keep their live pool object (and thus
+     * their charge). The freshly created pools — a first startup, a newly
+     * loaded world — get their stored energy back from
+     * {@code energy_storage} right here, so a world that loads late (Multiverse,
+     * delayed world load) is restored instead of starting empty.
      */
     public static void rebuildFromMarkers() {
         // Keep the live charge of clusters that survive the rebuild (world
@@ -231,6 +238,7 @@ public class BatteryManager implements Listener {
         for (BatteryCluster cluster : clustersById.values()) {
             if (cluster.uuid != null) existingPools.put(cluster.uuid, cluster.pool);
         }
+        Set<BatteryPool> freshPools = Collections.newSetFromMap(new IdentityHashMap<>());
 
         locationToCluster.clear();
         clustersById.clear();
@@ -279,7 +287,12 @@ public class BatteryManager implements Listener {
             cluster.uuid = group.getKey();
             cluster.world = world;
             cluster.blockKeys = new HashSet<>(group.getValue());
-            cluster.pool = existingPools.getOrDefault(cluster.uuid, new BatteryPool(0));
+            BatteryPool pool = existingPools.get(cluster.uuid);
+            if (pool == null) {
+                pool = new BatteryPool(0);
+                freshPools.add(pool);
+            }
+            cluster.pool = pool;
             cluster.recalculateCenter();
             BatteryMode persisted = persistedModes.get(cluster.uuid);
             if (persisted != null) cluster.mode = persisted;
@@ -292,6 +305,13 @@ public class BatteryManager implements Listener {
             }
             clustersById.put(cluster.id, cluster);
             usedUuids.add(cluster.uuid);
+        }
+
+        // Restore the stored charge of the pools that were just created.
+        // Surviving clusters keep their live pool above, so a delayed rebuild
+        // can never roll a charged battery back to an older DB snapshot.
+        if (!freshPools.isEmpty()) {
+            EnergyPersistence.load(freshPools);
         }
 
         // Clean up orphaned Markers (that did not end up in any cluster)

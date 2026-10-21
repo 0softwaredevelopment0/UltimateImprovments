@@ -85,9 +85,11 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
 
         ElectricFurnaceManager.init();
 
-        // Batteries first (their nodes must exist), then the energy restore.
+        // Batteries last: their registry rebuild creates the block nodes AND
+        // restores the stored charge of the pools it creates (see
+        // BatteryManager.rebuildFromMarkers → EnergyPersistence.load), so no
+        // separate load pass is needed here.
         BatteryManager.init();
-        EnergyPersistence.load();
         batteryMultiTickTask = Bukkit.getScheduler().runTaskTimer(main, BatteryManager::tick, 0L, 1L);
 
         // The single battery-balancing pass (the old BatteryDrainTask was
