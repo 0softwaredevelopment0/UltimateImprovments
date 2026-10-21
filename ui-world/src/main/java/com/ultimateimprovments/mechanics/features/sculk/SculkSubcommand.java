@@ -81,6 +81,7 @@ public final class SculkSubcommand {
                 + "</yellow><gray> active </gray><dark_gray>/</dark_gray><gray> </gray><yellow>"
                 + manager.trackedCatalysts() + "</yellow><gray> tracked</gray>"));
         sender.sendMessage(MessageUtil.parse("<gray>Worlds: </gray>" + filterSummary(manager)));
+        sender.sendMessage(MessageUtil.parse("<gray>Hazards: </gray>" + hazardSummary()));
         sender.sendMessage(MessageUtil.parse("<gray>Pulse: every </gray><white>" + manager.getIntervalTicks()
                 + "t</white><gray> · charge </gray><white>" + manager.getChargePerPulse()
                 + "</white><gray> · max </gray><white>" + manager.getMaxCatalystsPerPulse()
@@ -132,6 +133,15 @@ public final class SculkSubcommand {
 
     private static void usage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse("<red>✖ Usage:</red> <white>/ui sculk status|start|stop</white>"));
+    }
+
+    /** One line describing the contact hazards (module state, pulse, rules). */
+    private static String hazardSummary() {
+        SculkHazardManager hazards = SculkHazardManager.getInstance();
+        if (hazards == null) return "<red>OFF</red> <dark_gray>(module not initialised)</dark_gray>";
+        if (!hazards.isEnabled()) return "<red>OFF</red> <dark_gray>[sculk.hazards] enabled = false</dark_gray>";
+        return "<green>ON</green> <dark_gray>every</dark_gray> <white>" + hazards.getIntervalTicks()
+                + "t</white> <dark_gray>·</dark_gray> " + hazards.describe();
     }
 
     /** One line describing the world filter (whitelist, blacklist or both). */

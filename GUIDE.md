@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.5-alpha.8
+**Version:** 1.8.5-alpha.9
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -459,6 +459,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - **Omniscanner** — admin scanner with strict whitelists (blocks/items/entities); also finds items inside entity inventories (minecarts with chests, chested horses, villagers, ...).
 - **Meteor showers**, **auto-broadcast** (conditions: is-op, is-gamemode, height, health, hunger, is-group, online-*, xp-lvl-*), **death bell**, **glass breaking**, **shield slowness**, **terracotta speed**, **boosted cobweb**, **entity locator**, **exp bottle upgrade**, **netherite upgrade**.
 - **Infinitely growing sculk** — every loaded sculk catalyst is pulsed by the plugin once per second, so the vanilla bloom never runs out of charge and keeps converting `#minecraft:sculk_replaceable` blocks (stone, deepslate, dirt, gravel, sand, ...) forever, veins and occasional shriekers included. Each pulse starts the bloom from a **random one of the six face-adjacent blocks** (vanilla death-spot semantics): solid neighbours waste the pulse, so a walled-in catalyst never spreads, while an air/water face above a replaceable surface starts the infection. Vanilla rules only: ores, containers, tile entities and builds of other materials stay untouched. World whitelist/blacklist (each independently on/off, blacklist wins), `/ui sculk status|start|stop` with separate permissions; the start/stop switch is persisted in the DB. Tuned in `[sculk]` (`interval_ticks`, `charge_per_pulse`, `max_catalysts_per_pulse`, `max_mspt`, `[sculk.worlds]`).
+- **Sculk contact hazards** — the sculk fights back: once per second (configurable) the `SculkHazards` module inspects the block the player stands in/on and applies a debuff. Sculk vein → wither I for 1 s (`offset = 0`, veins have no collision), sculk block → wither I for 1 s (`offset = -1`, you stand on top of it), sculk shrieker → evoker fangs summoned at the shrieker's block (ownerless, so they hit whoever stands on the half-block), sculk sensor (incl. calibrated) → slowness 255 for 1 s, sculk catalyst → mining fatigue 255 for 1 s. Every rule lives in `[sculk.hazards.<rule>]` with its own `enabled`, `blocks`, `offset`, `effect`, `duration_ticks`, `amplifier`, rendering flags — or `fangs`, `fangs_count`, `fangs_attack_delay_ticks` for the shrieker. Creative/spectator players are skipped, `ui.sculk.hazards.bypass` grants immunity, the hazards work independently of `/ui sculk start|stop`, and `/ui sculk status` lists the active rules.
 - **World clock / timelines** — `/time` works correctly in all dimensions.
 
 ---
@@ -474,6 +475,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 | `ui.command.sculk.status` | `/ui sculk status` — growth state, active catalyst count, world filter (default FALSE) |
 | `ui.command.sculk.start` | `/ui sculk start` — enable sculk growth, persisted in the DB (default FALSE) |
 | `ui.command.sculk.stop` | `/ui sculk stop` — disable sculk growth, persisted in the DB (default FALSE) |
+| `ui.sculk.hazards.bypass` | Ignore the sculk contact hazards — wither, evoker fangs, slowness, mining fatigue (default FALSE) |
 | `ui.command.configregen` / `ui.command.configreset` | Config regen/reset commands (default FALSE, additionally gated by `config.commands_enabled`) |
 | `ui.enchant.itemstealing.steal` | Allows Item Stealing to trigger (default FALSE) |
 | `ui.chat.filter.bypass` | Bypass the chat filter |

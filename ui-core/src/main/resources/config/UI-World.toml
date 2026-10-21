@@ -138,6 +138,164 @@ blacklist_enabled = false
 # Default: []
 blacklist = []
 
+# Contact hazards. The growth module turns the world into sculk; this section
+# makes standing on the result hurt. Every interval_ticks the plugin inspects
+# the block the player occupies (or the block right under the feet - see each
+# rule's "offset") and applies the matching debuff. Nothing is event-driven: the
+# effect is refreshed for as long as the player stays there and expires on its
+# own (duration_ticks) after stepping off. The hazards are independent of
+# /ui sculk start|stop - stopping the spread does not disarm the blocks that
+# already exist.
+[sculk.hazards]
+# Master switch for all contact hazards.
+# Default: true
+enabled = true
+# How often the hazard pulse runs, in ticks (20 = one second).
+# Default: 20
+interval_ticks = 20
+# Skip creative players - the blocks cannot hurt them anyway.
+# Default: true
+ignore_creative = true
+# Skip spectators - they can fly through the sculk.
+# Default: true
+ignore_spectator = true
+# When true, hazards only fire in the worlds allowed by [sculk.worlds]
+# (whitelist/blacklist of the growth module). false = hazards work everywhere.
+# Default: false
+use_growth_world_filter = false
+# Permission that makes a player immune to every hazard. Empty string = no
+# bypass permission. The node is also registered in the permission registry.
+# Default: "ui.sculk.hazards.bypass"
+bypass_permission = "ui.sculk.hazards.bypass"
+
+# Per-rule keys shared by all tables below:
+#   enabled              - switch of this single rule (default true)
+#   blocks               - block materials that trigger the rule (a list)
+#   offset               - which block is inspected, counted from the block the
+#                          player's feet are in: 0 = the feet block itself,
+#                          -1 = the block the player stands on (one below).
+#   effect / duration_ticks / amplifier
+#                        - potion effect name (registry key, e.g. "wither"),
+#                          its duration in ticks and its amplifier (0 = level I,
+#                          254 = level 255). Keep duration_ticks >= interval_ticks
+#                          so the debuff never lapses while the player stays on
+#                          the block; a value of duration_ticks = interval_ticks
+#                          may show a one-tick gap in the HUD.
+#   particles / ambient / icon
+#                        - potion effect rendering flags.
+#   fangs                - true = summon evoker fangs at the block instead of a
+#                          potion effect (the fangs then use fangs_count and
+#                          fangs_attack_delay_ticks; effect keys are ignored).
+
+# Sculk vein: the vein has no collision, so the player literally stands in its
+# block -> offset 0, wither I for one second.
+[sculk.hazards.vein]
+# Default: true
+enabled = true
+# Default: ["SCULK_VEIN"]
+blocks = ["SCULK_VEIN"]
+# Default: 0
+offset = 0
+# Default: "WITHER"
+effect = "WITHER"
+# Default: 20
+duration_ticks = 20
+# Default: 0 (level I)
+amplifier = 0
+# Default: true
+particles = true
+# Default: false
+ambient = false
+# Default: true
+icon = true
+
+# Sculk block: a full block, so a player standing on it occupies the block one
+# level above it -> offset -1, wither I for one second.
+[sculk.hazards.block]
+# Default: true
+enabled = true
+# Default: ["SCULK"]
+blocks = ["SCULK"]
+# Default: -1
+offset = -1
+# Default: "WITHER"
+effect = "WITHER"
+# Default: 20
+duration_ticks = 20
+# Default: 0 (level I)
+amplifier = 0
+# Default: true
+particles = true
+# Default: false
+ambient = false
+# Default: true
+icon = true
+
+# Sculk shrieker: only half a block tall, so the player's feet are inside its
+# block -> offset 0. Instead of a potion effect the rule summons evoker fangs at
+# the centre of the shrieker's block; the fangs have no owner, so they damage
+# the player standing on them (and any mob in the hitbox).
+[sculk.hazards.shrieker]
+# Default: true
+enabled = true
+# Default: ["SCULK_SHRIEKER"]
+blocks = ["SCULK_SHRIEKER"]
+# Default: 0
+offset = 0
+# Summon evoker fangs instead of a potion effect.
+# Default: true
+fangs = true
+# How many fangs to summon per pulse.
+# Default: 1
+fangs_count = 1
+# Delay in ticks before the fangs attack (Paper requires >= 1; 1 = instant).
+# Default: 1
+fangs_attack_delay_ticks = 1
+
+# Sculk sensor (and the calibrated variant): half a block tall, so the player's
+# feet are inside its block -> offset 0, slowness 255 for one second.
+[sculk.hazards.sensor]
+# Default: true
+enabled = true
+# Default: ["SCULK_SENSOR", "CALIBRATED_SCULK_SENSOR"]
+blocks = ["SCULK_SENSOR", "CALIBRATED_SCULK_SENSOR"]
+# Default: 0
+offset = 0
+# Default: "SLOWNESS"
+effect = "SLOWNESS"
+# Default: 20
+duration_ticks = 20
+# Default: 254 (level 255)
+amplifier = 254
+# Default: true
+particles = true
+# Default: false
+ambient = false
+# Default: true
+icon = true
+
+# Sculk catalyst: a full block, so a player standing on it occupies the block
+# one level above it -> offset -1, mining fatigue 255 for one second.
+[sculk.hazards.catalyst]
+# Default: true
+enabled = true
+# Default: ["SCULK_CATALYST"]
+blocks = ["SCULK_CATALYST"]
+# Default: -1
+offset = -1
+# Default: "MINING_FATIGUE"
+effect = "MINING_FATIGUE"
+# Default: 20
+duration_ticks = 20
+# Default: 254 (level 255)
+amplifier = 254
+# Default: true
+particles = true
+# Default: false
+ambient = false
+# Default: true
+icon = true
+
 # ---- MESSAGES ----
 
 [messages.meteor]

@@ -27,7 +27,7 @@ public class UIWorld extends JavaPlugin implements SoftReloadable {
             "Beacon", "BlockCollapse", "DragonEgg", "BlockFriction", "BedrockBreak", "Kaboom",
             "EarthCore", "WoodcutterChallenge", "EnderPearlChallenge", "NetheriteKing",
             "OutOfMemory", "ServerFreeze", "CmdBlockTracker", "DeathBell", "MinecartSpeed",
-            "WirelessRedstone", "SculkGrowth", "Meteor");
+            "WirelessRedstone", "SculkGrowth", "SculkHazards", "Meteor");
 
     private static UIWorld instance;
 
