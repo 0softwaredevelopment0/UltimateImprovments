@@ -1,5 +1,6 @@
 package com.ultimateimprovments.mechanics.features.sculk;
 
+import com.ultimateimprovments.config.CommentedTomlTemplate;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -21,6 +22,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -45,6 +47,11 @@ import java.util.Set;
  *       catalyst are full blocks, so a player standing on one occupies the air
  *       block above it.</li>
  * </ul>
+ * <b>Proximity.</b> A rule with {@code radius > 0} ignores {@code offset} and
+ * searches a cube of that radius (in blocks, clamped to {@value #MAX_RADIUS})
+ * around the player's feet, nearest shell first, so merely walking past a
+ * sculk patch already costs something. {@code radius = 0} (default) keeps the
+ * pure contact behaviour described above.
  * <p>
  * <b>Rule kinds.</b> A rule either applies a potion effect ({@code effect},
  * {@code duration_ticks}, {@code amplifier}, {@code particles},
@@ -58,15 +65,26 @@ import java.util.Set;
  * shrieker's block, sensor → slowness 255, catalyst → mining fatigue 255; every
  * effect lasts one second and is refreshed every second.
  * <p>
+ * <b>Config resilience.</b> When {@code [sculk.hazards]} is missing from the
+ * live TOML (an old file that was not repaired yet, a hand-edited copy) the
+ * module does not switch itself off: it falls back to the bundled template's
+ * section, so the mechanic keeps working and only logs one warning.
+ * <p>
  * <b>Safety.</b> Each rule has its own {@code enabled} switch and the whole
  * module has a master switch. Creative/spectator players are skipped by default
  * and {@code bypass_permission} (default {@code ui.sculk.hazards.bypass}) makes
- * a player immune. The module is independent of the growth start/stop switch:
- * stopping the spread does not disarm the blocks that already exist, and
- * {@code use_growth_world_filter = true} makes the hazards follow the
+ * a player immune — note that a wildcard grant such as {@code ui.*} also matches
+ * it, so an admin testing the mechanic can silently be immune; the skip is
+ * logged once per player and {@link #describeAt(Player)} shows the flag for
+ * {@code /ui sculk status}. The module is independent of the growth start/stop
+ * switch: stopping the spread does not disarm the blocks that already exist,
+ * and {@code use_growth_world_filter = true} makes the hazards follow the
  * {@code [sculk.worlds]} filter of the growth module.
  */
 public final class SculkHazardManager extends BukkitRunnable {
+
+    /** Upper bound of a rule's proximity radius (blocks). */
+    private static final int MAX_RADIUS = 4;
 
     private static SculkHazardManager instance;
 
@@ -88,6 +106,12 @@ public final class SculkHazardManager extends BukkitRunnable {
 
     /** Active rules in config order — every matching rule fires in one pulse. */
     private final List<HazardRule> rules = new ArrayList<>();
+
+    /**
+     * Players already reported as immune because of {@code bypass_permission}.
+     * Kept only to log the skip once instead of every second.
+     */
+    private final Set<String> bypassReported = new HashSet<>();
 
     private BukkitTask task;
 
@@ -118,7 +142,9 @@ public final class SculkHazardManager extends BukkitRunnable {
         if (instance == null) return;
         int previousInterval = instance.intervalTicks;
         instance.reloadConfig();
-        if (instance.task != null && previousInterval != instance.intervalTicks) {
+        if (instance.task == null) {
+            instance.startTimer();
+        } else if (previousInterval != instance.intervalTicks) {
             instance.startTimer();
         }
         ConsoleLogger.info("[SCULK] Hazards reloaded (" + (instance.enabled ? "enabled" : "disabled")
@@ -129,18 +155,27 @@ public final class SculkHazardManager extends BukkitRunnable {
         if (instance == null) return;
         instance.stopTimer();
         instance.rules.clear();
+        instance.bypassReported.clear();
         instance = null;
         ConsoleLogger.info("[SCULK] Hazards disabled.");
     }
 
     private void reloadConfig() {
         rules.clear();
+        bypassReported.clear();
         ConfigurationSection sec = plugin.getConfig().getConfigurationSection("sculk.hazards");
         if (sec == null) {
-            enabled = false;
-            ConsoleLogger.warn("[SCULK] Config section 'sculk.hazards' not found — contact hazards DISABLED."
-                    + " Add it to configs/UI-World.toml to enable the mechanic.");
-            return;
+            sec = bundledDefaults();
+            if (sec == null) {
+                enabled = false;
+                ConsoleLogger.warn("[SCULK] Config section 'sculk.hazards' not found and the bundled"
+                        + " UI-World.toml template is unreadable — contact hazards DISABLED."
+                        + " Add the section to configs/UI-World.toml to enable the mechanic.");
+                return;
+            }
+            ConsoleLogger.warn("[SCULK] Config section 'sculk.hazards' is missing from"
+                    + " configs/UI-World.toml — contact hazards fall back to the bundled defaults"
+                    + " (run /ui reload after adding [sculk.hazards] to make the file authoritative).");
         }
 
         enabled = sec.getBoolean("enabled", true);
@@ -158,6 +193,20 @@ public final class SculkHazardManager extends BukkitRunnable {
         loadRule(sec, "catalyst");
     }
 
+    /**
+     * The {@code [sculk.hazards]} table of the bundled {@code config/UI-World.toml}
+     * template — defaults of last resort when the live file lost the section.
+     */
+    private ConfigurationSection bundledDefaults() {
+        try {
+            CommentedTomlTemplate template = CommentedTomlTemplate.loadResource(plugin, "config/UI-World.toml");
+            return template == null ? null : template.toBukkit().getConfigurationSection("sculk.hazards");
+        } catch (Exception e) {
+            ConsoleLogger.warn("[SCULK] Bundled template lookup failed: " + e.getMessage());
+            return null;
+        }
+    }
+
     /** Reads one hazard rule table (e.g. {@code [sculk.hazards.vein]}). */
     private void loadRule(ConfigurationSection hazards, String id) {
         ConfigurationSection sec = hazards.getConfigurationSection(id);
@@ -171,12 +220,13 @@ public final class SculkHazardManager extends BukkitRunnable {
         }
 
         int offset = sec.getInt("offset", 0);
+        int radius = Math.max(0, Math.min(MAX_RADIUS, sec.getInt("radius", 0)));
 
         if (sec.getBoolean("fangs", false)) {
             int count = Math.max(1, sec.getInt("fangs_count", 1));
             // Paper requires a positive delay; 1 tick is effectively instant.
             int delay = Math.max(1, sec.getInt("fangs_attack_delay_ticks", 1));
-            rules.add(new HazardRule(id, offset, blocks, null, 0, 0,
+            rules.add(new HazardRule(id, offset, radius, blocks, null, 0, 0,
                     false, false, false, delay, count));
             return;
         }
@@ -193,7 +243,7 @@ public final class SculkHazardManager extends BukkitRunnable {
         boolean particles = sec.getBoolean("particles", true);
         boolean ambient = sec.getBoolean("ambient", false);
         boolean icon = sec.getBoolean("icon", true);
-        rules.add(new HazardRule(id, offset, blocks, effect, durationTicks, amplifier,
+        rules.add(new HazardRule(id, offset, radius, blocks, effect, durationTicks, amplifier,
                 particles, ambient, icon, 0, 0));
     }
 
@@ -270,8 +320,38 @@ public final class SculkHazardManager extends BukkitRunnable {
                 out.append("<aqua>").append(rule.effect().getKey().getKey().toUpperCase(Locale.ROOT))
                         .append(' ').append(rule.amplifier() + 1).append("</aqua>");
             }
+            if (rule.radius() > 0) out.append("<dark_gray> @").append(rule.radius()).append("b</dark_gray>");
         }
         return out.length() == 0 ? "<dark_gray>(none)</dark_gray>" : out.toString();
+    }
+
+    /**
+     * Live evaluation for one player, for {@code /ui sculk status}: what the
+     * pulse sees at their feet, whether the bypass permission is active and
+     * which rules match right now. MiniMessage markup.
+     */
+    public String describeAt(Player player) {
+        if (player == null) return "<dark_gray>(console)</dark_gray>";
+        Block feet = player.getLocation().getBlock();
+        Block below = feet.getRelative(BlockFace.DOWN);
+        boolean bypass = !bypassPermission.isEmpty() && player.hasPermission(bypassPermission);
+
+        StringBuilder matched = new StringBuilder();
+        for (HazardRule rule : rules) {
+            if (findSource(feet, rule) == null) continue;
+            if (matched.length() > 0) matched.append("<dark_gray>, </dark_gray>");
+            matched.append("<white>").append(rule.id()).append("</white>");
+        }
+
+        StringBuilder out = new StringBuilder();
+        out.append("<gray>At you: </gray><white>").append(feet.getType()).append("</white>")
+                .append("<gray> / below </gray><white>").append(below.getType()).append("</white>")
+                .append("<gray> · gamemode </gray><white>").append(player.getGameMode()).append("</white>")
+                .append("<gray> · bypass </gray>")
+                .append(bypass ? "<red>yes</red>" : "<green>no</green>")
+                .append("<gray> · matched </gray>")
+                .append(matched.length() == 0 ? "<dark_gray>(none)</dark_gray>" : matched.toString());
+        return out.toString();
     }
 
     // =========================
@@ -293,14 +373,23 @@ public final class SculkHazardManager extends BukkitRunnable {
         GameMode mode = player.getGameMode();
         if (ignoreSpectator && mode == GameMode.SPECTATOR) return false;
         if (ignoreCreative && mode == GameMode.CREATIVE) return false;
-        if (!bypassPermission.isEmpty() && player.hasPermission(bypassPermission)) return false;
+        if (!bypassPermission.isEmpty() && player.hasPermission(bypassPermission)) {
+            // Wildcard grants (ui.*, *) silently match this node — say it once,
+            // otherwise "the hazards do nothing" looks like a bug of the pulse.
+            if (bypassReported.add(player.getName().toLowerCase(Locale.ROOT))) {
+                ConsoleLogger.info("[SCULK] Hazards: " + player.getName()
+                        + " is immune (" + bypassPermission + ") — remove the node to be affected.");
+            }
+            return false;
+        }
         return true;
     }
 
     /**
      * Applies every rule whose source block matches. A rule with
      * {@code offset = 0} inspects the feet block, a negative offset looks
-     * below it ({@code -1} = the block the player stands on).
+     * below it ({@code -1} = the block the player stands on), and
+     * {@code radius > 0} searches the surrounding cube instead.
      */
     private void applyHazards(Player player) {
         World world = player.getWorld();
@@ -308,8 +397,8 @@ public final class SculkHazardManager extends BukkitRunnable {
 
         Block feet = player.getLocation().getBlock();
         for (HazardRule rule : rules) {
-            Block source = rule.offset() == 0 ? feet : feet.getRelative(BlockFace.UP, rule.offset());
-            if (!rule.blocks().contains(source.getType())) continue;
+            Block source = findSource(feet, rule);
+            if (source == null) continue;
 
             if (rule.isFangs()) {
                 summonFangs(source, rule);
@@ -318,6 +407,41 @@ public final class SculkHazardManager extends BukkitRunnable {
                         rule.amplifier(), rule.ambient(), rule.particles(), rule.icon()));
             }
         }
+    }
+
+    /**
+     * The block that triggers this rule at the given feet block, or {@code null}.
+     * Radius 0 = the single contact block ({@code offset}), radius &gt; 0 = the
+     * nearest matching block in the surrounding cube (nearest shell first, so
+     * a closer block always wins over a farther one).
+     */
+    private static Block findSource(Block feet, HazardRule rule) {
+        if (rule.radius() <= 0) {
+            Block source = rule.offset() == 0 ? feet : feet.getRelative(BlockFace.UP, rule.offset());
+            return rule.blocks().contains(source.getType()) ? source : null;
+        }
+        for (int shell = 0; shell <= rule.radius(); shell++) {
+            Block found = findOnShell(feet, rule.blocks(), shell);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    /** Scans the cube shell at Chebyshev distance {@code shell} around {@code feet}. */
+    private static Block findOnShell(Block feet, Set<Material> blocks, int shell) {
+        for (int dx = -shell; dx <= shell; dx++) {
+            for (int dy = -shell; dy <= shell; dy++) {
+                for (int dz = -shell; dz <= shell; dz++) {
+                    if (shell > 0
+                            && Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz))) != shell) {
+                        continue;
+                    }
+                    Block block = feet.getRelative(dx, dy, dz);
+                    if (blocks.contains(block.getType())) return block;
+                }
+            }
+        }
+        return null;
     }
 
     private boolean isWorldAllowed(World world) {
@@ -351,12 +475,14 @@ public final class SculkHazardManager extends BukkitRunnable {
 
     /**
      * One configured rule: which blocks trigger it, which block relative to the
-     * feet is inspected, and what happens on a match. A rule with
-     * {@code effect == null} summons fangs instead of a potion effect.
+     * feet is inspected (or which cube around them when {@code radius > 0}), and
+     * what happens on a match. A rule with {@code effect == null} summons fangs
+     * instead of a potion effect.
      */
     private record HazardRule(
             String id,
             int offset,
+            int radius,
             Set<Material> blocks,
             PotionEffectType effect,
             int durationTicks,
