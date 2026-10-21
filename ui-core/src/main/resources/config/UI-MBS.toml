@@ -84,6 +84,12 @@ shield_particle_rod_speed = 0.35
 shield_particle_rod_count = 16
 # Default: 16
 shield_particle_dust_count = 16
+# Radius in blocks for the reactor visual gate: no particles and no ambient
+# sounds are spawned while no player is this close (0 = always). Vanilla only
+# sends particles/sounds to nearby players, so without viewers the work is
+# pure waste.
+# Default: 32.0
+particle_view_distance = 32.0
 # Minimum value.
 # Default: 1000
 fuel_spin_min = 1000

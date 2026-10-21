@@ -344,6 +344,17 @@ public class ReactorShield {
 
         ReactorConfig cfg = ReactorConfig.getInstance();
 
+        // =========================
+        // VIEWER GATE — vanilla only sends particles to players within 32
+        // blocks, so without a nearby player this whole method is pure waste
+        // (~1 ms/tick of spawnParticle calls on an empty corner of the map).
+        // =========================
+        double viewDistance = cfg.getParticleViewDistance();
+        if (viewDistance > 0) {
+            var world = base.getWorld();
+            if (world == null || world.getNearbyPlayers(base, viewDistance).isEmpty()) return;
+        }
+
         // Core chamber center (anchor-relative): (0.5, −4.5, 0.5) — the
         // geometric middle of the core column, straight from the NBT template.
         Location core = base.clone().add(0.5, -4.5, 0.5);

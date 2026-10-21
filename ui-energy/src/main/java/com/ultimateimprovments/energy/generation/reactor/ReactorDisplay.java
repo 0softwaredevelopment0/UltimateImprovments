@@ -129,6 +129,15 @@ public class ReactorDisplay {
         Location base = reactor.getReactorLocation();
         if (base == null) return;
 
+        // Viewer gate: core dust, high-temp effects and the ambient hum are
+        // only worth spawning while a player is close enough to see/hear them
+        // (vanilla drops the packets for everyone else anyway).
+        double viewDistance = ReactorConfig.getInstance().getParticleViewDistance();
+        if (viewDistance > 0) {
+            var world = base.getWorld();
+            if (world == null || world.getNearbyPlayers(base, viewDistance).isEmpty()) return;
+        }
+
         Location coreCenter = base.clone().add(0.5, -4.5, 0.5);
 
         double workMult = reactor.getCoreWorkTemp() > 0
@@ -506,7 +515,9 @@ public class ReactorDisplay {
     // HELPER: IS BULB POWERED
     // =========================
     public boolean isBulbPowered(Location base, int dx, int dy, int dz) {
-        Block block = base.clone().add(dx, dy, dz).getBlock();
+        org.bukkit.World world = base.getWorld();
+        if (world == null) return false;
+        Block block = world.getBlockAt(base.getBlockX() + dx, base.getBlockY() + dy, base.getBlockZ() + dz);
         if (block.getType() != Materials.WAXED_COPPER_BULB) return false;
         CopperBulb bulbData = (CopperBulb) block.getBlockData();
         return bulbData.isPowered();
@@ -516,7 +527,9 @@ public class ReactorDisplay {
     // HELPER: SET BULB LIT
     // =========================
     public void setBulbLit(Location base, int dx, int dy, int dz, boolean lit) {
-        Block block = base.clone().add(dx, dy, dz).getBlock();
+        org.bukkit.World world = base.getWorld();
+        if (world == null) return;
+        Block block = world.getBlockAt(base.getBlockX() + dx, base.getBlockY() + dy, base.getBlockZ() + dz);
         if (block.getType() != Materials.WAXED_COPPER_BULB) return;
         CopperBulb bulbData = (CopperBulb) block.getBlockData();
         if (bulbData.isLit() != lit) {

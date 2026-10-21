@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.5-alpha.9
+**Version:** 1.8.5-alpha.10
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -411,6 +411,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - Wear system — the reactor degrades over time.
 - States: normal → degradation → self-destruct → meltdown.
 - Emits radiation at high temperatures.
+- **Runtime cost**: barrels are read through live block states (no NBT snapshot) with a 10-tick fuel cache, the structure audit works on a flat pre-parsed cell index, and particles/ambient sounds are skipped while no player is within `reactor.particle_view_distance` (default 32) of the reactor.
 
 ### Compact Nuclear Reactor
 3×3×3 energy generator (chiseled deepslate / copper / glass / reinforced deepslate, barrel on top):
