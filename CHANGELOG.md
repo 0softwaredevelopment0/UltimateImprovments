@@ -3,7 +3,13 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
-## [Unreleased]
+## [1.8.5-alpha.1] - since 1.8.3-release.1 (2026-10-21)
+
+> **Alpha channel** — first 1.8.5 build. Everything below landed after
+> `1.8.3-release.1` (the whole 1.8.4 dev line): batteries as multi-block
+> structures, the compact nuclear reactor with its thermal model, the
+> datapack language variants, and the fixes on top. In-game verification of
+> the newest features is still pending.
 
 ### Added
 - **Batteries are real multi-block structures (UI-Energy + UI-Other)** — a
