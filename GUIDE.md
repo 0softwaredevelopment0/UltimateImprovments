@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.5-alpha.5
+**Version:** 1.8.5-alpha.6
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -458,7 +458,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - **Minecart speed** — acceleration on powered rails, collision damage = speed × 20, particles.
 - **Omniscanner** — admin scanner with strict whitelists (blocks/items/entities); also finds items inside entity inventories (minecarts with chests, chested horses, villagers, ...).
 - **Meteor showers**, **auto-broadcast** (conditions: is-op, is-gamemode, height, health, hunger, is-group, online-*, xp-lvl-*), **death bell**, **glass breaking**, **shield slowness**, **terracotta speed**, **boosted cobweb**, **entity locator**, **exp bottle upgrade**, **netherite upgrade**.
-- **Infinitely growing sculk** — every loaded sculk catalyst is pulsed by the plugin once per second, so the vanilla bloom never runs out of charge and keeps converting `#minecraft:sculk_replaceable` blocks (stone, deepslate, dirt, gravel, sand, ...) forever, veins and occasional shriekers included. Vanilla rules only: ores, containers, tile entities and builds of other materials stay untouched. World whitelist/blacklist (each independently on/off, blacklist wins), `/ui sculk status|start|stop` with separate permissions; the start/stop switch is persisted in the DB. Tuned in `[sculk]` (`interval_ticks`, `charge_per_pulse`, `max_catalysts_per_pulse`, `max_mspt`, `[sculk.worlds]`).
+- **Infinitely growing sculk** — every loaded sculk catalyst is pulsed by the plugin once per second, so the vanilla bloom never runs out of charge and keeps converting `#minecraft:sculk_replaceable` blocks (stone, deepslate, dirt, gravel, sand, ...) forever, veins and occasional shriekers included. The bloom starts from an air cell above a replaceable surface near the catalyst (`bloom_origin_radius`), exactly like a mob death would. Vanilla rules only: ores, containers, tile entities and builds of other materials stay untouched. World whitelist/blacklist (each independently on/off, blacklist wins), `/ui sculk status|start|stop` with separate permissions; the start/stop switch is persisted in the DB. Tuned in `[sculk]` (`interval_ticks`, `charge_per_pulse`, `max_catalysts_per_pulse`, `max_mspt`, `bloom_origin_radius`, `[sculk.worlds]`).
 - **World clock / timelines** — `/time` works correctly in all dimensions.
 
 ---
