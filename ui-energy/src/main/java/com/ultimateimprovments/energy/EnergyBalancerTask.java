@@ -58,71 +58,87 @@ public class EnergyBalancerTask extends BukkitRunnable {
     // =========================
     // GROUP BALANCING
     // =========================
+    /**
+     * Equalizes the CHARGE PERCENTAGE of the storage units of one connected
+     * group. Percentages (not absolute values) are the only correct target
+     * now that a unit is a whole multiblock battery of arbitrary size: with
+     * the old absolute average a 100-block battery (10 000 000 ⚡) and a
+     * single-block one (100 000 ⚡) would "equalize" to 50 000 ⚡ each, i.e.
+     * drain the large battery almost to zero.
+     * <p>
+     * {@code group} is already deduplicated by pool (see
+     * {@link EnergyFlow#collectBalanceGroup}), so every entry is one
+     * independent storage unit.
+     */
     private void balanceGroup(List<CableNode> group, int maxTransfer, boolean log) {
-        int totalEnergy = 0;
-        for (CableNode b : group) totalEnergy += b.getEnergy();
-        int average = totalEnergy / group.size();
-
-        // Collect the excess from rich batteries
-        int collected = 0;
-        List<CableNode> rich = new ArrayList<>();
-        List<CableNode> poor = new ArrayList<>();
-        Map<CableNode, Integer> moved = new LinkedHashMap<>();
+        long totalEnergy = 0;
+        long totalCapacity = 0;
         for (CableNode b : group) {
+            totalEnergy += b.getEnergy();
+            totalCapacity += Math.max(0, b.getMaxEnergy());
+        }
+        if (totalCapacity <= 0) return;
+        double averageShare = (double) totalEnergy / (double) totalCapacity;
+
+        Map<CableNode, Integer> targets = new LinkedHashMap<>();
+        Map<CableNode, Integer> moved = new LinkedHashMap<>();
+        Map<CableNode, Integer> donated = new LinkedHashMap<>();
+        List<CableNode> poor = new ArrayList<>();
+        int collected = 0;
+
+        for (CableNode b : group) {
+            int capacity = b.getMaxEnergy();
+            if (capacity <= 0) continue;
+
             int current = b.getEnergy();
-            if (current > average) {
-                int remove = Math.min(current - average, maxTransfer);
-                if (remove > 0) {
-                    b.removeEnergy(remove);
-                    collected += remove;
-                    rich.add(b);
-                    moved.merge(b, remove, Integer::sum);
+            int target = (int) Math.round(capacity * averageShare);
+            targets.put(b, target);
+
+            if (current > target) {
+                int take = Math.min(Math.min(current - target, maxTransfer), current);
+                if (take > 0) {
+                    b.removeEnergy(take);
+                    collected += take;
+                    donated.merge(b, take, Integer::sum);
+                    moved.merge(b, take, Integer::sum);
                 }
-            } else if (current < average) {
+            } else if (current < target) {
                 poor.add(b);
             }
         }
 
         if (collected <= 0) return;
 
-        // Distribute to poor batteries
+        // Distribute to the batteries below average.
+        int remaining = collected;
         for (CableNode b : poor) {
-            if (collected <= 0) break;
-            int deficit = average - b.getEnergy();
+            if (remaining <= 0) break;
+            int deficit = targets.getOrDefault(b, b.getEnergy()) - b.getEnergy();
             if (deficit <= 0) continue;
-            int add = Math.min(Math.min(deficit, maxTransfer), collected);
+            int add = Math.min(Math.min(deficit, maxTransfer), remaining);
             if (add > 0) {
                 b.addEnergy(add);
-                collected -= add;
+                remaining -= add;
                 moved.merge(b, add, Integer::sum);
             }
         }
 
-        // Return undistributed energy back to rich batteries (proportionally)
-        if (collected > 0 && !rich.isEmpty()) {
-            int totalRichEnergy = 0;
-            for (CableNode r : rich) totalRichEnergy += r.getEnergy();
-            int remainingToReturn = collected;
-            for (int i = 0; i < rich.size() && remainingToReturn > 0; i++) {
-                CableNode r = rich.get(i);
-                int takenBack;
-                if (i == rich.size() - 1) {
-                    takenBack = remainingToReturn;
-                } else {
-                    double share = totalRichEnergy > 0 ? (double) r.getEnergy() / totalRichEnergy : 1.0 / rich.size();
-                    takenBack = Math.min(remainingToReturn, Math.max(1, (int) (collected * share)));
-                    // Prevent over-allocation
-                    if (takenBack > remainingToReturn) takenBack = remainingToReturn;
+        // Return whatever the poor batteries could not take to the donors
+        // that gave it (never above their own cap).
+        if (remaining > 0) {
+            for (Map.Entry<CableNode, Integer> entry : donated.entrySet()) {
+                if (remaining <= 0) break;
+                CableNode b = entry.getKey();
+                int space = b.getMaxEnergy() - b.getEnergy();
+                int back = Math.min(Math.min(space, remaining), entry.getValue());
+                if (back > 0) {
+                    b.addEnergy(back);
+                    remaining -= back;
                 }
-                r.addEnergy(takenBack);
-                remainingToReturn -= takenBack;
             }
-            int returned = collected - remainingToReturn;
-            if (log && returned > 0) {
-                ConsoleLogger.info("[Balancer] Returned " + returned + " undistributed energy to rich batteries");
+            if (log) {
+                ConsoleLogger.info("[Balancer] " + remaining + " energy left undistributed (no free room)");
             }
-        } else if (collected > 0 && log) {
-            ConsoleLogger.info("[Balancer] " + collected + " energy left undistributed (no rich batteries to return to)");
         }
 
         // Activity trail on the cables adjacent to the moved batteries

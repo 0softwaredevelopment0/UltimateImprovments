@@ -3,6 +3,48 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.2] - since 1.8.5-alpha.1 (2026-10-21)
+
+> **Alpha channel** — bug-fix build on top of `1.8.5-alpha.1`.
+
+### Fixed
+- **A battery multiblock now really is ONE battery** — every copper-grate
+  block kept its own private charge (`CableNode.energy`), so charging one
+  face filled only the blocks the traversal happened to reach and the
+  multimeter showed a different value on every block; the far side of the
+  same structure looked empty and refused to give energy. The cluster now
+  owns a single `BatteryPool` (new class in UI-Energy) and every block's
+  network node delegates its get/add/remove/set calls to that one instance:
+  charge through any face = the whole structure charges, discharge through
+  any face = the same reserve is drained, and the tooltip is identical on
+  every block. Capacity is still `energy.battery.max_energy × blocks`, but
+  as one shared cap instead of `blocks` independent caps.
+- **Energy reached through a battery counted once per block** — the
+  availability/space checks summed the same reserve for every block of the
+  cluster (a 20-block battery with 100 000 ⚡ could "pay" 2 000 000 ⚡), and
+  the balancer treated the blocks of one structure as separate batteries.
+  Traversals now deduplicate by pool (identity), the pool is settled once,
+  and a battery reached from the far side of the cluster is still walked
+  through so cables behind it stay reachable.
+- **Balancing mixed-size batteries destroyed charge** — the pass equalized
+  absolute values, so a 100-block battery and a single-block one "leveled"
+  to the same number of joules and the large one was emptied almost to
+  zero. Balancing now targets the same CHARGE PERCENTAGE for every storage
+  unit, capped per unit by `energy.balancer.max_transfer`.
+- **Stored energy could be lost on a delayed rebuild** — `BatteryManager`
+  recreated clusters (and now their pools) on every world-load/delayed
+  rebuild pass without carrying the charge over. The pool object is reused
+  for a surviving cluster UUID, so the scheduled rebuilds at 5/30/120 s
+  after startup no longer wipe a charged battery.
+- **Merging two clusters threw one charge away** — placing a block that
+  bridges two assembled batteries now adds both pools and clamps to the new
+  capacity, so no energy disappears in the merge.
+- **Legacy saved energy is migrated, not dropped** — the per-block
+  `energy_storage` rows written by previous builds are summed per cluster on
+  load (the old per-block values were the cluster's split charge), and new
+  saves write one row per storage unit instead of duplicating the total on
+  every block.
+
 ## [1.8.5-alpha.1] - since 1.8.3-release.1 (2026-10-21)
 
 > **Alpha channel** — first 1.8.5 build. Everything below landed after
