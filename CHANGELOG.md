@@ -3,6 +3,35 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.9] - since 1.8.5-alpha.8 (2026-10-21)
+
+> **Alpha channel** — new feature on top of `1.8.5-alpha.8`.
+
+### Added
+- **Sculk contact hazards** — the `SculkHazards` module (UI-World) makes the
+  grown sculk dangerous to walk on. Every second (`[sculk.hazards]
+  interval_ticks`, 20 ticks) the pulse inspects the block under the player and
+  applies the matching debuff, refreshing it for as long as the player stays
+  there:
+  - **sculk vein** → wither I for 1 s (`offset = 0`: veins have no collision,
+    the player stands inside their block);
+  - **sculk block** → wither I for 1 s (`offset = -1`: the player stands on top
+    of it, i.e. occupies the block above);
+  - **sculk shrieker** → evoker fangs summoned at the centre of the shrieker's
+    block — the fangs have no owner, so they damage the player standing on the
+    half-block (and every mob in the hitbox);
+  - **sculk sensor / calibrated sculk sensor** → slowness 255 for 1 s
+    (`offset = 0`: the sensor is half a block tall);
+  - **sculk catalyst** → mining fatigue 255 for 1 s (`offset = -1`).
+  Every rule has its own table (`[sculk.hazards.vein|block|shrieker|sensor|
+  catalyst]`) with `enabled`, `blocks`, `offset`, `effect`, `duration_ticks`,
+  `amplifier`, `particles`/`ambient`/`icon` — or `fangs`, `fangs_count`,
+  `fangs_attack_delay_ticks` instead of an effect. Creative and spectator
+  players are skipped, `ui.sculk.hazards.bypass` grants immunity, and
+  `use_growth_world_filter = true` makes the hazards follow the
+  `[sculk.worlds]` filter. The module is independent of
+  `/ui sculk start|stop`; `/ui sculk status` now lists the active rules.
+
 ## [1.8.5-alpha.8] - since 1.8.5-alpha.7 (2026-10-21)
 
 > **Alpha channel** — behavior change on top of `1.8.5-alpha.7`.

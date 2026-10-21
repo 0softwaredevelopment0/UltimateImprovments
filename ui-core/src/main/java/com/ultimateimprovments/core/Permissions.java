@@ -206,6 +206,8 @@ public final class Permissions {
     public static final String UI_CREATIVE_BYPASS = "ui.creative.bypass";
     public static final String UI_PACKETGUARD_BYPASS = "ui.packetguard.bypass";
     public static final String UI_ENCHANT_AOE_BYPASS = "ui.enchant.aoe.bypass";
+    /** Immunity to sculk contact hazards (wither, fangs, slowness, mining fatigue). */
+    public static final String UI_SCULK_HAZARDS_BYPASS = "ui.sculk.hazards.bypass";
     public static final String UI_OVERLOAD_LOGS = "ui.overload.logs";
     public static final String UI_PUNISH_NOTIFY = "ui.punish.notify";
     public static final String UI_PROXY_SERVER = "ui.proxy.server";
@@ -381,6 +383,7 @@ public final class Permissions {
                 new Permission(UI_CREATIVE_BYPASS, "Bypass creative item validation", PermissionDefault.FALSE),
                 new Permission(UI_PACKETGUARD_BYPASS, "Bypass packet guard", PermissionDefault.FALSE),
                 new Permission(UI_ENCHANT_AOE_BYPASS, "Bypass AOE enchantment restrictions", PermissionDefault.FALSE),
+                new Permission(UI_SCULK_HAZARDS_BYPASS, "Ignore the sculk contact hazards (wither, evoker fangs, slowness, mining fatigue)", PermissionDefault.FALSE),
                 new Permission(UI_OVERLOAD_LOGS, "Receive overload logs", PermissionDefault.FALSE),
                 new Permission(UI_PUNISH_NOTIFY, "Receive punish notifications", PermissionDefault.FALSE),
                 new Permission(UI_PROXY_SERVER, "Access proxy server features", PermissionDefault.FALSE),

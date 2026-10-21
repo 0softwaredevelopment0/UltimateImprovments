@@ -6,6 +6,7 @@ import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseManager;
 import com.ultimateimprovments.mechanics.features.movement.BlockFrictionListener;
 import com.ultimateimprovments.mechanics.features.sculk.SculkGrowthListener;
 import com.ultimateimprovments.mechanics.features.sculk.SculkGrowthManager;
+import com.ultimateimprovments.mechanics.features.sculk.SculkHazardManager;
 import com.ultimateimprovments.mechanics.features.world.BeaconManager;
 import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
 import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
@@ -235,6 +236,26 @@ public final class WorldModules {
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 SculkGrowthManager.reload();
+            }
+        });
+
+        // SculkHazards — standing on the sculk alive gives it teeth: wither on
+        // veins/sculk, evoker fangs on shriekers, slowness on sensors and
+        // mining fatigue on catalysts, all refreshed every second.
+        mm.register(new SimpleModule("SculkHazards", "mechanics/features/sculk", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                SculkHazardManager.init((Main) plugin);
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                SculkHazardManager.shutdown();
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                SculkHazardManager.reload();
             }
         });
 
