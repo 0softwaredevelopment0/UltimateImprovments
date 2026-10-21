@@ -174,6 +174,13 @@ bypass_permission = "ui.sculk.hazards.bypass"
 #   offset               - which block is inspected, counted from the block the
 #                          player's feet are in: 0 = the feet block itself,
 #                          -1 = the block the player stands on (one below).
+#   radius               - proximity radius in blocks: 0 (default) = only the
+#                          block selected by offset (pure contact); 1-4 = also
+#                          react to a matching block inside a cube of that size
+#                          around the player, nearest block first. Use 1-2 if the
+#                          sculk should hurt when merely walking next to it. A
+#                          rule with radius > 0 ignores offset. Cost: every pulse
+#                          scans (2*radius+1)^3 blocks per player per rule.
 #   effect / duration_ticks / amplifier
 #                        - potion effect name (registry key, e.g. "wither"),
 #                          its duration in ticks and its amplifier (0 = level I,
@@ -196,6 +203,9 @@ enabled = true
 blocks = ["SCULK_VEIN"]
 # Default: 0
 offset = 0
+# Proximity radius in blocks (0 = contact only, 1-4 = aura around the player).
+# Default: 0
+radius = 0
 # Default: "WITHER"
 effect = "WITHER"
 # Default: 20
@@ -218,6 +228,9 @@ enabled = true
 blocks = ["SCULK"]
 # Default: -1
 offset = -1
+# Proximity radius in blocks (0 = contact only, 1-4 = aura around the player).
+# Default: 0
+radius = 0
 # Default: "WITHER"
 effect = "WITHER"
 # Default: 20
@@ -242,6 +255,9 @@ enabled = true
 blocks = ["SCULK_SHRIEKER"]
 # Default: 0
 offset = 0
+# Proximity radius in blocks (0 = contact only, 1-4 = aura around the player).
+# Default: 0
+radius = 0
 # Summon evoker fangs instead of a potion effect.
 # Default: true
 fangs = true
@@ -261,6 +277,9 @@ enabled = true
 blocks = ["SCULK_SENSOR", "CALIBRATED_SCULK_SENSOR"]
 # Default: 0
 offset = 0
+# Proximity radius in blocks (0 = contact only, 1-4 = aura around the player).
+# Default: 0
+radius = 0
 # Default: "SLOWNESS"
 effect = "SLOWNESS"
 # Default: 20
@@ -283,6 +302,9 @@ enabled = true
 blocks = ["SCULK_CATALYST"]
 # Default: -1
 offset = -1
+# Proximity radius in blocks (0 = contact only, 1-4 = aura around the player).
+# Default: 0
+radius = 0
 # Default: "MINING_FATIGUE"
 effect = "MINING_FATIGUE"
 # Default: 20

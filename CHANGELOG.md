@@ -3,6 +3,40 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.11] - since 1.8.5-alpha.10 (2026-10-21)
+
+> **Alpha channel** — bugfix for the sculk contact hazards on top of `1.8.5-alpha.10`.
+
+### Fixed
+- **Sculk hazards could silently do nothing.** Three failure modes of the
+  `SculkHazards` module are now covered:
+  - a live `configs/UI-World.toml` without `[sculk.hazards]` used to switch the
+    whole module off with a single console warning (the in-memory repair only
+    rewrites the file, so any hand-edited or partially written copy could hit
+    this). The module now falls back to the bundled `UI-World.toml` defaults,
+    keeps running and logs one actionable warning instead of going dark;
+  - a player holding the bypass node — including through a wildcard grant such
+    as `ui.*` or `*`, which matches `ui.sculk.hazards.bypass` too — was skipped
+    without any trace, which looks exactly like "the effects are broken". The
+    skip is now logged once per player (`[SCULK] Hazards: <player> is immune
+    (<node>)`), and `/ui sculk status` reports the flag live;
+  - `/ui sculk reload`-style reloads could leave the timer stopped if the
+    previous task had been cancelled; the timer is now (re)started whenever it
+    is missing.
+- **`/ui sculk status` now shows the player's own evaluation** — the block at
+  the feet, the block below, the gamemode, the bypass flag and the rules that
+  match right now (`matched: vein, block` / `(none)`), so a "nothing happens"
+  report can be told apart from a config, permission or geometry problem in one
+  look.
+
+### Added
+- `radius` (per hazard rule, `[sculk.hazards.<rule>]`, default `0`, clamped to
+  0..4) — proximity instead of strict contact: with `radius = 1..4` a rule also
+  fires when a matching block is inside a cube of that size around the player
+  (nearest block wins, `offset` is ignored). At `0` the behaviour is unchanged:
+  only the block selected by `offset` counts. Every pulse scans
+  `(2*radius+1)^3` blocks per player per rule, so 1-2 is the sensible range.
+
 ## [1.8.5-alpha.10] - since 1.8.5-alpha.9 (2026-10-21)
 
 > **Alpha channel** — performance fix on top of `1.8.5-alpha.9`.
