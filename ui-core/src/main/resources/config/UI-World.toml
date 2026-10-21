@@ -191,6 +191,12 @@ bypass_permission = "ui.sculk.hazards.bypass"
 #                          so the debuff never lapses while the player stays on
 #                          the block; a value of duration_ticks = interval_ticks
 #                          may show a one-tick gap in the HUD.
+#                          Wither, poison and regeneration only apply their
+#                          effect when the REMAINING duration is a multiple of
+#                          40/25/50 >> amplifier, so a one-second wither (20t)
+#                          shows the icon but deals no damage. The module lifts
+#                          too-short durations to one such interval (wither I =
+#                          40t = 2 s) and logs it.
 #   particles / ambient / icon
 #                        - potion effect rendering flags.
 #   fangs                - true = summon evoker fangs at the block instead of a
@@ -198,7 +204,7 @@ bypass_permission = "ui.sculk.hazards.bypass"
 #                          fangs_attack_delay_ticks; effect keys are ignored).
 
 # Sculk vein: the vein has no collision, so the player literally stands in its
-# block -> offset 0, wither I for one second.
+# block -> offset 0, wither I for two seconds.
 [sculk.hazards.vein]
 # Default: true
 enabled = true
@@ -211,8 +217,10 @@ offset = 0
 radius = 0
 # Default: "WITHER"
 effect = "WITHER"
-# Default: 20
-duration_ticks = 20
+# Two seconds: wither I only damages when the remaining duration is a multiple
+# of 40 ticks, so a one-second wither is purely cosmetic.
+# Default: 40
+duration_ticks = 40
 # Default: 0 (level I)
 amplifier = 0
 # Default: true
@@ -223,7 +231,7 @@ ambient = false
 icon = true
 
 # Sculk block: a full block, so a player standing on it occupies the block one
-# level above it -> offset -1, wither I for one second.
+# level above it -> offset -1, wither I for two seconds.
 [sculk.hazards.block]
 # Default: true
 enabled = true
@@ -236,8 +244,9 @@ offset = -1
 radius = 0
 # Default: "WITHER"
 effect = "WITHER"
-# Default: 20
-duration_ticks = 20
+# Two seconds: see the note on [sculk.hazards.vein].
+# Default: 40
+duration_ticks = 40
 # Default: 0 (level I)
 amplifier = 0
 # Default: true

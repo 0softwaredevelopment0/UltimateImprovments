@@ -62,8 +62,10 @@ import java.util.Set;
  * <p>
  * <b>Defaults</b> (see {@code [sculk.hazards]} in {@code configs/UI-World.toml}):
  * vein → wither I, sculk block → wither I, shrieker → one evoker fang at the
- * shrieker's block, sensor → slowness 255, catalyst → mining fatigue 255; every
- * effect lasts one second and is refreshed every second.
+ * shrieker's block, sensor → slowness 255, catalyst → mining fatigue 255. Every
+ * rule is refreshed every second; the wither rules last two seconds because
+ * vanilla only applies wither damage when the remaining duration is a multiple
+ * of 40 ticks (a one-second wither would be a dead icon).
  * <p>
  * <b>Config resilience.</b> When {@code [sculk.hazards]} is missing from the
  * live TOML (an old file that was not repaired yet, a hand-edited copy) the
@@ -242,6 +244,7 @@ public final class SculkHazardManager extends BukkitRunnable {
 
         int durationTicks = Math.max(1, sec.getInt("duration_ticks", intervalTicks));
         int amplifier = Math.max(0, sec.getInt("amplifier", 0));
+        durationTicks = damagingWindow(id, effect, durationTicks, amplifier);
         boolean particles = sec.getBoolean("particles", true);
         boolean ambient = sec.getBoolean("ambient", false);
         boolean icon = sec.getBoolean("icon", true);
@@ -280,6 +283,44 @@ public final class SculkHazardManager extends BukkitRunnable {
             ConsoleLogger.warn("[SCULK] Effect registry lookup failed: " + e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Lifts the configured duration to one full interval of the effect's own
+     * tick, so the debuff actually does something.
+     * <p>
+     * Wither, poison and regeneration do not tick every second: vanilla applies
+     * them only when the <b>remaining</b> duration is a multiple of
+     * {@code 40 >> amplifier} (wither), {@code 25 >> amplifier} (poison) or
+     * {@code 50 >> amplifier} (regeneration). A one-second wither (20 ticks,
+     * amplifier 0) never reaches that remainder, so the HUD icon shows up but
+     * no damage is dealt — the reported "the effect doesn't hurt". The window
+     * therefore always covers at least one interval (wither I = 40 ticks = 2 s).
+     */
+    private int damagingWindow(String id, PotionEffectType effect, int durationTicks, int amplifier) {
+        int step = effectTickInterval(effect, amplifier);
+        if (step <= 0 || durationTicks >= step) return durationTicks;
+        ConsoleLogger.warn("[SCULK] Hazards rule '" + id + "': duration_ticks=" + durationTicks
+                + " is shorter than the " + effect.getKey().getKey() + " tick interval (" + step
+                + "t) — using " + step + "t, otherwise the effect never triggers.");
+        return step;
+    }
+
+    /**
+     * Vanilla interval (in ticks) between two applications of an effect that
+     * uses the "duration remainder" rule; 0 for effects that tick continuously
+     * (slowness, mining fatigue, ...) or are unknown.
+     */
+    private static int effectTickInterval(PotionEffectType effect, int amplifier) {
+        int base = switch (effect.getKey().getKey().toLowerCase(Locale.ROOT)) {
+            case "wither" -> 40;
+            case "poison" -> 25;
+            case "regeneration" -> 50;
+            default -> 0;
+        };
+        if (base <= 0) return 0;
+        int step = base >> Math.min(amplifier, 8);
+        return Math.max(1, step);
     }
 
     private void startTimer() {

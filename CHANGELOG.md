@@ -3,6 +3,22 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.13] - since 1.8.5-alpha.12 (2026-10-21)
+
+> **Alpha channel** — behaviour fix for the sculk wither on top of `1.8.5-alpha.12`.
+
+### Fixed
+- **Sculk wither showed the icon but dealt no damage.** The vein and block
+  rules applied wither I for one second (20 ticks). Vanilla only applies the
+  wither effect when the **remaining** duration is a multiple of
+  `40 >> amplifier`, and a 20-tick instance never reaches that remainder, so
+  the debuff was purely cosmetic. The wither rules now default to
+  `duration_ticks = 40` (2 s), and the module lifts any too-short duration of a
+  duration-remainder effect (wither, poison, regeneration) to one full interval
+  and logs it — an existing `configs/UI-World.toml` with `duration_ticks = 20`
+  therefore starts hurting after the update without editing the file. Effects
+  that tick continuously (slowness, mining fatigue) are untouched.
+
 ## [1.8.5-alpha.12] - since 1.8.5-alpha.11 (2026-10-21)
 
 > **Alpha channel** — permission fix for the sculk contact hazards on top of `1.8.5-alpha.11`.
