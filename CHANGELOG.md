@@ -3,6 +3,26 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.6] - since 1.8.5-alpha.5 (2026-10-21)
+
+> **Alpha channel** — bug-fix build on top of `1.8.5-alpha.5`.
+
+### Fixed
+- **A freshly placed sculk catalyst never spread** — the bloom was started at
+  the catalyst block itself. A vanilla sculk charge can only grow from an
+  air/water block space where a sculk vein can attach to a
+  `#minecraft:sculk_replaceable` surface: the solid catalyst block is not such
+  a space, and the default sculk behaviour on a non-sculk block neither grows
+  veins nor converts anything, so every pulse was wasted (this also matches the
+  vanilla rule that a lone catalyst in plain terrain does not spread on its
+  own). The manager now searches for an air/water cell directly above a
+  replaceable surface (or an existing sculk block) within
+  `bloom_origin_radius` — new key, default 2, clamped to 1..8 — and starts the
+  bloom from that cell, exactly like a mob death at that spot. A catalyst with
+  no such surface within range now logs one actionable warning (once per
+  catalyst) instead of silently doing nothing.
+- `/ui sculk status` now also shows the origin search radius in the pulse line.
+
 ## [1.8.5-alpha.5] - since 1.8.5-alpha.4 (2026-10-21)
 
 > **Alpha channel** — control surface for the sculk growth on top of `1.8.5-alpha.4`.

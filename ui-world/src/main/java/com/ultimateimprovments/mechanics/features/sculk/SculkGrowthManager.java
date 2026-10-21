@@ -8,6 +8,8 @@ import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -19,6 +21,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,6 +44,16 @@ import java.util.Set;
  * surfaces, occasionally places sculk shriekers and plays the vanilla sound and
  * particles. Ores, containers, tile entities and builds made of other materials
  * are untouched because vanilla does not replace them either.
+ * <p>
+ * <b>Bloom origin.</b> Vanilla starts a bloom at the block where the mob died —
+ * an air block above the ground — not at the catalyst: a sculk charge needs a
+ * block space where sculk veins can attach to a {@code sculk_replaceable}
+ * surface, and the solid catalyst block itself is not such a space (a cursor
+ * placed inside it can never grow anything, which is why a lone catalyst
+ * "doesn't spread" in vanilla). The manager therefore searches for an air (or
+ * water) cell above a replaceable surface within {@code bloom_origin_radius}
+ * blocks of the catalyst and starts the bloom there, exactly like a death at
+ * that spot would.
  * <p>
  * <b>Catalyst discovery.</b> Catalysts are not hard-coded: they are collected
  * from loaded chunks ({@link Chunk#getTileEntities()} only, so chunk scanning is
@@ -90,6 +103,26 @@ public final class SculkGrowthManager extends BukkitRunnable {
     private int maxCatalystsPerPulse = 32;
     /** TPS guard: pulses are skipped while the average tick time is above this. */
     private double maxMspt = 50.0;
+    /** How far from the catalyst to look for a valid bloom origin (air cell above a replaceable surface). */
+    private int originRadius = 2;
+
+    /** Existing sculk blocks a bloom cursor can start on top of. */
+    private static final Set<Material> SCULK_SUBSTRATE = EnumSet.of(Material.SCULK);
+
+    /** Used only if the server does not expose the vanilla {@code #sculk_replaceable} tag. */
+    private static final Set<Material> FALLBACK_REPLACEABLE = EnumSet.of(
+            Material.STONE, Material.DEEPSLATE, Material.GRANITE, Material.DIORITE, Material.ANDESITE,
+            Material.TUFF, Material.CALCITE, Material.DRIPSTONE_BLOCK, Material.TERRACOTTA,
+            Material.DIRT, Material.GRASS_BLOCK, Material.MYCELIUM, Material.PODZOL,
+            Material.COARSE_DIRT, Material.ROOTED_DIRT, Material.CLAY, Material.MOSS_BLOCK,
+            Material.MUD, Material.SAND, Material.RED_SAND, Material.GRAVEL,
+            Material.SANDSTONE, Material.RED_SANDSTONE, Material.NETHERRACK,
+            Material.SOUL_SAND, Material.SOUL_SOIL, Material.BASALT, Material.SMOOTH_BASALT,
+            Material.BLACKSTONE, Material.END_STONE);
+
+    /** Cached vanilla block tag; resolved lazily (null + resolved = use the fallback). */
+    private static Tag<Material> sculkReplaceableTag;
+    private static boolean sculkReplaceableTagResolved;
 
     // ===== WORLD FILTER (whitelist and blacklist are independent) =====
     private boolean whitelistEnabled = false;
@@ -102,6 +135,8 @@ public final class SculkGrowthManager extends BukkitRunnable {
     private final Set<CatalystKey> known = new HashSet<>();
     /** Round-robin order of the known catalysts. */
     private final Deque<CatalystKey> queue = new ArrayDeque<>();
+    /** Catalysts already warned about a missing bloom origin (log once, not every pulse). */
+    private final Set<CatalystKey> noOriginWarned = new HashSet<>();
 
     private BukkitTask task;
 
@@ -142,6 +177,7 @@ public final class SculkGrowthManager extends BukkitRunnable {
         // loaded chunks, so newly allowed worlds are picked up immediately.
         instance.known.clear();
         instance.queue.clear();
+        instance.noOriginWarned.clear();
         instance.discoverLoadedChunks();
         if (instance.task != null && previousInterval != instance.intervalTicks) {
             instance.startTimer();
@@ -156,6 +192,7 @@ public final class SculkGrowthManager extends BukkitRunnable {
         instance.stopTimer();
         instance.known.clear();
         instance.queue.clear();
+        instance.noOriginWarned.clear();
         instance = null;
         ConsoleLogger.info("[SCULK] Growth disabled.");
     }
@@ -173,6 +210,7 @@ public final class SculkGrowthManager extends BukkitRunnable {
         chargePerPulse = Math.max(1, sec.getInt("charge_per_pulse", 10));
         maxCatalystsPerPulse = Math.max(1, sec.getInt("max_catalysts_per_pulse", 32));
         maxMspt = Math.max(1.0, sec.getDouble("max_mspt", 50.0));
+        originRadius = Math.min(8, Math.max(1, sec.getInt("bloom_origin_radius", 2)));
 
         whitelistEnabled = sec.getBoolean("worlds.whitelist_enabled", false);
         blacklistEnabled = sec.getBoolean("worlds.blacklist_enabled", false);
@@ -235,6 +273,7 @@ public final class SculkGrowthManager extends BukkitRunnable {
         CatalystKey key = new CatalystKey(block.getWorld().getName(),
                 LocationUtil.toKey(block.getX(), block.getY(), block.getZ()));
         known.remove(key);
+        noOriginWarned.remove(key);
     }
 
     private void track(World world, int x, int y, int z) {
@@ -340,10 +379,89 @@ public final class SculkGrowthManager extends BukkitRunnable {
     public int getChargePerPulse() { return chargePerPulse; }
     public int getMaxCatalystsPerPulse() { return maxCatalystsPerPulse; }
     public double getMaxMspt() { return maxMspt; }
+    public int getOriginRadius() { return originRadius; }
     public boolean isWhitelistEnabled() { return whitelistEnabled; }
     public boolean isBlacklistEnabled() { return blacklistEnabled; }
     public Set<String> getWhitelist() { return whitelist; }
     public Set<String> getBlacklist() { return blacklist; }
+
+    // =========================
+    // BLOOM ORIGIN — where vanilla would start the bloom
+    // =========================
+
+    /**
+     * Finds a block space where a vanilla bloom can actually start: an air (or
+     * water) cell directly above a block the sculk family can replace, or above
+     * an existing sculk block.
+     * <p>
+     * Vanilla starts the charge at the mob's death block for exactly this
+     * reason: the cursor needs a block space where sculk veins can attach to a
+     * solid surface, then the vein converts that surface into sculk. A cursor
+     * placed inside the solid catalyst block can never do either, which is why
+     * a lone catalyst does not spread in vanilla.
+     *
+     * @return the origin block, or {@code null} when there is no convertible
+     *         surface within {@link #originRadius} blocks
+     */
+    private Block findBloomOrigin(Block catalyst) {
+        World world = catalyst.getWorld();
+        int cx = catalyst.getX();
+        int cy = catalyst.getY();
+        int cz = catalyst.getZ();
+
+        Block best = null;
+        int bestScore = Integer.MAX_VALUE;
+        boolean bestExistingSculk = false;
+
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -originRadius; dx <= originRadius; dx++) {
+                for (int dz = -originRadius; dz <= originRadius; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) continue;
+
+                    int x = cx + dx;
+                    int y = cy + dy;
+                    int z = cz + dz;
+                    // Never force-load a chunk for a candidate cell.
+                    if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+
+                    Material type = world.getBlockAt(x, y, z).getType();
+                    if (type != Material.AIR && type != Material.CAVE_AIR && type != Material.WATER) continue;
+
+                    Material below = world.getBlockAt(x, y - 1, z).getType();
+                    boolean existingSculk = SCULK_SUBSTRATE.contains(below);
+                    if (!existingSculk && !isSculkReplaceable(below)) continue;
+
+                    // Prefer a fresh replaceable substrate over an existing sculk
+                    // block, then the closest cell, then the same Y level.
+                    int score = dx * dx + dz * dz + 2 * dy * dy;
+                    boolean better = best == null
+                            || (bestExistingSculk && !existingSculk)
+                            || (bestExistingSculk == existingSculk && score < bestScore);
+                    if (better) {
+                        best = world.getBlockAt(x, y, z);
+                        bestScore = score;
+                        bestExistingSculk = existingSculk;
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    /** Vanilla {@code #minecraft:sculk_replaceable}, with a static fallback. */
+    private static boolean isSculkReplaceable(Material material) {
+        if (!sculkReplaceableTagResolved) {
+            try {
+                sculkReplaceableTag = Bukkit.getTag(Tag.REGISTRY_BLOCKS,
+                        NamespacedKey.minecraft("sculk_replaceable"), Material.class);
+            } catch (Throwable ignored) {
+                sculkReplaceableTag = null;
+            }
+            sculkReplaceableTagResolved = true;
+        }
+        if (sculkReplaceableTag != null) return sculkReplaceableTag.isTagged(material);
+        return FALLBACK_REPLACEABLE.contains(material);
+    }
 
     // =========================
     // PULSE — vanilla bloom per catalyst
@@ -393,9 +511,24 @@ public final class SculkGrowthManager extends BukkitRunnable {
                 continue;
             }
 
+            // A bloom cursor only works from an air cell above a convertible
+            // surface — never from inside the solid catalyst block.
+            Block origin = findBloomOrigin(block);
+            if (origin == null) {
+                if (noOriginWarned.add(key)) {
+                    ConsoleLogger.warn("[SCULK] No bloom origin near catalyst at "
+                            + world.getName() + " " + x + " " + y + " " + z
+                            + " — place it on/near replaceable ground (stone, dirt, ...),"
+                            + " no such surface within " + originRadius + " block(s).");
+                }
+                queue.addLast(key);
+                continue;
+            }
+            noOriginWarned.remove(key);
+
             try {
                 if (block.getState() instanceof SculkCatalyst catalyst) {
-                    catalyst.bloom(block, chargePerPulse);
+                    catalyst.bloom(origin, chargePerPulse);
                 }
             } catch (Throwable t) {
                 ConsoleLogger.warn("[SCULK] Bloom failed at " + world.getName() + " "
