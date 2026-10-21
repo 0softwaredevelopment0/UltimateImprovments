@@ -4,7 +4,7 @@ plugins {
 
 // Root build.gradle — shared config for all subprojects
 group = 'com.ultimateimprovments'
-version = '1.8.5-alpha.3'
+version = '1.8.5-alpha.4'
 
 subprojects {
     apply plugin: 'java-library'
@@ -27,6 +27,10 @@ subprojects {
 
     processResources {
         filteringCharset = 'UTF-8'
+        // `expand(project: project)` alone does not make Gradle re-run the task
+        // when only the version changes: the expanded resources then keep the
+        // version of the last full rebuild. Declare it as an explicit input.
+        inputs.property('version', project.version)
         filesMatching(['plugin.yml', 'paper-plugin.yml']) {
             expand(project: project)
         }

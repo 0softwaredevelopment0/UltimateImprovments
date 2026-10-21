@@ -72,6 +72,7 @@ End-crystal turrets: configure via Shift+RMB, whitelist/blacklist targets, fires
 - Radiation system with hazmat protection, dosimeter and an admin overlay (`/ui radview`), homes, notes, spawn, RTP, dimension teleportation
 - Power management with countdown bossbar, suicide command, maintenance mode
 - Auto-broadcast with conditions, update checker with JAR auto-replace, death logging
+- Infinitely growing sculk — every sculk catalyst keeps blooming on a plugin cooldown (vanilla spread rules)
 
 ---
 

@@ -3,6 +3,43 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.4] - since 1.8.5-alpha.3 (2026-10-21)
+
+> **Alpha channel** — new mechanic on top of `1.8.5-alpha.3`.
+
+### Added
+- **Infinitely growing sculk** — a sculk catalyst in vanilla only blooms when
+  a mob dies nearby, because the death's XP becomes the bloom "charge" of its
+  `SculkSpreader`; without deaths the patch stops growing. The new
+  **SculkGrowth** module (UI-World) pulses every loaded catalyst on its own
+  cooldown (`interval_ticks`, 20 = 1 s) through Paper's
+  `SculkCatalyst#bloom(Block, int)` API, adding `charge_per_pulse` (default 10)
+  each time. The spread itself is the real vanilla mechanic, not an emulation:
+  only blocks from `#minecraft:sculk_replaceable` (stone, deepslate, dirt,
+  gravel, sand, ...) are converted, sculk veins grow on surfaces, shriekers
+  appear occasionally, and the vanilla sound/particles play. Ores, containers,
+  tile entities and builds of other materials stay untouched. Because charge
+  is never allowed to run out, the patch expands without a limit — it spreads
+  like a virus.
+- Catalysts are discovered automatically: loaded chunks are scanned for
+  catalyst tile entities on chunk load and once at startup, player-placed
+  catalysts are tracked from `BlockPlaceEvent`, broken ones are pruned. Only
+  loaded chunks are processed (no force-loading), at most
+  `max_catalysts_per_pulse` (default 32) catalysts bloom per pulse in a
+  round-robin, and a pulse is skipped while the average tick time exceeds
+  `max_mspt` (default 50 ms) — a TPS guard for worlds with hundreds of
+  catalysts. Settings live in the new `[sculk]` section of
+  `configs/UI-World.toml`.
+
+### Fixed
+- **Built JARs advertised a stale plugin version** — `processResources` expands
+  `${project.version}` into `paper-plugin.yml`, but Gradle did not treat the
+  version as an input of that task, so after a version-only bump the task was
+  considered up-to-date and every jar kept the version of the last full
+  rebuild (`1.8.4-alpha.2` through the whole `1.8.5-alpha.x` line). The version
+  is now an explicit `processResources` input, so each release embeds the
+  version it is built as.
+
 ## [1.8.5-alpha.3] - since 1.8.5-alpha.2 (2026-10-21)
 
 > **Alpha channel** — bug-fix build on top of `1.8.5-alpha.2`.
