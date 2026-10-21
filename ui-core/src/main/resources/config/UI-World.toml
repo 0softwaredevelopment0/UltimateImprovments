@@ -113,12 +113,11 @@ max_catalysts_per_pulse = 32
 # Skip a pulse while the average tick time is above this value (milliseconds).
 # Default: 50.0
 max_mspt = 50.0
-# How far from a catalyst (in blocks along each axis) to look for a valid bloom
-# origin: an air/water cell directly above a sculk_replaceable surface (or an
-# existing sculk block). A bloom cannot start inside the solid catalyst block,
-# so this is what makes a freshly placed catalyst spread. 1..8.
-# Default: 2
-bloom_origin_radius = 2
+# Log a warning when a catalyst has no valid bloom origin: none of its six
+# face-adjacent blocks is air/water above a replaceable surface. Off by default
+# to avoid console spam; such catalysts are simply ignored by the pulse.
+# Default: false
+warn_no_origin = false
 
 # World filter. The whitelist and the blacklist are independent: each can be
 # switched on or off, they can be active at the same time, and the blacklist

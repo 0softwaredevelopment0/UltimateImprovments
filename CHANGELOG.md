@@ -3,6 +3,30 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.7] - since 1.8.5-alpha.6 (2026-10-21)
+
+> **Alpha channel** — behavior change on top of `1.8.5-alpha.6`.
+
+### Changed
+- **The bloom origin is now looked up only in the six face-adjacent blocks of
+  the catalyst** — the previous build searched a radius around it. A neighbour
+  qualifies only when it is air/water (a space where the vanilla charge can
+  place sculk veins) and has a valid substrate on one of its own six faces: a
+  `#minecraft:sculk_replaceable` block (fresh sculk seed) or an existing sculk
+  block. The first qualifying neighbour is used, preferring a replaceable
+  substrate over existing sculk and a substrate directly below. If none of the
+  six neighbours qualifies, the catalyst is ignored — there is nowhere for the
+  infection to start from.
+
+### Added
+- `warn_no_origin` (default `false`) — when enabled, a catalyst without a
+  valid origin logs one actionable warning (once per catalyst) instead of
+  being silently ignored. The warning is off by default to avoid console spam.
+
+### Removed
+- `bloom_origin_radius` — superseded by the fixed six-neighbour lookup. The key
+  left in an existing config file is harmless and ignored.
+
 ## [1.8.5-alpha.6] - since 1.8.5-alpha.5 (2026-10-21)
 
 > **Alpha channel** — bug-fix build on top of `1.8.5-alpha.5`.

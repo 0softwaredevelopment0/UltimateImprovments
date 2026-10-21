@@ -84,8 +84,7 @@ public final class SculkSubcommand {
         sender.sendMessage(MessageUtil.parse("<gray>Pulse: every </gray><white>" + manager.getIntervalTicks()
                 + "t</white><gray> · charge </gray><white>" + manager.getChargePerPulse()
                 + "</white><gray> · max </gray><white>" + manager.getMaxCatalystsPerPulse()
-                + "</white><gray> catalyst(s)/pulse · origin r=</gray><white>" + manager.getOriginRadius()
-                + "</white><gray> · MSPT gate </gray><white>" + manager.getMaxMspt()
+                + "</white><gray> catalyst(s)/pulse · MSPT gate </gray><white>" + manager.getMaxMspt()
                 + "</white>"));
         return true;
     }
