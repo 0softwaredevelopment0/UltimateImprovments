@@ -160,6 +160,12 @@ public final class Permissions {
     public static final String CMD_ENCHANT = "ui.command.enchant";
     public static final String CMD_SETRAD = "ui.command.setrad";
     public static final String CMD_METEOR_SPAWN = "ui.command.meteor.spawn";
+    /** /ui sculk status — growth state, active catalyst count, world filter. */
+    public static final String CMD_SCULK_STATUS = "ui.command.sculk.status";
+    /** /ui sculk start — enable growth and persist the switch in the DB. */
+    public static final String CMD_SCULK_START = "ui.command.sculk.start";
+    /** /ui sculk stop — disable growth and persist the switch in the DB. */
+    public static final String CMD_SCULK_STOP = "ui.command.sculk.stop";
     public static final String CMD_REDSTONE_LIST = "ui.command.redstone.list";
     public static final String CMD_POWER_OFF = "ui.command.power.off";
     public static final String CMD_POWER_REBOOT = "ui.command.power.reboot";
@@ -339,6 +345,9 @@ public final class Permissions {
                 new Permission(CMD_ENCHANT, "Enchant items", PermissionDefault.FALSE),
                 new Permission(CMD_SETRAD, "Set radiation levels", PermissionDefault.FALSE),
                 new Permission(CMD_METEOR_SPAWN, "Spawn meteors", PermissionDefault.FALSE),
+                new Permission(CMD_SCULK_STATUS, "Show sculk growth status (/ui sculk status) — active catalyst count, growth state and world filter", PermissionDefault.FALSE),
+                new Permission(CMD_SCULK_START, "Enable sculk growth (/ui sculk start) — the switch is persisted in the database", PermissionDefault.FALSE),
+                new Permission(CMD_SCULK_STOP, "Disable sculk growth (/ui sculk stop) — the switch is persisted in the database", PermissionDefault.FALSE),
                 new Permission(CMD_REDSTONE_LIST, "List blocked redstone chunks", PermissionDefault.FALSE),
                 new Permission(CMD_POWER_OFF, "Request server shutdown", PermissionDefault.FALSE),
                 new Permission(CMD_POWER_REBOOT, "Request server restart", PermissionDefault.FALSE),

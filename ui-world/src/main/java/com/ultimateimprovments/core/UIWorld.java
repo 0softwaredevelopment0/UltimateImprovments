@@ -2,6 +2,7 @@ package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.command.SubCommandRegistry;
 import com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter;
+import com.ultimateimprovments.mechanics.features.sculk.SculkSubcommand;
 import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
 import com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge;
 import com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge;
@@ -92,6 +93,8 @@ public class UIWorld extends JavaPlugin implements SoftReloadable {
         try {
             SubCommandRegistry registry = SubCommandRegistry.getInstance();
             registry.register(LegacySubCommandAdapter.of("cmdblocklist", CmdBlockTracker::execute));
+            registry.register(LegacySubCommandAdapter.of("sculk",
+                    SculkSubcommand::execute, SculkSubcommand::tabComplete));
             registry.register(LegacySubCommandAdapter.of("advancement", (s, a) -> {
                 if (!(s instanceof Player p)) return false;
                 if (a.length < 2) {
