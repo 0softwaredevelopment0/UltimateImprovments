@@ -12,6 +12,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.SculkCatalyst;
 import org.bukkit.configuration.ConfigurationSection;
@@ -50,10 +51,11 @@ import java.util.Set;
  * block space where sculk veins can attach to a {@code sculk_replaceable}
  * surface, and the solid catalyst block itself is not such a space (a cursor
  * placed inside it can never grow anything, which is why a lone catalyst
- * "doesn't spread" in vanilla). The manager therefore searches for an air (or
- * water) cell above a replaceable surface within {@code bloom_origin_radius}
- * blocks of the catalyst and starts the bloom there, exactly like a death at
- * that spot would.
+ * "doesn't spread" in vanilla). The manager therefore inspects the six
+ * face-adjacent blocks of the catalyst, picks the first one that can host a
+ * charge (air/water with a replaceable or sculk substrate on one of its faces)
+ * and starts the bloom there, exactly like a death at that spot would. If none
+ * of the six neighbours is suitable, the catalyst is ignored.
  * <p>
  * <b>Catalyst discovery.</b> Catalysts are not hard-coded: they are collected
  * from loaded chunks ({@link Chunk#getTileEntities()} only, so chunk scanning is
@@ -103,8 +105,14 @@ public final class SculkGrowthManager extends BukkitRunnable {
     private int maxCatalystsPerPulse = 32;
     /** TPS guard: pulses are skipped while the average tick time is above this. */
     private double maxMspt = 50.0;
-    /** How far from the catalyst to look for a valid bloom origin (air cell above a replaceable surface). */
-    private int originRadius = 2;
+    /** Log a warning when a catalyst has none of its six neighbours as a valid origin. */
+    private boolean warnNoOrigin = false;
+
+    /** The six face neighbours — the only cells a bloom origin is looked up in. */
+    private static final BlockFace[] ADJACENT_FACES = {
+            BlockFace.DOWN, BlockFace.UP, BlockFace.NORTH,
+            BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST
+    };
 
     /** Existing sculk blocks a bloom cursor can start on top of. */
     private static final Set<Material> SCULK_SUBSTRATE = EnumSet.of(Material.SCULK);
@@ -210,7 +218,7 @@ public final class SculkGrowthManager extends BukkitRunnable {
         chargePerPulse = Math.max(1, sec.getInt("charge_per_pulse", 10));
         maxCatalystsPerPulse = Math.max(1, sec.getInt("max_catalysts_per_pulse", 32));
         maxMspt = Math.max(1.0, sec.getDouble("max_mspt", 50.0));
-        originRadius = Math.min(8, Math.max(1, sec.getInt("bloom_origin_radius", 2)));
+        warnNoOrigin = sec.getBoolean("warn_no_origin", false);
 
         whitelistEnabled = sec.getBoolean("worlds.whitelist_enabled", false);
         blacklistEnabled = sec.getBoolean("worlds.blacklist_enabled", false);
@@ -379,7 +387,7 @@ public final class SculkGrowthManager extends BukkitRunnable {
     public int getChargePerPulse() { return chargePerPulse; }
     public int getMaxCatalystsPerPulse() { return maxCatalystsPerPulse; }
     public double getMaxMspt() { return maxMspt; }
-    public int getOriginRadius() { return originRadius; }
+    public boolean isWarnNoOrigin() { return warnNoOrigin; }
     public boolean isWhitelistEnabled() { return whitelistEnabled; }
     public boolean isBlacklistEnabled() { return blacklistEnabled; }
     public Set<String> getWhitelist() { return whitelist; }
@@ -390,59 +398,56 @@ public final class SculkGrowthManager extends BukkitRunnable {
     // =========================
 
     /**
-     * Finds a block space where a vanilla bloom can actually start: an air (or
-     * water) cell directly above a block the sculk family can replace, or above
-     * an existing sculk block.
+     * Finds a block space where a vanilla bloom can actually start, looking
+     * only at the six face-adjacent blocks of the catalyst.
      * <p>
-     * Vanilla starts the charge at the mob's death block for exactly this
-     * reason: the cursor needs a block space where sculk veins can attach to a
-     * solid surface, then the vein converts that surface into sculk. A cursor
-     * placed inside the solid catalyst block can never do either, which is why
-     * a lone catalyst does not spread in vanilla.
+     * A candidate must be air or water and have a valid substrate on one of its
+     * own six faces: a block the sculk family can replace (then sculk veins
+     * attach to it and convert it into sculk) or an existing sculk block. If no
+     * neighbour qualifies, the catalyst is ignored — there is nowhere for the
+     * infection to start from.
      *
-     * @return the origin block, or {@code null} when there is no convertible
-     *         surface within {@link #originRadius} blocks
+     * @return the origin block, or {@code null} when none of the six
+     *         neighbours can host a charge
      */
     private Block findBloomOrigin(Block catalyst) {
         World world = catalyst.getWorld();
-        int cx = catalyst.getX();
-        int cy = catalyst.getY();
-        int cz = catalyst.getZ();
-
         Block best = null;
         int bestScore = Integer.MAX_VALUE;
-        boolean bestExistingSculk = false;
 
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -originRadius; dx <= originRadius; dx++) {
-                for (int dz = -originRadius; dz <= originRadius; dz++) {
-                    if (dx == 0 && dy == 0 && dz == 0) continue;
+        for (BlockFace face : ADJACENT_FACES) {
+            Block cell = catalyst.getRelative(face);
+            // Never force-load a chunk for a candidate cell.
+            if (!world.isChunkLoaded(cell.getX() >> 4, cell.getZ() >> 4)) continue;
 
-                    int x = cx + dx;
-                    int y = cy + dy;
-                    int z = cz + dz;
-                    // Never force-load a chunk for a candidate cell.
-                    if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+            Material type = cell.getType();
+            if (type != Material.AIR && type != Material.CAVE_AIR && type != Material.WATER) continue;
 
-                    Material type = world.getBlockAt(x, y, z).getType();
-                    if (type != Material.AIR && type != Material.CAVE_AIR && type != Material.WATER) continue;
-
-                    Material below = world.getBlockAt(x, y - 1, z).getType();
-                    boolean existingSculk = SCULK_SUBSTRATE.contains(below);
-                    if (!existingSculk && !isSculkReplaceable(below)) continue;
-
-                    // Prefer a fresh replaceable substrate over an existing sculk
-                    // block, then the closest cell, then the same Y level.
-                    int score = dx * dx + dz * dz + 2 * dy * dy;
-                    boolean better = best == null
-                            || (bestExistingSculk && !existingSculk)
-                            || (bestExistingSculk == existingSculk && score < bestScore);
-                    if (better) {
-                        best = world.getBlockAt(x, y, z);
-                        bestScore = score;
-                        bestExistingSculk = existingSculk;
-                    }
+            // The vein must attach to something: scan the candidate's own faces.
+            boolean replaceableSubstrate = false;
+            boolean sculkSubstrate = false;
+            boolean substrateBelow = false;
+            for (BlockFace subFace : ADJACENT_FACES) {
+                Block sub = cell.getRelative(subFace);
+                if (!world.isChunkLoaded(sub.getX() >> 4, sub.getZ() >> 4)) continue;
+                Material mat = sub.getType();
+                if (isSculkReplaceable(mat)) {
+                    replaceableSubstrate = true;
+                    if (subFace == BlockFace.DOWN) substrateBelow = true;
+                } else if (SCULK_SUBSTRATE.contains(mat)) {
+                    sculkSubstrate = true;
+                    if (subFace == BlockFace.DOWN) substrateBelow = true;
                 }
+            }
+            if (!replaceableSubstrate && !sculkSubstrate) continue;
+
+            // Prefer a fresh replaceable substrate over an existing sculk block,
+            // then a substrate directly below (a mob standing on the ground),
+            // then the fixed face order.
+            int score = (replaceableSubstrate ? 0 : 10) + (substrateBelow ? 0 : 1);
+            if (score < bestScore) {
+                bestScore = score;
+                best = cell;
             }
         }
         return best;
@@ -515,11 +520,10 @@ public final class SculkGrowthManager extends BukkitRunnable {
             // surface — never from inside the solid catalyst block.
             Block origin = findBloomOrigin(block);
             if (origin == null) {
-                if (noOriginWarned.add(key)) {
+                if (warnNoOrigin && noOriginWarned.add(key)) {
                     ConsoleLogger.warn("[SCULK] No bloom origin near catalyst at "
                             + world.getName() + " " + x + " " + y + " " + z
-                            + " — place it on/near replaceable ground (stone, dirt, ...),"
-                            + " no such surface within " + originRadius + " block(s).");
+                            + " — none of its six neighbours is air/water above a replaceable surface.");
                 }
                 queue.addLast(key);
                 continue;
