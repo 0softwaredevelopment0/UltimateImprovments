@@ -3,6 +3,33 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.3] - since 1.8.5-alpha.2 (2026-10-21)
+
+> **Alpha channel** — bug-fix build on top of `1.8.5-alpha.2`.
+
+### Fixed
+- **The generator left its trigger frame behind** — assembling the blast
+  furnace generator registered the structure but never touched the item
+  frame, so the frame (and any item inside it) stayed on top of the furnace
+  instead of breaking and dropping. Every other structure already consumes
+  its one-shot trigger frame (battery, lamp, lightning, DFC, CER). The frame
+  is now removed after a successful assembly and drops as an item frame —
+  `GLOW_ITEM_FRAME` for glow frames — together with the displayed item.
+  `GeneratorManager.assembleFromFrame` takes the frame reference from
+  `ReactorListener`, so no coordinate guessing is involved.
+- **Battery charge of a late-loaded world was never restored (and its rows
+  were wiped)** — the energy rewrite deleted the WHOLE `energy_storage`
+  table and re-inserted only what the currently loaded worlds reported, so a
+  battery in a world loaded later (Multiverse, delayed world load) lost its
+  saved charge within one save interval (10 s). The rewrite is now scoped to
+  the UIDs of the worlds loaded at that moment; rows of other worlds survive.
+  In addition, stored energy is restored for the pools that a rebuild
+  actually created (`BatteryManager.rebuildFromMarkers` →
+  `EnergyPersistence.load(Collection<BatteryPool>)`), so a world that loads
+  after startup gets its batteries back instead of starting empty, while
+  already running batteries are never rolled back to an older DB snapshot by
+  the 5/30/120 s rebuild passes.
+
 ## [1.8.5-alpha.2] - since 1.8.5-alpha.1 (2026-10-21)
 
 > **Alpha channel** — bug-fix build on top of `1.8.5-alpha.1`.
