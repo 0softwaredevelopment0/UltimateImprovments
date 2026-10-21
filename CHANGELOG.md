@@ -3,6 +3,23 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.8] - since 1.8.5-alpha.7 (2026-10-21)
+
+> **Alpha channel** — behavior change on top of `1.8.5-alpha.7`.
+
+### Changed
+- **Every pulse starts the bloom from a random one of the six face-adjacent
+  blocks** — no pre-checks at all. A solid neighbour simply wastes that pulse
+  (vanilla cannot place a sculk vein inside a solid block), so a walled-in
+  catalyst never spreads, by design. A catalyst with an air/water face above a
+  replaceable surface starts growing within a few pulses, because the random
+  pick eventually lands on a valid face every second.
+
+### Removed
+- `warn_no_origin` and the no-origin console warning — with the random pick
+  there is no "no origin" state any more; every catalyst always has six
+  candidates.
+
 ## [1.8.5-alpha.7] - since 1.8.5-alpha.6 (2026-10-21)
 
 > **Alpha channel** — behavior change on top of `1.8.5-alpha.6`.

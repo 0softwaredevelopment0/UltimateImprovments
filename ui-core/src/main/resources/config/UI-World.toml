@@ -113,11 +113,11 @@ max_catalysts_per_pulse = 32
 # Skip a pulse while the average tick time is above this value (milliseconds).
 # Default: 50.0
 max_mspt = 50.0
-# Log a warning when a catalyst has no valid bloom origin: none of its six
-# face-adjacent blocks is air/water above a replaceable surface. Off by default
-# to avoid console spam; such catalysts are simply ignored by the pulse.
-# Default: false
-warn_no_origin = false
+# Each pulse starts the bloom from one RANDOM block out of the six faces of the
+# catalyst. Solid neighbours simply waste that pulse (vanilla cannot start a
+# bloom inside a solid block), so a walled-in catalyst never spreads; a
+# catalyst with at least one air/water face above a replaceable surface starts
+# growing within a few pulses.
 
 # World filter. The whitelist and the blacklist are independent: each can be
 # switched on or off, they can be active at the same time, and the blacklist
