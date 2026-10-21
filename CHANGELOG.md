@@ -3,6 +3,22 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.12] - since 1.8.5-alpha.11 (2026-10-21)
+
+> **Alpha channel** — permission fix for the sculk contact hazards on top of `1.8.5-alpha.11`.
+
+### Fixed
+- **The sculk hazard bypass was effectively on for every admin.**
+  `ui.sculk.hazards.bypass` was checked with `Player#hasPermission`, which also
+  answers `true` for a wildcard grant — `*` or `ui.*`, the normal LuckPerms
+  setup for operators and staff — so the player testing the mechanic was
+  immune and the hazards looked broken. Immunity now requires an **explicit**
+  grant of that exact node: the new `Permissions.isExplicitlyGranted` combines
+  `Permissible#isPermissionSet` (exact node only, wildcards excluded) with
+  `hasPermission`. OP alone and wildcards no longer count, and the immunity log
+  line plus the `At you:` line of `/ui sculk status` now say "granted
+  explicitly".
+
 ## [1.8.5-alpha.11] - since 1.8.5-alpha.10 (2026-10-21)
 
 > **Alpha channel** — bugfix for the sculk contact hazards on top of `1.8.5-alpha.10`.

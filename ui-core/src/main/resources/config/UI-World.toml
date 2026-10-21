@@ -165,6 +165,9 @@ ignore_spectator = true
 use_growth_world_filter = false
 # Permission that makes a player immune to every hazard. Empty string = no
 # bypass permission. The node is also registered in the permission registry.
+# Immunity requires an EXPLICIT grant of this exact node: wildcards such as
+# "*" or "ui.*" (the usual admin setup) do NOT count, so an OP testing the
+# mechanic still gets hurt.
 # Default: "ui.sculk.hazards.bypass"
 bypass_permission = "ui.sculk.hazards.bypass"
 
