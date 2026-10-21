@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:ender_chest",
+          "weight": 1,
+          "quality": 1,
+          "conditions": [
+            {
+              "type": "minecraft:random_chance",
+              "chance": 0.99
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

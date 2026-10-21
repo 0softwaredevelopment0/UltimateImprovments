@@ -16,11 +16,12 @@ import java.nio.file.Path;
  * reload/restart" flow: the pack is extracted fresh from the plugin JAR on every
  * server start and discovered with {@code autoEnableOnServerStart(true)}, so it is
  * active from the first world load with no restart.
+ * <p>
+ * The extracted folder is <b>language-specific</b> ({@code UI-Datapack-en} or
+ * {@code UI-Datapack-ru}, see {@link DatapackPackBootstrap}) and its name is used as
+ * the pack id, so {@code /datapack list} shows which variant is active.
  */
 public class UIDatapackBootstrap implements PluginBootstrap {
-
-    /** Datapack id; Paper combines it with the plugin for the display name. */
-    public static final String PACK_ID = "UI-Datapack";
 
     /**
      * The discovery event can fire several times (each time the server scans for
@@ -39,10 +40,12 @@ public class UIDatapackBootstrap implements PluginBootstrap {
                 if (preparedPack == null) {
                     return; // master toggle off — nothing to register
                 }
-                event.registrar().discoverPack(preparedPack, PACK_ID, configurer -> configurer
+                // The folder name carries the language (UI-Datapack-en / UI-Datapack-ru).
+                String packId = preparedPack.getFileName().toString();
+                event.registrar().discoverPack(preparedPack, packId, configurer -> configurer
                         .autoEnableOnServerStart(true)
                         .position(true, Datapack.Position.TOP));
-                context.getLogger().info("Registered bundled datapack '" + PACK_ID
+                context.getLogger().info("Registered bundled datapack '" + packId
                         + "' for discovery (auto-enabled on start).");
             } catch (Throwable t) {
                 context.getLogger().error("Failed to register the bundled datapack: "

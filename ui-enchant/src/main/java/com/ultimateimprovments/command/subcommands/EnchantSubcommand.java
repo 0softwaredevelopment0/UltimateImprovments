@@ -222,31 +222,35 @@ public final class EnchantSubcommand {
     private static volatile List<String> cachedDatapackEnchants = null;
 
     /**
-     * Reads {@code datapacks/UI-Datapack/data/ui/enchantment/*.json} from the plugin jar
-     * and returns their ids (file names without the .json extension).
+     * Reads {@code datapacks/UI-Datapack-<lang>/data/ui/enchantment/*.json} from the
+     * plugin JAR and returns their ids (file names without the .json extension).
+     * Both language variants ({@code -en}, {@code -ru}) are scanned — the ids are
+     * identical, the translation only touches display names.
      */
     private static List<String> datapackEnchantNames() {
         List<String> cached = cachedDatapackEnchants;
         if (cached != null) return cached;
 
-        List<String> result = new ArrayList<>();
+        Set<String> result = new java.util.LinkedHashSet<>();
         try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(Main.getInstance().getPluginFile())) {
             var entries = zip.entries();
-            String prefix = "datapacks/UI-Datapack/data/ui/enchantment/";
+            String marker = "/data/ui/enchantment/";
             while (entries.hasMoreElements()) {
                 var entry = entries.nextElement();
                 if (entry.isDirectory()) continue;
                 String name = entry.getName();
-                if (!name.startsWith(prefix) || !name.endsWith(".json")) continue;
-                String id = name.substring(prefix.length(), name.length() - ".json".length());
-                result.add(id);
+                if (!name.startsWith("datapacks/UI-Datapack") || !name.contains(marker)
+                        || !name.endsWith(".json")) continue;
+                result.add(name.substring(name.lastIndexOf(marker) + marker.length(),
+                        name.length() - ".json".length()));
             }
         } catch (Exception e) {
             // datapack not reachable — registry + config still cover the list
         }
-        result.sort(String::compareTo);
-        cachedDatapackEnchants = result;
-        return result;
+        List<String> list = new ArrayList<>(result);
+        list.sort(String::compareTo);
+        cachedDatapackEnchants = list;
+        return list;
     }
 
     // =========================

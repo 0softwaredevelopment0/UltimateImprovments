@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "X": "minecraft:netherrack",
+    "A": "minecraft:netherite_scrap",
+    "B": "minecraft:diamond_block"
+  },
+  "pattern": [
+    "XAX",
+    "XBX",
+    "XXX"
+  ],
+  "result": {
+    "id": "minecraft:netherite_upgrade_smithing_template"
+  }
+}

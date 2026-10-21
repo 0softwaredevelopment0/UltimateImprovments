@@ -45,7 +45,8 @@ public class DatapackInstaller {
         }
 
         ConsoleLogger.info("[Datapack] Bundled pack is provided by the bootstrapper "
-                + "(Paper DATAPACK_DISCOVERY, before worlds). Parts: " + DatapackModules.describe());
+                + "(Paper DATAPACK_DISCOVERY, before worlds). Language: "
+                + DatapackModules.getLanguage() + ". Parts: " + DatapackModules.describe());
 
         // Migration: old versions copied the pack into world/datapacks. Remove that
         // copy once the worlds are available, otherwise the same pack id would load twice.
@@ -53,18 +54,19 @@ public class DatapackInstaller {
 
         try {
             Datapack pack = findPack();
+            String packName = "UI-Datapack-" + DatapackModules.getLanguage();
             if (pack == null) {
-                ConsoleLogger.warn("[Datapack] UI-Datapack was not discovered at startup. "
+                ConsoleLogger.warn("[Datapack] " + packName + " was not discovered at startup. "
                         + "Check that 'bootstrapper' is set in paper-plugin.yml and datapack.enabled: true; "
                         + "a server restart is required after changing these.");
                 return;
             }
             if (!pack.isEnabled()) {
-                ConsoleLogger.warn("[Datapack] UI-Datapack is discovered but disabled — enabling it now "
+                ConsoleLogger.warn("[Datapack] " + packName + " is discovered but disabled — enabling it now "
                         + "(this triggers a data reload, but no server restart).");
                 pack.setEnabled(true);
             } else {
-                ConsoleLogger.success("[Datapack] UI-Datapack is enabled (loaded before the worlds).");
+                ConsoleLogger.success("[Datapack] " + packName + " is enabled (loaded before the worlds).");
             }
         } catch (Throwable t) {
             ConsoleLogger.warn("[Datapack] Could not query the datapack manager: " + t.getMessage());
@@ -72,16 +74,19 @@ public class DatapackInstaller {
     }
 
     /**
-     * Deletes the legacy {@code world/datapacks/UI-Datapack} copy installed by older
-     * versions (the pack now comes from the plugin/bootstrapper). Without this the same
-     * content would be loaded twice (world pack + plugin pack).
+     * Deletes the legacy {@code world/datapacks/UI-Datapack} (and any language
+     * variant of it) installed by older versions — the pack now comes from the
+     * plugin/bootstrapper. Without this the same content would be loaded twice
+     * (world pack + plugin pack).
      */
     private void removeLegacyWorldCopy() {
         try {
             if (Bukkit.getWorlds().isEmpty()) return;
             World first = Bukkit.getWorlds().get(0);
-            File legacy = new File(new File(first.getWorldFolder(), "datapacks"), "UI-Datapack");
-            if (legacy.isDirectory()) {
+            File datapacks = new File(first.getWorldFolder(), "datapacks");
+            File[] copies = datapacks.listFiles((dir, name) -> name.startsWith("UI-Datapack"));
+            if (copies == null) return;
+            for (File legacy : copies) {
                 ConsoleLogger.warn("[Datapack] Removing legacy world copy "
                         + legacy.getAbsolutePath() + " — the pack is now provided by the plugin "
                         + "(prevents a duplicate pack).");

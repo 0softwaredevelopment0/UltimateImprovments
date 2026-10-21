@@ -40,10 +40,13 @@ This is the complete guide: installation, every command, custom items, enchantme
    UI-Datapack jar and enabled automatically **before worlds load**
    (Paper bootstrapper) — no `/datapack enable`, no double restart.
 
-> The datapack lives in its own plugin part — **UI-Datapack**. Its settings
-> (`datapack.enabled`, `datapack.modules.*`) are configured in
-> `plugins/UltimateImprovments/configs/UI-Datapack.toml`; changing them
-> requires a restart (pack discovery happens at server startup).
+> The datapack lives in its own plugin part — **UI-Datapack**. It ships in two
+> language variants (`UI-Datapack-en` / `UI-Datapack-ru` — identical content,
+> translated names). Its settings (`datapack.enabled`, `datapack.lang`,
+> `datapack.modules.*`) are configured in
+> `plugins/UltimateImprovments/configs/UI-Datapack.toml`; `datapack.lang = "auto"`
+> follows `messages.lang`. Changing them requires a restart (pack discovery
+> happens at server startup).
 
 > Multi-block structures (NBT templates, markers, lightning/magnet mechanics,
 > reactor/generator validation) live in **UI-MBS**. Energy-dependent structure

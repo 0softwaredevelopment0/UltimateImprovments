@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "nether_ingot",
+  "category": "misc",
+  "pattern": [
+    "GNG",
+    "NUN",
+    "GNG"
+  ],
+  "key": {
+    "G": [
+      "minecraft:gold_block"
+    ],
+    "N": [
+      "minecraft:netherite_scrap"
+    ],
+    "U": [
+      "minecraft:netherite_upgrade_smithing_template"
+    ]
+  },
+  "result": {
+    "id": "minecraft:netherite_ingot",
+    "count": 1
+  }
+}

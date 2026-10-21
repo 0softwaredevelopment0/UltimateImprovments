@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "description": {
+      "text": "Датапак плагина UI.",
+      "color": "white"
+    },
+    "min_format": 121,
+    "max_format": 121
+  }
+}
