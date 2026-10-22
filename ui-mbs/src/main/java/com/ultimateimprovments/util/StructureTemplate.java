@@ -51,10 +51,20 @@ import java.util.zip.GZIPInputStream;
  * center with the fewest mismatched cells and reports the match percentage together
  * with concrete fix instructions (place/break/replace with coordinates).
  * <p>
+ * <b>Structure ownership of a clicked block.</b> The adaptive single-block
+ * structures (electric lamp on a waxed copper bulb, battery on a waxed copper
+ * grate) use blocks that are ordinary cells of these templates too, so a frame
+ * hung on a partially built reactor must not be mistaken for a lamp trigger.
+ * {@link #findOwningCandidate(Location, int, Location)} finds the template whose
+ * solid body contains the clicked block, and {@link #claimsFrame} decides whether
+ * enough of that body is already in place to treat the click as an assembly
+ * attempt of the structure instead (see {@link #CLAIM_MIN_SOLID_PERCENT}).
+ * <p>
  * Usage:
  * <pre>
  *   Location center = tmpl.findMatch(frameLocation, 5);          // exact match
  *   MatchResult best = tmpl.bestMatch(frameLocation, 5);         // closest candidate
+ *   BestCandidate owned = findOwningCandidate(frameLocation, 5, attachedBlock);
  * </pre>
  */
 public class StructureTemplate {
@@ -72,13 +82,33 @@ public class StructureTemplate {
      */
     private record AirZone(int dx, int dy, int dz, double radius) {}
 
-    /** Result of checking one candidate center position against a template. */
+    /**
+     * Result of checking one candidate center position against a template.
+     *
+     * @param solidCells       number of SOLID template cells (the structure's body)
+     * @param solidMismatches  how many of those solid cells do not match the world
+     */
     public record MatchResult(boolean matched, int total, int mismatches, Location center,
-                              List<Fix> fixes, List<Fix> forbidden) {
+                              List<Fix> fixes, List<Fix> forbidden,
+                              int solidCells, int solidMismatches) {
 
-        /** Percentage of matching cells (0..100). */
+        /** Percentage of matching checked cells (0..100). */
         public int percent() {
             return total == 0 ? 100 : Math.max(0, Math.round((total - mismatches) * 100f / total));
+        }
+
+        /**
+         * Percentage of the template's SOLID cells that are already in place
+         * (0..100). {@link #percent()} also counts the template's air cells —
+         * and an empty field "matches" nearly all air of a sparse template — so
+         * it says nothing about how much of the body the player has actually
+         * built. This is the measure used to tell "the player is building this
+         * structure" from "this is a random build near the template".
+         */
+        public int solidPercent() {
+            return solidCells == 0
+                    ? 0
+                    : Math.max(0, Math.round((solidCells - solidMismatches) * 100f / solidCells));
         }
     }
 
@@ -209,7 +239,7 @@ public class StructureTemplate {
     public MatchResult checkAt(Location center) {
         if (center == null || center.getWorld() == null || totalCells() == 0) {
             return new MatchResult(false, Math.max(1, totalCells()), Math.max(1, totalCells()), center,
-                    List.of(), List.of());
+                    List.of(), List.of(), 0, 0);
         }
 
         World world = center.getWorld();
@@ -217,9 +247,11 @@ public class StructureTemplate {
 
         List<Fix> fixes = new ArrayList<>();
         List<Fix> forbidden = new ArrayList<>();
+        int solidMismatches = 0;
         for (BlockEntry b : blocks) {
             Material actual = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
             if (materialMatches(b.material(), actual)) continue;
+            solidMismatches++;
             // A forbidden material fails the check wherever it stands —
             // even in place of an expected solid block (a clearer error
             // than "place X" for something that must not be here at all)
@@ -248,7 +280,7 @@ public class StructureTemplate {
 
         int mismatchCount = fixes.size() + forbidden.size();
         return new MatchResult(mismatchCount == 0, totalCells(), mismatchCount, center,
-                List.copyOf(fixes), List.copyOf(forbidden));
+                List.copyOf(fixes), List.copyOf(forbidden), blocks.size(), solidMismatches);
     }
 
     /**
@@ -385,6 +417,144 @@ public class StructureTemplate {
                     || (r.percent() == best.result().percent()
                         && r.mismatches() < best.result().mismatches())) {
                 best = new BestCandidate(t, r);
+            }
+        }
+        return best;
+    }
+
+    // =========================
+    // OWNERSHIP-AWARE CANDIDATE — which structure does the clicked block belong to?
+    // =========================
+
+    /**
+     * Minimum share of a template's SOLID cells that must already stand in the
+     * world before a frame click is treated as an assembly attempt of that
+     * template instead of an adaptive single-block structure (electric lamp,
+     * battery, magnet, generator).
+     * <p>
+     * The adaptive trigger blocks are also ordinary cells of the NBT templates:
+     * the Dark Fusion Reactor is built from waxed copper bulbs (12 of them) and
+     * waxed copper grates (9). With the plain "the block under the frame is a
+     * bulb → assemble a lamp" rule, hanging the DFC frame on a control bulb of a
+     * still-incomplete reactor reported a light-multiblock error and the DFC fix
+     * list never reached the player. A random build near a template has a solid
+     * coverage of only a few percent (sparse templates such as the lightning
+     * structure reach ~4%), a structure the player is actually building has far
+     * more, so one quarter separates the two cases with a wide margin.
+     */
+    public static final int CLAIM_MIN_SOLID_PERCENT = 25;
+
+    /**
+     * Across ALL loaded templates find the structure whose SOLID BODY the given
+     * world block belongs to.
+     * <p>
+     * Every candidate center is derived from one of the template's solid cells
+     * ({@code center = block − cellOffset}) and kept only when it lies within
+     * {@code radius} of {@code origin}, so this is not a brute-force volume
+     * scan: a block can only belong to a template if that template has a solid
+     * cell at the same position. The winner is chosen by SOLID coverage (air
+     * cells say nothing about how much of the body exists — see
+     * {@link MatchResult#solidPercent()}), ties by fewer absolute mismatches.
+     *
+     * @return the best owning candidate, or {@code null} when the block cannot
+     *         belong to any loaded template near {@code origin}
+     */
+    public static BestCandidate findOwningCandidate(Location origin, int radius, Location blockLoc) {
+        return findOwningCandidate(templates.values(), origin, radius, blockLoc);
+    }
+
+    /**
+     * {@link #findOwningCandidate(Location, int, Location)} against an explicit
+     * set of templates. Exposed for tests so the real bundled NBT templates can
+     * be checked without the plugin's template registry (which is filled from
+     * the plugin JAR at startup).
+     */
+    static BestCandidate findOwningCandidate(Collection<StructureTemplate> candidates,
+                                             Location origin, int radius, Location blockLoc) {
+        if (origin == null || origin.getWorld() == null
+                || blockLoc == null || blockLoc.getWorld() == null
+                || !origin.getWorld().equals(blockLoc.getWorld())) {
+            return null;
+        }
+        BestCandidate best = null;
+        for (StructureTemplate t : candidates) {
+            MatchResult r = t.bestMatchOwning(origin, radius, blockLoc);
+            if (r == null) continue;
+            if (best == null
+                    || r.solidPercent() > best.result().solidPercent()
+                    || (r.solidPercent() == best.result().solidPercent()
+                        && r.mismatches() < best.result().mismatches())) {
+                best = new BestCandidate(t, r);
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Whether the clicked frame is an assembly attempt of the multi-block
+     * structure described by {@code candidate}: the frame is attached to one of
+     * the template's SOLID cells and the player has already built at least
+     * {@link #CLAIM_MIN_SOLID_PERCENT}% of the body. When this is true the
+     * template diagnostics (closest structure + fixes) must win over the
+     * adaptive single-block structures.
+     */
+    public static boolean claimsFrame(BestCandidate candidate, Location attachedLoc) {
+        if (candidate == null || attachedLoc == null) return false;
+        if (candidate.result().solidPercent() < CLAIM_MIN_SOLID_PERCENT) return false;
+        return candidate.template().isSolidCellAt(candidate.result().center(), attachedLoc);
+    }
+
+    /**
+     * Best candidate center among the positions where {@code blockLoc} is one of
+     * THIS template's solid cells. Each solid cell maps to exactly one center
+     * ({@code center = blockLoc − cellOffset}); centers outside the search
+     * radius are skipped. Returns {@code null} when the block cannot belong to
+     * this template near {@code origin}.
+     */
+    private MatchResult bestMatchOwning(Location origin, int radius, Location blockLoc) {
+        World world = origin.getWorld();
+        if (world == null || blockLoc.getWorld() == null || !world.equals(blockLoc.getWorld())) return null;
+        int ox = origin.getBlockX(), oy = origin.getBlockY(), oz = origin.getBlockZ();
+        int bx = blockLoc.getBlockX(), by = blockLoc.getBlockY(), bz = blockLoc.getBlockZ();
+
+        // The clicked block ITSELF must be one of the template's materials: this
+        // is the literal "the frame is attached to a cell of this structure"
+        // test, and it keeps the search cheap — a waxed copper bulb yields only
+        // the bulb cells of each template (12 + 1), a lodestone/blast furnace
+        // yields no candidate at all instead of hundreds of full volume checks.
+        Material actual = world.getBlockAt(bx, by, bz).getType();
+
+        // Same cheap pruning as bestMatch: a candidate whose sample cells are
+        // already more mismatched than the best candidate's TOTAL mismatches can
+        // never win, so the expensive full check is skipped for it.
+        List<BlockEntry> sample = blocks.size() > 12 ? blocks.subList(0, 12) : blocks;
+
+        MatchResult best = null;
+        for (BlockEntry cell : blocks) {
+            if (!materialMatches(cell.material(), actual)) continue;
+            int cx = bx - cell.dx(), cy = by - cell.dy(), cz = bz - cell.dz();
+            if (Math.abs(cx - ox) > radius || Math.abs(cy - oy) > radius
+                    || Math.abs(cz - oz) > radius) {
+                continue;
+            }
+
+            if (best != null) {
+                int sampleMismatch = 0;
+                for (BlockEntry b : sample) {
+                    Material sampleMaterial = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
+                    if (!materialMatches(b.material(), sampleMaterial)) sampleMismatch++;
+                }
+                if (sampleMismatch >= best.mismatches()) continue;
+            }
+
+            MatchResult r = checkAt(new Location(world, cx, cy, cz));
+            if (r.matched()) return r; // the structure is complete — nothing better exists
+
+            if (best == null
+                    || r.solidPercent() > best.solidPercent()
+                    || (r.solidPercent() == best.solidPercent()
+                        && r.mismatches() < best.mismatches())) {
+                best = r;
             }
         }
         return best;

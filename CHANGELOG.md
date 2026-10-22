@@ -3,6 +3,52 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.17] - since 1.8.5-alpha.16 (2026-10-22)
+
+> **Alpha channel** — structure-assembly priority fix on top of `1.8.5-alpha.16`.
+
+### Fixed
+- **A partly built multi-block structure was mistaken for an adaptive single-block
+  structure, so its real fix list was never shown.** The item-frame auto-detect ran the
+  adaptive branches first: a frame attached to a **waxed copper bulb** went straight to the
+  electric lamp (`LightManager.assemble`), a frame on a **waxed copper grate** to a battery,
+  and only the leftovers reached the "closest structure + fixes" report. Both materials are
+  ordinary cells of the shipped NBT templates — the Dark Fusion Reactor is built from
+  **12 waxed copper bulbs**, **24 waxed chiseled copper** junctions and **9 waxed copper
+  grates**, and two roof control bulbs stand directly on chiseled copper — so a frame hung
+  on a DFC control bulb of an incomplete/incorrect reactor answered
+  "A light structure needs more than one block: at least 1 waxed copper bulb and 1 waxed
+  chiseled copper junction!" (or even assembled a lamp out of the reactor's own blocks).
+  The DFC could therefore not be assembled through its trigger frame once anything was
+  wrong with the build: the diagnostics that say "place waxed copper bulb at x y z" were
+  unreachable.
+  The assembler now runs the **full template check before any adaptive branch**:
+  `StructureTemplate.findOwningCandidate` finds the template whose solid body contains the
+  clicked block (candidate centers are derived from that template's solid cells, and the
+  clicked block must be one of the template's materials, so a bulb costs 13 volume checks
+  instead of a brute-force radius scan), and when at least `CLAIM_MIN_SOLID_PERCENT`
+  (**25%**) of that template's solid cells are already built, `claimsFrame` treats the
+  click as an assembly attempt of the structure. Complete builds still assemble through the
+  unchanged exact-match path; an incomplete one answers with the existing localized
+  "Closest structure: <name> — NN% match" line plus the concrete
+  place / break / replace list. The report is now one shared helper
+  (`ReactorListener#reportClosestStructure`), used by the claim path and by the final
+  not-recognized fallback. Standalone lamps, batteries, magnets and generators keep
+  assembling exactly as before (a lone lamp covers under 7% of any template body, well
+  below the claim threshold). A structure with less than a quarter of its body placed still
+  falls through to the adaptive interpretation — build more of it, or hang the frame on a
+  non-trigger block (e.g. the reactor case glass), to get the closest-structure report.
+
+### Added
+- `MatchResult` now carries the solid-cell census (`solidCells` / `solidMismatches`) and
+  `solidPercent()` — the share of the structure's BODY that already stands in the world.
+  The old air-inclusive `percent()` cannot tell "the reactor is 96% built" from "empty
+  field with a lamp", because a sparse template "matches" nearly all of its air cells.
+- `StructureTemplate.findOwningCandidate(...)` / `claimsFrame(...)` and
+  `StructureAssemblyClaimTest` (dynamic-proxy `World`/`Block` over the real bundled NBT
+  templates): a half-built DFC claims both a bulb frame and a grate frame, a complete DFC
+  claims, a standalone lamp and a lodestone (magnet) trigger do not, plus the 25% boundary.
+
 ## [1.8.5-alpha.16] - since 1.8.5-alpha.15 (2026-10-22)
 
 > **Alpha channel** — compact nuclear reactor output fix on top of `1.8.5-alpha.15`.
