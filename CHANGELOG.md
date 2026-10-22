@@ -3,6 +3,35 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.15] - since 1.8.5-alpha.14 (2026-10-22)
+
+> **Alpha channel** — multi-block structure assembly occupancy fix on top of `1.8.5-alpha.14`.
+
+### Fixed
+- **A structure standing next to another one was reported as "already active at this place".**
+  The listener looked for the first NBT template match within a 5-block radius and then asked the
+  manager whether a structure exists at that center — so a second, separate build placed NEARBY
+  (not touching) was rejected: the scan found the OLD build's matching volume first. Assembly now
+  resolves the position of the clicked frame itself:
+  - a candidate is accepted only when its volume does not intersect any assembled structure, and the
+    conflict test is a per-coordinate (X/Y/Z) box comparison against the registered structures'
+    volumes — no radius/distance anywhere (`StructureTemplate#overlapsVolume`).
+    A structure with a gap — or even one touching the other's face without sharing cells — is free;
+    a structure that would stand inside another one is refused.
+  - when every exact match is already assembled, the position is resolved through the block the frame
+    is actually attached to (`StructureTemplate#isSolidCellAt`), so the clicked frame still reports /
+    toggles only the structure it belongs to.
+- **Assembly refusals lost the UI prefix and used a hardcoded structure name.** "Already assembled"
+  refusals now carry the global `[UI]` prefix and the localized structure display name
+  (`messages.structures.structure_already_assembled` / `structure_overlap` with `%structure%` and
+  `%existing%`), so the message no longer hardcodes "nuclear reactor". The same prefix was added to
+  the battery / lamp / lightning / magnet / generator refusals and to the DFC duplicate-assembly check.
+
+### Added
+- Occupancy regression tests (`StructureVolumeOverlapTest`): nearby reactors (1-block gap and
+  face-touching layouts) are free, the same or overlapping cells and a reactor inside the fusion
+  reactor volume are conflicts, and the solid-cell frame lookup is locked down.
+
 ## [1.8.5-alpha.14] - since 1.8.5-alpha.13 (2026-10-22)
 
 > **Alpha channel** — the unfinished multiblock lamp is replaced by the adaptive
