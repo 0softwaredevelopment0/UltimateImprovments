@@ -1,6 +1,5 @@
 package com.ultimateimprovments.energy.generation.nuclear;
 
-import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
@@ -10,6 +9,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.MultimeterApi;
 import com.ultimateimprovments.util.StructureTemplate;
 import com.ultimateimprovments.util.StructuresMessages;
 
@@ -23,8 +23,6 @@ import org.bukkit.entity.Creeper;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Collection;
 import java.util.Locale;
@@ -707,7 +705,7 @@ public final class NuclearReactorManager {
     public static void sendReadout(Player player, NuclearReactor reactor) {
         if (player == null || reactor == null) return;
 
-        if (!holdsMultimeter(player)) {
+        if (!MultimeterApi.holdsMultimeter(player)) {
             player.sendMessage(MessageUtil.parse(prefix() + msg("multimeter_required",
                     "<red>A multimeter is required to read the data!")));
             return;
@@ -796,6 +794,10 @@ public final class NuclearReactorManager {
 
         player.sendMessage(MessageUtil.parse(p + msg("meter_hint",
                 "<dark_gray>Emeralds and ice go into the barrel, a lever on top of the barrel, cable under the bottom port</dark_gray>")));
+
+        // Tell the shared API that this click got its parameters, so the
+        // generic MultimeterListener does not append its "can't measure" error.
+        MultimeterApi.markMeasured(player);
     }
 
     /** {@code [CER]} chat prefix — the word is configurable. */
@@ -806,20 +808,6 @@ public final class NuclearReactorManager {
     // Changed the prefix word from "CER" to "Compact Energy Reactor" for a better understanding.
     private static String prefixWord() {
         return msg("prefix", "Compact Energy Reactor");
-    }
-
-    private static boolean holdsMultimeter(Player player) {
-        return isMultimeter(player.getInventory().getItemInMainHand())
-                || isMultimeter(player.getInventory().getItemInOffHand());
-    }
-
-    /** PDC tag check for the custom multimeter item (base: clock). */
-    private static boolean isMultimeter(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) return false;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return false;
-        Byte value = meta.getPersistentDataContainer().get(Keys.MULTIMETER, PersistentDataType.BYTE);
-        return value != null && value == (byte) 1;
     }
 
     /** How many cooling blocks (any ice type) the barrel currently holds. */

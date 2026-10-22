@@ -1,17 +1,16 @@
 package com.ultimateimprovments.listener;
 
-import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.*;
-import com.ultimateimprovments.core.hooks.CoreHooks;
+import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityManager;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityManager;
+import com.ultimateimprovments.util.MultimeterApi;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -19,20 +18,31 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
+/**
+ * Generic multimeter readout: cables, batteries, junctions, particle-accelerator
+ * blocks and structure-integrity blocks.
+ * <p>
+ * It is the LAST listener of the click ({@link EventPriority#HIGHEST}) and the
+ * fallback of the whole multimeter feature: subsystem readouts (generator, CER,
+ * DFC control sign) run earlier, cancel the event and mark the click as
+ * measured through {@link MultimeterApi}. When this listener reaches a block it
+ * cannot read it asks {@link MultimeterApi#finishMeasurement(Player)} — that
+ * method sends the standard {@code [METER] Can't measure parameters of this
+ * block.} error only when no other subsystem answered, and stays silent
+ * otherwise.
+ */
 public class MultimeterListener implements Listener {
 
-    private static final NamespacedKey KEY =
-            new NamespacedKey(Main.getInstance(), "is_multimeter");
-
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onUse(PlayerInteractEvent e) {
 
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (e.getClickedBlock() == null) return;
 
         Player player = e.getPlayer();
@@ -45,7 +55,18 @@ public class MultimeterListener implements Listener {
         // =========================
         // PDC CHECK (MULTIMETER ONLY)
         // =========================
-        if (!is_multimeter(item)) return;
+        if (!MultimeterApi.isMultimeter(item)) return;
+
+        // The multimeter is a SHIFT+RMB tool: a plain right-click keeps its
+        // vanilla behaviour (furnace GUI, sign editor, block placement, ...).
+        if (!player.isSneaking()) return;
+
+        // Compatibility gate: a subsystem readout (generator, CER, DFC control
+        // sign) may already have answered this click. Do not append a second
+        // "nothing to read here" line on top of its parameters. This also
+        // covers the off-hand event of one click, whose event is a separate
+        // PlayerInteractEvent.
+        if (MultimeterApi.wasMeasured(player)) return;
 
         // Click sound when measuring
         player.playSound(block.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
@@ -63,6 +84,9 @@ public class MultimeterListener implements Listener {
             } else {
                 player.sendMessage(MessageUtil.parse("<red>❌ Structure Integrity system not available.</red>"));
             }
+            // The branch owns the click even when the system is down — one
+            // answer per click and hand is enough.
+            MultimeterApi.markMeasured(player);
             return;
         }
 
@@ -81,6 +105,7 @@ public class MultimeterListener implements Listener {
             player.sendMessage(MessageUtil.parse("<aqua>Buffer: </aqua>" + energyColor + energy + "/1000 ⚡</" + (energy >= 1000 ? "green" : "yellow") + ">"));
             player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
             player.sendMessage(MessageUtil.parse("<aqua>Status: </aqua>" + (canAccel ? "<green>✔ Готов ускорить</green>" : "<yellow>⏳ Не готов (нужно 1000⚡ + редстоун)</yellow>")));
+            MultimeterApi.markMeasured(player);
             return;
         }
 
@@ -101,31 +126,18 @@ public class MultimeterListener implements Listener {
             } else {
                 player.sendMessage(MessageUtil.parse("<aqua>Last speed: </aqua><gray>No particle has passed yet</gray>"));
             }
-            return;
-        }
-
-        // =========================
-        // ⚡ GENERATOR (BLAST_FURNACE) — handled by GeneratorManager's
-        // SHIFT+RMB multimeter readout (full data pack, GEN prefix). Here the
-        // generator stays SILENT: other clicks do nothing plugin-side.
-        // =========================
-        if (type == Materials.BLAST_FURNACE) {
+            MultimeterApi.markMeasured(player);
             return;
         }
 
         CableNode node = CableNetwork.getNode(block.getLocation());
 
-        player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
-
-        if (node == null) {
-            player.sendMessage(MessageUtil.parse("<gray>No energy node at this block.</gray>"));
-            return;
-        }
-
         // =========================
         // BATTERY
         // =========================
-        if (type == Materials.WAXED_COPPER_GRATE) {
+        if (node != null && type == Materials.WAXED_COPPER_GRATE) {
+
+            player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
 
             int transferred = node.getAndResetTransferred();
             BatteryManager.BatteryCluster cluster = BatteryManager.getCluster(block.getLocation());
@@ -143,13 +155,16 @@ public class MultimeterListener implements Listener {
             player.sendMessage(MessageUtil.parse("<aqua>Mode: </aqua><white>" + mode + "</white> <gray>(redstone pulse cycles)</gray>"));
             player.sendMessage(MessageUtil.parse("<aqua>Transfer rate: </aqua><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<aqua>Connections: </aqua><white>" + node.getConnectionKeys().size() + "</white>"));
+            MultimeterApi.markMeasured(player);
             return;
         }
 
         // =========================
         // CABLE
         // =========================
-        if (type == Materials.WAXED_LIGHTNING_ROD) {
+        if (node != null && type == Materials.WAXED_LIGHTNING_ROD) {
+
+            player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
 
             int transferred = node.getAndResetTransferred();
             boolean flowing = CableNetwork.isFlowing(LocationUtil.normalize(block.getLocation()));
@@ -178,13 +193,16 @@ public class MultimeterListener implements Listener {
                 player.sendMessage(MessageUtil.parse("<yellow>Axis: </yellow><white>" + axis + "</white>"));
             }
 
+            MultimeterApi.markMeasured(player);
             return;
         }
 
         // =========================
         // JUNCTION
         // =========================
-        if (type == Materials.WAXED_CHISELED_COPPER) {
+        if (node != null && type == Materials.WAXED_CHISELED_COPPER) {
+
+            player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
 
             int transferred = node.getAndResetTransferred();
             player.sendMessage(MessageUtil.parse("<gold>Type: Junction</gold>"));
@@ -199,27 +217,12 @@ public class MultimeterListener implements Listener {
             player.sendMessage(MessageUtil.parse("<gold>Transfer rate: </gold><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<gold>Connections: </gold><white>" + node.getConnectionKeys().size() + "</white>"));
             player.sendMessage(MessageUtil.parse("<gold>Mode: </gold><white>Omni-directional</white>"));
+            MultimeterApi.markMeasured(player);
             return;
         }
 
-        player.sendMessage(MessageUtil.parse("<gray>This block is not part of energy network.</gray>"));
-    }
-
-    // =========================
-    // PDC CHECK
-    // =========================
-    private boolean is_multimeter(ItemStack item) {
-
-        if (item == null || item.getType() == Material.AIR) return false;
-
-        var meta = item.getItemMeta();
-        if (meta == null) return false;
-
-        PersistentDataContainer data =
-                meta.getPersistentDataContainer();
-
-        Byte val = data.get(KEY, PersistentDataType.BYTE);
-
-        return val != null && val == (byte) 1;
+        // Nothing here can be measured: the shared API reports it in chat, but
+        // only when no other subsystem already answered this click.
+        MultimeterApi.finishMeasurement(player);
     }
 }
