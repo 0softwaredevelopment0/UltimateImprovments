@@ -1,6 +1,5 @@
 package com.ultimateimprovments.energy.generation.reactor;
 
-import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningManager;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningStructure;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
@@ -8,6 +7,7 @@ import com.ultimateimprovments.mechanics.environment.magnet.MagnetStructure;
 import com.ultimateimprovments.structure.StructureOccupancy;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.MultimeterApi;
 import com.ultimateimprovments.util.StructureTemplate;
 import com.ultimateimprovments.util.StructuresMessages;
 import com.ultimateimprovments.util.LocationUtil;
@@ -34,7 +34,6 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 
@@ -730,6 +729,10 @@ public class ReactorListener implements Listener {
 
         Player player = e.getPlayer();
 
+        // The multimeter is a SHIFT+RMB tool: a plain right-click keeps the
+        // vanilla sign editor.
+        if (!player.isSneaking()) return;
+
         // Only the registered control-panel DATA signs demand the multimeter
         // (registered at assembly, cleared at disassembly). Lamp label signs
         // and any other signs of the structure keep their normal behavior —
@@ -747,7 +750,7 @@ public class ReactorListener implements Listener {
         e.setCancelled(true);
 
         // The data readout only works with a multimeter in hand
-        if (!holdsMultimeter(player)) {
+        if (!MultimeterApi.holdsMultimeter(player)) {
             player.sendMessage(MessageUtil.parse(dfcPrefix() + msg("sign_multimeter_required",
                     "<red>A multimeter is required to read the data!")));
             return;
@@ -762,28 +765,15 @@ public class ReactorListener implements Listener {
 
         // Open reactor stats
         ReactorStatsDisplay.sendStats(player);
+
+        // Tell the shared API that this click got its parameters, so the
+        // generic MultimeterListener does not append its "can't measure" error.
+        MultimeterApi.markMeasured(player);
     }
 
     /** Same [UI][DFC] prefix the reactor broadcasts use. */
     private static String dfcPrefix() {
         return MessageUtil.PREFIX + "<dark_gray>[<yellow>DFC<dark_gray>] ";
-    }
-
-    // =========================
-    // HOLDS MULTIMETER (main or off hand, PDC tag)
-    // =========================
-    private boolean holdsMultimeter(Player player) {
-        return isMultimeter(player.getInventory().getItemInMainHand())
-                || isMultimeter(player.getInventory().getItemInOffHand());
-    }
-
-    /** PDC tag check for the custom multimeter item (base: clock). */
-    private boolean isMultimeter(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) return false;
-        var meta = item.getItemMeta();
-        if (meta == null) return false;
-        Byte val = meta.getPersistentDataContainer().get(Keys.MULTIMETER, PersistentDataType.BYTE);
-        return val != null && val == (byte) 1;
     }
 
     // =========================

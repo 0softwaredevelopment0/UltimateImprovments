@@ -1348,6 +1348,16 @@ meter_meltdown = "<dark_red>❌ Детонация через </dark_red><white>
 # Default: <dark_red>✖ МЕЛТДАУН — детонация через %sec% с</dark_red>
 status_meltdown = "<dark_red>✖ МЕЛТДАУН — детонация через %sec% с</dark_red>"
 
+# Generic multimeter (SHIFT+RMB) messages — shared by every addon through
+# MultimeterApi in UI-Core. The global plugin prefix is prepended by the code.
+[messages.structures.multimeter]
+# Chat tag word inside [<yellow>word<dark_gray>].
+# Default: METER
+prefix = "METER"
+# Shown when SHIFT+RMB with the multimeter hits a block that no subsystem can read.
+# Default: Can't measure parameters of this block.
+cant_measure = "Не удалось измерить параметры этого блока."
+
 # names section.
 [messages.structures.names]
 # Default: <red>Реактор тёмного синтеза</red>
@@ -1857,6 +1867,16 @@ meter_meltdown = "<dark_red>❌ Detonation in </dark_red><white>%sec%s</white>"
 # Placeholders: %sec%
 # Default: <dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>
 status_meltdown = "<dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>"
+
+# Generic multimeter (SHIFT+RMB) messages — shared by every addon through
+# MultimeterApi in UI-Core. The global plugin prefix is prepended by the code.
+[messages_en.structures.multimeter]
+# Chat tag word inside [<yellow>word<dark_gray>].
+# Default: METER
+prefix = "METER"
+# Shown when SHIFT+RMB with the multimeter hits a block that no subsystem can read.
+# Default: Can't measure parameters of this block.
+cant_measure = "Can't measure parameters of this block."
 
 # names section.
 [messages_en.structures.names]

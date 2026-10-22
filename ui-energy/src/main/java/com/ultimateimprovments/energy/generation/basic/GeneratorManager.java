@@ -11,6 +11,7 @@ import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MultimeterApi;
 import com.ultimateimprovments.util.StructuresMessages;
 
 import java.util.UUID;
@@ -31,7 +32,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
@@ -163,7 +163,7 @@ public class GeneratorManager implements Listener {
         // The measurement owns the click: no furnace GUI on SHIFT+RMB
         e.setCancelled(true);
 
-        if (!holdsMultimeter(player)) {
+        if (!MultimeterApi.holdsMultimeter(player)) {
             player.sendMessage(MessageUtil.parse(prefix() + msg("multimeter_required",
                     "<red>A multimeter is required to read the data!")));
             return;
@@ -175,19 +175,6 @@ public class GeneratorManager implements Listener {
     /** The [GEN] chat prefix — the word is configurable (structures.generator.prefix). */
     private static String prefix() {
         return "<dark_gray>[<yellow>" + msg("prefix", "GEN") + "<dark_gray>] ";
-    }
-
-    private static boolean holdsMultimeter(Player player) {
-        return isMultimeter(player.getInventory().getItemInMainHand())
-                || isMultimeter(player.getInventory().getItemInOffHand());
-    }
-
-    private static boolean isMultimeter(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) return false;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return false;
-        Byte val = meta.getPersistentDataContainer().get(Keys.MULTIMETER, PersistentDataType.BYTE);
-        return val != null && val == (byte) 1;
     }
 
     /** Full generator data pack (localized, GEN-prefixed). */
@@ -271,6 +258,10 @@ public class GeneratorManager implements Listener {
         player.sendMessage(MessageUtil.parse(prefix() + msg("meter_connections",
                 "<aqua>Connections: </aqua><white>%count%</white>")
                 .replace("%count%", String.valueOf(node != null ? node.getConnectionKeys().size() : 0))));
+
+        // Tell the shared API that this click got its parameters, so the
+        // generic MultimeterListener does not append its "can't measure" error.
+        MultimeterApi.markMeasured(player);
     }
 
     // =========================

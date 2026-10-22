@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.5-alpha.17
+**Version:** 1.8.5-alpha.18
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -240,7 +240,7 @@ Crafter). Recipes come from the bundled datapack.
 | **Photon Cannon** | Long-range projectile weapon. |
 | **Electro Shoker** | Close-combat projectile weapon. |
 | **Antimatter Flask** | Explosive item — devastating blast. |
-| **Multimeter** | Inspect block/energy information. |
+| **Multimeter** | **SHIFT+RMB** reads block/energy parameters: cables, batteries, junctions, generators, reactors, particle-accelerator blocks and structure integrity. A plain RMB keeps the vanilla block interaction. Blocks with nothing to read answer with the `[METER] Can't measure parameters of this block.` error. |
 | **Metal Detector / Ore Finder / Mob Finder / Entity Locator** | Scanning tools. |
 | **Health Meter** | Shows mob health. |
 | **Portable Radar** | Nearby entity radar. |

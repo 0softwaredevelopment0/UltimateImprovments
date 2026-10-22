@@ -3,6 +3,51 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.18] - since 1.8.5-alpha.17 (2026-10-22)
+
+> **Alpha channel** — multimeter interaction cleanup (SHIFT+RMB only) and the
+> shared readout contract on top of `1.8.5-alpha.17`.
+
+### Fixed
+- **A successful reactor readout was followed by a false "nothing here" message.**
+  `MultimeterListener` (UI-Other) was a plain `NORMAL`-priority listener, so it ran
+  *before* the reactor/generator/sign readouts (`HIGH`), printed its own failure line on
+  the clicked reactor block, and only then the reactor's `[CER]` data pack arrived — the
+  player saw the parameters *and* "there is no data here". The generic reader is now a
+  `HIGHEST` listener with `ignoreCancelled = true`: the subsystem that owns the block
+  cancels the interaction first, so the fallback never speaks on top of a real readout.
+  A shared per-click state (`MultimeterApi#markMeasured` / `#wasMeasured`) additionally
+  covers the second `PlayerInteractEvent` of the same click (one per hand).
+- **The two slightly different "not an energy block" lines are gone**
+  (`No energy node at this block.`, `This block is not part of energy network.`) together
+  with the silent special case for plain blast furnaces. Every unreadable block now gets
+  the single standard error described below.
+
+### Changed
+- **The multimeter is a SHIFT+RMB tool.** A plain right-click no longer reads anything
+  plugin-side: cables, batteries, junctions, particle-accelerator blocks, ender-chest
+  integrity reports and the DFC control-panel signs all require SHIFT+RMB (the DFC sign
+  used to intercept a plain RMB too, so the sign editor was unreachable). Plain RMB keeps
+  the vanilla interaction — furnace GUI, sign editor, container, etc. The generic reader
+  also now requires `RIGHT_CLICK_BLOCK` (a left-click with the meter no longer fired a
+  readout).
+- **Unified "can't measure" error:** `<plugin prefix> [METER] Can't measure parameters
+  of this block.` (localizable as `messages/_en.structures.multimeter.cant_measure`,
+  the `METER` tag word as `…multimeter.prefix` in `UI-Other.toml`).
+
+### Added
+- **`MultimeterApi` (UI-Core, `com.ultimateimprovments.util`)** — the single shared entry
+  point of the tool:
+  - `isMultimeter(ItemStack)` / `holdsMultimeter(Player)` — the PDC check that used to be
+    duplicated in four places (generic reader, generator, CER, DFC listener);
+  - `markMeasured(Player)` — a subsystem reports that it delivered the parameters;
+  - `finishMeasurement(Player)` — the method the generic reader calls at the end: it
+    checks whether any subsystem delivered a readout during this click and, if not, sends
+    the standard `[METER]` error to the player (returns `true` when the data was already
+    shown, so callers can branch on it).
+  The generator readout, the CER readout and the DFC control-sign readout now mark their
+  clicks as measured through this API.
+
 ## [1.8.5-alpha.17] - since 1.8.5-alpha.16 (2026-10-22)
 
 > **Alpha channel** — structure-assembly priority fix on top of `1.8.5-alpha.16`.

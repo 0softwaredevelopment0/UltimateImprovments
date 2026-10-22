@@ -97,11 +97,11 @@ public final class SimpleModules {
                 var pm = main.getServer().getPluginManager();
                 pm.registerEvents(new BlockPlaceListener(), main);
                 pm.registerEvents(new BlockBreakListener(), main);
-                // Multimeter: reading cables/junctions/batteries/generators by
-                // right-clicking them with the multimeter item. This listener
-                // existed but was never registered — the item stayed silent
-                // on every energy block (the reactor sign check used its own
-                // holdsMultimeter and worked, which made it extra confusing).
+                // Multimeter: reading cables/junctions/batteries/generators with
+                // SHIFT+RMB while holding the multimeter item. Runs at HIGHEST
+                // and defers to subsystem readouts through MultimeterApi, so a
+                // real readout is never followed by the generic "nothing here"
+                // error (see MultimeterListener).
                 pm.registerEvents(new MultimeterListener(), main);
                 pm.registerEvents(new PluginHideListener(), main);
                 pm.registerEvents(new ServerBrandListener(), main);
