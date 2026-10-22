@@ -47,6 +47,9 @@ in this file.
     shown, so callers can branch on it).
   The generator readout, the CER readout and the DFC control-sign readout now mark their
   clicks as measured through this API.
+- `MultimeterMessagesTest` guards the bundled RU/EN `structures.multimeter.*` texts and
+  asserts that the composed error renders exactly as
+  `[UI] [METER] Can't measure parameters of this block.` with the default prefix.
 
 ## [1.8.5-alpha.17] - since 1.8.5-alpha.16 (2026-10-22)
 

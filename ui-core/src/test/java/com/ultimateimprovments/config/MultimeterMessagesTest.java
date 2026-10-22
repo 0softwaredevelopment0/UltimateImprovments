@@ -1,6 +1,8 @@
 package com.ultimateimprovments.config;
 
 import com.moandjiezana.toml.Toml;
+import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.MultimeterApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -58,5 +60,12 @@ class MultimeterMessagesTest {
             assertTrue(ruError.contains("измерить") && ruError.contains("параметр"),
                     "ru structures.multimeter.cant_measure should translate the error: " + ruError);
         }
+    }
+
+    @Test
+    @DisplayName("The composed error renders as '<plugin prefix> [METER] Can't measure parameters of this block.'")
+    void composedErrorRendersAsRequested() {
+        String plain = MessageUtil.toPlainText(MultimeterApi.cantMeasureMessage());
+        assertEquals("[UI] [METER] Can't measure parameters of this block.", plain);
     }
 }
