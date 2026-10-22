@@ -264,8 +264,13 @@ public final class NuclearReactorManager {
         NuclearReactor existing = reactors.get(anchor);
         if (existing != null) {
             if (player != null) {
-                player.sendMessage(MessageUtil.parse(msg("already_active",
-                        "<yellow>A nuclear reactor is already active at this place!")));
+                // Localized structure name — never a hardcoded "nuclear reactor"
+                // word; the global UI prefix is part of every refusal.
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                        + StructuresMessages.get("structure_already_assembled",
+                                "<yellow>A structure is already assembled here: <white>%structure%</white><yellow>! <dark_gray>(%coords%)")
+                        .replace("%structure%", template.getDisplayName())
+                        .replace("%coords%", coords(anchor))));
             }
             return existing;
         }

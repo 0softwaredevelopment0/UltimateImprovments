@@ -973,6 +973,14 @@ lamp_already_active = "<yellow>Лампочка уже собрана на эт�
 generator_already_active = "<yellow>Генератор уже собран на этом месте!"
 # Default: <dark_red>❌ <red>Нет кабеля рядом с плавильной печью!
 generator_no_cable = "<dark_red>❌ <red>Нет кабеля рядом с плавильной печью!"
+# Assembly refusal: the matched position already belongs to an assembled structure.
+# Placeholders: %structure% (localized structure name from structures.names), %coords%
+# Default: <yellow>Здесь уже собрана структура <white>%structure%</white><yellow>! <dark_gray>(<gray>%coords%<dark_gray>)
+structure_already_assembled = "<yellow>Здесь уже собрана структура <white>%structure%</white><yellow>! <dark_gray>(<gray>%coords%<dark_gray>)"
+# Assembly refusal: the new structure would stand INSIDE another structure (each axis is checked).
+# Placeholders: %structure% (being assembled), %existing% (occupying structure), %coords%
+# Default: <dark_red>❌ <red>Нельзя собрать <white>%structure%</white><red> здесь: это место уже занимает <white>%existing%</white><red>! <dark_gray>(<gray>%coords%<dark_gray>)
+structure_overlap = "<dark_red>❌ <red>Нельзя собрать <white>%structure%</white><red> здесь: это место уже занимает <white>%existing%</white><red>! <dark_gray>(<gray>%coords%<dark_gray>)"
 # Default: <dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%…
 reactor_stats_click = "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% MPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%"
 # Default: <dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>%coords% <dark_gray>[%status%<dark…
@@ -1498,6 +1506,14 @@ lamp_already_active = "<yellow>The lamp is already assembled at this place!"
 generator_already_active = "<yellow>The generator is already assembled at this place!"
 # Default: <dark_red>❌ <red>No cable near the blast furnace!
 generator_no_cable = "<dark_red>❌ <red>No cable near the blast furnace!"
+# Assembly refusal: the matched position already belongs to an assembled structure.
+# Placeholders: %structure% (localized structure name from structures.names), %coords%
+# Default: <yellow>A structure is already assembled here: <white>%structure%</white><yellow>! <dark_gray>(<gray>%coords%<dark_gray>)
+structure_already_assembled = "<yellow>A structure is already assembled here: <white>%structure%</white><yellow>! <dark_gray>(<gray>%coords%<dark_gray>)"
+# Assembly refusal: the new structure would stand INSIDE another structure (each axis is checked).
+# Placeholders: %structure% (being assembled), %existing% (occupying structure), %coords%
+# Default: <dark_red>❌ <red>Cannot assemble <white>%structure%</white><red> here: <white>%existing%</white><red> already occupies this place! <dark_gray>(<gray>%coords%<dark_gray>)
+structure_overlap = "<dark_red>❌ <red>Cannot assemble <white>%structure%</white><red> here: <white>%existing%</white><red> already occupies this place! <dark_gray>(<gray>%coords%<dark_gray>)"
 # Default: <dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%…
 reactor_stats_click = "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% MPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%"
 # Default: <dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Active <dark_gray>| <white>%coords% <dark_gray>[%status%<da…

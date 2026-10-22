@@ -5,6 +5,7 @@ import com.ultimateimprovments.mechanics.environment.lightning.LightningManager;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningStructure;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetStructure;
+import com.ultimateimprovments.structure.StructureOccupancy;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.StructureTemplate;
@@ -34,6 +35,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+
+import java.util.List;
 
 public class ReactorListener implements Listener {
 
@@ -331,7 +334,6 @@ public class ReactorListener implements Listener {
             StructureTemplate.initAll();
             templatesLoaded = true;
         }
-
         // Check: were there template loading errors
         StructureTemplate lightningTmpl = StructureTemplate.get("lightning");
         StructureTemplate reactorTmpl = StructureTemplate.get("darkfusionreactor");
@@ -363,19 +365,19 @@ public class ReactorListener implements Listener {
                     "<gray>Check the server console for details.")));
         }
 
+        // The block the clicked frame is attached to. Only the structure that
+        // OWNS this block is the one the player interacts with — a build standing
+        // nearby never owns it, so its matching volume must not hijack the click.
+        Location attachedLoc = LocationUtil.normalize(
+                frame.getLocation().getBlock().getRelative(
+                        frame.getFacing().getOppositeFace()
+                ).getLocation());
+
         // =========================
         // 1a. Lightning template
         // =========================
         if (lightningTmpl != null) {
-            Location center = lightningTmpl.findMatch(frameLoc, 5);
-            if (center == null) {
-                // Retry close to the frame: the anchor block of the template may sit
-                // slightly outside the strict scan grid of findMatch.
-                var best = lightningTmpl.bestMatch(frameLoc, 5);
-                if (best != null && best.matched()) {
-                    center = best.center();
-                }
-            }
+            Location center = resolveAssemblyCenter(lightningTmpl, frameLoc, attachedLoc, 5);
             if (center != null) {
                 if (LightningManager.isActive(center)) {
                     boolean enabled = LightningManager.isEnabled(center);
@@ -384,6 +386,12 @@ public class ReactorListener implements Listener {
                             ? "lightning_toggled_off" : "lightning_toggled_on",
                             enabled ? "<red>❌ <white>Lightning structure turned off!"
                                     : "<green>✔ <white>Lightning structure turned on!")));
+                    return;
+                }
+                List<StructureOccupancy.Conflict> conflicts =
+                        StructureOccupancy.conflictsAt(lightningTmpl, center);
+                if (!conflicts.isEmpty()) {
+                    denyAssembly(player, lightningTmpl, center, conflicts);
                     return;
                 }
                 player.sendMessage(MessageUtil.parse(msg("lightning_detected",
@@ -397,19 +405,15 @@ public class ReactorListener implements Listener {
         // 1b. Reactor template
         // =========================
         if (reactorTmpl != null) {
-            Location center = reactorTmpl.findMatch(frameLoc, 5);
-            if (center == null) {
-                var best = reactorTmpl.bestMatch(frameLoc, 5);
-                if (best != null && best.matched()) {
-                    center = best.center();
-                }
-            }
+            Location center = resolveAssemblyCenter(reactorTmpl, frameLoc, attachedLoc, 5);
             if (center != null) {
-                // Multi-reactor: only a reactor at THIS place is a duplicate —
-                // a different location assembles its own reactor
-                if (ReactorManager.getAt(center) != null) {
-                    player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
-                            "<yellow>The reactor is already active at this place!")));
+                // Multi-reactor: only a structure that would OCCUPY THIS PLACE is
+                // a duplicate — a build standing next to an existing reactor has
+                // its own free volume and assembles its own reactor.
+                List<StructureOccupancy.Conflict> conflicts =
+                        StructureOccupancy.conflictsAt(reactorTmpl, center);
+                if (!conflicts.isEmpty()) {
+                    denyAssembly(player, reactorTmpl, center, conflicts);
                     return;
                 }
                 ReactorManager.setPendingAssembly(player, center, frame, "dark_synthesis");
@@ -424,17 +428,12 @@ public class ReactorListener implements Listener {
         // 1c. Compact nuclear reactor template
         // =========================
         if (nuclearTmpl != null) {
-            Location center = nuclearTmpl.findMatch(frameLoc, 5);
-            if (center == null) {
-                var best = nuclearTmpl.bestMatch(frameLoc, 5);
-                if (best != null && best.matched()) {
-                    center = best.center();
-                }
-            }
+            Location center = resolveAssemblyCenter(nuclearTmpl, frameLoc, attachedLoc, 5);
             if (center != null) {
-                if (NuclearReactorManager.getAt(center) != null) {
-                    player.sendMessage(MessageUtil.parse(msg("nuclear_reactor.already_active",
-                            "<yellow>A nuclear reactor is already active at this place!")));
+                List<StructureOccupancy.Conflict> conflicts =
+                        StructureOccupancy.conflictsAt(nuclearTmpl, center);
+                if (!conflicts.isEmpty()) {
+                    denyAssembly(player, nuclearTmpl, center, conflicts);
                     return;
                 }
                 player.sendMessage(MessageUtil.parse(msg("nuclear_reactor.detected",
@@ -450,14 +449,9 @@ public class ReactorListener implements Listener {
         // =========================
         // 2. CHECK: MAGNET (LODESTONE — not NBT, but multi-block)
         // =========================
-        Location attachedLoc = LocationUtil.normalize(
-                frame.getLocation().getBlock().getRelative(
-                        frame.getFacing().getOppositeFace()
-                ).getLocation()
-        );
         if (attachedLoc != null && attachedLoc.getBlock().getType() == Material.LODESTONE) {
             if (MagnetManager.isActive(attachedLoc)) {
-                player.sendMessage(MessageUtil.parse(msg("magnet_already_active",
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg("magnet_already_active",
                         "<yellow>A magnet is already active at this place!")));
                 return;
             }
@@ -471,18 +465,13 @@ public class ReactorListener implements Listener {
         // =========================
         // 3. CHECK: BATTERY (WAXED_COPPER_GRATE + frame)
         // =========================
-        Location attachedLoc2 = LocationUtil.normalize(
-                frame.getLocation().getBlock().getRelative(
-                        frame.getFacing().getOppositeFace()
-                ).getLocation()
-        );
-        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Materials.WAXED_COPPER_GRATE) {
-            if (BatteryManager.isActive(attachedLoc2)) {
-                player.sendMessage(MessageUtil.parse(msg("battery_already_active",
+        if (attachedLoc != null && attachedLoc.getBlock().getType() == Materials.WAXED_COPPER_GRATE) {
+            if (BatteryManager.isActive(attachedLoc)) {
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg("battery_already_active",
                         "<yellow>A battery is already assembled at this place!")));
                 return;
             }
-            BatteryManager.assemble(attachedLoc2, player);
+            BatteryManager.assemble(attachedLoc, player);
             return;
         }
 
@@ -494,13 +483,13 @@ public class ReactorListener implements Listener {
         // are deliberately NOT a trigger, so a decorative frame on a cable
         // stays harmless.
         // =========================
-        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Materials.WAXED_COPPER_BULB) {
-            if (LightManager.isActive(attachedLoc2)) {
-                player.sendMessage(MessageUtil.parse(msg("lamp_already_active",
+        if (attachedLoc != null && attachedLoc.getBlock().getType() == Materials.WAXED_COPPER_BULB) {
+            if (LightManager.isActive(attachedLoc)) {
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg("lamp_already_active",
                         "<yellow>A lamp is already assembled at this place!")));
                 return;
             }
-            LightManager.assemble(attachedLoc2, player, frame);
+            LightManager.assemble(attachedLoc, player, frame);
             return;
         }
 
@@ -526,7 +515,7 @@ public class ReactorListener implements Listener {
                 GeneratorManager.assembleFromFrame(player, generatorLoc, frame);
                 return;
             } else {
-                player.sendMessage(MessageUtil.parse(msg("generator_no_cable",
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg("generator_no_cable",
                         "<dark_red>❌ <red>No cable near the electric furnace!")));
                 return;
             }
@@ -579,6 +568,66 @@ public class ReactorListener implements Listener {
                             "<dark_gray> • <gray>...and %count% more fixes")
                     .replace("%count%", String.valueOf(allFixes.size() - limit))));
         }
+    }
+
+    // =========================
+    // ASSEMBLY CENTER / REFUSAL HELPERS
+    // =========================
+    /**
+     * Resolves the template center the clicked frame belongs to.
+     * <ol>
+     *   <li><b>First</b> an exact match whose VOLUME (all 3 coordinates) does not
+     *       overlap any assembled structure is returned. A build standing next
+     *       to an existing one — even with no gap — therefore gets assembled at
+     *       its OWN position; the neighbouring structure's matching volume can
+     *       no longer be mistaken for it.</li>
+     *   <li><b>Only when every match is already occupied</b> the match that
+     *       actually OWNS the block the frame is attached to is returned (the
+     *       structure the player is interacting with) — that is the genuine
+     *       "already assembled here" / lightning-toggle case.</li>
+     * </ol>
+     *
+     * @return the center to assemble / report on, or {@code null} when this
+     *         template does not match the clicked frame at all
+     */
+    private static Location resolveAssemblyCenter(StructureTemplate template, Location frameLoc,
+                                                  Location attachedLoc, int radius) {
+        Location free = template.findMatch(frameLoc, radius,
+                center -> StructureOccupancy.isFree(template, center));
+        if (free != null) return free;
+        if (attachedLoc == null) return null;
+        return template.findMatch(frameLoc, radius,
+                center -> template.isSolidCellAt(center, attachedLoc));
+    }
+
+    /**
+     * Refuses the assembly because the matched position already belongs to an
+     * assembled structure. The message always carries the global UI prefix and
+     * the LOCALIZED structure display name (config {@code structures.names.*}),
+     * never a hardcoded structure word.
+     */
+    private static void denyAssembly(Player player, StructureTemplate template, Location center,
+                                     List<StructureOccupancy.Conflict> conflicts) {
+        StructureOccupancy.Conflict samePlace = null;
+        for (StructureOccupancy.Conflict conflict : conflicts) {
+            if (conflict.at(center)) {
+                samePlace = conflict;
+                break;
+            }
+        }
+        if (samePlace != null) {
+            player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg("structure_already_assembled",
+                            "<yellow>Structure <white>%structure%</white> <yellow>is already assembled at this place! <dark_gray>(%coords%)")
+                    .replace("%structure%", samePlace.displayName())
+                    .replace("%coords%", coords(samePlace.anchor()))));
+            return;
+        }
+        StructureOccupancy.Conflict existing = conflicts.get(0);
+        player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg("structure_overlap",
+                        "<dark_red>❌ <red>Cannot assemble <white>%structure%</white><red> here: <white>%existing%</white> <red>already occupies this place! <dark_gray>(%coords%)")
+                .replace("%structure%", template.getDisplayName())
+                .replace("%existing%", existing.displayName())
+                .replace("%coords%", coords(existing.anchor()))));
     }
 
     // =========================
