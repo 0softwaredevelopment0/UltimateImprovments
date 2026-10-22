@@ -31,6 +31,18 @@ public class StructureChunkListener implements Listener {
     @EventHandler
     public void onWorldLoad(WorldLoadEvent e) {
         rebuildAllManagers();
+
+        // A late world (Multiverse and friends) may finish loading its chunks
+        // after this event, and the managers deliberately skip structures whose
+        // chunks they cannot see (a partial view is never purged). Force-load
+        // the registered structure chunks, then rebuild once more.
+        Plugin plugin = Main.getInstance();
+        if (plugin == null) return;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            StructureChunkTracker.loadTrackedChunks();
+            rebuildAllManagers();
+        }, 100L);
+        Bukkit.getScheduler().runTaskLater(plugin, StructureChunkListener::rebuildAllManagers, 600L);
     }
 
     // ════════════════════════════════════════

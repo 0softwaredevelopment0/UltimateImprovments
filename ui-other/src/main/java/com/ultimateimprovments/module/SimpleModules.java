@@ -9,7 +9,6 @@ import com.ultimateimprovments.core.TaskManager;
 import com.ultimateimprovments.database.AsyncAutoSaveManager;
 import com.ultimateimprovments.database.DatabaseInit;
 import com.ultimateimprovments.database.DatabaseManager;
-import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.energy.generation.reactor.ReactorListener;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;

@@ -3,6 +3,68 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.14] - since 1.8.5-alpha.13 (2026-10-22)
+
+> **Alpha channel** — the unfinished multiblock lamp is replaced by the adaptive
+> electric light structure on top of `1.8.5-alpha.13`.
+
+### Added
+- **Multiblock electric lamp (adaptive light structure).** The old
+  `LightManager` is gone; the lamp is now a proper adaptive multiblock in the
+  energy network:
+  - **Assembly** — a one-shot item frame on a **waxed copper bulb** assembles
+    the whole connected component of **waxed copper bulbs** and **waxed
+    chiseled copper** blocks into one structure (flood fill over both
+    materials, chunks are never force-loaded). A valid structure has more than
+    one block in total, at least **one bulb** and at least **one junction**;
+    the frame breaks and drops after a successful assembly, an invalid attempt
+    leaves it intact and explains what is missing.
+  - **Energy** — every lamp consumes **1 ⚡/s**, so the structure consumes
+    `lamps ⚡/s`. The local buffer holds **5 × lamps ⚡** (five seconds of
+    autonomy). The structure refills the buffer from the cable network through
+    its junction ports whenever the reserve can no longer cover the next second
+    (chiseled copper is the `CABLE` node of the network), and goes dark when the
+    network cannot deliver. The drained amount is accounted **gross**
+    (`EnergyFlow.pullGross`): the structure stores exactly the energy the
+    network gave up, so a far-away battery does not make a lamp cost more than
+    its advertised 1 ⚡/s (plain `pull` keeps its distance-based wire loss for
+    every other consumer). Nothing is consumed while the lamps are off.
+  - **Redstone** — **every** junction block of the structure must be powered
+    (directly or indirectly). One unpowered junction switches the whole
+    structure off; no energy is spent and the buffer is kept, so restoring the
+    signal relights the lamps immediately. A redstone component event next to a
+    structure block is applied at once through the new `LightRedstoneListener`
+    where the server reports one (dust/plate circuits); a lever or torch
+    attached to a junction is picked up by the one-second energy tick. The
+    copper bulb's own `powered` property is normalised while the structure
+    drives its `lit` state (a copper bulb is a redstone toggle block, the
+    manager has to stay authoritative).
+  - **Persistence** — only the bulbs get `light` rows in
+    `structure_markers`; the junctions keep their own `cable` rows (a junction
+    that appeared without our place event gets one), otherwise the energy
+    network would lose those nodes on the next restart. The light caches are
+    world-aware, a rebuild never purges rows it could not verify (late world
+    load / unloaded chunks) and drops rows whose block is gone. Breaking any
+    block of the structure dismantles it; placing a bulb/junction against an
+    assembled structure joins it, and a block that bridges two structures
+    merges them (buffers are summed and clamped to the new capacity).
+  - **Caveat** — a fixture touching a longer chiseled-copper run absorbs that
+    whole run as junctions (they are all structure members and all must be
+    powered), so connect the grid to the fixture with lightning-rod cable.
+
+### Changed
+- **The light manager now runs once per second** instead of every tick
+  (`UIEnergy` schedules it at 20 ticks) and is shut down cleanly: disabling or
+  soft-reloading UI-Energy turns the burning lamps off instead of leaving the
+  world with lit bulbs and no manager.
+
+### Removed
+- The unfinished lamp code: the unreachable `REDSTONE_LAMP` frame branch
+  (the manager only ever looked at waxed copper bulbs), the per-block
+  `power × 2` buffer, the `isBlockPowered()` polling of bulbs (now the
+  junctions are polled), the per-structure `StructureMarker.place()` storm and
+  the unused 1-tick lighting queue.
+
 ## [1.8.5-alpha.13] - since 1.8.5-alpha.12 (2026-10-21)
 
 > **Alpha channel** — behaviour fix for the sculk wither on top of `1.8.5-alpha.12`.
