@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.5-alpha.10
+**Version:** 1.8.5-alpha.17
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -428,6 +428,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 - Config: `[nuclear_reactor]` in UI-MBS.toml (`enabled`, `energy_per_second`, `fuel_interval_seconds`, `fuel_item`, `log`, `buffer_capacity`, `heat_rate`, `work_temp`, `max_temp`, `passive_cool_rate`, `passive_cool_*`, `temp_limit_*`, `cooling_*`, `meltdown_seconds`, `explosion_power`, `alert_radius`).
 
 ### Energy Network
+- **Structure assembly (item frame trigger)** — SHIFT+RMB on a one-shot item frame runs a **full NBT template check first**: the assembler tries every bundled multi-block template (lightning structure, DFC, CER) before any adaptive single-block structure (battery, electric lamp, magnet, generator). If the clicked block belongs to a template whose solid body is at least a quarter built, the click is an assembly attempt of that structure — a complete build assembles, an incomplete one answers with the **closest structure and the exact place / break / replace list** instead of a lamp or battery error. That is what keeps a frame hung on a DFC control bulb (waxed copper bulb) from starting an electric lamp on the reactor's own blocks; a standalone lamp or battery still assembles normally.
 - **Cables** — waxed lightning rod (straight) / waxed chiseled copper (corner).
 - **Batteries** — a multi-block structure, not a single block: put a one-shot item frame on a waxed copper grate and every copper grate connected to it becomes **one adaptive battery**. Capacity is **100 000 ⚡ per block** (config `energy.battery.max_energy`), stored in **one shared pool** for the whole structure: charging through any face charges the battery, discharging through any face drains the same reserve, and the multimeter shows the same charge on every block. The structure shares one mode. A copper grate placed on its own is inert — no node, no storage.
 - **Battery modes** — a redstone pulse on **any** block of the cluster cycles Charge → Charge & Discharge → Discharge. Only a real redstone event counts (lever, button, dust, torch, plate changing 0 → powered); indirect power from neighbouring circuits and the charging process itself are ignored, and a short debounce collapses a whole dust line into one cycle. The mode is saved in SQLite and survives a restart; SHIFT+RMB with an empty hand still works as a manual shortcut.
