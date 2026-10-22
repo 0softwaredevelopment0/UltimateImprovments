@@ -188,6 +188,14 @@ public class MultimeterListener implements Listener {
 
             int transferred = node.getAndResetTransferred();
             player.sendMessage(MessageUtil.parse("<gold>Type: Junction</gold>"));
+            // A copper port can be a storage node: the compact nuclear
+            // reactor's output buffer lives on its bottom port (the only
+            // GENERATOR-typed junction in the family), so it reads like the
+            // generator buffer instead of hiding the charge behind 0 ⚡/tick.
+            if (node.getType() == NodeType.GENERATOR) {
+                player.sendMessage(MessageUtil.parse("<gold>Buffer: </gold><white>"
+                        + node.getEnergy() + "/" + node.getMaxEnergy() + " ⚡</white>"));
+            }
             player.sendMessage(MessageUtil.parse("<gold>Transfer rate: </gold><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<gold>Connections: </gold><white>" + node.getConnectionKeys().size() + "</white>"));
             player.sendMessage(MessageUtil.parse("<gold>Mode: </gold><white>Omni-directional</white>"));

@@ -389,7 +389,11 @@ public class BatteryManager implements Listener {
         if (loc == null) return;
         long key = toKey(loc);
         if (locationToCluster.containsKey(key)) {
-            if (player != null) player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<yellow>Battery already assembled here!"));
+            if (player != null) {
+                player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse(
+                        com.ultimateimprovments.util.MessageUtil.PREFIX
+                                + "<yellow>Battery already assembled here!"));
+            }
             return;
         }
 

@@ -186,6 +186,8 @@ final class ConfigRules {
             integer("nuclear_reactor.fuel_interval_seconds", 1, 3600, "Seconds one fuel item lasts"),
             notBlank("nuclear_reactor.fuel_item", 64),
             bool("nuclear_reactor.log"),
+            integer("nuclear_reactor.buffer_capacity", 1, Integer.MAX_VALUE,
+                    "Ёмкость выходного буфера CER (энергия без батарей в сети)"),
             // Thermal model: heating, working point, meltdown
             integer("nuclear_reactor.heat_rate", 0, 10000, "Heating rate in degrees per second"),
             integer("nuclear_reactor.work_temp", 1, 1000000, "Working temperature (coolant drain starts here)"),

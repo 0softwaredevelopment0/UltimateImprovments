@@ -4,9 +4,11 @@ import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
+import com.ultimateimprovments.energy.transfer.cable.NodeType;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.LocationUtil;
+import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.StructureTemplate;
 import com.ultimateimprovments.util.StructuresMessages;
@@ -141,12 +143,43 @@ public final class NuclearReactorManager {
         Location norm = LocationUtil.normalize(anchor);
         if (norm == null) return;
 
+        releaseOutputNode(norm);
+
         NuclearReactor removed = reactors.remove(norm);
         StructureMarker.removeAt(norm);
         NuclearReactorPersistence.delete(norm);
         NuclearReactorAudit.reset(norm);
         if (removed != null) {
             ConsoleLogger.info("[NuclearReactor] Disassembled at " + coords(norm));
+        }
+    }
+
+    /**
+     * Drops the reactor's RAM-only output buffer when the structure goes away.
+     * <p>
+     * Explosions never fire {@code BlockBreakEvent}, so without this the port
+     * node would keep its charge after a detonation and a rebuilt reactor — or
+     * any consumer still connected to that spot — would inherit it. The node is
+     * drained always; when the copper port block is still standing (a meltdown
+     * sealed with a wrong block, a dismantled-but-not-destroyed cube) the node
+     * is kept as a plain cable, otherwise it is removed together with its
+     * registry row.
+     */
+    private static void releaseOutputNode(Location anchor) {
+        Location port = LocationUtil.normalize(anchor.clone().add(0, -2, 0));
+        if (port == null || port.getWorld() == null) return;
+
+        CableNode node = CableNetwork.getNode(port);
+        if (node == null) return;
+
+        node.setEnergy(0);
+        boolean portPresent = port.getWorld()
+                .isChunkLoaded(port.getBlockX() >> 4, port.getBlockZ() >> 4)
+                && port.getBlock().getType() == Materials.WAXED_CHISELED_COPPER;
+        if (portPresent) {
+            node.setType(NodeType.CABLE);
+        } else {
+            CableNetwork.removeNode(port);
         }
     }
 
@@ -232,6 +265,61 @@ public final class NuclearReactorManager {
         return null;
     }
 
+    /**
+     * The reactor's own output buffer, living on the bottom copper port.
+     * <p>
+     * {@link com.ultimateimprovments.energy.transfer.cable.EnergyFlow#push}
+     * settles energy only at batteries, while every consumer in the family
+     * (electrical lamp, electric furnace, accelerator, DFC case junctions)
+     * <b>pulls</b> — and a pull can only drain a node that actually stores
+     * energy. Without a battery in the network the reactor therefore produced
+     * nothing at all (the space gate reported the network as full). The coal
+     * generator solves the same problem with its {@code GENERATOR}-typed
+     * leftover buffer; the reactor does the same here.
+     * <p>
+     * The port is safe as a storage node: it is the template's single waxed
+     * chiseled copper cell and a network leaf (its bottom face is the only
+     * exposed one and the cable attaches there), so it never routes energy
+     * between two cable runs. A player-placed port — or one rebuilt from its
+     * {@code cable} marker row after a restart — starts out as a plain
+     * {@code CABLE} node, so the type is re-asserted on every pass. The node
+     * itself is RAM-only, exactly like the generator's buffer.
+     * <p>
+     * Unlike the generator's leftover buffer, this one is deliberately
+     * <b>not</b> re-offered to the batteries: with a battery in the network the
+     * reactor pushes to it first anyway, so the buffer only fills when the
+     * batteries are full, and keeping the charge there makes it a local reserve
+     * that the nearest consumers drain first (breadth-first pull order).
+     *
+     * @return the buffer node, or {@code null} when the port block is gone
+     *         (damaged structure) or the world is unavailable
+     */
+    public static CableNode ensureOutputNode(NuclearReactor reactor) {
+        if (reactor == null) return null;
+
+        Location port = LocationUtil.normalize(reactor.getEnergyPortLocation());
+        if (port == null || port.getWorld() == null) return null;
+        if (port.getBlock().getType() != Materials.WAXED_CHISELED_COPPER) return null;
+
+        CableNetwork.ensureNode(port, NodeType.GENERATOR);
+        CableNode node = CableNetwork.getNode(port);
+        if (node == null) return null;
+
+        if (node.getType() != NodeType.GENERATOR) node.setType(NodeType.GENERATOR);
+        node.setMaxEnergy(bufferCapacity());
+        return node;
+    }
+
+    /**
+     * Leftover output buffer of one reactor (config:
+     * {@code nuclear_reactor.buffer_capacity}). Whatever the cable network
+     * cannot take waits here until a consumer pulls it, so a direct
+     * reactor → consumer setup works without a battery.
+     */
+    public static int bufferCapacity() {
+        return Math.max(1, cfgInt("buffer_capacity", 2000));
+    }
+
     // =========================
     // ASSEMBLY
     // =========================
@@ -264,8 +352,13 @@ public final class NuclearReactorManager {
         NuclearReactor existing = reactors.get(anchor);
         if (existing != null) {
             if (player != null) {
-                player.sendMessage(MessageUtil.parse(msg("already_active",
-                        "<yellow>A nuclear reactor is already active at this place!")));
+                // Localized structure name — never a hardcoded "nuclear reactor"
+                // word; the global UI prefix is part of every refusal.
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                        + StructuresMessages.get("structure_already_assembled",
+                                "<yellow>A structure is already assembled here: <white>%structure%</white><yellow>! <dark_gray>(%coords%)")
+                        .replace("%structure%", template.getDisplayName())
+                        .replace("%coords%", coords(anchor))));
             }
             return existing;
         }
@@ -679,6 +772,15 @@ public final class NuclearReactorManager {
                         "<aqua>Output: </aqua><white>%energy% ⚡/s</white>")
                 .replace("%energy%", String.valueOf(energyPerSecond()))));
 
+        // The output buffer is where the energy the network cannot take waits
+        // for a direct consumer — the same "Buffer: n/max" line as the coal
+        // generator's readout.
+        CableNode output = ensureOutputNode(reactor);
+        player.sendMessage(MessageUtil.parse(p + msg("meter_buffer",
+                        "<aqua>Buffer: </aqua><white>%energy%/%max% ⚡</white>")
+                .replace("%energy%", String.valueOf(output != null ? output.getEnergy() : 0))
+                .replace("%max%", String.valueOf(output != null ? output.getMaxEnergy() : 0))));
+
         player.sendMessage(MessageUtil.parse(p + msg("meter_structure",
                         "<aqua>Structure: </aqua>%state%")
                 .replace("%state%", reactor.getStatus() == NuclearReactor.Status.DAMAGED
@@ -736,7 +838,8 @@ public final class NuclearReactorManager {
             case UNPOWERED -> msg("status_unpowered", "<red>❌ No redstone signal on the center block");
             case NO_FUEL -> msg("status_no_fuel", "<yellow>⚠ No emeralds in the barrel");
             case NO_CABLE -> msg("status_no_cable", "<yellow>⚠ No cable under the bottom port");
-            case OUTPUT_BLOCKED -> msg("status_output_blocked", "<yellow>⚠ The network is full — the reactor is switched off");
+            case OUTPUT_BLOCKED -> msg("status_output_blocked",
+                    "<yellow>⚠ The network and the output buffer are full — the reactor is switched off");
             case DAMAGED -> msg("status_damaged", "<dark_red>✖ Structure damaged");
             case MELTDOWN -> msg("status_meltdown",
                             "<dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>")

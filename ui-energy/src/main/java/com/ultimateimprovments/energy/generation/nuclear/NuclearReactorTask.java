@@ -14,11 +14,19 @@ import org.bukkit.scheduler.BukkitRunnable;
  * One-second pass over every assembled compact nuclear reactor.
  * <p>
  * Energy gates, in order: chunk loaded → template intact → cable under the
- * bottom port → the network has room for the output (a saturated network
- * switches the reactor off) → redstone-powered center block → fuel available.
- * Only when all of them are open is energy pushed into the network, and the
- * fuel countdown advances <b>proportionally to the accepted energy</b>: a full
- * or missing network never wastes an emerald.
+ * bottom port → the network (or the reactor's own output buffer) has room for
+ * the output → redstone-powered center block → fuel available. Only when all of
+ * them are open is energy pushed into the network, and the fuel countdown
+ * advances <b>proportionally to the accepted energy</b>: a full or missing
+ * network never wastes an emerald.
+ * <p>
+ * Whatever the network cannot take (no battery at all, or every battery full)
+ * stays in the reactor's own {@code GENERATOR}-typed buffer on the bottom
+ * copper port instead of being lost. Every consumer of the family pulls its
+ * energy through the cable network, and a pull can drain that buffer directly —
+ * so a reactor → lamps/wires setup works without a battery, exactly like a
+ * coal generator with its leftover buffer. See
+ * {@link NuclearReactorManager#ensureOutputNode(NuclearReactor)}.
  * <p>
  * Thermal model (same shape as the DFC):
  * <ul>
@@ -116,12 +124,34 @@ public class NuclearReactorTask extends BukkitRunnable {
                 // The bottom copper port must touch a cable node.
                 CableNode node = NuclearReactorManager.findPortNode(reactor.getEnergyPortLocation());
 
+                // The port is also the reactor's own output buffer: energy the
+                // network cannot take is kept there for a consumer that pulls
+                // straight through the cable (a lamp / furnace setup without a
+                // battery). Created/typed before the gate so the gate can see
+                // its free room.
+                CableNode output = NuclearReactorManager.ensureOutputNode(reactor);
+                int bufferFree = output == null
+                        ? 0
+                        : Math.max(0, output.getMaxEnergy() - output.getEnergy());
+                // One full production pass must fit somewhere — in the network
+                // (batteries) or in the buffer. A deliberately small buffer
+                // still opens the gate: the pass is then partially accepted and
+                // the fuel burns proportionally to what was taken. Requiring a
+                // full pass on the network side too keeps a nearly full battery
+                // from accepting a few volts while the rest of the pass is
+                // destroyed on a full buffer.
+                int passRoom = output == null
+                        ? 0
+                        : Math.min(energyPerSecond, Math.max(1, output.getMaxEnergy()));
+
                 if (node == null) {
                     status = NuclearReactor.Status.NO_CABLE;
-                } else if (!EnergyFlow.hasSpace(node.getLocation(), 1)) {
-                    // Gate 1 — the network is saturated: switch the reactor
-                    // OFF before redstone and fuel are even considered. It
-                    // resumes automatically on the first second with free room.
+                } else if (!EnergyFlow.hasSpace(node.getLocation(), energyPerSecond)
+                        && bufferFree < passRoom) {
+                    // Gate 1 — neither the network nor the reactor's own buffer
+                    // can take a full production pass: switch the reactor OFF
+                    // before redstone and fuel are even considered. It resumes
+                    // automatically on the first second with free room.
                     status = NuclearReactor.Status.OUTPUT_BLOCKED;
                 } else {
                     // Gate 2 — the reinforced deepslate in the center must be
@@ -153,11 +183,34 @@ public class NuclearReactorTask extends BukkitRunnable {
                         }
 
                         int accepted = EnergyFlow.push(node.getLocation(), request);
+
+                        // Overflow: the network has no battery with free room
+                        // (or no battery at all) — keep the energy in the
+                        // reactor's own buffer instead of losing it. A consumer
+                        // pulling through the cable drains that buffer, so the
+                        // reactor feeds lamps and machines directly.
+                        int leftover = request - accepted;
+                        if (leftover > 0 && output != null) {
+                            int before = output.getEnergy();
+                            output.addEnergy(leftover);
+                            int buffered = output.getEnergy() - before;
+                            if (buffered > 0) {
+                                accepted += buffered;
+                                // Activity trail for the multimeter: the energy
+                                // really moved, into the buffer.
+                                output.addTransferred(buffered);
+                            }
+                        }
+
                         if (accepted <= 0) {
                             status = NuclearReactor.Status.OUTPUT_BLOCKED;
                         } else {
-                            int burnedTicks = (int) Math.round(
-                                    (double) PASS_TICKS * accepted / energyPerSecond);
+                            // Never produce free energy: a tiny partial
+                            // acceptance (nearly full buffer) rounds down to
+                            // zero ticks, so at least one tick of fuel is
+                            // always accounted for the energy that moved.
+                            int burnedTicks = Math.max(1, (int) Math.round(
+                                    (double) PASS_TICKS * accepted / energyPerSecond));
                             reactor.burnFuelTicks(Math.min(PASS_TICKS, burnedTicks));
                             running = true;
                             status = NuclearReactor.Status.RUNNING;
