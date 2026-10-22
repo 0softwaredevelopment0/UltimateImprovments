@@ -106,7 +106,9 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
         }, 200L, 200L);
 
         LightManager.init();
-        lightTask = Bukkit.getScheduler().runTaskTimer(main, LightManager::tick, 0L, 1L);
+        // Once per second (20 real ticks): the light structure consumes 1 ⚡/s
+        // per lamp and tops its buffer up from the network.
+        lightTask = Bukkit.getScheduler().runTaskTimer(main, LightManager::tick, 20L, 20L);
 
         // Bridge for UI-MBS structure mechanics (lightning cooking energy cost)
         com.ultimateimprovments.mbs.api.MbsEnergy.register(new MbsEnergyBridge());
@@ -133,6 +135,7 @@ public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core
         ReactorManager.shutdown();
         NuclearReactorManager.shutdown();
         ElectricFurnaceManager.shutdown();
+        LightManager.shutdown();
         BatteryManager.shutdown();
         com.ultimateimprovments.mbs.api.MbsEnergy.unregister();
         org.bukkit.event.HandlerList.unregisterAll(this);

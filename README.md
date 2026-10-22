@@ -38,7 +38,7 @@
 
 ### Technology & Machinery
 - **Dark Fusion Reactor** — multi-block structure with temperature/pressure/integrity simulation, wear, meltdown
-- **Energy network** — cables, batteries, generators, electric furnace, energy workbench
+- **Energy network** — cables, batteries, generators, electric furnace, energy workbench, adaptive electric lamps
 - **Custom crafting** — 20+ craftable items (only craftable in a Crafter, preview in the vanilla workbench)
 - **Particle accelerator**, wireless redstone, magnet & lightning structures
 
