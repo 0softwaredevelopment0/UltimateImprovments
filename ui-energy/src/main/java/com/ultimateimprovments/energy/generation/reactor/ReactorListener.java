@@ -447,7 +447,39 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 2. CHECK: MAGNET (LODESTONE — not NBT, but multi-block)
+        // 2. FULL STRUCTURE CHECK vs ADAPTIVE SINGLE-BLOCK STRUCTURES
+        // The adaptive trigger blocks are ordinary cells of the NBT templates
+        // too: the DFC is built from 12 waxed copper bulbs and 9 waxed copper
+        // grates, and its roof control bulbs sit right next to the chiseled
+        // copper junctions. Without this step a frame hung on a DFC control
+        // bulb assembled (or tried to assemble) an electric lamp, and the
+        // player never saw the real fix list of the reactor: the frame looked
+        // like a lamp trigger even though the structure around it was almost
+        // complete. So the full template check runs BEFORE any adaptive
+        // branch: the candidate must OWN the clicked block and already have at
+        // least CLAIM_MIN_SOLID_PERCENT of its solid body in place, otherwise
+        // the adaptive structure interpretation stays in charge.
+        // =========================
+        Material attachedType = attachedLoc != null ? attachedLoc.getBlock().getType() : null;
+        Location generatorLoc = LocationUtil.normalize(
+                frame.getLocation().clone().add(0, -1, 0));
+
+        boolean adaptiveTrigger = attachedType == Material.LODESTONE
+                || attachedType == Materials.WAXED_COPPER_GRATE
+                || attachedType == Materials.WAXED_COPPER_BULB
+                || (generatorLoc != null
+                    && generatorLoc.getBlock().getType() == Materials.BLAST_FURNACE);
+        if (adaptiveTrigger) {
+            StructureTemplate.BestCandidate owning =
+                    StructureTemplate.findOwningCandidate(frameLoc, 5, attachedLoc);
+            if (StructureTemplate.claimsFrame(owning, attachedLoc)) {
+                reportClosestStructure(player, owning);
+                return;
+            }
+        }
+
+        // =========================
+        // 3. CHECK: MAGNET (LODESTONE — not NBT, but multi-block)
         // =========================
         if (attachedLoc != null && attachedLoc.getBlock().getType() == Material.LODESTONE) {
             if (MagnetManager.isActive(attachedLoc)) {
@@ -463,7 +495,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 3. CHECK: BATTERY (WAXED_COPPER_GRATE + frame)
+        // 4. CHECK: BATTERY (WAXED_COPPER_GRATE + frame)
         // =========================
         if (attachedLoc != null && attachedLoc.getBlock().getType() == Materials.WAXED_COPPER_GRATE) {
             if (BatteryManager.isActive(attachedLoc)) {
@@ -476,7 +508,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 4. CHECK: LIGHT MULTIBLOCK (waxed copper bulb + frame)
+        // 5. CHECK: LIGHT MULTIBLOCK (waxed copper bulb + frame)
         // The lamp is an adaptive structure: waxed copper bulbs plus waxed
         // chiseled copper junctions (the energy ports of the structure). A
         // frame on a bulb assembles the whole connected component; junctions
@@ -494,12 +526,9 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 5. CHECK: GENERATOR (BLAST_FURNACE + frame on top)
+        // 6. CHECK: GENERATOR (BLAST_FURNACE + frame on top)
         // =========================
-        // The block under the frame
-        Location generatorLoc = LocationUtil.normalize(
-                frame.getLocation().clone().add(0, -1, 0)
-        );
+        // The block under the frame (resolved above, for the adaptive check)
         if (generatorLoc != null
                 && generatorLoc.getBlock().getType() == Materials.BLAST_FURNACE
                 && GeneratorStructure.isValid(generatorLoc)) {
@@ -522,9 +551,20 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 6. NOTHING RECOGNIZED — show the closest structure and how to fix it
+        // 7. NOTHING RECOGNIZED — show the closest structure and how to fix it
         // =========================
-        StructureTemplate.BestCandidate best = StructureTemplate.findBestCandidate(frameLoc, 5);
+        reportClosestStructure(player, StructureTemplate.findBestCandidate(frameLoc, 5));
+    }
+
+    /**
+     * Prints the full structure diagnostics for a candidate: the "closest
+     * structure" line with its match percentage and the concrete
+     * place / break / replace fixes (forbidden blocks keep their dedicated
+     * formatting). Used both for a frame that is not recognized as any
+     * structure at all and for a frame attached to a partially built NBT
+     * structure whose adaptive trigger block would otherwise hijack the click.
+     */
+    private static void reportClosestStructure(Player player, StructureTemplate.BestCandidate best) {
 
         player.sendMessage("");
         player.sendMessage(MessageUtil.parse(msg("not_recognized",
