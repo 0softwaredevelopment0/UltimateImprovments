@@ -487,15 +487,20 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 4. CHECK: LAMP (REDSTONE_LAMP + frame)
+        // 4. CHECK: LIGHT MULTIBLOCK (waxed copper bulb + frame)
+        // The lamp is an adaptive structure: waxed copper bulbs plus waxed
+        // chiseled copper junctions (the energy ports of the structure). A
+        // frame on a bulb assembles the whole connected component; junctions
+        // are deliberately NOT a trigger, so a decorative frame on a cable
+        // stays harmless.
         // =========================
-        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Material.REDSTONE_LAMP) {
+        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Materials.WAXED_COPPER_BULB) {
             if (LightManager.isActive(attachedLoc2)) {
                 player.sendMessage(MessageUtil.parse(msg("lamp_already_active",
                         "<yellow>A lamp is already assembled at this place!")));
                 return;
             }
-            LightManager.assemble(attachedLoc2, player);
+            LightManager.assemble(attachedLoc2, player, frame);
             return;
         }
 

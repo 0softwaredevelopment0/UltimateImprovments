@@ -59,7 +59,9 @@ public class BlockPlaceListener implements Listener {
         }
 
         // =========================
-        // 💡 LIGHT MULTIBLOCK (hot expand) — WAXED_COPPER_BULB, not REDSTONE_LAMP!
+        // 💡 LIGHT MULTIBLOCK (hot expand) — a waxed copper bulb is a lamp of an
+        // assembled structure and never a cable. A bulb placed against an
+        // assembled structure joins it (the next tick lights it if needed).
         // =========================
         if (type == Materials.WAXED_COPPER_BULB) {
             LightManager.onBlockPlaced(loc);
@@ -92,6 +94,15 @@ public class BlockPlaceListener implements Listener {
         // AUTO CONNECT
         // =========================
         autoConnect(loc, node);
+
+        // =========================
+        // 💡 LIGHT MULTIBLOCK (hot expand) — a waxed chiseled copper block is a
+        // junction of the energy network AND a possible energy port of an
+        // assembled light structure, so a junction placed against one joins it.
+        // =========================
+        if (type == Materials.WAXED_CHISELED_COPPER) {
+            LightManager.onBlockPlaced(loc);
+        }
     }
 
     // =========================

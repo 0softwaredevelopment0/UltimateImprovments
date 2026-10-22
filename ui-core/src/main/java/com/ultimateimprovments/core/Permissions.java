@@ -3,6 +3,7 @@ package com.ultimateimprovments.core;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
@@ -215,6 +216,34 @@ public final class Permissions {
     public static final String UI_SERVERLOCKDOWN_BYPASS = "ui.serverlockdown.bypass";
 
     // ═══════════ REGISTRATION ═══════════
+
+    /**
+     * Whether a node is granted <b>explicitly</b> to this player — a direct or
+     * group grant of that exact node — as opposed to being implied by a default
+     * or by a wildcard.
+     * <p>
+     * Use this for "bypass" nodes: {@link Permissible#hasPermission(String)}
+     * alone also answers {@code true} for an OP player on a server that hands
+     * out {@code *} / {@code ui.*} (the usual LuckPerms setup for admins), so an
+     * admin testing a mechanic would silently bypass it. {@link
+     * Permissible#isPermissionSet(String)} only matches a node that was really
+     * set, so a wildcard does not count; the pair therefore reads "granted, and
+     * granted on purpose".
+     * <p>
+     * Caveat: permission plugins implement {@code isPermissionSet} themselves;
+     * the big ones (LuckPerms, PermissionsEx, GroupManager) treat wildcards as
+     * non-explicit, which is exactly the wanted behaviour. Vanilla Bukkit
+     * returns {@code false} for every node whose default is FALSE, so OP alone
+     * never satisfies this check.
+     *
+     * @param permissible the player (or any permissible) to test
+     * @param node        the permission node, e.g. {@link #UI_SCULK_HAZARDS_BYPASS}
+     * @return true only when the exact node is set for this permissible
+     */
+    public static boolean isExplicitlyGranted(Permissible permissible, String node) {
+        if (permissible == null || node == null || node.isEmpty()) return false;
+        return permissible.isPermissionSet(node) && permissible.hasPermission(node);
+    }
 
     /**
      * Registers all plugin permissions in the {@link PluginManager}.

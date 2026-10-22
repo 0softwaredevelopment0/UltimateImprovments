@@ -82,6 +82,12 @@ public final class SculkSubcommand {
                 + manager.trackedCatalysts() + "</yellow><gray> tracked</gray>"));
         sender.sendMessage(MessageUtil.parse("<gray>Worlds: </gray>" + filterSummary(manager)));
         sender.sendMessage(MessageUtil.parse("<gray>Hazards: </gray>" + hazardSummary()));
+        if (sender instanceof org.bukkit.entity.Player player) {
+            SculkHazardManager hazards = SculkHazardManager.getInstance();
+            if (hazards != null) {
+                sender.sendMessage(MessageUtil.parse(hazards.describeAt(player)));
+            }
+        }
         sender.sendMessage(MessageUtil.parse("<gray>Pulse: every </gray><white>" + manager.getIntervalTicks()
                 + "t</white><gray> · charge </gray><white>" + manager.getChargePerPulse()
                 + "</white><gray> · max </gray><white>" + manager.getMaxCatalystsPerPulse()

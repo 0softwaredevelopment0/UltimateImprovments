@@ -417,13 +417,26 @@ public class StructureMarker {
     // would permanently lose structure data (previously the loss was only temporary
     // — from the RAM cache; now the source of truth is the DB).
     public static void purgeOrphaned(String type, Set<UUID> usedUuids) {
+        purgeOrphaned(type, usedUuids, null);
+    }
+
+    /**
+     * Type-scoped purge with a protected set: a UUID listed in {@code keepUuids}
+     * is never removed even when it is missing from {@code usedUuids}. Managers
+     * pass the UUIDs they could not verify during the rebuild (their chunks were
+     * still unloaded) — deleting those rows would permanently lose a live
+     * structure on a late world load.
+     */
+    public static void purgeOrphaned(String type, Set<UUID> usedUuids, Set<UUID> keepUuids) {
         if (type == null) return;
         Iterator<Map.Entry<String, StructureData>> it = byPosition.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, StructureData> entry = it.next();
             StructureData data = entry.getValue();
             if (!type.equals(data.type())) continue;
-            if (!usedUuids.contains(data.uuid())) {
+            if (usedUuids.contains(data.uuid())) continue;
+            if (keepUuids != null && keepUuids.contains(data.uuid())) continue;
+            {
                 // Skip entries of unloaded worlds — structures are kept, and when the
                 // world loads the managers rebuild and decide their fate.
                 if (data.worldUid() != null && !isWorldLoaded(data.worldUid())) {
