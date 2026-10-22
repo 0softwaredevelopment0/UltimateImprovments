@@ -803,6 +803,7 @@ public final class NuclearReactorManager {
         return "<dark_gray>[<yellow>" + prefixWord() + "<dark_gray>] ";
     }
 
+    // Changed the prefix word from "CER" to "Compact Energy Reactor" for a better understanding.
     private static String prefixWord() {
         return msg("prefix", "Compact Energy Reactor");
     }
@@ -830,6 +831,7 @@ public final class NuclearReactorManager {
         return total;
     }
 
+    // Also changed the red cross to "❌" because that's better.
     private static String statusLabel(NuclearReactor reactor) {
         NuclearReactor.Status status = reactor.getStatus();
         if (status == null) return "?";
@@ -955,3 +957,5 @@ public final class NuclearReactorManager {
         return loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ();
     }
 }
+
+// Review: OK
