@@ -785,7 +785,7 @@ public final class NuclearReactorManager {
                         "<aqua>Structure: </aqua>%state%")
                 .replace("%state%", reactor.getStatus() == NuclearReactor.Status.DAMAGED
                                 || reactor.getStatus() == NuclearReactor.Status.MELTDOWN
-                        ? msg("structure_damaged", "<dark_red>✖ Damaged</dark_red>")
+                        ? msg("structure_damaged", "<dark_red>❌ Damaged</dark_red>")
                         : msg("structure_ok", "<green>✔ Intact</green>"))));
 
         if (reactor.isMeltdown()) {
@@ -804,7 +804,7 @@ public final class NuclearReactorManager {
     }
 
     private static String prefixWord() {
-        return msg("prefix", "CER");
+        return msg("prefix", "Compact Energy Reactor");
     }
 
     private static boolean holdsMultimeter(Player player) {
@@ -840,9 +840,9 @@ public final class NuclearReactorManager {
             case NO_CABLE -> msg("status_no_cable", "<yellow>⚠ No cable under the bottom port");
             case OUTPUT_BLOCKED -> msg("status_output_blocked",
                     "<yellow>⚠ The network and the output buffer are full — the reactor is switched off");
-            case DAMAGED -> msg("status_damaged", "<dark_red>✖ Structure damaged");
+            case DAMAGED -> msg("status_damaged", "<dark_red>❌ Structure damaged");
             case MELTDOWN -> msg("status_meltdown",
-                            "<dark_red>✖ MELTDOWN — detonation in %sec%s</dark_red>")
+                            "<dark_red>❌ MELTDOWN — detonation in %sec%s</dark_red>")
                     .replace("%sec%", String.valueOf(reactor.getMeltdownSeconds()));
         };
     }
