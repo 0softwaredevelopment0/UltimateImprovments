@@ -77,6 +77,15 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
+        // 💡 LIGHT MULTIBLOCK — a waxed chiseled copper junction is a structure
+        // member too: breaking it dismantles the whole structure. Its own cable
+        // row/node is removed by the regular cable teardown below.
+        // =========================
+        if (e.getBlock().getType() == Materials.WAXED_CHISELED_COPPER && LightManager.isActive(loc)) {
+            LightManager.onBlockBroken(loc, breaker);
+        }
+
+        // =========================
         // CRAFTER — clean up any orphaned Marker (old Item Assembler leftovers)
         // =========================
         if (e.getBlock().getType() == Material.CRAFTER) {

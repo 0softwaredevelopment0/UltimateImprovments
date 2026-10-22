@@ -3,6 +3,134 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.14] - since 1.8.5-alpha.13 (2026-10-22)
+
+> **Alpha channel** — the unfinished multiblock lamp is replaced by the adaptive
+> electric light structure on top of `1.8.5-alpha.13`.
+
+### Added
+- **Multiblock electric lamp (adaptive light structure).** The old
+  `LightManager` is gone; the lamp is now a proper adaptive multiblock in the
+  energy network:
+  - **Assembly** — a one-shot item frame on a **waxed copper bulb** assembles
+    the whole connected component of **waxed copper bulbs** and **waxed
+    chiseled copper** blocks into one structure (flood fill over both
+    materials, chunks are never force-loaded). A valid structure has more than
+    one block in total, at least **one bulb** and at least **one junction**;
+    the frame breaks and drops after a successful assembly, an invalid attempt
+    leaves it intact and explains what is missing.
+  - **Energy** — every lamp consumes **1 ⚡/s**, so the structure consumes
+    `lamps ⚡/s`. The local buffer holds **5 × lamps ⚡** (five seconds of
+    autonomy). The structure refills the buffer from the cable network through
+    its junction ports whenever the reserve can no longer cover the next second
+    (chiseled copper is the `CABLE` node of the network), and goes dark when the
+    network cannot deliver. The drained amount is accounted **gross**
+    (`EnergyFlow.pullGross`): the structure stores exactly the energy the
+    network gave up, so a far-away battery does not make a lamp cost more than
+    its advertised 1 ⚡/s (plain `pull` keeps its distance-based wire loss for
+    every other consumer). Nothing is consumed while the lamps are off.
+  - **Redstone** — **every** junction block of the structure must be powered
+    (directly or indirectly). One unpowered junction switches the whole
+    structure off; no energy is spent and the buffer is kept, so restoring the
+    signal relights the lamps immediately. A redstone component event next to a
+    structure block is applied at once through the new `LightRedstoneListener`
+    where the server reports one (dust/plate circuits); a lever or torch
+    attached to a junction is picked up by the one-second energy tick. The
+    copper bulb's own `powered` property is normalised while the structure
+    drives its `lit` state (a copper bulb is a redstone toggle block, the
+    manager has to stay authoritative).
+  - **Persistence** — only the bulbs get `light` rows in
+    `structure_markers`; the junctions keep their own `cable` rows (a junction
+    that appeared without our place event gets one), otherwise the energy
+    network would lose those nodes on the next restart. The light caches are
+    world-aware, a rebuild never purges rows it could not verify (late world
+    load / unloaded chunks) and drops rows whose block is gone. Breaking any
+    block of the structure dismantles it; placing a bulb/junction against an
+    assembled structure joins it, and a block that bridges two structures
+    merges them (buffers are summed and clamped to the new capacity).
+  - **Caveat** — a fixture touching a longer chiseled-copper run absorbs that
+    whole run as junctions (they are all structure members and all must be
+    powered), so connect the grid to the fixture with lightning-rod cable.
+
+### Changed
+- **The light manager now runs once per second** instead of every tick
+  (`UIEnergy` schedules it at 20 ticks) and is shut down cleanly: disabling or
+  soft-reloading UI-Energy turns the burning lamps off instead of leaving the
+  world with lit bulbs and no manager.
+
+### Removed
+- The unfinished lamp code: the unreachable `REDSTONE_LAMP` frame branch
+  (the manager only ever looked at waxed copper bulbs), the per-block
+  `power × 2` buffer, the `isBlockPowered()` polling of bulbs (now the
+  junctions are polled), the per-structure `StructureMarker.place()` storm and
+  the unused 1-tick lighting queue.
+
+## [1.8.5-alpha.13] - since 1.8.5-alpha.12 (2026-10-21)
+
+> **Alpha channel** — behaviour fix for the sculk wither on top of `1.8.5-alpha.12`.
+
+### Fixed
+- **Sculk wither showed the icon but dealt no damage.** The vein and block
+  rules applied wither I for one second (20 ticks). Vanilla only applies the
+  wither effect when the **remaining** duration is a multiple of
+  `40 >> amplifier`, and a 20-tick instance never reaches that remainder, so
+  the debuff was purely cosmetic. The wither rules now default to
+  `duration_ticks = 40` (2 s), and the module lifts any too-short duration of a
+  duration-remainder effect (wither, poison, regeneration) to one full interval
+  and logs it — an existing `configs/UI-World.toml` with `duration_ticks = 20`
+  therefore starts hurting after the update without editing the file. Effects
+  that tick continuously (slowness, mining fatigue) are untouched.
+
+## [1.8.5-alpha.12] - since 1.8.5-alpha.11 (2026-10-21)
+
+> **Alpha channel** — permission fix for the sculk contact hazards on top of `1.8.5-alpha.11`.
+
+### Fixed
+- **The sculk hazard bypass was effectively on for every admin.**
+  `ui.sculk.hazards.bypass` was checked with `Player#hasPermission`, which also
+  answers `true` for a wildcard grant — `*` or `ui.*`, the normal LuckPerms
+  setup for operators and staff — so the player testing the mechanic was
+  immune and the hazards looked broken. Immunity now requires an **explicit**
+  grant of that exact node: the new `Permissions.isExplicitlyGranted` combines
+  `Permissible#isPermissionSet` (exact node only, wildcards excluded) with
+  `hasPermission`. OP alone and wildcards no longer count, and the immunity log
+  line plus the `At you:` line of `/ui sculk status` now say "granted
+  explicitly".
+
+## [1.8.5-alpha.11] - since 1.8.5-alpha.10 (2026-10-21)
+
+> **Alpha channel** — bugfix for the sculk contact hazards on top of `1.8.5-alpha.10`.
+
+### Fixed
+- **Sculk hazards could silently do nothing.** Three failure modes of the
+  `SculkHazards` module are now covered:
+  - a live `configs/UI-World.toml` without `[sculk.hazards]` used to switch the
+    whole module off with a single console warning (the in-memory repair only
+    rewrites the file, so any hand-edited or partially written copy could hit
+    this). The module now falls back to the bundled `UI-World.toml` defaults,
+    keeps running and logs one actionable warning instead of going dark;
+  - a player holding the bypass node — including through a wildcard grant such
+    as `ui.*` or `*`, which matches `ui.sculk.hazards.bypass` too — was skipped
+    without any trace, which looks exactly like "the effects are broken". The
+    skip is now logged once per player (`[SCULK] Hazards: <player> is immune
+    (<node>)`), and `/ui sculk status` reports the flag live;
+  - `/ui sculk reload`-style reloads could leave the timer stopped if the
+    previous task had been cancelled; the timer is now (re)started whenever it
+    is missing.
+- **`/ui sculk status` now shows the player's own evaluation** — the block at
+  the feet, the block below, the gamemode, the bypass flag and the rules that
+  match right now (`matched: vein, block` / `(none)`), so a "nothing happens"
+  report can be told apart from a config, permission or geometry problem in one
+  look.
+
+### Added
+- `radius` (per hazard rule, `[sculk.hazards.<rule>]`, default `0`, clamped to
+  0..4) — proximity instead of strict contact: with `radius = 1..4` a rule also
+  fires when a matching block is inside a cube of that size around the player
+  (nearest block wins, `offset` is ignored). At `0` the behaviour is unchanged:
+  only the block selected by `offset` counts. Every pulse scans
+  `(2*radius+1)^3` blocks per player per rule, so 1-2 is the sensible range.
+
 ## [1.8.5-alpha.10] - since 1.8.5-alpha.9 (2026-10-21)
 
 > **Alpha channel** — performance fix on top of `1.8.5-alpha.9`.

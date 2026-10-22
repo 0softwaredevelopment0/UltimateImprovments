@@ -95,6 +95,27 @@ public final class EnergyFlow {
         return result.moved() - loss;
     }
 
+    /**
+     * Drains up to {@code amount} energy from the network reachable from
+     * {@code origin} and returns the <b>gross</b> amount the sources gave up.
+     * <p>
+     * Wire losses still apply to every plain {@link #pull(Location, int)}: they
+     * are subtracted there because the caller receives usable energy. A consumer
+     * that stores the drained energy in its OWN buffer (the multiblock lamp)
+     * needs the raw drained value instead — otherwise a tiny per-second request
+     * vanishes into the distance-based loss entirely, and a distant consumer
+     * could never light up. Traversal and side effects (flow marks for the
+     * visuals, multimeter counters) are exactly the same as for a pull.
+     *
+     * @param origin the network node (or machine block) the consumer pulls at
+     * @param amount requested gross amount
+     * @return gross energy taken from the sources (0 when nothing was available)
+     */
+    public static int pullGross(Location origin, int amount) {
+        if (amount <= 0) return 0;
+        return flow(origin, amount, false).moved();
+    }
+
     /** One traversal outcome: energy settled at storage nodes + hops touched. */
     private record FlowResult(int moved, int hops) {}
 
