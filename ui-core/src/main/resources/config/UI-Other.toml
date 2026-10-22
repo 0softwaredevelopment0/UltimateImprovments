@@ -1295,6 +1295,10 @@ cable_connected = "<green>✔ Подключён</green>"
 cable_missing = "<red>✘ Нет</red>"
 # Default: <aqua>Выход: </aqua><white>%energy% ⚡/с</white>
 meter_output = "<aqua>Выход: </aqua><white>%energy% ⚡/с</white>"
+# Leftover output buffer on the bottom copper port (energy waiting for a consumer
+# when the network has no battery room).
+# Default: <aqua>Буфер: </aqua><white>%energy%/%max% ⚡</white>
+meter_buffer = "<aqua>Буфер: </aqua><white>%energy%/%max% ⚡</white>"
 # Default: <aqua>Структура: </aqua>%state%
 meter_structure = "<aqua>Структура: </aqua>%state%"
 # Default: <green>✔ Цела</green>
@@ -1311,8 +1315,10 @@ status_unpowered = "<red>❌ Нет сигнала редстоуна на це�
 status_no_fuel = "<yellow>⚠ В бочке нет изумрудов"
 # Default: <yellow>⚠ Нет кабеля под нижним портом
 status_no_cable = "<yellow>⚠ Нет кабеля под нижним портом"
-# Default: <yellow>⚠ Сеть заполнена — реактор выключен
-status_output_blocked = "<yellow>⚠ Сеть заполнена — реактор выключен"
+# The network AND the reactor's own output buffer are full — it resumes on the
+# first second with free room.
+# Default: <yellow>⚠ Сеть и буфер заполнены — реактор выключен
+status_output_blocked = "<yellow>⚠ Сеть и буфер заполнены — реактор выключен"
 # Default: <dark_red>✖ Структура повреждена
 status_damaged = "<dark_red>✖ Структура повреждена"
 # Structure alerts (broadcast within nuclear_reactor.alert_radius blocks).
@@ -1799,6 +1805,10 @@ cable_connected = "<green>✔ Connected</green>"
 cable_missing = "<red>✘ Not connected</red>"
 # Default: <aqua>Output: </aqua><white>%energy% ⚡/s</white>
 meter_output = "<aqua>Output: </aqua><white>%energy% ⚡/s</white>"
+# Leftover output buffer on the bottom copper port (energy waiting for a consumer
+# when the network has no battery room).
+# Default: <aqua>Buffer: </aqua><white>%energy%/%max% ⚡</white>
+meter_buffer = "<aqua>Buffer: </aqua><white>%energy%/%max% ⚡</white>"
 # Default: <aqua>Structure: </aqua>%state%
 meter_structure = "<aqua>Structure: </aqua>%state%"
 # Default: <green>✔ Intact</green>
@@ -1815,8 +1825,10 @@ status_unpowered = "<red>❌ No redstone signal on the center block"
 status_no_fuel = "<yellow>⚠ No emeralds in the barrel"
 # Default: <yellow>⚠ No cable under the bottom port
 status_no_cable = "<yellow>⚠ No cable under the bottom port"
-# Default: <yellow>⚠ The network is full — the reactor is switched off
-status_output_blocked = "<yellow>⚠ The network is full — the reactor is switched off"
+# The network AND the reactor's own output buffer are full — it resumes on the
+# first second with free room.
+# Default: <yellow>⚠ The network and the output buffer are full — the reactor is switched off
+status_output_blocked = "<yellow>⚠ The network and the output buffer are full — the reactor is switched off"
 # Default: <dark_red>✖ Structure damaged
 status_damaged = "<dark_red>✖ Structure damaged"
 # Structure alerts (broadcast within nuclear_reactor.alert_radius blocks).

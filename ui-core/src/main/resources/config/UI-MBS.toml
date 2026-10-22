@@ -217,7 +217,9 @@ natural_cool_multiplier_max = 1.0
 
 # Compact nuclear reactor: emeralds burn in the top barrel, the redstone-
 # powered reinforced deepslate in the center enables it, and 100 ⚡/s are
-# pushed into the cable network through the bottom copper port.
+# pushed into the cable network through the bottom copper port. Whatever the
+# network cannot take stays in the reactor's own output buffer on that port,
+# where any consumer pulls it directly (lamps/machines work without a battery).
 [nuclear_reactor]
 # Master switch (true = feature on).
 # Default: true
@@ -229,7 +231,7 @@ enabled = true
 energy_per_second = 100
 # Seconds one fuel item (one emerald) sustains the reactor. Fuel is only
 # spent while the structure is intact, the center is powered, a cable is
-# connected and the network actually accepts the energy.
+# connected and the network (or the output buffer) actually accepts the energy.
 # Default: 10
 fuel_interval_seconds = 10
 # Fuel item consumed from the barrel.
@@ -238,6 +240,15 @@ fuel_item = "EMERALD"
 # Log every operating-state change to the console.
 # Default: false
 log = false
+# Leftover output buffer of one reactor: when no battery in the network takes
+# the produced energy, it waits on the bottom copper port until a consumer
+# pulls it (a direct reactor → wires → lamp / machine setup works without a
+# battery). The reactor switches off while the network AND this buffer are
+# full and resumes automatically when a consumer drains either of them.
+# Keep it modest: an unloaded reactor keeps producing (and heating up) until
+# the buffer is full, so a huge value lets it run far longer than needed.
+# Default: 2000
+buffer_capacity = 2000
 
 # ----------------------------------------------------------------
 # THERMAL MODEL (temperature, coolant and meltdown)
