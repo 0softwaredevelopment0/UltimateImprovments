@@ -71,7 +71,7 @@ public final class ReactorCommand {
         // =========================
         ReactorManager reactor = ReactorManager.getAt(pending.center());
         if (reactor != null) {
-            player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
+            player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg("reactor_already_active",
                     "<yellow>The reactor is already active at this place!")));
             ReactorManager.clearPendingAssembly(player);
             return;
@@ -228,7 +228,8 @@ public final class ReactorCommand {
         // CHECK IF ALREADY ACTIVE
         // =========================
         if (MagnetManager.isActive(loc)) {
-            player.sendMessage(MessageUtil.parse("<yellow>A magnet is already active at this place!"));
+            player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                    + "<yellow>A magnet is already active at this place!"));
             ReactorManager.clearPendingAssembly(player);
             return;
         }

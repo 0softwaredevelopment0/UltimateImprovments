@@ -65,6 +65,38 @@ class NuclearReactorTemplateTest {
         assertEquals(1, count(t, Material.BARREL));
     }
 
+    /**
+     * The reactor's own energy **output buffer** lives on the bottom copper
+     * port (see {@code NuclearReactorManager#ensureOutputNode}): the port is
+     * turned into a storage node of the cable network, so it must stay a
+     * network **leaf** — the block under it free for the cable, no cable cell
+     * around it, and (already guaranteed by the complete material census above:
+     * 8+4+4+8+1+1+1 = 27 cells) no other cable material in the cube. If the
+     * template ever gains a second copper cell, the port would become a routing
+     * node and the buffer has to move.
+     */
+    @Test
+    void energyPortStaysANetworkLeaf() throws Exception {
+        StructureTemplate t = load();
+
+        // Nothing in the template below the bottom layer: the block under the
+        // port is free, which is where the cable attaches.
+        assertTrue(t.getBlocks().stream().noneMatch(b -> b.dy() <= -3),
+                "the block under the energy port must stay free for the cable");
+
+        // No copper cell touches the port (center above, four bottom sides) —
+        // the port cannot route energy onwards.
+        int[][] neighbours = {{0, 1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
+        for (int[] d : neighbours) {
+            int dx = d[0], dy = -2 + d[1], dz = d[2];
+            assertTrue(t.getBlocks().stream().noneMatch(b ->
+                            b.dx() == dx && b.dy() == dy && b.dz() == dz
+                                    && b.material() == Material.WAXED_CHISELED_COPPER),
+                    "no copper cell may neighbour the energy port at ("
+                            + dx + "," + dy + "," + dz + ")");
+        }
+    }
+
     private static void assertBlock(StructureTemplate t, int dx, int dy, int dz, Material material) {
         assertTrue(t.getBlocks().stream().anyMatch(b ->
                         b.dx() == dx && b.dy() == dy && b.dz() == dz && b.material() == material),

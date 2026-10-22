@@ -116,6 +116,69 @@ public class StructureTemplate {
     /** Total number of checked cells (solid + required-air). */
     public int totalCells() { return blocks.size() + airBlocks.size(); }
 
+    // =========================
+    // VOLUME / OCCUPANCY CHECKS
+    // =========================
+
+    /**
+     * Whether the VOLUME of this template at the origin overlaps the volume of
+     * {@code other} placed at the given offset (the offset is
+     * {@code otherCenter − thisCenter}).
+     * <p>
+     * The test is a plain 3-coordinate AABB comparison — X, Y and Z are compared
+     * separately, never a radius/distance. Two structures that merely STAND NEXT
+     * TO each other (their cells are adjacent, no shared cell) do NOT overlap
+     * and therefore may coexist; only a structure whose cells the other one
+     * would occupy (i.e. it stands inside / across it) is a conflict.
+     */
+    public boolean overlapsVolume(StructureTemplate other, int deltaX, int deltaY, int deltaZ) {
+        if (other == null || hasNoCells() || other.hasNoCells()) return false;
+        return minX <= other.maxX + deltaX && other.minX + deltaX <= maxX
+                && minY <= other.maxY + deltaY && other.minY + deltaY <= maxY
+                && minZ <= other.maxZ + deltaZ && other.minZ + deltaZ <= maxZ;
+    }
+
+    /** {@link #overlapsVolume(StructureTemplate, int, int, int)} against this same shape. */
+    public boolean overlapsVolume(int deltaX, int deltaY, int deltaZ) {
+        return overlapsVolume(this, deltaX, deltaY, deltaZ);
+    }
+
+    /** A template without cells has no volume and never overlaps anything. */
+    private boolean hasNoCells() {
+        return minX == Integer.MAX_VALUE;
+    }
+
+    /**
+     * Whether the world block at {@code blockLoc} is one of this template's
+     * SOLID cells when the template is centered at {@code center}. Used to find
+     * out which assembled structure the clicked item frame actually belongs to:
+     * the frame is attached to a real block of the structure it triggers, while
+     * a neighbouring structure never owns that block.
+     */
+    public boolean isSolidCellAt(Location center, Location blockLoc) {
+        if (center == null || blockLoc == null
+                || center.getWorld() == null || blockLoc.getWorld() == null
+                || !center.getWorld().equals(blockLoc.getWorld())) {
+            return false;
+        }
+        return hasSolidCell(
+                blockLoc.getBlockX() - center.getBlockX(),
+                blockLoc.getBlockY() - center.getBlockY(),
+                blockLoc.getBlockZ() - center.getBlockZ());
+    }
+
+    /** Whether the given center-relative offset is one of this template's SOLID cells. */
+    public boolean hasSolidCell(int dx, int dy, int dz) {
+        // Cheap bounds reject before the cell scan
+        if (dx < minX || dx > maxX || dy < minY || dy > maxY || dz < minZ || dz > maxZ) {
+            return false;
+        }
+        for (BlockEntry b : blocks) {
+            if (b.dx() == dx && b.dy() == dy && b.dz() == dz) return true;
+        }
+        return false;
+    }
+
     private void addBlock(int dx, int dy, int dz, Material material) {
         blocks.add(new BlockEntry(dx, dy, dz, material));
         trackBounds(dx, dy, dz);
@@ -217,6 +280,21 @@ public class StructureTemplate {
      * @return the matching center position, or {@code null} if not found
      */
     public Location findMatch(Location origin, int radius) {
+        return findMatch(origin, radius, null);
+    }
+
+    /**
+     * Same as {@link #findMatch(Location, int)}, but only a position accepted by
+     * {@code accept} is returned. The caller uses this to skip positions that
+     * already belong to an assembled structure: an identical build standing
+     * NEARBY must be assembled at its OWN position instead of being mistaken
+     * for "the structure is already here". {@code accept == null} accepts every
+     * match (the plain behaviour).
+     *
+     * @param accept optional filter applied to every exact match, never to a
+     *               non-matching candidate
+     */
+    public Location findMatch(Location origin, int radius, java.util.function.Predicate<Location> accept) {
         if (origin == null || origin.getWorld() == null || blocks.isEmpty()) return null;
 
         World world = origin.getWorld();
@@ -233,7 +311,9 @@ public class StructureTemplate {
                     if (!materialMatches(first.material(), anchor)) continue;
 
                     MatchResult r = checkAt(new Location(world, cx, cy, cz));
-                    if (r.matched()) return new Location(world, cx, cy, cz);
+                    if (!r.matched()) continue;
+                    Location candidate = new Location(world, cx, cy, cz);
+                    if (accept == null || accept.test(candidate)) return candidate;
                 }
             }
         }

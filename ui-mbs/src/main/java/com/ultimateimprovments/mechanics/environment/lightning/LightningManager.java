@@ -140,7 +140,11 @@ public class LightningManager implements Listener {
         }
 
         if (activeStructures.containsKey(center)) {
-            if (player != null) player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<yellow>⚡ Lightning structure already assembled here!"));
+            if (player != null) {
+                player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse(
+                        com.ultimateimprovments.util.MessageUtil.PREFIX
+                                + "<yellow>⚡ Lightning structure already assembled here!"));
+            }
             return;
         }
 

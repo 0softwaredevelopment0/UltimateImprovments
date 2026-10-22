@@ -483,8 +483,8 @@ public final class LightManager {
         long seedKey = toKey(loc);
         if (clusterAt(loc.getWorld(), seedKey) != null) {
             if (player != null) {
-                player.sendMessage(MessageUtil.parse(
-                        "<yellow>A light structure is already assembled at this place!</yellow>"));
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                        + "<yellow>A light structure is already assembled at this place!</yellow>"));
             }
             return;
         }
@@ -521,8 +521,8 @@ public final class LightManager {
         }
         if (overlaps) {
             if (player != null) {
-                player.sendMessage(MessageUtil.parse(
-                        "<dark_red>❌ <red>This lamp already belongs to another light structure!</red>"));
+                player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX
+                        + "<dark_red>❌ <red>This lamp already belongs to another light structure!</red>"));
             }
             return;
         }
