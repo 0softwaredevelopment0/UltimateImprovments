@@ -3,6 +3,53 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.16] - since 1.8.5-alpha.15 (2026-10-22)
+
+> **Alpha channel** — compact nuclear reactor output fix on top of `1.8.5-alpha.15`.
+
+### Fixed
+- **The compact nuclear reactor (CER) could not power a consumer directly.**
+  Every consumer of the energy network (electrical lamp, electric furnace, particle
+  accelerator, DFC case junctions) **pulls** energy, and only a node that stores energy can
+  be pulled from. `EnergyFlow.push` settles energy at **batteries only**, and the reactor had
+  no storage of its own — so on a battery-less network the space gate saw "no room" and
+  switched the reactor off (and a forced run would still report `OUTPUT_BLOCKED`). A battery
+  in the network hid the problem: the reactor charged it and consumers drained it. The coal
+  generator never had the bug because its surplus goes into its own `GENERATOR`-typed buffer.
+  The reactor now has the same kind of **output buffer on its bottom copper port**
+  (`NuclearReactorManager#ensureOutputNode`): the network is offered the output first
+  (batteries), and whatever it cannot take stays on the port, where any consumer pulling
+  through the cable drains it — the reactor feeds lamps and machines directly, with or without
+  a battery.
+  - The port is safe as a storage node: `nuclearreactor.nbt` has exactly one waxed chiseled
+    copper cell (the bottom-center port), a network leaf whose only exposed face is the bottom
+    one where the cable attaches — it never routes energy between two cable runs. A
+    player-placed port (or one rebuilt from its `cable` marker row after a restart) starts as a
+    plain `CABLE` node, so the type is re-asserted on every pass; the node is RAM-only, exactly
+    like the generator's buffer.
+  - The output gate opens while the network **or** the reactor's own buffer can take a full
+    production pass (a full pass is required on both sides, so a nearly full battery can no
+    longer accept a few volts while the rest of the pass is destroyed on a full buffer), and
+    the overflow is accounted as accepted energy, so the fuel countdown stays proportional to
+    what was produced.
+  - A partial acceptance no longer rounds the fuel burn down to zero ticks (a nearly full
+    network — or now a nearly full buffer — accepting only a few ⚡ used to produce them
+    without spending any fuel).
+  - A dismantled or detonated reactor releases its buffer: explosions never fire
+    `BlockBreakEvent`, so the charge used to survive a detonation and would be inherited by a
+    rebuilt reactor. The port node is drained and either reverted to a plain cable (the copper
+    block still stands) or removed with its registry row.
+- **Multimeter `[CER]` readout** now includes the output buffer line
+  (`Buffer: n/max ⚡`), so the state behind a dark lamp is visible; the generic multimeter on
+  the bottom copper port also shows a `Buffer:` line for a storage-typed junction, and the
+  `OUTPUT_BLOCKED` default text now mentions the buffer.
+
+### Added
+- `nuclear_reactor.buffer_capacity` config key (UI-MBS.toml, default **2000 ⚡**, minimum 1) —
+  the reactor's own leftover output buffer, the counterpart of
+  `energy.generator.buffer_capacity`. It is what a direct reactor → consumer setup runs on;
+  the reactor switches itself off while both the batteries and this buffer are full.
+
 ## [1.8.5-alpha.15] - since 1.8.5-alpha.14 (2026-10-22)
 
 > **Alpha channel** — multi-block structure assembly occupancy fix on top of `1.8.5-alpha.14`.
