@@ -39,6 +39,7 @@ node_modules/
 
 # Runtime logs (do not commit)
 ui-mbs/logs/
+ui-core/logs/
 
 # Eclipse/JDT build output
 */bin/

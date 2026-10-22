@@ -132,14 +132,23 @@ public final class MultimeterApi {
     }
 
     /**
+     * The full standard error (MiniMessage, unparsed): plugin prefix, the
+     * {@code [METER]} tag and the localized body. Kept public so tests and
+     * diagnostics can assert the exact rendered line.
+     */
+    public static String cantMeasureMessage() {
+        return MessageUtil.PREFIX + meterPrefix()
+                + "<white>" + MessageUtil.raw(CANT_MEASURE_KEY, CANT_MEASURE_DEFAULT);
+    }
+
+    /**
      * Sends the standard {@code <plugin prefix> [METER] Can't measure
      * parameters of this block.} error to the player. Callers usually prefer
      * {@link #finishMeasurement(Player)}, which only sends it when needed.
      */
     public static void sendCantMeasure(Player player) {
         if (player == null) return;
-        player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + meterPrefix()
-                + "<white>" + MessageUtil.raw(CANT_MEASURE_KEY, CANT_MEASURE_DEFAULT)));
+        player.sendMessage(MessageUtil.parse(cantMeasureMessage()));
     }
 
     /**
