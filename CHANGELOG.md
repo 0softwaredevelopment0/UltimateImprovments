@@ -3,6 +3,77 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.19] - since 1.8.5-alpha.18 (2026-10-23)
+
+> **Alpha channel** — the meteor mechanic is alive again: meteors fall and spawn
+> meteorite blocks in the normal world (and optionally in the space dimension).
+
+### Fixed
+- **Meteors never spawned anywhere: `space.meteor_space_only` redirected the whole
+  mechanic into the void space dimension.** The key (default `true` since the space
+  update) made both the scheduler and `/ui meteor spawn` target `ui_space`
+  exclusively. `ui_space` is a void world with a single spawn platform, so
+  `findSurfaceY` found no surface and aborted every spawn — while in the overworld
+  the module just saw "no players in ui_space" and skipped silently. The redirect
+  is removed: meteors use the configured worlds again, and `ui_space` is only used
+  when it is listed there. The obsolete key is ignored and reported once at startup.
+- **Even a started meteor aborted ~1 s before impact: `Particle.FLASH` was spawned
+  without its required `Color` data.** `Particle.FLASH` carries
+  `org.bukkit.Color` in Paper 26.3, so the data-less `spawnParticle` overload threw
+  `missing required data class org.bukkit.Color` at ~70% of the fall. The animation
+  catch removed the meteor and cancelled the task — no explosion, no blocks, ever.
+  The impact flash call had the same bug and would have aborted the impact before
+  the meteorite was built. Both calls now pass `Color.WHITE`.
+- **The central ore was overwritten by the crater.** The impact carved the crater
+  *after* placing the meteorite, so magma/obsidian/fire replaced the ore block in
+  the middle of the structure. The crater is now carved first and the meteorite
+  placed last, so the sphere and its ore always survive. The crater also works on
+  the actual ground block now (it used to decorate the air block above the surface).
+- **Meteors near the build limit could throw and die mid-air.** The start height
+  (`surface + 80..120`) was not clamped to the world build limits, and the sphere /
+  crater wrote blocks without a bounds check. Both are clamped now (the marker stays
+  at `maxHeight - 1 - sphere_radius` so the whole display sphere is inside the
+  world), and spawns with no headroom above the surface are skipped with a warning.
+- **The fall chunk could unload mid-flight.** Nobody may be within entity-ticking
+  distance of a meteor 30–120 blocks away: the BlockDisplay sphere froze in the sky
+  and impact-time cleanup missed it. The fall column now holds a transient
+  `addPluginChunkTicket` for the meteor's lifetime, released on impact/cleanup, and
+  entity removal no longer skips displays whose chunk reports them invalid.
+- **One bad cycle killed the meteor scheduler forever.** `rescheduleNext` ran after
+  `spawnRandomMeteor()` without a guard, so any throw skipped the next schedule.
+  The cycle is now try/catch/finally-scheduled, and meteor creation/scheduling is
+  guarded (a failed constructor cleans up its own entities and chunk ticket).
+- **`/ui meteor spawn` from the console did nothing when nobody was online.** A
+  force spawn without players now uses the target world's spawn point, so admins can
+  trigger and test the mechanic headlessly.
+
+### Changed
+- **`[meteor] worlds` (UI-World.toml, default `[]`).** New list of worlds meteors
+  may fall in; an empty list keeps using the single `meteor.world` name. Add
+  `"ui_space"` to also spawn meteors in the space dimension. Missing world names are
+  logged; when the list is explicitly configured and none of its entries exist the
+  mechanic stays idle instead of silently substituting another world. When
+  `meteor.world` (the implicit single-world path) is wrong, the first loaded world
+  is used with a warning.
+- **Void worlds work now.** With no surface in the probe area (e.g. a really empty
+  `ui_space`) the impact point falls back to the caller's height at a random point
+  inside the spawn radius — never right at the player's feet. If the configured
+  `meteor.height` window excludes existing terrain, that terrain is used with a
+  warning instead of being mistaken for a void world.
+- **`[meteor]` settings are validated now** (`meteor.enabled`, interval, radii,
+  heights, sphere radius, explosion power, active cap, `worlds`, ...); previously
+  none of the meteor keys were covered by `ConfigRules`. Runtime clamps were added
+  for interval/count/radius/cap, and `display_blocks`/`core_ores` entries must be
+  real block materials (a non-block material used to throw inside the task
+  constructor).
+- **`space.meteor_space_only` removed from the bundled UI-Shared.toml** and from the
+  validation rules. Existing configs keep the stale key; it is ignored.
+- **`/ui meteor` texts come from the config.** `[messages.meteor]` was declared but
+  never read — the subcommand now resolves `usage`, `unknown_sub`, `invalid_count`,
+  `module_disabled`, `module_not_init`, `spawned` and the new `spawn_failed` /
+  `spawn_partial` from `configs/UI-World.toml`. `/ui meteor` also has tab completion
+  (`spawn` + count suggestions).
+
 ## [1.8.5-alpha.18] - since 1.8.5-alpha.17 (2026-10-22)
 
 > **Alpha channel** — multimeter interaction cleanup (SHIFT+RMB only) and the

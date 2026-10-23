@@ -127,7 +127,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("swapjar", SwapJarSubcommand::execute));
         // ── /ui update — download release JARs into UltimateImprovments/update (apply with /ui swapjar) ──
         registry.register(LegacySubCommandAdapter.of("update", UpdateSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("meteor", MeteorSubcommand::execute));
+        registry.register(LegacySubCommandAdapter.of("meteor", MeteorSubcommand::execute,
+                tc((s, a) -> {
+                    if (a.length == 2) return List.of("spawn");
+                    if (a.length == 3 && a[1].equalsIgnoreCase("spawn"))
+                        return List.of("1", "2", "3", "5", "10");
+                    return List.of();
+                })));
         registry.register(LegacySubCommandAdapter.of("plugin", PluginSubcommand::execute,
                 tc((s, a) -> PluginSubcommand.tabComplete(s, a))));
         // ── /ui redstone, /ui check|uncheck, /ui codepane, /ui maint, /ui sudo,
