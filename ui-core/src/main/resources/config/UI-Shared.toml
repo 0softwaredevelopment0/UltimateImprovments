@@ -82,8 +82,6 @@ gravity = 0.01
 # Damage.
 # Default: 1
 oxygen_damage_per_second = 1
-# Default: true
-meteor_space_only = true
 # World name.
 # Default: ["world"]
 space_entry_worlds = ["world"]

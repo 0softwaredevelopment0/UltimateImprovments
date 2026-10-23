@@ -1,6 +1,7 @@
 package com.ultimateimprovments.module.meteor;
 
 import com.ultimateimprovments.util.ConsoleLogger;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -13,6 +14,7 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Marker;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -31,11 +33,16 @@ import java.util.Random;
 public class MeteorTask extends BukkitRunnable {
 
     // ──────────── Fields ────────────
+    private final Plugin plugin;
     private final World world;
     private final double startY, targetX, targetY, targetZ;
     private final int totalTicks;
     private int tick;
     private double currentY;
+
+    /** Chunk of the fall/impact column, kept loaded by a plugin ticket while alive. */
+    private final int chunkX, chunkZ;
+    private boolean chunkTicketHeld;
 
     private final int sphereRadius;
     private final float explosionPower;
@@ -54,7 +61,8 @@ public class MeteorTask extends BukkitRunnable {
     private Runnable onComplete;
 
     // ──────────── Constructor ────────────
-    public MeteorTask(World world,
+    public MeteorTask(Plugin plugin,
+                      World world,
                       double startY,
                       double targetX, double targetY, double targetZ,
                       int totalTicks,
@@ -62,6 +70,7 @@ public class MeteorTask extends BukkitRunnable {
                       float explosionPower,
                       List<BlockData> shellBlocks,
                       Map<Material, Double> coreOres) {
+        this.plugin = plugin;
         this.world = world;
         this.startY = startY;
         this.targetX = targetX;
@@ -74,16 +83,30 @@ public class MeteorTask extends BukkitRunnable {
         this.shellBlocks = shellBlocks;
         this.coreOres = coreOres;
         this.random = new Random();
+        this.chunkX = ((int) Math.floor(targetX)) >> 4;
+        this.chunkZ = ((int) Math.floor(targetZ)) >> 4;
         // Pick the core ore once so the falling visual matches what actually lands.
         this.coreOre = pickCoreOre();
 
-        // ── Create the Marker at the start height ──
-        Location startLoc = new Location(world, targetX, startY, targetZ);
-        this.marker = (Marker) world.spawnEntity(startLoc, EntityType.MARKER);
-        this.marker.setPersistent(false);
+        // Keep the fall column loaded and ticking for the meteor's short lifetime.
+        // Without the ticket the chunk may unload when no player is close enough:
+        // the displays freeze mid-air and the impact cleanup misses them.
+        this.chunkTicketHeld = world.addPluginChunkTicket(chunkX, chunkZ, plugin);
 
-        // ── Spawn the falling block visualizers (a glowing sphere of blocks) ──
-        spawnBlockVisualizers(startLoc);
+        try {
+            // ── Create the Marker at the start height ──
+            Location startLoc = new Location(world, targetX, startY, targetZ);
+            this.marker = (Marker) world.spawnEntity(startLoc, EntityType.MARKER);
+            this.marker.setPersistent(false);
+
+            // ── Spawn the falling block visualizers (a glowing sphere of blocks) ──
+            spawnBlockVisualizers(startLoc);
+        } catch (RuntimeException e) {
+            // A partially constructed task must not leak entities or a chunk ticket.
+            safeCleanup();
+            throw new IllegalStateException("Could not spawn the falling meteor entities: "
+                    + e.getMessage(), e);
+        }
     }
 
     // ──────────── Main loop ────────────
@@ -99,7 +122,10 @@ public class MeteorTask extends BukkitRunnable {
                 impact();
             } catch (Exception e) {
                 ConsoleLogger.warn("[Meteor] Exception during impact: " + e.getMessage());
-                removeMarker();
+                // Marker AND every BlockDisplay must go — the display entities are
+                // not persistent, so a half-finished impact used to leak a hovering
+                // block sphere in the sky.
+                safeCleanup();
                 if (onComplete != null) onComplete.run();
                 cancel();
             }
@@ -156,9 +182,12 @@ public class MeteorTask extends BukkitRunnable {
         world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, trailLoc, (int) (3 * intensity),
                 0.3, 0.5, 0.3, 0.05);
 
-        // Bright flash in the last third
+        // Bright flash in the last third.
+        // FLASH carries Color data (org.bukkit.Color) — spawning it without the
+        // data object throws "missing required data class org.bukkit.Color" and
+        // used to abort the whole fall at ~70% before the impact.
         if (progress > 0.7 && random.nextDouble() < 0.2) {
-            world.spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0);
+            world.spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0, Color.WHITE);
         }
 
         // ── Sound ──
@@ -193,7 +222,7 @@ public class MeteorTask extends BukkitRunnable {
         world.spawnParticle(Particle.FLAME, impactLoc, 60, 4, 2, 4, 0.15);
         world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, impactLoc, 80, 4, 2, 4, 0.08);
         world.spawnParticle(Particle.LAVA, impactLoc, 30, 1, 0.5, 1, 0);
-        world.spawnParticle(Particle.FLASH, impactLoc, 1, 0, 0, 0, 0);
+        world.spawnParticle(Particle.FLASH, impactLoc, 1, 0, 0, 0, 0, Color.WHITE);
 
         // Rising smoke column
         for (int i = 0; i < 5; i++) {
@@ -209,11 +238,17 @@ public class MeteorTask extends BukkitRunnable {
         world.playSound(impactLoc, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0f, 0.4f);
         world.playSound(impactLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 2.0f, 0.8f);
 
+        // ── Crater first, meteorite last ──
+        // The crater decoration (magma/obsidian/fire) must not overwrite the
+        // meteorite blocks and the central ore, so it is carved before the
+        // structure is placed.
+        spawnCrater(impactLoc);
+
         // ── Spawn the meteor structure (block sphere + central ore) ──
         spawnMeteorStructure(impactLoc);
 
-        // ── Crater ──
-        spawnCrater(impactLoc);
+        // The chunk ticket is only needed while the meteor is on screen.
+        releaseChunkTicket();
 
         ConsoleLogger.info("[Meteor] Impact at " + impactLoc.getBlockX() + " " + impactLoc.getBlockY() + " " + impactLoc.getBlockZ()
                 + " in " + world.getName());
@@ -238,19 +273,18 @@ public class MeteorTask extends BukkitRunnable {
                     if (dist > r + 0.5) continue;
 
                     Block b = center.getBlock().getRelative(dx, dy, dz);
+                    if (!isInsideWorld(b)) continue;
 
-                    // Don't replace air/liquids if the block was already solid?
-                    // The meteor REPLACES existing blocks (impact force)
+                    // The meteor REPLACES existing blocks (impact force).
 
                     // Center — ore
                     if (dist <= 0.5) {
-                        b.setType(coreOre);
+                        setBlockDataSafely(b, coreOre.createBlockData());
                         continue;
                     }
 
                     // Shell — a random block from display_blocks
-                    BlockData blockData = shellBlocks.get(random.nextInt(shellBlocks.size()));
-                    b.setType(blockData.getMaterial());
+                    setBlockDataSafely(b, shellBlocks.get(random.nextInt(shellBlocks.size())));
                 }
             }
         }
@@ -285,38 +319,47 @@ public class MeteorTask extends BukkitRunnable {
 
     /**
      * Creates a crater around the impact point.
+     * <p>
+     * The impact point is the first air block above the surface (see
+     * {@code MeteorModule}), so the crater slice lives one block below it — the
+     * real ground the explosion hit, not empty air.
      */
     private void spawnCrater(Location impactLoc) {
         int craterR = sphereRadius * 2;
+        int groundY = impactLoc.getBlockY() - 1;
 
         for (int dx = -craterR; dx <= craterR; dx++) {
             for (int dz = -craterR; dz <= craterR; dz++) {
                 double dist = Math.sqrt(dx * dx + dz * dz);
                 if (dist > craterR + 0.5) continue;
 
-                Block b = world.getBlockAt(impactLoc.clone().add(dx, 0, dz));
+                // The explosion already removed the top layer, so find the new
+                // crater bottom of this column instead of decorating empty air.
+                Block b = firstSolidBelow(
+                        world.getBlockAt(impactLoc.getBlockX() + dx, groundY, impactLoc.getBlockZ() + dz), 5);
+                if (b == null) continue;
                 Block above = b.getRelative(BlockFace.UP);
 
                 // Center: magma + fire
                 if (dist <= craterR * 0.35) {
                     if (!b.isEmpty()) {
-                        if (random.nextDouble() < 0.5) b.setType(Material.MAGMA_BLOCK);
-                        else if (random.nextDouble() < 0.3) b.setType(Material.OBSIDIAN);
+                        if (random.nextDouble() < 0.5) setTypeSafely(b, Material.MAGMA_BLOCK);
+                        else if (random.nextDouble() < 0.3) setTypeSafely(b, Material.OBSIDIAN);
                     }
                     if (above.isEmpty() && random.nextDouble() < 0.6) {
-                        above.setType(Material.FIRE);
+                        setTypeSafely(above, Material.FIRE);
                     }
                 }
                 // Middle ring: blackstone
                 else if (dist <= craterR * 0.7) {
                     if (random.nextDouble() < 0.25 && !b.isEmpty()) {
-                        b.setType(Material.BLACKSTONE);
+                        setTypeSafely(b, Material.BLACKSTONE);
                     }
                 }
                 // Outer ring: fire
                 else if (dist <= craterR) {
                     if (above.isEmpty() && random.nextDouble() < 0.15) {
-                        above.setType(Material.FIRE);
+                        setTypeSafely(above, Material.FIRE);
                     }
                 }
             }
@@ -332,6 +375,7 @@ public class MeteorTask extends BukkitRunnable {
     private void safeCleanup() {
         removeMarker();
         removeDisplays();
+        releaseChunkTicket();
     }
 
     /**
@@ -342,13 +386,25 @@ public class MeteorTask extends BukkitRunnable {
     public void cleanup() {
         removeMarker();
         removeDisplays();
+        releaseChunkTicket();
+    }
+
+    /** Releases the plugin chunk ticket that kept the fall column loaded. */
+    private void releaseChunkTicket() {
+        if (!chunkTicketHeld) return;
+        chunkTicketHeld = false;
+        try {
+            world.removePluginChunkTicket(chunkX, chunkZ, plugin);
+        } catch (Exception ignored) {
+            // The world may already be shutting down.
+        }
     }
 
     private void removeMarker() {
         if (marker != null && marker.isValid()) {
             marker.remove();
-            marker = null;
         }
+        marker = null;
     }
 
     /**
@@ -356,8 +412,12 @@ public class MeteorTask extends BukkitRunnable {
      */
     private void removeDisplays() {
         for (BlockDisplay display : displays) {
-            if (display.isValid()) {
+            // No isValid() gate: a display in a not-yet-ticked chunk reports invalid
+            // even though the entity exists, and skipping it leaked the whole sphere.
+            try {
                 display.remove();
+            } catch (Exception ignored) {
+                // Already despawned (chunk unload) — nothing to do.
             }
         }
         displays.clear();
@@ -412,5 +472,37 @@ public class MeteorTask extends BukkitRunnable {
 
     private static double lerp(double a, double b, double t) {
         return a + (b - a) * t;
+    }
+
+    /**
+     * @return true when the block is inside this world's build limits. A meteor
+     *         near the build limit would otherwise throw from {@code setType}.
+     */
+    private boolean isInsideWorld(Block block) {
+        return block.getY() >= world.getMinHeight() && block.getY() < world.getMaxHeight();
+    }
+
+    private void setTypeSafely(Block block, Material material) {
+        if (material == null || !isInsideWorld(block)) return;
+        block.setType(material, false);
+    }
+
+    private void setBlockDataSafely(Block block, BlockData data) {
+        if (data == null || !isInsideWorld(block)) return;
+        block.setBlockData(data, false);
+    }
+
+    /**
+     * @return the first solid block at or below {@code start} within {@code depth}
+     *         blocks, or {@code null} when the column is empty (void/crater hole).
+     */
+    private Block firstSolidBelow(Block start, int depth) {
+        Block block = start;
+        for (int i = 0; i <= depth; i++) {
+            if (!isInsideWorld(block)) return null;
+            if (!block.isEmpty() && !block.isLiquid() && block.getType().isSolid()) return block;
+            block = block.getRelative(BlockFace.DOWN);
+        }
+        return null;
     }
 }

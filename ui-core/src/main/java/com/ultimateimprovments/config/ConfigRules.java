@@ -609,8 +609,26 @@ final class ConfigRules {
             dbl("space.oxygen_damage_per_second", 0, 1000),
             integer("radiation.space_radiation", 0, 10000),
             integer("radiation.space_interval_ticks", 1, 6000),
-            bool("space.meteor_space_only"),
             stringList("space.space_entry_worlds"),
+
+            // Meteors (UI-World): worlds list is the modern selector, the single
+            // "world" name is its fallback, and space.meteor_space_only is gone
+            // (it aimed meteors at the void space dimension — see MeteorModule).
+            bool("meteor.enabled"),
+            string("meteor.world", false, 64),
+            stringList("meteor.worlds"),
+            integer("meteor.count_per_spawn", 1, 100),
+            integer("meteor.fall_duration_ticks", 1, 20 * 60 * 10, "Ticks the meteor spends falling"),
+            integer("meteor.sphere_radius", 1, 5),
+            dbl("meteor.explosion_power", 0, 30),
+            integer("meteor.max_active", 1, 1000),
+            integer("meteor.spawn_radius.min", 1, 10000),
+            integer("meteor.spawn_radius.max", 1, 10000),
+            integer("meteor.height.min", -2048, 2048),
+            integer("meteor.height.max", -2048, 2048),
+            integer("meteor.interval.min", 1, 100000),
+            integer("meteor.interval.max", 1, 100000),
+            bool("meteor.log_scheduler"),
 
             notBlank("plugin_version", 32),
             string("prefix", false, 512)

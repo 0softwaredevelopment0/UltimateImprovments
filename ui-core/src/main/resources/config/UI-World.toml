@@ -15,9 +15,13 @@ enabled = true
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# World name.
+# World name used when "worlds" below is empty.
 # Default: "world"
 world = "world"
+# Worlds where meteors may fall near players (a list). Leave empty to use the
+# single "world" name above; add "ui_space" to also shower the space dimension.
+# Default: [] (empty = the "world" value above)
+worlds = []
 # Default: 1
 count_per_spawn = 1
 # Duration.
@@ -342,9 +346,15 @@ unknown_sub = "<red>❌ Unknown meteor subcommand: </red><white>%sub%</white>"
 no_permission = "<red>❌ You don't have permission to spawn meteors!</red>"
 # Default: <red>❌ Invalid count!</red>
 invalid_count = "<red>❌ Invalid count!</red>"
-# Default: <red>❌ Meteor module is disabled in config.yml!</red>
-module_disabled = "<red>❌ Meteor module is disabled in config.yml!</red>"
+# Default: <red>❌ Meteor module is disabled in configs/UI-World.toml!</red>
+module_disabled = "<red>❌ Meteor module is disabled in configs/UI-World.toml!</red>"
 # Default: <red>❌ Meteor module is not initialized!</red>
 module_not_init = "<red>❌ Meteor module is not initialized!</red>"
 # Default: <green>✔</green> <white>Spawned </white><yellow>%count%</yellow><white> meteor(s)!</white>
 spawned = "<green>✔</green> <white>Spawned </white><yellow>%count%</yellow><white> meteor(s)!</white>"
+# No meteor could be created at all (see the server console).
+# Default: <red>❌ Could not spawn a meteor — see the server console for the reason.</red>
+spawn_failed = "<red>❌ Could not spawn a meteor — see the server console for the reason.</red>"
+# Only part of the requested meteors were created (active meteor cap).
+# Default: <yellow>⚠ Spawned </yellow><white>%spawned%</white><yellow> of </yellow><white>%count%</white><yellow> meteor(s) — active limit reached.</yellow>
+spawn_partial = "<yellow>⚠ Spawned </yellow><white>%spawned%</white><yellow> of </yellow><white>%count%</white><yellow> meteor(s) — active limit reached.</yellow>"
