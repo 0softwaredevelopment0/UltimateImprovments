@@ -14,6 +14,7 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Marker;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -29,8 +30,25 @@ import java.util.Random;
  * <p>The Marker spawns high in the sky and is teleported down every tick.
  * On ground impact: a real explosion + a meteor structure made of the specified
  * blocks with ore in the center spawns at the impact point.</p>
+ *
+ * <p>Everything the players actually see comes from the BlockDisplay sphere and
+ * from particles/sounds sent by hand: the meteor falls ~80-120 blocks above the
+ * ground and up to ~120 blocks away horizontally, far outside the default
+ * ranges of display entities (64 blocks) and particle broadcasts (32 blocks).</p>
  */
 public class MeteorTask extends BukkitRunnable {
+
+    /**
+     * Client-side render range of the falling sphere, in multiples of 64 blocks
+     * ({@code view_range * 64}). Display entities default to 1.0, i.e. 64 blocks,
+     * which culled the meteor for the whole descent — it only popped in right
+     * before the impact. 4.0 covers the tallest fall plus the widest spawn
+     * offset (~256 blocks).
+     */
+    private static final float VIEW_RANGE = 4.0f;
+
+    /** Squared distance within which players receive the trail particles and sounds. */
+    private static final double EFFECT_RADIUS_SQR = Math.pow(VIEW_RANGE * 64.0, 2);
 
     // ──────────── Fields ────────────
     private final Plugin plugin;
@@ -160,26 +178,30 @@ public class MeteorTask extends BukkitRunnable {
         // ── Move the block visualizers with the marker ──
         moveDisplays(loc);
 
+        // World#spawnParticle/playSound only reach ~32/16 blocks, so the fall is
+        // broadcast to the players who can actually see the meteor instead.
+        List<Player> viewers = viewersNear(loc);
+
         // ── Particles ──
         double intensity = 0.5 + progress * 2.0;
         // Spread the fire across the whole visible sphere, not just the center
         double fireSpread = sphereRadius + 0.6;
 
         // Fire aura
-        world.spawnParticle(Particle.FLAME, loc, (int) (6 * intensity),
+        particle(viewers, Particle.FLAME, loc, (int) (6 * intensity),
                 fireSpread, fireSpread * 0.6, fireSpread, 0.02);
 
         // Smoke
-        world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, (int) (4 * intensity),
+        particle(viewers, Particle.CAMPFIRE_SIGNAL_SMOKE, loc, (int) (4 * intensity),
                 fireSpread, fireSpread * 0.4, fireSpread, 0.03);
 
         // Sparks
-        world.spawnParticle(Particle.LAVA, loc, (int) (2 * intensity),
+        particle(viewers, Particle.LAVA, loc, (int) (2 * intensity),
                 fireSpread, fireSpread * 0.6, fireSpread, 0);
 
         // Trail above (smoke stays higher)
         Location trailLoc = loc.clone().add(0, 1.0, 0);
-        world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, trailLoc, (int) (3 * intensity),
+        particle(viewers, Particle.CAMPFIRE_SIGNAL_SMOKE, trailLoc, (int) (3 * intensity),
                 0.3, 0.5, 0.3, 0.05);
 
         // Bright flash in the last third.
@@ -187,20 +209,20 @@ public class MeteorTask extends BukkitRunnable {
         // data object throws "missing required data class org.bukkit.Color" and
         // used to abort the whole fall at ~70% before the impact.
         if (progress > 0.7 && random.nextDouble() < 0.2) {
-            world.spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0, Color.WHITE);
+            particle(viewers, Particle.FLASH, loc, 1, 0, 0, 0, 0, Color.WHITE);
         }
 
         // ── Sound ──
         float volume = 0.3f + (float) progress * 0.7f;
         float pitch = 0.3f + (float) progress * 0.6f;
-        world.playSound(loc, Sound.ENTITY_GHAST_SHOOT, volume * 0.5f, pitch);
+        sound(viewers, Sound.ENTITY_GHAST_SHOOT, loc, volume * 0.5f, pitch);
 
         if (progress > 0.6) {
             float rumblePitch = 0.1f + (float) (1.0 - progress) * 0.3f;
-            world.playSound(loc, Sound.BLOCK_LAVA_AMBIENT, volume * 0.3f, rumblePitch);
+            sound(viewers, Sound.BLOCK_LAVA_AMBIENT, loc, volume * 0.3f, rumblePitch);
         }
         if (progress > 0.8) {
-            world.playSound(loc, Sound.ENTITY_CREEPER_PRIMED, 0.4f, 0.5f);
+            sound(viewers, Sound.ENTITY_CREEPER_PRIMED, loc, 0.4f, 0.5f);
         }
     }
 
@@ -214,29 +236,33 @@ public class MeteorTask extends BukkitRunnable {
 
         Location impactLoc = new Location(world, targetX, targetY, targetZ);
 
+        // Same reason as the fall: the impact point is up to ~120 blocks away
+        // from the players watching, so particles/sounds go out per player.
+        List<Player> viewers = viewersNear(impactLoc);
+
         // ── Explosion (configurable power, TNT = 4.0) ──
         world.createExplosion(impactLoc, explosionPower, true);
 
         // ── Explosion particles ──
-        world.spawnParticle(Particle.EXPLOSION_EMITTER, impactLoc, 1, 0, 0, 0, 0);
-        world.spawnParticle(Particle.FLAME, impactLoc, 60, 4, 2, 4, 0.15);
-        world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, impactLoc, 80, 4, 2, 4, 0.08);
-        world.spawnParticle(Particle.LAVA, impactLoc, 30, 1, 0.5, 1, 0);
-        world.spawnParticle(Particle.FLASH, impactLoc, 1, 0, 0, 0, 0, Color.WHITE);
+        particle(viewers, Particle.EXPLOSION_EMITTER, impactLoc, 1, 0, 0, 0, 0);
+        particle(viewers, Particle.FLAME, impactLoc, 60, 4, 2, 4, 0.15);
+        particle(viewers, Particle.CAMPFIRE_SIGNAL_SMOKE, impactLoc, 80, 4, 2, 4, 0.08);
+        particle(viewers, Particle.LAVA, impactLoc, 30, 1, 0.5, 1, 0);
+        particle(viewers, Particle.FLASH, impactLoc, 1, 0, 0, 0, 0, Color.WHITE);
 
         // Rising smoke column
         for (int i = 0; i < 5; i++) {
             double offsetY = i * 1.5;
             Location smokeLoc = impactLoc.clone().add(0, offsetY, 0);
-            world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, smokeLoc,
+            particle(viewers, Particle.CAMPFIRE_SIGNAL_SMOKE, smokeLoc,
                     10 + i * 5, 1.5 - i * 0.2, 0.3, 1.5 - i * 0.2, 0.05);
-            world.spawnParticle(Particle.FLAME, smokeLoc, 5, 0.5, 0.3, 0.5, 0.02);
+            particle(viewers, Particle.FLAME, smokeLoc, 5, 0.5, 0.3, 0.5, 0.02);
         }
 
         // ── Sounds ──
-        world.playSound(impactLoc, Sound.ENTITY_GENERIC_EXPLODE, 3.0f, 0.6f);
-        world.playSound(impactLoc, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0f, 0.4f);
-        world.playSound(impactLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 2.0f, 0.8f);
+        sound(viewers, Sound.ENTITY_GENERIC_EXPLODE, impactLoc, 3.0f, 0.6f);
+        sound(viewers, Sound.ENTITY_FIREWORK_ROCKET_BLAST, impactLoc, 2.0f, 0.4f);
+        sound(viewers, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, impactLoc, 2.0f, 0.8f);
 
         // ── Crater first, meteorite last ──
         // The crater decoration (magma/obsidian/fire) must not overwrite the
@@ -372,6 +398,11 @@ public class MeteorTask extends BukkitRunnable {
         this.onComplete = onComplete;
     }
 
+    /** @return number of BlockDisplay entities rendering the falling sphere. */
+    public int displayCount() {
+        return displays.size();
+    }
+
     private void safeCleanup() {
         removeMarker();
         removeDisplays();
@@ -445,6 +476,9 @@ public class MeteorTask extends BukkitRunnable {
                     display.setPersistent(false);
                     // Fullbright — makes the rock look molten/burning
                     display.setBrightness(new Display.Brightness(15, 15));
+                    // Render far enough: the default 1.0 (=64 blocks) culled the
+                    // whole sphere while it was still high above the players.
+                    display.setViewRange(VIEW_RANGE);
 
                     displays.add(display);
                     displayOffsets.add(new Vector(dx, dy, dz));
@@ -469,6 +503,52 @@ public class MeteorTask extends BukkitRunnable {
     }
 
     // ──────────── Helpers ────────────
+
+    /**
+     * @return players in this meteor's world close enough to perceive the fall.
+     *         {@code World#spawnParticle} broadcasts only within 32 blocks and
+     *         sounds fade out over {@code volume * 16} blocks, both far inside
+     *         the ~200-block fall column, so the visuals are delivered manually.
+     */
+    private List<Player> viewersNear(Location center) {
+        List<Player> viewers = new ArrayList<>();
+        for (Player player : world.getPlayers()) {
+            if (player.getLocation().distanceSquared(center) <= EFFECT_RADIUS_SQR) {
+                viewers.add(player);
+            }
+        }
+        return viewers;
+    }
+
+    /** Sends a particle to every viewer (the world-wide broadcast stops at 32 blocks). */
+    private void particle(List<Player> viewers, Particle particle, Location loc, int count,
+                          double offsetX, double offsetY, double offsetZ, double extra) {
+        for (Player viewer : viewers) {
+            viewer.spawnParticle(particle, loc, count, offsetX, offsetY, offsetZ, extra);
+        }
+    }
+
+    /** Same as {@link #particle} but for particles that require a data object (e.g. FLASH). */
+    private <T> void particle(List<Player> viewers, Particle particle, Location loc, int count,
+                              double offsetX, double offsetY, double offsetZ, double extra, T data) {
+        for (Player viewer : viewers) {
+            viewer.spawnParticle(particle, loc, count, offsetX, offsetY, offsetZ, extra, data);
+        }
+    }
+
+    /**
+     * Plays a sound for every viewer.
+     * <p>
+     * The client fades a sound out linearly over {@code volume * 16} blocks, so
+     * the packet volume is raised by the listener's distance: without it the fall
+     * was completely silent for anyone farther than ~16 blocks.
+     */
+    private void sound(List<Player> viewers, Sound sound, Location loc, float volume, float pitch) {
+        for (Player viewer : viewers) {
+            double distance = Math.sqrt(Math.max(0.0, viewer.getLocation().distanceSquared(loc)));
+            viewer.playSound(loc, sound, volume + (float) (distance / 16.0), pitch);
+        }
+    }
 
     private static double lerp(double a, double b, double t) {
         return a + (b - a) * t;

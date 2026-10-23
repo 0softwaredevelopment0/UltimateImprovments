@@ -471,7 +471,8 @@ public class MeteorModule extends PluginModule {
 
         ConsoleLogger.info("[Meteor] Spawned meteor in '" + world.getName() + "' → ("
                 + targetX + ", " + targetY + ", " + targetZ + ") radius=" + sphereRadius
-                + " power=" + explosionPower + " startY=" + (int) startY);
+                + " power=" + explosionPower + " startY=" + (int) startY
+                + " displays=" + task.displayCount());
         return true;
     }
 
