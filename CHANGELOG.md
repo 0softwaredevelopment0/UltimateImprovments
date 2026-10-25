@@ -3,6 +3,19 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.21] - since 1.8.5-alpha.20 (2026-10-26)
+
+### Added
+- **GSit `/spin` guard** (ui-guard, `[gsit_spin_guard]` in UI-Guard.toml):
+  opt-in protection (`enabled`, default `false`) against the GSit
+  version-mismatch bug that leaves a player invisible for everyone else after
+  `/spin`. Two modes (`mode`, default `1`): mode 1 requires the new
+  `ui.gsit.spin` permission (registered in code, default FALSE) and answers
+  error 002 with the missing node otherwise; mode 2 disables the command for
+  players with error 011. Both `/spin` and the GSit alias `/gspin` (including
+  namespace-qualified forms) are intercepted before GSit runs; console and
+  command blocks are untouched.
+
 ## [1.8.5-alpha.19] - since 1.8.5-alpha.18 (2026-10-23)
 
 > **Alpha channel** — the meteor mechanic is alive again: meteors fall and spawn

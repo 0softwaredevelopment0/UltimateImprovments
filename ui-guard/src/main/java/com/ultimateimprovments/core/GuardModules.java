@@ -10,6 +10,7 @@ import com.ultimateimprovments.mechanics.security.serverlockdown.ServerLockdownM
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
+import com.ultimateimprovments.mechanics.security.gsit.GSitSpinGuard;
 import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
 import com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler;
 import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
@@ -195,6 +196,26 @@ public final class GuardModules {
                 SudoManager.init();
                 guard.getServer().getPluginManager().registerEvents(new SudoQuitListener(), guard);
                 ConsoleLogger.info("[SudoModule] Sudo mode initialized.");
+            }
+        });
+
+        // GSitSpinGuard (opt-in protection against the GSit version-mismatch
+        // invisibility bug: /spin is gated by ui.gsit.spin or disabled entirely)
+        mm.register(new SimpleModule("GSitSpinGuard", "mechanics/security/gsit", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                JavaPlugin guard = UIGuard.getInstance();
+                guard.getServer().getPluginManager().registerEvents(new GSitSpinGuard(), guard);
+                if (!GSitSpinGuard.isEnabled()) {
+                    ConsoleLogger.info("[GSitSpinGuard] /spin protection is disabled in config"
+                            + " (gsit_spin_guard.enabled: false).");
+                    return;
+                }
+                var gsit = guard.getServer().getPluginManager().getPlugin("GSit");
+                ConsoleLogger.info("[GSitSpinGuard] /spin protection active (mode=" + GSitSpinGuard.getMode()
+                        + (gsit != null ? ", GSit " + gsit.getPluginMeta().getVersion()
+                                        : ", GSit not installed")
+                        + ").");
             }
         });
 

@@ -59,8 +59,8 @@ public final class AddonCatalog {
         // ── UI-Guard ──
         route("UI-Guard", "packet_guard", "proxy_server", "redstone_guard",
                 "emergency_entity_kill", "server_overload_warning", "bot_protection",
-                "check", "codepanel", "sudo", "maintenance", "console_lockdown",
-                "server_lockdown", "command_policy", "stresstest");
+                "check", "codepanel", "sudo", "gsit_spin_guard", "maintenance",
+                "console_lockdown", "server_lockdown", "command_policy", "stresstest");
         // ── UI-World ──
         route("UI-World", "wireless_redstone", "meteor", "block_friction", "sculk");
         // ── UI-Items ──

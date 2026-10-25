@@ -1,6 +1,6 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.8.5-alpha.18
+**Version:** 1.8.5-alpha.21
 **Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
@@ -391,6 +391,11 @@ End-crystal turrets are a ranged defense system:
 - **BotProtection** — join rate limiting.
 - **CreativeItemValidator** — validates creative items (size, PDC, lore).
 - **CmdBlockTracker** — lists active command blocks.
+- **GSit /spin guard** — opt-in protection against the GSit version-mismatch
+  invisibility bug: `/spin` (alias `/gspin`) either requires `ui.gsit.spin`
+  (otherwise error 002) or is disabled entirely (error 011). Config:
+  `[gsit_spin_guard]` in `UI-Guard.toml`, `enabled = false` by default,
+  `mode = 1` (1 = permission gate, 2 = command disabled).
 - OP command / whitelist command blockers.
 
 ### Offline inventory editing
@@ -485,6 +490,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 | `ui.enchant.itemstealing.steal` | Allows Item Stealing to trigger (default FALSE) |
 | `ui.chat.filter.bypass` | Bypass the chat filter |
 | `ui.packetguard.bypass` | Bypass packet size limits |
+| `ui.gsit.spin` | Use `/spin` while the GSit version-mismatch guard is active (`gsit_spin_guard` mode 1, default FALSE) |
 | `ui.gmprotect.bypass` | Bypass game-mode protection |
 | `ui.creative.bypass` | Bypass creative item validation |
 | `ui.show.brand` | Show the server brand in F3 |

@@ -206,6 +206,11 @@ public final class Permissions {
     public static final String UI_GMPROTECT_BYPASS = "ui.gmprotect.bypass";
     public static final String UI_CREATIVE_BYPASS = "ui.creative.bypass";
     public static final String UI_PACKETGUARD_BYPASS = "ui.packetguard.bypass";
+    /**
+     * GSit /spin guard (mode 1): allows {@code /spin} while the protection
+     * against the GSit version-mismatch invisibility bug is active.
+     */
+    public static final String UI_GSIT_SPIN = "ui.gsit.spin";
     public static final String UI_ENCHANT_AOE_BYPASS = "ui.enchant.aoe.bypass";
     /** Immunity to sculk contact hazards (wither, fangs, slowness, mining fatigue). */
     public static final String UI_SCULK_HAZARDS_BYPASS = "ui.sculk.hazards.bypass";
@@ -411,6 +416,7 @@ public final class Permissions {
                 new Permission(UI_GMPROTECT_BYPASS, "Bypass game-mode protection", PermissionDefault.FALSE),
                 new Permission(UI_CREATIVE_BYPASS, "Bypass creative item validation", PermissionDefault.FALSE),
                 new Permission(UI_PACKETGUARD_BYPASS, "Bypass packet guard", PermissionDefault.FALSE),
+                new Permission(UI_GSIT_SPIN, "Use /spin while the GSit version-mismatch guard is active (gsit_spin_guard mode 1)", PermissionDefault.FALSE),
                 new Permission(UI_ENCHANT_AOE_BYPASS, "Bypass AOE enchantment restrictions", PermissionDefault.FALSE),
                 new Permission(UI_SCULK_HAZARDS_BYPASS, "Ignore the sculk contact hazards (wither, evoker fangs, slowness, mining fatigue)", PermissionDefault.FALSE),
                 new Permission(UI_OVERLOAD_LOGS, "Receive overload logs", PermissionDefault.FALSE),

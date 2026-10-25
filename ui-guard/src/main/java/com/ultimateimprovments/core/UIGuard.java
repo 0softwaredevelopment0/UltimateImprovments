@@ -25,8 +25,8 @@ public class UIGuard extends JavaPlugin implements SoftReloadable {
 
     private static final Set<String> OWNED_MODULES = Set.of(
             "RedstoneGuard", "PacketGuard", "ProxyServer", "BotProtection", "ServerOverload",
-            "Check", "CodePanel", "Sudo", "Maintenance", "ConsoleLockdown", "ServerLockdown",
-            "StressTest");
+            "Check", "CodePanel", "Sudo", "GSitSpinGuard", "Maintenance", "ConsoleLockdown",
+            "ServerLockdown", "StressTest");
 
     private static UIGuard instance;
 

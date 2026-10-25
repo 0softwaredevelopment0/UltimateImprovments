@@ -196,6 +196,23 @@ enabled = true
 # Default: ["op", "deop", "stop", "restart"]
 disabled_commands = ["op", "deop", "stop", "restart"]
 
+# GSit /spin guard — protection against the GSit version-mismatch bug that
+# leaves the player INVISIBLE for everyone else after using /spin.
+# Opt-in: keep disabled unless the installed GSit build does not match the
+# server/client version. Both /spin and its GSit alias /gspin are covered.
+
+[gsit_spin_guard]
+# Master switch (true = feature on).
+# Default: false
+enabled = false
+# Protection mode:
+#   1 — /spin requires the ui.gsit.spin permission; players without it get
+#       error 002 (insufficient permissions);
+#   2 — /spin is disabled on the server; players get error 011 (command
+#       disabled on this server).
+# Default: 1
+mode = 1
+
 [maintenance]
 # Maintenance mode switch: non-staff players are kicked/blocked.
 # Default: true
