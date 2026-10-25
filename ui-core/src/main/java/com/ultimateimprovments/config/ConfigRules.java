@@ -548,6 +548,11 @@ final class ConfigRules {
             bool("command_policy.enabled"),
             stringList("command_policy.disabled_commands"),
 
+            // GSit /spin guard (protection against the version-mismatch
+            // invisibility bug); 1 = permission gate, 2 = command disabled
+            bool("gsit_spin_guard.enabled"),
+            integer("gsit_spin_guard.mode", 1, 2, "Режим защиты /spin: 1 — нужно ui.gsit.spin (002), 2 — команда отключена (011)"),
+
             // Stress test / server benchmarks (/ui stresstest)
             bool("stresstest.enabled"),
             integer("stresstest.warmup_seconds", 0, 60, "Baseline sampling time before the load starts (s)"),
