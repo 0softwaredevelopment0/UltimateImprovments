@@ -38,6 +38,7 @@ public class KitDialogHandler implements Listener {
     private static final Key IMPORT_SUBMIT = Key.key(NS, "kit_import_submit");
     private static final Key EXPORT_SUBMIT = Key.key(NS, "kit_export_submit");
     private static final Key EXPORT_SUBMIT_FORCE = Key.key(NS, "kit_export_submit_force");
+    private static final Key COOLDOWN_SUBMIT = Key.key(NS, "kit_cooldown_submit");
     private static final Key CANCEL = Key.key(NS, "kit_cancel");
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -97,15 +98,20 @@ public class KitDialogHandler implements Listener {
                     confirmed != null && confirmed);
             return;
         }
-
         if (identifier.equals(IMPORT_SUBMIT)) {
-            KitService.importFromHand(player, text(response, KitDialogs.KEY_NAME));
+            KitService.importFromHand(player, text(response, KitDialogs.KEY_NAME), "");
             return;
         }
 
         if (identifier.equals(EXPORT_SUBMIT) || identifier.equals(EXPORT_SUBMIT_FORCE)) {
-            KitService.exportToHand(player, text(response, KitDialogs.KEY_NAME),
+            KitService.exportToHand(player, text(response, KitDialogs.KEY_NAME), "",
                     identifier.equals(EXPORT_SUBMIT_FORCE));
+            return;
+        }
+
+        if (identifier.equals(COOLDOWN_SUBMIT)) {
+            KitService.setCooldown(player, text(response, KitDialogs.KEY_NAME),
+                    text(response, KitDialogs.KEY_SECONDS));
         }
     }
 

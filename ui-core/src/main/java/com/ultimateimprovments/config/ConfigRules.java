@@ -574,10 +574,11 @@ final class ConfigRules {
 
             integer("access_control.check_interval_ticks", 1, 72000),
 
-            // Kits (/ui kit) — page size and input limits
+            // Kits (/ui kit) — page size, input limits and cooldown cap
             integer("kits.list_page_size", 1, 50, "Kits shown per /ui kit list page"),
             integer("kits.max_name_length", 1, 64, "Max kit name length (MiniMessage tags included)"),
             integer("kits.max_description_length", 0, 512, "Max kit description length (MiniMessage tags included)"),
+            integer("kits.max_cooldown_seconds", 0, 31536000, "Max kit cooldown in seconds (0 = cooldowns cannot be set)"),
 
             // Operator lists ([op_lists]) — OP whitelist + OP blacklist,
             // one combined periodic check task
