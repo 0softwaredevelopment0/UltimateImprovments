@@ -44,9 +44,9 @@ public final class RedstoneSubcommand {
 
         RedstoneGuard guard = RedstoneGuard.getInstance();
         if (guard == null) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Redstone guard is not initialized!</red>"
-            ));
+            sender.sendMessage(MessageUtil.parse(MessageUtil.raw(
+                    "redstone_guard.not_initialized",
+                    "<red>❌ Redstone guard is not initialized!</red>")));
             return true;
         }
 
@@ -92,7 +92,10 @@ public final class RedstoneSubcommand {
                 "<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
         ));
         sender.sendMessage(MessageUtil.parse(
-                "<dark_gray>┃</dark_gray> <red>🔴 Blocked Redstone Chunks</red> <gray>(<white>" + chunks.size() + "</white>)</gray>"
+                "<dark_gray>┃</dark_gray> " + MessageUtil.raw(
+                        "redstone_guard.list_header",
+                        "<red>🔴 Blocked Redstone Chunks</red> <gray>(<white>%count%</white>)</gray>")
+                        .replace("%count%", String.valueOf(chunks.size()))
         ));
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>┃</dark_gray>"
@@ -100,7 +103,9 @@ public final class RedstoneSubcommand {
 
         if (chunks.isEmpty()) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_gray>┃</dark_gray>   <dark_gray>(empty — no blocked chunks)</dark_gray>"
+                    "<dark_gray>┃</dark_gray>   " + MessageUtil.raw(
+                            "redstone_guard.list_empty",
+                            "<dark_gray>(empty — no blocked chunks)</dark_gray>")
             ));
         } else {
             int start = (page - 1) * PER_PAGE;
@@ -111,18 +116,26 @@ public final class RedstoneSubcommand {
                 ChunkKey key = bc.key();
 
                 // Chunk center coordinates — clickable (/tp @s)
+                String tpCommand = "/tp @s " + key.centerX() + " " + safeY(key) + " " + key.centerZ();
                 Component coords = MessageUtil.parse(
                         "<aqua>" + key.centerX() + "</aqua><gray>,</gray> <aqua>" + key.centerZ() + "</aqua>"
-                ).clickEvent(ClickEvent.runCommand("/tp @s " + key.centerX() + " " + safeY(key) + " " + key.centerZ()))
+                ).clickEvent(ClickEvent.runCommand(tpCommand))
                  .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                         MessageUtil.parse("<green>Click to teleport</green>\n<gray>/tp @s " + key.centerX() + " " + safeY(key) + " " + key.centerZ() + "</gray>")));
+                         MessageUtil.parse(MessageUtil.raw(
+                                 "redstone_guard.tp_hover",
+                                 "<green>Click to teleport</green>\n<gray>%command%</gray>")
+                                 .replace("%command%", tpCommand))));
 
                 // Unlock button — clickable
-                Component unlockBtn = MessageUtil.parse(
-                        "<dark_green>[</dark_green><green>✔ Unlock</green><dark_green>]</dark_green>"
+                Component unlockBtn = MessageUtil.parse(MessageUtil.raw(
+                        "redstone_guard.unlock_button",
+                        "<dark_green>[</dark_green><green>✔ Unlock</green><dark_green>]</dark_green>")
                 ).clickEvent(ClickEvent.runCommand("/ui redstone unlock " + bc.number()))
                  .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                         MessageUtil.parse("<green>Click to unlock chunk #" + bc.number() + "</green>")));
+                         MessageUtil.parse(MessageUtil.raw(
+                                 "redstone_guard.unlock_hover",
+                                 "<green>Click to unlock chunk #%number%</green>")
+                                 .replace("%number%", String.valueOf(bc.number())))));
 
                 sender.sendMessage(
                         MessageUtil.parse("<dark_gray>┃</dark_gray> <yellow>#" + bc.number() + "</yellow> <gray>" + key.world() + "</gray> ")
@@ -142,18 +155,26 @@ public final class RedstoneSubcommand {
                 ? MessageUtil.parse("<white>[</white><yellow>◀</yellow><white>]</white>")
                         .clickEvent(ClickEvent.runCommand("/ui redstone list " + (page - 1)))
                         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                MessageUtil.parse("<gray>Previous page</gray>")))
+                                MessageUtil.parse(MessageUtil.raw(
+                                        "redstone_guard.page_prev_hover",
+                                        "<gray>Previous page</gray>"))))
                 : MessageUtil.parse("<dark_gray>[◀]</dark_gray>");
 
         Component nextBtn = page < totalPages
                 ? MessageUtil.parse("<white>[</white><yellow>▶</yellow><white>]</white>")
                         .clickEvent(ClickEvent.runCommand("/ui redstone list " + (page + 1)))
                         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                MessageUtil.parse("<gray>Next page</gray>")))
+                                MessageUtil.parse(MessageUtil.raw(
+                                        "redstone_guard.page_next_hover",
+                                        "<gray>Next page</gray>"))))
                 : MessageUtil.parse("<dark_gray>[▶]</dark_gray>");
 
         Component pageInfo = MessageUtil.parse(
-                "<dark_gray>┃</dark_gray> <gray>Page</gray> <white>" + page + "/" + totalPages + "</white> <dark_gray>|</dark_gray> <gray>/ui redstone list [страница]</gray>"
+                "<dark_gray>┃</dark_gray> " + MessageUtil.raw(
+                        "redstone_guard.page_info",
+                        "<gray>Page</gray> <white>%page%/%total%</white> <dark_gray>|</dark_gray> <gray>/ui redstone list [page]</gray>")
+                        .replace("%page%", String.valueOf(page))
+                        .replace("%total%", String.valueOf(totalPages))
         );
 
         sender.sendMessage(prevBtn.append(pageInfo).append(nextBtn));
@@ -185,9 +206,9 @@ public final class RedstoneSubcommand {
 
     private static boolean unlockChunk(CommandSender sender, RedstoneGuard guard, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui redstone unlock <номер чанка></white>"
-            ));
+            sender.sendMessage(MessageUtil.parse(MessageUtil.raw(
+                    "redstone_guard.usage_unlock",
+                    "<red>❌ Usage: </red><white>/ui redstone unlock <number></white>")));
             return true;
         }
 
@@ -195,21 +216,24 @@ public final class RedstoneSubcommand {
         try {
             number = Integer.parseInt(args[2]);
         } catch (NumberFormatException e) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Invalid chunk number: </red><yellow>" + args[2] + "</yellow>"
-            ));
+            sender.sendMessage(MessageUtil.parse(MessageUtil.raw(
+                    "redstone_guard.invalid_number",
+                    "<red>❌ Invalid chunk number: </red><yellow>%value%</yellow>")
+                    .replace("%value%", args[2])));
             return true;
         }
 
         if (guard.unlock(number)) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<green>✔</green> <white>Chunk</white> <yellow>#" + number + "</yellow> <white>unlocked.</white>"
-            ));
+            sender.sendMessage(MessageUtil.parse(MessageUtil.raw(
+                    "redstone_guard.unlock_success",
+                    "<green>✔</green> <white>Chunk</white> <yellow>#%number%</yellow> <white>unlocked.</white>")
+                    .replace("%number%", String.valueOf(number))));
             ConsoleLogger.info("[RedstoneGuard] Chunk #" + number + " unlocked by " + sender.getName());
         } else {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Chunk</red> <yellow>#" + number + "</yellow> <red>is not blocked!</red>"
-            ));
+            sender.sendMessage(MessageUtil.parse(MessageUtil.raw(
+                    "redstone_guard.not_blocked",
+                    "<red>❌ Chunk</red> <yellow>#%number%</yellow> <red>is not blocked!</red>")
+                    .replace("%number%", String.valueOf(number))));
         }
         return true;
     }

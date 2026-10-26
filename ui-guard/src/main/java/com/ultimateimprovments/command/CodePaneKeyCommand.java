@@ -216,12 +216,18 @@ public class CodePaneKeyCommand {
 
         sender.sendMessage("");
         sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════</gold>"));
-        sender.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Code Panel Keys </white><gray>(" + keys.size() + ")</gray>"));
+        sender.sendMessage(MessageUtil.parse(MessageUtil.raw(
+                "codepane.key.list_title",
+                "<gold>  ✦ </gold><white>Code Panel Keys </white><gray>(%count%)</gray>")
+                .replace("%count%", String.valueOf(keys.size()))));
         sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════</gold>"));
 
         for (CodePanelDatabase.CodePanelKey key : keys) {
             sender.sendMessage("");
-            sender.sendMessage(MessageUtil.parse("<gray>┌─ </gray><yellow>" + key.keyName + "</yellow>"));
+            sender.sendMessage(MessageUtil.parse(MessageUtil.raw(
+                    "codepane.key.list_entry",
+                    "<gray>┌─ </gray><yellow>%name%</yellow>")
+                    .replace("%name%", key.keyName)));
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>%code%</white>").replace("%code%", key.code)));
 
             if (key.command != null && !key.command.isEmpty()) {
@@ -578,10 +584,23 @@ public class CodePaneKeyCommand {
         long hours = minutes / 60;
         long days = hours / 24;
 
-        if (days > 0) return days + "д " + (hours % 24) + "ч";
-        if (hours > 0) return hours + "ч " + (minutes % 60) + "м";
-        if (minutes > 0) return minutes + "м " + (seconds % 60) + "с";
-        return seconds + "с";
+        if (days > 0) {
+            return MessagesManager.getString("codepane.units.days", "%days%d %hours%h")
+                    .replace("%days%", String.valueOf(days))
+                    .replace("%hours%", String.valueOf(hours % 24));
+        }
+        if (hours > 0) {
+            return MessagesManager.getString("codepane.units.hours", "%hours%h %minutes%m")
+                    .replace("%hours%", String.valueOf(hours))
+                    .replace("%minutes%", String.valueOf(minutes % 60));
+        }
+        if (minutes > 0) {
+            return MessagesManager.getString("codepane.units.minutes", "%minutes%m %seconds%s")
+                    .replace("%minutes%", String.valueOf(minutes))
+                    .replace("%seconds%", String.valueOf(seconds % 60));
+        }
+        return MessagesManager.getString("codepane.units.seconds", "%seconds%s")
+                .replace("%seconds%", String.valueOf(seconds));
     }
 
     private static long parseTimeFlag(String value) {

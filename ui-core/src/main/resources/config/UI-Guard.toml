@@ -298,6 +298,8 @@ max_entities = 2000
 
 # codepanel section.
 [messages.codepanel]
+# Text shown when the console runs /ui codepane (the panel is player-only).
+players_only = "<dark_red>❌</dark_red> <red>Только игрок может открыть кодовую панель.</red>"
 
 # messages section.
 # Placeholders: %seconds%
@@ -397,6 +399,18 @@ info_expires_in = "<gray>Expires:</gray> <white>%duration%</white>"
 info_max_attempts = "<gray>Max attempts:</gray> <white>%max%</white>"
 # Default: <gray>Expires at:</gray> <white>%date%</white>
 info_expires_at = "<gray>Expires at:</gray> <white>%date%</white>"
+# Header of /ui codepane key list. Placeholder: %count%.
+list_title = "<gold>  ✦ </gold><white>Ключи кодовой панели </white><gray>(%count%)</gray>"
+# One entry line of /ui codepane key list. Placeholder: %name%.
+list_entry = "<gray>┌─ </gray><yellow>%name%</yellow>"
+
+# Duration units used for the key expiry line.
+# Placeholders: %days%, %hours%, %minutes%, %seconds%.
+[messages.codepanel.units]
+days = "%days%д %hours%ч"
+hours = "%hours%ч %minutes%м"
+minutes = "%minutes%м %seconds%с"
+seconds = "%seconds%с"
 
 # help section.
 # Placeholders: %entity%
@@ -549,6 +563,8 @@ teleported = "<gray>Teleported to suspect's new location.</gray>"
 
 # codepanel section.
 [messages_en.codepanel]
+# Text shown when the console runs /ui codepane (the panel is player-only).
+players_only = "<dark_red>❌</dark_red> <red>Only a player can open the code panel.</red>"
 
 # messages section.
 # Placeholders: %seconds%
@@ -648,6 +664,18 @@ info_expires_in = "<gray>Expires:</gray> <white>%duration%</white>"
 info_max_attempts = "<gray>Max attempts:</gray> <white>%max%</white>"
 # Default: <gray>Expires at:</gray> <white>%date%</white>
 info_expires_at = "<gray>Expires at:</gray> <white>%date%</white>"
+# Header of /ui codepane key list. Placeholder: %count%.
+list_title = "<gold>  ✦ </gold><white>Code Panel Keys </white><gray>(%count%)</gray>"
+# One entry line of /ui codepane key list. Placeholder: %name%.
+list_entry = "<gray>┌─ </gray><yellow>%name%</yellow>"
+
+# Duration units used for the key expiry line.
+# Placeholders: %days%, %hours%, %minutes%, %seconds%.
+[messages_en.codepanel.units]
+days = "%days%d %hours%h"
+hours = "%hours%h %minutes%m"
+minutes = "%minutes%m %seconds%s"
+seconds = "%seconds%s"
 
 # help section.
 # Placeholders: %entity%
@@ -821,6 +849,31 @@ chunk_frozen = "<red>⚠</red> <white>Ваш чанк </white><yellow>#%number% 
 # Alert to staff when a chunk is unblocked.
 # Placeholders: %number%, %chunk%.
 chunk_unlocked = "<white>Чанк </white><yellow>#%number% </yellow><gray>(%chunk%) </gray><green>разблокирован</green>"
+# Shown when the redstone guard module is not initialised.
+not_initialized = "<red>❌ Модуль защиты редстоуна не инициализирован!</red>"
+# Header of /ui redstone list. Placeholder: %count%.
+list_header = "<red>🔴 Заблокированные чанки редстоуна</red> <gray>(<white>%count%</white>)</gray>"
+# Shown when no chunk is blocked.
+list_empty = "<dark_gray>(пусто — нет заблокированных чанков)</dark_gray>"
+# Hover of the clickable chunk coordinates. Placeholder: %command%.
+tp_hover = "<green>Нажмите, чтобы телепортироваться</green>\n<gray>%command%</gray>"
+# Clickable unlock button in /ui redstone list.
+unlock_button = "<dark_green>[</dark_green><green>✔ Разблокировать</green><dark_green>]</dark_green>"
+# Hover of the unlock button. Placeholder: %number%.
+unlock_hover = "<green>Нажмите, чтобы разблокировать чанк #%number%</green>"
+# Pagination hover texts.
+page_prev_hover = "<gray>Предыдущая страница</gray>"
+page_next_hover = "<gray>Следующая страница</gray>"
+# Pagination line. Placeholders: %page%, %total%.
+page_info = "<gray>Страница</gray> <white>%page%/%total%</white> <dark_gray>|</dark_gray> <gray>/ui redstone list [страница]</gray>"
+# /ui redstone unlock without a number.
+usage_unlock = "<red>❌ Использование: </red><white>/ui redstone unlock <номер чанка></white>"
+# Chunk number is not a number. Placeholder: %value%.
+invalid_number = "<red>❌ Неверный номер чанка: </red><yellow>%value%</yellow>"
+# Chunk unlocked successfully. Placeholder: %number%.
+unlock_success = "<green>✔</green> <white>Чанк</white> <yellow>#%number%</yellow> <white>разблокирован.</white>"
+# Nothing is blocked under that number. Placeholder: %number%.
+not_blocked = "<red>❌ Чанк</red> <yellow>#%number%</yellow> <red>не заблокирован!</red>"
 
 [messages.server_overload_warning]
 # Alert when MSPT crosses the critical threshold. Placeholder: %mspt%.
@@ -930,6 +983,31 @@ chunk_frozen = "<red>⚠</red> <white>Your chunk </white><yellow>#%number% </yel
 # Alert to staff when a chunk is unblocked.
 # Placeholders: %number%, %chunk%.
 chunk_unlocked = "<white>Chunk </white><yellow>#%number% </yellow><gray>(%chunk%) </gray><green>unblocked</green>"
+# Shown when the redstone guard module is not initialised.
+not_initialized = "<red>❌ Redstone guard is not initialized!</red>"
+# Header of /ui redstone list. Placeholder: %count%.
+list_header = "<red>🔴 Blocked Redstone Chunks</red> <gray>(<white>%count%</white>)</gray>"
+# Shown when no chunk is blocked.
+list_empty = "<dark_gray>(empty — no blocked chunks)</dark_gray>"
+# Hover of the clickable chunk coordinates. Placeholder: %command%.
+tp_hover = "<green>Click to teleport</green>\n<gray>%command%</gray>"
+# Clickable unlock button in /ui redstone list.
+unlock_button = "<dark_green>[</dark_green><green>✔ Unlock</green><dark_green>]</dark_green>"
+# Hover of the unlock button. Placeholder: %number%.
+unlock_hover = "<green>Click to unlock chunk #%number%</green>"
+# Pagination hover texts.
+page_prev_hover = "<gray>Previous page</gray>"
+page_next_hover = "<gray>Next page</gray>"
+# Pagination line. Placeholders: %page%, %total%.
+page_info = "<gray>Page</gray> <white>%page%/%total%</white> <dark_gray>|</dark_gray> <gray>/ui redstone list [page]</gray>"
+# /ui redstone unlock without a number.
+usage_unlock = "<red>❌ Usage: </red><white>/ui redstone unlock <number></white>"
+# Chunk number is not a number. Placeholder: %value%.
+invalid_number = "<red>❌ Invalid chunk number: </red><yellow>%value%</yellow>"
+# Chunk unlocked successfully. Placeholder: %number%.
+unlock_success = "<green>✔</green> <white>Chunk</white> <yellow>#%number%</yellow> <white>unlocked.</white>"
+# Nothing is blocked under that number. Placeholder: %number%.
+not_blocked = "<red>❌ Chunk</red> <yellow>#%number%</yellow> <red>is not blocked!</red>"
 
 [messages_en.server_overload_warning]
 # Alert when MSPT crosses the critical threshold. Placeholder: %mspt%.
