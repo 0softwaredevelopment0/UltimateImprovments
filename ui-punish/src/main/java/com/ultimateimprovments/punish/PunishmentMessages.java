@@ -187,10 +187,34 @@ public final class PunishmentMessages {
      */
     public static List<String> buildBlockLines(String player, String punisher, String reason,
                                                 String duration, String discordUrl) {
-        List<String> lines = getConfig().getStringList(path("block"));
+        List<String> lines = new ArrayList<>(getConfig().getStringList(path("block")));
+
+        // Safety net: a config written by an older version may have no "Time remaining"
+        // line yet (the block template gained it later, and the config repair only fills
+        // MISSING keys). Insert the standard line after the reason line so the dialog
+        // always shows the time — permanent renders as the red "Permanent" label.
+        boolean hasDuration = false;
+        for (String line : lines) {
+            if (line != null && line.contains(DURATION)) {
+                hasDuration = true;
+                break;
+            }
+        }
+        if (!hasDuration) {
+            int insertAt = lines.size();
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                if (line != null && line.contains(REASON)) {
+                    insertAt = i + 1;
+                    break;
+                }
+            }
+            lines.add(insertAt, "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>");
+        }
+
         List<String> out = new ArrayList<>(lines.size());
         for (String line : lines) {
-            out.add(line
+            out.add(line == null ? "" : line
                     .replace(PLAYER,   player == null ? "" : player)
                     .replace(PUNISHER, punisher == null ? "" : punisher)
                     .replace(REASON,   reason == null ? "" : reason)
