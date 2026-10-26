@@ -800,6 +800,20 @@ scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in
 100 = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <red>joins blocked — this looks like a bot attack!</red>"
 1000 = "<dark_red>🔒 CRITICAL:</dark_red> <white>Server lockdown has blocked </white><yellow>%count%</yellow> <white>joins this session!</white>"
 
+# redstone guard section (alerts of the redstone_guard feature).
+# The plugin prefix is added automatically — don't repeat it here.
+
+[messages.redstone_guard]
+# Alert to staff when a chunk is blocked forever.
+# Placeholders: %mspt%, %number%, %chunk%, %iterations%, %limit%.
+chunk_blocked = "<white>MSPT </white><red>%mspt% </red><gray>→ </gray><red>Заблокирован чанк </red><yellow>#%number% </yellow><gray>(%chunk%) </gray><red>навсегда</red> <dark_gray>| /ui redstone unlock %number%</dark_gray>"
+# Message shown to every player standing in the blocked chunk.
+# Placeholders: %number%, %chunk%.
+chunk_frozen = "<red>⚠</red> <white>Ваш чанк </white><yellow>#%number% </yellow><white>заморожен</white> <gray>(%chunk%) — редстоун здесь отключён из-за перегрузки сервера.</gray>"
+# Alert to staff when a chunk is unblocked.
+# Placeholders: %number%, %chunk%.
+chunk_unlocked = "<white>Чанк </white><yellow>#%number% </yellow><gray>(%chunk%) </gray><green>разблокирован</green>"
+
 # stresstest section (/ui stresstest — server benchmarks).
 
 [messages.stresstest]
@@ -883,6 +897,20 @@ scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in
 10 = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <gray>joins blocked this session.</gray>"
 100 = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <red>joins blocked — this looks like a bot attack!</red>"
 1000 = "<dark_red>🔒 CRITICAL:</dark_red> <white>Server lockdown has blocked </white><yellow>%count%</yellow> <white>joins this session!</white>"
+
+# redstone guard section (alerts of the redstone_guard feature).
+# The plugin prefix is added automatically — don't repeat it here.
+
+[messages_en.redstone_guard]
+# Alert to staff when a chunk is blocked forever.
+# Placeholders: %mspt%, %number%, %chunk%, %iterations%, %limit%.
+chunk_blocked = "<white>MSPT </white><red>%mspt% </red><gray>→ </gray><red>Chunk blocked </red><yellow>#%number% </yellow><gray>(%chunk%) </gray><red>forever</red> <dark_gray>| /ui redstone unlock %number%</dark_gray>"
+# Message shown to every player standing in the blocked chunk.
+# Placeholders: %number%, %chunk%.
+chunk_frozen = "<red>⚠</red> <white>Your chunk </white><yellow>#%number% </yellow><white>is frozen</white> <gray>(%chunk%) — redstone is disabled here because the server is overloaded.</gray>"
+# Alert to staff when a chunk is unblocked.
+# Placeholders: %number%, %chunk%.
+chunk_unlocked = "<white>Chunk </white><yellow>#%number% </yellow><gray>(%chunk%) </gray><green>unblocked</green>"
 
 # stresstest section (/ui stresstest — server benchmarks).
 

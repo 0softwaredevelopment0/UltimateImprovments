@@ -1,5 +1,6 @@
 package com.ultimateimprovments.server;
 
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -178,10 +179,11 @@ public final class RedstoneGuard {
         blockedKeys.remove(removed.key);
         deleteBlock(number); // 💾 from the DB
         ConsoleLogger.info("[REDSTONE_GUARD] Chunk #" + number + " unblocked: " + removed.key);
-        ServerOverloadNotify.broadcast(
-                MessageUtil.PREFIX + "<white>Чанк </white><yellow>#" + number
-                        + " </yellow><gray>(" + removed.key + ") </gray><green>разблокирован</green>"
-        );
+        ServerOverloadNotify.broadcast(MessageUtil.PREFIX + MessagesManager.getString(
+                "redstone_guard.chunk_unlocked",
+                "<white>Chunk </white><yellow>#%number%</yellow> <gray>(%chunk%) </gray><green>unblocked</green>")
+                .replace("%number%", String.valueOf(number))
+                .replace("%chunk%", removed.key.toString()));
         return true;
     }
 
@@ -201,18 +203,25 @@ public final class RedstoneGuard {
     // =========================
 
     private void notifyChunkBlocked(double mspt, ChunkKey key, int number, int iterations) {
+        String msptText = String.format("%.1f", mspt);
         ConsoleLogger.log(
-                "<red>MSPT=" + String.format("%.1f", mspt)
+                "<red>MSPT=" + msptText
                         + " → BLOCKED CHUNK #" + number + " " + key + " FOREVER</red>"
                         + " <gray>(iterations=" + iterations + ", limit " + chunkIterationsLimit + ")</gray>"
         );
 
-        ServerOverloadNotify.broadcast(
-                MessageUtil.PREFIX + "<white>MSPT </white><red>" + String.format("%.1f", mspt)
-                        + " </red><gray>→ </gray><red>Заблокирован чанк </red><yellow>#" + number
-                        + " </yellow><gray>(" + key + ") </gray><red>навсегда</red>"
-                        + " <dark_gray>| /ui redstone unlock " + number + "</dark_gray>"
-        );
+        // Alert text lives in the config (messages.redstone_guard / messages_en.redstone_guard)
+        String message = MessagesManager.getString(
+                        "redstone_guard.chunk_blocked",
+                        "<white>MSPT </white><red>%mspt%</red> <gray>→ </gray><red>Chunk blocked </red>"
+                                + "<yellow>#%number%</yellow> <gray>(%chunk%) </gray><red>forever</red>"
+                                + " <dark_gray>| /ui redstone unlock %number%</dark_gray>")
+                .replace("%mspt%", msptText)
+                .replace("%number%", String.valueOf(number))
+                .replace("%chunk%", key.toString())
+                .replace("%iterations%", String.valueOf(iterations))
+                .replace("%limit%", String.valueOf(chunkIterationsLimit));
+        ServerOverloadNotify.broadcast(MessageUtil.PREFIX + message);
     }
 
     /**
@@ -224,11 +233,12 @@ public final class RedstoneGuard {
             if (!player.getWorld().getName().equals(key.world())) continue;
             Chunk chunk = player.getLocation().getChunk();
             if (chunk.getX() == key.x() && chunk.getZ() == key.z()) {
-                player.sendMessage(MessageUtil.parse(
-                        "<red>⚠</red> <white>Ваш чанк </white><yellow>#" + number
-                                + " </yellow><white>заморожен</white> <gray>(" + key
-                                + ") — редстоун здесь отключён из-за перегрузки сервера.</gray>"
-                ));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                        "redstone_guard.chunk_frozen",
+                        "<red>⚠</red> <white>Your chunk </white><yellow>#%number%</yellow> <white>is frozen</white>"
+                                + " <gray>(%chunk%) — redstone is disabled here because the server is overloaded.</gray>")
+                        .replace("%number%", String.valueOf(number))
+                        .replace("%chunk%", key.toString())));
             }
         }
     }
