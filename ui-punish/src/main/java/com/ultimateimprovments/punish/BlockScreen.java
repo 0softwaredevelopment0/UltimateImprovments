@@ -36,10 +36,11 @@ import java.util.Optional;
  * the client closes the window itself, instantly, without the
  * «Waiting for server…» screen.
  * <p>
- * Both the Close button and the dialog exit action (ESC) fire the
- * {@link #BLOCK_CLOSE_ID} custom click, so {@link BlockEnforcer} can run the
- * server-side check: block still active → chat hint + re-open; block expired or
- * lifted → release the player.
+ * Both the Close button and the dialog exit are disabled by design: ESC cannot
+ * dismiss the screen ({@code canCloseWithEscape = false}), and the only exit is
+ * the Close button, which fires the {@link #BLOCK_CLOSE_ID} custom click so
+ * {@link BlockEnforcer} can run the server-side check: block still active →
+ * chat hint + re-open; block expired or lifted → release the player.
  */
 public final class BlockScreen {
 
@@ -106,16 +107,17 @@ public final class BlockScreen {
         CommonDialogData data = new CommonDialogData(
                 title,
                 Optional.of(externalTitle),
-                true,                       // canCloseWithEscape — ESC leaves the dialog and triggers the exit action
+                false,                      // canCloseWithEscape — ESC must NOT dismiss the dialog
                 true,                       // pause
                 DialogAction.CLOSE,         // client closes the window itself (no "Waiting for server")
                 body,
                 List.of()                   // no inputs
         );
 
-        // The exit action (ESC / window close) runs the same server-side check as the Close button.
+        // No exitAction: it would render a SECOND Close button under the first one.
+        // The only way out is the Close button above (server-side expiry check).
         MultiActionDialog dialog = new MultiActionDialog(
-                data, List.of(closeBtn), Optional.of(closeBtn), 1);
+                data, List.of(closeBtn), Optional.empty(), 1);
 
         serverPlayer.openDialog(Holder.direct(dialog));
     }
