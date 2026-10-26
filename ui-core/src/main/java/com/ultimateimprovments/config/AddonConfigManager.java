@@ -216,7 +216,10 @@ public final class AddonConfigManager {
         // Repair: fill missing keys from the bundled commented TOML template so new
         // plugin versions add new settings/messages even when the file already exists.
         int repaired = repairFromBundle(addon, view);
-        if (repaired > 0) {
+        // Upgrades of values that ALREADY exist on disk but changed their default shape
+        // in a newer version — repairFromBundle only fills MISSING keys.
+        int upgraded = upgradeExistingValues(addon, view);
+        if (repaired > 0 || upgraded > 0) {
             writeAddonToml(addon, toml, view);
         }
         return view;
@@ -261,6 +264,61 @@ public final class AddonConfigManager {
             }
         }
         return added;
+    }
+
+    /** Standard "Time remaining" line of the block dialog (added by {@link #upgradeExistingValues}). */
+    private static final String BLOCK_TIME_LINE =
+            "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>";
+
+    /**
+     * Upgrades values that already exist on disk but changed their default shape in a
+     * newer plugin version. {@link #repairFromBundle(String, YamlConfiguration)} only
+     * fills MISSING keys, so a list template that gained a line would otherwise stay
+     * stale forever on an existing installation (e.g. the block dialog gained the
+     * "Time remaining" line in 1.8.5-alpha.34, but the live {@code block} key already
+     * existed — the new line never appeared).
+     * <p>
+     * Currently: {@code messages.punishment.block} and {@code messages_en.punishment.block} —
+     * when the stored list has no {@code %duration%} entry, the standard time line is
+     * inserted right after the {@code %reason%} line (i.e. between Reason and the
+     * appeal/Discord lines). Idempotent: a list that already has the line is untouched.
+     *
+     * @return number of upgraded values
+     */
+    private static int upgradeExistingValues(String addon, YamlConfiguration view) {
+        if (!"UI-Core".equals(addon)) return 0;
+        int upgraded = 0;
+        for (String root : new String[]{"messages", "messages_en"}) {
+            String path = root + ".punishment.block";
+            if (!view.isSet(path)) continue;
+            List<String> lines = view.getStringList(path);
+            if (lines == null || lines.isEmpty()) continue;
+
+            boolean hasDuration = false;
+            for (String line : lines) {
+                if (line != null && line.contains("%duration%")) {
+                    hasDuration = true;
+                    break;
+                }
+            }
+            if (hasDuration) continue;
+
+            List<String> updated = new ArrayList<>(lines);
+            int insertAt = updated.size();
+            for (int i = 0; i < updated.size(); i++) {
+                String line = updated.get(i);
+                if (line != null && line.contains("%reason%")) {
+                    insertAt = i + 1;
+                    break;
+                }
+            }
+            updated.add(insertAt, BLOCK_TIME_LINE);
+            view.set(path, updated);
+            upgraded++;
+            ConsoleLogger.info("[Config/UI-Core] Upgraded " + path
+                    + ": inserted the \"Time remaining\" line into the block dialog template");
+        }
+        return upgraded;
     }
 
     /** Writes the in-memory view back to {@code configs/<addon>.toml}, preserving comments. */
