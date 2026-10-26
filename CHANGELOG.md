@@ -3,6 +3,18 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.29] - since 1.8.5-alpha.28 (2026-10-26)
+
+### Fixed
+- **`/ui oplist` printed the literal `</gray>` after every nick**: the entry line
+  opened `<white>` for online players and closed it with `</gray>`, so the
+  unpaired closing tag leaked into the message and the row rendered with the
+  rest of the line inheriting the wrong colour. The closing tag now matches the
+  opening one (`</white>` / `</gray>`), the page header gold star is closed
+  properly (`<gold>✦</gold>`) and stored names are escaped with
+  `MiniMessage.escapeTags` before being interpolated, so a name can never inject
+  tags into the row or the hover text.
+
 ## [1.8.5-alpha.28] - since 1.8.5-alpha.27 (2026-10-26)
 
 ### Changed
