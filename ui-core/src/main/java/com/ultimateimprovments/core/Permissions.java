@@ -206,6 +206,26 @@ public final class Permissions {
     public static final String CMD_CLAN_REMOVE = "ui.command.clan.remove";
     public static final String CMD_CLAN_HOME_BYPASS = "ui.command.clan.home.bypasscooldown";
 
+    // ═══════════ Commands: kits (/ui kit) ═══════════
+    /** /ui kit — base access (kit list). */
+    public static final String CMD_KIT = "ui.command.kit";
+    /** /ui kit give — give a kit to yourself. */
+    public static final String CMD_KIT_GIVE = "ui.command.kit.give";
+    /** /ui kit give — give a kit to another player (non-empty recipient field). */
+    public static final String CMD_KIT_GIVE_OTHER = "ui.command.kit.give.other";
+    /** /ui kit give -f | export -f — overwrite occupied slots instead of failing. */
+    public static final String CMD_KIT_GIVE_FORCE = "ui.command.kit.give.force";
+    /** /ui kit create — create a new kit. */
+    public static final String CMD_KIT_CREATE = "ui.command.kit.create";
+    /** /ui kit rename — rename an existing kit. */
+    public static final String CMD_KIT_RENAME = "ui.command.kit.rename";
+    /** /ui kit delete — delete a kit. */
+    public static final String CMD_KIT_DELETE = "ui.command.kit.delete";
+    /** /ui kit import — copy a shulker box from the main hand into a kit. */
+    public static final String CMD_KIT_IMPORT = "ui.command.kit.import";
+    /** /ui kit export — write a kit into a shulker box. */
+    public static final String CMD_KIT_EXPORT = "ui.command.kit.export";
+
     // ═══════════ Features and modifiers ═══════════
     public static final String UI_ALERTS = "ui.alerts";
     public static final String UI_SHOW_BRAND = "ui.show.brand";
@@ -403,6 +423,15 @@ public final class Permissions {
                 new Permission(CMD_CODEPANE_KEY_MODIFY, "Modify code panel keys", PermissionDefault.FALSE),
                 new Permission(CMD_CHGDIM, "Teleport between dimensions", PermissionDefault.FALSE),
                 new Permission(CMD_CHGDIM_ALL, "Teleport to any dimension world", PermissionDefault.FALSE),
+                new Permission(CMD_KIT, "Use the kit system (/ui kit list)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_GIVE, "Give kits to yourself (/ui kit give)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_GIVE_OTHER, "Give kits to other players (non-empty recipient field)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_GIVE_FORCE, "Force-give/export kits, overwriting occupied slots (-f)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_CREATE, "Create kits (/ui kit create)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_RENAME, "Rename kits (/ui kit rename)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_DELETE, "Delete kits (/ui kit delete)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_IMPORT, "Import a shulker box into a kit (/ui kit import)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_EXPORT, "Export a kit into a shulker box (/ui kit export)", PermissionDefault.FALSE),
                 new Permission(CMD_ITEM, "Manage items", PermissionDefault.FALSE),
                 new Permission(CMD_DURA, "Scale the held item's durability (/ui dura multiply|divide [raw])", PermissionDefault.FALSE),
                 new Permission(CMD_ENCHANT, "Enchant items", PermissionDefault.FALSE),

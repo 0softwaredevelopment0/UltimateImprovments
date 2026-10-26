@@ -336,6 +336,31 @@ public final class SimpleModules {
                 ContainerTriggerManager.reloadConfig();
             }
         });
+
+        // Kits — /ui kit give|create|rename|delete|import|export|list
+        mm.register(new PluginModule("Kits", "mechanics/features/kits", false) {
+            private com.ultimateimprovments.mechanics.features.kits.KitDialogHandler listener;
+
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                com.ultimateimprovments.mechanics.features.kits.KitStore.init();
+                listener = new com.ultimateimprovments.mechanics.features.kits.KitDialogHandler();
+                plugin.getServer().getPluginManager().registerEvents(listener, plugin);
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                if (listener != null) {
+                    HandlerList.unregisterAll(listener);
+                    listener = null;
+                }
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                com.ultimateimprovments.mechanics.features.kits.KitStore.reload();
+            }
+        });
     }
 
     // --------------------------------------------------------------------------

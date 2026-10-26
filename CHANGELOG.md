@@ -3,6 +3,39 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.23] - since 1.8.5-alpha.22 (2026-10-26)
+
+### Added
+- **Kits** (ui-other, new `Kits` module under `mechanics/features/kits`, `[kits]`
+  in UI-Other.toml): named 27-slot item sets stored in the new SQLite table
+  `kits` (slot-for-slot the shulker-box layout) and managed through dialog
+  windows — `/ui kit give|create|rename|delete|import|export|list`.
+  - `/ui kit give [-f]` opens a dialog with a kit name and an optional
+    recipient (empty = yourself); a non-empty recipient requires
+    `ui.command.kit.give.other` (error 002 otherwise). Without `-f` the kit
+    lands in the top three inventory rows (slots 9–35) and fails with error 025
+    naming the occupied slots; `-f` (`ui.command.kit.give.force`) overwrites
+    them and reports the count + slot numbers.
+  - `/ui kit create` — name + description (MiniMessage tags are stored raw and
+    rendered in `/ui kit list`, while commands address kits by the tag-free
+    plain name, case-insensitively; duplicates are rejected with error 023).
+  - `/ui kit rename`, `/ui kit delete` (with a confirmation checkbox → error
+    028 when unticked), `/ui kit import` (copies the shulker box from the main
+    hand into the kit; the shulker stays untouched), `/ui kit export [-f]`
+    (writes the kit into a shulker box placed in the main hand, `-f` overwrites
+    the hand item).
+  - `/ui kit list [page]` — clickable pagination (7 per page, `list_page_size`),
+    each row shows the number, the rendered display name and the description.
+  - New error codes 022 kit not found, 023 kit already exists, 024 no shulker in
+    the main hand, 025 no space, 026 player not online, 027 invalid input,
+    028 not confirmed, 029 empty kit, 030 empty shulker. All texts are bilingual
+    (`messages.kits` RU / `messages_en.kits` EN).
+  - Dialogs use `DialogAction.CLOSE` (no "Waiting for server…" screen after a
+    click); failures are reported as command errors in chat.
+  - Permissions (registered in code, default FALSE): `ui.command.kit`,
+    `.kit.give`, `.kit.give.other`, `.kit.give.force`, `.kit.create`,
+    `.kit.rename`, `.kit.delete`, `.kit.import`, `.kit.export`.
+
 ## [1.8.5-alpha.22] - since 1.8.5-alpha.21 (2026-10-26)
 
 ### Added

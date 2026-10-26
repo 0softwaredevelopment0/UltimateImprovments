@@ -574,6 +574,11 @@ final class ConfigRules {
 
             integer("access_control.check_interval_ticks", 1, 72000),
 
+            // Kits (/ui kit) — page size and input limits
+            integer("kits.list_page_size", 1, 50, "Kits shown per /ui kit list page"),
+            integer("kits.max_name_length", 1, 64, "Max kit name length (MiniMessage tags included)"),
+            integer("kits.max_description_length", 0, 512, "Max kit description length (MiniMessage tags included)"),
+
             // Operator lists ([op_lists]) — OP whitelist + OP blacklist,
             // one combined periodic check task
             integer("op_lists.check_interval_ticks", 0, 1728000, "Shared OP-lists check interval (ticks, 0 = off)"),

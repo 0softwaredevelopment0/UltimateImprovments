@@ -77,6 +77,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(new CmdLogSubcommand());
         registry.register(new ScoreboardNickSubcommand()); // /ui scoreboardnick — protected scoreboard nickname
         registry.register(new TurretSubcommand());
+        registry.register(new KitSubcommand()); // /ui kit give|create|rename|delete|import|export|list
         registry.register(LegacySubCommandAdapter.of("reload",
                 (s, a) -> ReloadSubcommand.execute(s, a),
                 tc((s, a) -> a.length == 2 ? ReloadSubcommand.tabCompleteTargets(a.length >= 2 ? a[1] : "") : List.of())));

@@ -70,7 +70,7 @@ public final class AddonCatalog {
                 "features", "brand_spoof", "sunburn",
                 "death_logger", "power", "suicide",
                 "changedimmension", "motd",
-                "structure_integrity");
+                "structure_integrity", "kits");
     }
 
     // Message groups (first segment under messages/messages_en) routed to addons.
@@ -102,7 +102,7 @@ routeMsg("UI-Items", "crafting");
         routeMsg("UI-Other", "changedimmension", "motd",
                 "suicide", "notes", "power", "death_logger",
                 "structures", "space", "wireless_redstone",
-                "structure_integrity");
+                "structure_integrity", "kits");
     }
 
     private AddonCatalog() {}
