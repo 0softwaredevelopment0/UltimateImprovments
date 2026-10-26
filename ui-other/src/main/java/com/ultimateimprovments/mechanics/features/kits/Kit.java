@@ -32,9 +32,11 @@ public final class Kit {
     private final long createdAt;
     private long updatedAt;
     private final int cooldownSeconds;
+    private final int globalCooldownSeconds;
 
     public Kit(String key, String name, String description, ItemStack[] items,
-               String createdBy, long createdAt, long updatedAt, int cooldownSeconds) {
+               String createdBy, long createdAt, long updatedAt,
+               int cooldownSeconds, int globalCooldownSeconds) {
         this.key = key;
         this.name = name;
         this.description = description == null ? "" : description;
@@ -43,6 +45,7 @@ public final class Kit {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.cooldownSeconds = Math.max(0, cooldownSeconds);
+        this.globalCooldownSeconds = Math.max(0, globalCooldownSeconds);
     }
 
     // =========================================================================
@@ -97,6 +100,20 @@ public final class Kit {
     /** True when the kit restricts how often a player may receive it. */
     public boolean hasCooldown() {
         return cooldownSeconds > 0;
+    }
+
+    /**
+     * Server-wide cooldown of the kit in seconds; {@code 0} = no cooldown.
+     * Unlike {@link #cooldownSeconds()} this is <b>not</b> per player: once
+     * anyone receives the kit, nobody may receive it again until it expires.
+     */
+    public int globalCooldownSeconds() {
+        return globalCooldownSeconds;
+    }
+
+    /** True when the kit has a server-wide cooldown. */
+    public boolean hasGlobalCooldown() {
+        return globalCooldownSeconds > 0;
     }
 
     public void touch() {

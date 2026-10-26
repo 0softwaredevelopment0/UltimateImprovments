@@ -229,6 +229,12 @@ public final class Permissions {
     public static final String CMD_KIT_COOLDOWN = "ui.command.kit.cooldown";
     /** Ignores kit cooldowns when receiving a kit. */
     public static final String CMD_KIT_COOLDOWN_BYPASS = "ui.command.kit.cooldown.bypass";
+    /** /ui kit globalcd — set/clear a kit's server-wide cooldown. */
+    public static final String CMD_KIT_GLOBALCD = "ui.command.kit.globalcd";
+    /** Ignores the server-wide kit cooldown when receiving a kit. */
+    public static final String CMD_KIT_GLOBALCD_BYPASS = "ui.command.kit.globalcd.bypass";
+    /** /ui kit resetcd — reset a player's kit cooldowns. */
+    public static final String CMD_KIT_RESETCD = "ui.command.kit.resetcd";
 
     // ═══════════ Features and modifiers ═══════════
     public static final String UI_ALERTS = "ui.alerts";
@@ -438,6 +444,9 @@ public final class Permissions {
                 new Permission(CMD_KIT_EXPORT, "Export a kit into a shulker box (/ui kit export)", PermissionDefault.FALSE),
                 new Permission(CMD_KIT_COOLDOWN, "Set a kit's cooldown (/ui kit cooldown)", PermissionDefault.FALSE),
                 new Permission(CMD_KIT_COOLDOWN_BYPASS, "Ignore kit cooldowns when receiving a kit", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_GLOBALCD, "Set a kit's server-wide cooldown (/ui kit globalcd)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_GLOBALCD_BYPASS, "Ignore the server-wide kit cooldown when receiving a kit", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_RESETCD, "Reset a player's kit cooldowns (/ui kit resetcd)", PermissionDefault.FALSE),
                 new Permission(CMD_ITEM, "Manage items", PermissionDefault.FALSE),
                 new Permission(CMD_DURA, "Scale the held item's durability (/ui dura multiply|divide [raw])", PermissionDefault.FALSE),
                 new Permission(CMD_ENCHANT, "Enchant items", PermissionDefault.FALSE),

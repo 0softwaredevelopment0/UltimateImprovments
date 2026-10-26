@@ -33,7 +33,9 @@ import java.util.Optional;
  *   <li>{@link #openDelete(Player)} — kit name + confirmation checkbox;</li>
  *   <li>{@link #openImport(Player)} — kit name (contents come from the main hand);</li>
  *   <li>{@link #openExport(Player, boolean)} — kit name (result goes to the main hand);</li>
- *   <li>{@link #openCooldown(Player)} — kit name + cooldown in seconds.</li>
+ *   <li>{@link #openCooldown(Player)} — kit name + cooldown in seconds;</li>
+ *   <li>{@link #openGlobalCooldown(Player)} — kit name + server-wide cooldown in seconds;</li>
+ *   <li>{@link #openResetCooldown(Player)} — player nickname + a confirmation checkbox.</li>
  * </ul>
  * <p>
  * All dialogs use {@link DialogAction#CLOSE} (NOT {@code WAIT_FOR_RESPONSE}): with
@@ -66,6 +68,10 @@ public final class KitDialogs {
     public static final Identifier EXPORT_SUBMIT_FORCE = id("kit_export_submit_force");
     /** Cooldown → submit. */
     public static final Identifier COOLDOWN_SUBMIT = id("kit_cooldown_submit");
+    /** Global cooldown → submit. */
+    public static final Identifier GLOBALCD_SUBMIT = id("kit_globalcd_submit");
+    /** Reset cooldowns → submit. */
+    public static final Identifier RESETCD_SUBMIT = id("kit_resetcd_submit");
     /** Cancel (any dialog). */
     public static final Identifier CANCEL = id("kit_cancel");
 
@@ -164,6 +170,33 @@ public final class KitDialogs {
                         input(KEY_SECONDS, cfgString("kits.dialog.cooldown.seconds_label",
                                 "<gray>Cooldown (seconds, 0 = off)</gray>"), 12)),
                 COOLDOWN_SUBMIT);
+    }
+
+    /** Global cooldown: kit name + server-wide cooldown in seconds (0 = no cooldown). */
+    public static void openGlobalCooldown(Player player) {
+        open(player,
+                "globalcd", "<white>Enter the kit name and its global cooldown in seconds "
+                        + "<gray>(0 = no cooldown)</gray><white>:</white>",
+                List.of(
+                        input(KEY_NAME, cfgString("kits.dialog.globalcd.kit_label", "<gray>Kit name</gray>"), maxName()),
+                        input(KEY_SECONDS, cfgString("kits.dialog.globalcd.seconds_label",
+                                "<gray>Global cooldown (seconds, 0 = off)</gray>"), 12)),
+                GLOBALCD_SUBMIT);
+    }
+
+    /** Reset cooldowns: player nickname + a confirmation checkbox. */
+    public static void openResetCooldown(Player player) {
+        var checkboxLabel = nativeText(cfgString("kits.dialog.resetcd.checkbox_label",
+                "<red>I really want to reset this player's cooldowns</red>"));
+        BooleanInput confirmInput = new BooleanInput(checkboxLabel, false, "true", "false");
+
+        open(player,
+                "resetcd", "<white>Enter the player nickname and tick the confirmation checkbox:</white>",
+                List.of(
+                        input(KEY_TARGET, cfgString("kits.dialog.resetcd.player_label",
+                                "<gray>Player nickname</gray>"), maxName()),
+                        new Input(KEY_CONFIRM, confirmInput)),
+                RESETCD_SUBMIT);
     }
 
     // =========================================================================

@@ -221,7 +221,7 @@ public final class KitService {
 
         Kit kit = new Kit(key, name, rawDescription == null ? "" : rawDescription.trim(),
                 new ItemStack[Kit.SLOTS], senderName(sender),
-                System.currentTimeMillis(), System.currentTimeMillis(), 0);
+                System.currentTimeMillis(), System.currentTimeMillis(), 0, 0);
         if (!KitStore.save(kit)) {
             CommandErrors.unknownError(sender);
             return false;
@@ -352,7 +352,8 @@ public final class KitService {
 
         // The shulker box itself stays untouched in the player's hand.
         Kit updated = new Kit(kit.key(), kit.name(), kit.description(), contents,
-                kit.createdBy(), kit.createdAt(), System.currentTimeMillis(), kit.cooldownSeconds());
+                kit.createdBy(), kit.createdAt(), System.currentTimeMillis(),
+                kit.cooldownSeconds(), kit.globalCooldownSeconds());
         if (!KitStore.save(updated)) {
             CommandErrors.unknownError(sender);
             return false;
@@ -479,13 +480,16 @@ public final class KitService {
         }
 
         Kit updated = new Kit(kit.key(), kit.name(), kit.description(), kit.items(),
-                kit.createdBy(), kit.createdAt(), System.currentTimeMillis(), (int) seconds);
+                kit.createdBy(), kit.createdAt(), System.currentTimeMillis(),
+                (int) seconds, kit.globalCooldownSeconds());
         if (!KitStore.save(updated)) {
             CommandErrors.unknownError(sender);
             return false;
         }
 
         if (seconds == 0) {
+            // Disabling the cooldown also stops the timers that are still running.
+            KitStore.clearKitPlayerCooldowns(kit.key());
             send(sender, get("cooldown_removed",
                     "<green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> "
                             + "<white>removed.</white>",
@@ -495,6 +499,104 @@ public final class KitService {
                     "<green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> "
                             + "<white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>",
                     "%kit%", kit.name(), "%seconds%", String.valueOf(seconds)));
+        }
+        return true;
+    }
+
+    /**
+     * Sets or clears the server-wide cooldown of a kit — once anyone receives
+     * the kit, nobody may receive it until the cooldown expires.
+     *
+     * @param rawSeconds whole seconds, {@code 0} removes the cooldown
+     */
+    public static boolean setGlobalCooldown(CommandSender sender, String rawKit, String rawSeconds) {
+        if (!sender.hasPermission(Permissions.CMD_KIT_GLOBALCD)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_GLOBALCD);
+            return false;
+        }
+        Kit kit = KitStore.get(rawKit);
+        if (kit == null) {
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
+                    "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
+                    "%kit%", plainOr(rawKit)));
+            return false;
+        }
+
+        long seconds = parseSeconds(rawSeconds);
+        int max = maxCooldownSeconds();
+        if (seconds < 0 || seconds > max) {
+            error(sender, ERR_INVALID_COOLDOWN, invalidCooldownText(max));
+            return false;
+        }
+
+        Kit updated = new Kit(kit.key(), kit.name(), kit.description(), kit.items(),
+                kit.createdBy(), kit.createdAt(), System.currentTimeMillis(),
+                kit.cooldownSeconds(), (int) seconds);
+        if (!KitStore.save(updated)) {
+            CommandErrors.unknownError(sender);
+            return false;
+        }
+
+        if (seconds == 0) {
+            KitStore.clearGlobalCooldown(kit.key());
+            send(sender, get("globalcd_removed",
+                    "<green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> "
+                            + "<white>removed.</white>",
+                    "%kit%", kit.name()));
+        } else {
+            send(sender, get("globalcd_set",
+                    "<green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> "
+                            + "<white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>",
+                    "%kit%", kit.name(), "%seconds%", String.valueOf(seconds)));
+        }
+        return true;
+    }
+
+    // =========================================================================
+    // RESET COOLDOWNS
+    // =========================================================================
+
+    /**
+     * Clears every per-player kit cooldown of one player. Global (server-wide)
+     * cooldowns belong to the kit and are left untouched.
+     *
+     * @param confirmed the confirmation checkbox / the {@code -c} flag
+     */
+    public static boolean resetCooldowns(CommandSender sender, String rawPlayer, boolean confirmed) {
+        if (!sender.hasPermission(Permissions.CMD_KIT_RESETCD)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_RESETCD);
+            return false;
+        }
+        if (!confirmed) {
+            error(sender, ERR_NOT_CONFIRMED, get("not_confirmed_reset",
+                    "<red>Reset was not confirmed — tick the checkbox "
+                            + "(console: append </red><white>-c</white><red>).</red>"));
+            return false;
+        }
+
+        String name = rawPlayer == null ? "" : rawPlayer.trim();
+        if (name.isEmpty()) {
+            error(sender, ERR_TARGET_REQUIRED, get("resetcd_target_required",
+                    "<red>Specify the player whose kit cooldowns should be reset!</red>"));
+            return false;
+        }
+        Player target = Bukkit.getPlayerExact(name);
+        if (target == null) {
+            error(sender, ERR_PLAYER_NOT_FOUND, get("player_not_found",
+                    "<red>Player</red> <white>\"%player%\"</white> <red>is not online!</red>",
+                    "%player%", name));
+            return false;
+        }
+
+        int cleared = KitStore.clearPlayerCooldowns(target.getUniqueId());
+        send(sender, get("resetcd_done",
+                "<green>✔</green> <white>Kit cooldowns reset for</white> <yellow>%player%</yellow> "
+                        + "<gray>(</gray><yellow>%count%</yellow> <gray>cooldown(s) cleared).</gray>",
+                "%player%", target.getName(), "%count%", String.valueOf(cleared)));
+        if (!(sender instanceof Player self) || target != self) {
+            send(target, get("resetcd_notify",
+                    "<gray>✦ Your kit cooldowns were reset by</gray> <yellow>%player%</yellow><gray>.</gray>",
+                    "%player%", senderName(sender)));
         }
         return true;
     }
@@ -525,6 +627,17 @@ public final class KitService {
 
     /** Reports error 031 when the recipient is still on the kit's cooldown. */
     private static boolean cooldownBlocked(CommandSender sender, Kit kit, Player target) {
+        // Global (server-wide) cooldown first — it blocks everyone.
+        if (kit.hasGlobalCooldown() && !target.hasPermission(Permissions.CMD_KIT_GLOBALCD_BYPASS)) {
+            long globalRemaining = KitStore.remainingGlobalCooldownSeconds(kit.key());
+            if (globalRemaining > 0) {
+                error(sender, ERR_COOLDOWN, get("globalcd_active",
+                        "<red>Kit</red> <white>%kit%</white> <red>is on a global cooldown — </red>"
+                                + "<yellow>%seconds%</yellow><red>s left.</red>",
+                        "%kit%", kit.name(), "%seconds%", String.valueOf(globalRemaining)));
+                return true;
+            }
+        }
         if (!kit.hasCooldown() || target.hasPermission(Permissions.CMD_KIT_COOLDOWN_BYPASS)) return false;
         long remaining = KitStore.remainingCooldownSeconds(target.getUniqueId(), kit.key());
         if (remaining <= 0) return false;
@@ -537,10 +650,14 @@ public final class KitService {
     }
 
     /** Starts the kit cooldown for the recipient (no-op for cooldown-free kits). */
+    /** Starts the kit cooldowns for the recipient (no-op for cooldown-free kits). */
     private static void startCooldown(Kit kit, Player target) {
-        if (!kit.hasCooldown()) return;
-        if (target.hasPermission(Permissions.CMD_KIT_COOLDOWN_BYPASS)) return;
-        KitStore.markCooldown(target.getUniqueId(), kit.key());
+        if (kit.hasGlobalCooldown() && !target.hasPermission(Permissions.CMD_KIT_GLOBALCD_BYPASS)) {
+            KitStore.markGlobalCooldown(kit.key());
+        }
+        if (kit.hasCooldown() && !target.hasPermission(Permissions.CMD_KIT_COOLDOWN_BYPASS)) {
+            KitStore.markCooldown(target.getUniqueId(), kit.key());
+        }
     }
 
     // =========================================================================
@@ -591,6 +708,11 @@ public final class KitService {
                 rowComponent = rowComponent.append(MessageUtil.parse(get("list_row_cooldown",
                         " <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>")
                         .replace("%seconds%", String.valueOf(kit.cooldownSeconds()))));
+            }
+            if (kit.hasGlobalCooldown()) {
+                rowComponent = rowComponent.append(MessageUtil.parse(get("list_row_global_cooldown",
+                        " <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>")
+                        .replace("%seconds%", String.valueOf(kit.globalCooldownSeconds()))));
             }
             sender.sendMessage(rowComponent);
         }
