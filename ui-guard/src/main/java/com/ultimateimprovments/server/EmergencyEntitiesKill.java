@@ -1,5 +1,6 @@
 package com.ultimateimprovments.server;
 
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -132,8 +133,13 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
             );
         }
 
-        String message = MessageUtil.PREFIX + "<white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
-                + " <gray>(MSPT </gray><red>" + String.format("%.1f", mspt) + "</red><gray>)</gray>";
+        String message = MessageUtil.PREFIX + MessagesManager.getString(
+                "emergency_entity_kill.entity_removed",
+                "<white>Removed </white><yellow>%count% </yellow><white>%type%</white>"
+                        + " <gray>(MSPT </gray><red>%mspt%</red><gray>)</gray>")
+                .replace("%count%", String.valueOf(removed))
+                .replace("%type%", topType)
+                .replace("%mspt%", String.format("%.1f", mspt));
 
         if (broadcastToAll) {
             ServerOverloadNotify.broadcastAll(message, cooldownMs);

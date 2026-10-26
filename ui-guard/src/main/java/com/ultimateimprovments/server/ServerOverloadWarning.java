@@ -1,5 +1,6 @@
 package com.ultimateimprovments.server;
 
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -56,10 +57,10 @@ public class ServerOverloadWarning extends BukkitRunnable {
                         "<red>MSPT=" + String.format("%.1f", mspt)
                                 + " — critical threshold!</red>"
                 );
-                ServerOverloadNotify.broadcast(
-                        MessageUtil.PREFIX + "<white>Server MSPT reached a critical threshold! Check tick info.<dark_gray>(<yellow>"
-                                + String.format("%.1f", mspt) + "<dark_gray>)"
-                );
+                ServerOverloadNotify.broadcast(MessageUtil.PREFIX + MessagesManager.getString(
+                        "server_overload_warning.critical",
+                        "<white>Server MSPT is exceeding maximum operation parameters! <dark_gray>(<yellow>%mspt%<dark_gray>)")
+                        .replace("%mspt%", String.format("%.1f", mspt)));
             }
             return;
         }
@@ -72,10 +73,10 @@ public class ServerOverloadWarning extends BukkitRunnable {
                         "<yellow>MSPT=" + String.format("%.1f", mspt)
                                 + " — safe operation exceeded!</yellow>"
                 );
-                ServerOverloadNotify.broadcast(
-                        MessageUtil.PREFIX + "<white>Server MSPT is exceeding safe operation parameters! <dark_gray>(<yellow>"
-                                + String.format("%.1f", mspt) + "<dark_gray>)"
-                );
+                ServerOverloadNotify.broadcast(MessageUtil.PREFIX + MessagesManager.getString(
+                        "server_overload_warning.high",
+                        "<white>Server MSPT is exceeding safe operation parameters! <dark_gray>(<yellow>%mspt%<dark_gray>)")
+                        .replace("%mspt%", String.format("%.1f", mspt)));
             }
             return;
         }

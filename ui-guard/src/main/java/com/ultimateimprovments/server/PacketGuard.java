@@ -43,7 +43,9 @@ public class PacketGuard implements Listener {
     private static boolean enabled = true;
     private static boolean log = true;
     private static boolean logInject = false;
-    private static String kickMessage = "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>";
+    private static final String DEFAULT_KICK_MESSAGE =
+            "<dark_red>❌</dark_red> <red>Packet too large!</red>\\n<gray>Please reconnect to the server.</gray>";
+    private static String kickMessage = DEFAULT_KICK_MESSAGE;
     private static String bypassPermission = "ui.packetguard.bypass";
 
     // =========================
@@ -75,8 +77,7 @@ public class PacketGuard implements Listener {
         enabled = cfg.getBoolean("enabled", true);
         log = cfg.getBoolean("log", true);
         logInject = cfg.getBoolean("log_inject", false);
-        kickMessage = MessagesManager.getString("packet_guard.kick_message",
-                "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>");
+        kickMessage = MessagesManager.getString("packet_guard.kick_message", DEFAULT_KICK_MESSAGE);
         bypassPermission = cfg.getString("bypass_permission", "ui.packetguard.bypass");
     }
 

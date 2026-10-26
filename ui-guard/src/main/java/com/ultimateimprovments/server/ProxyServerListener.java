@@ -1,5 +1,6 @@
 package com.ultimateimprovments.server;
 
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -40,7 +41,9 @@ public class ProxyServerListener implements Listener {
     /** Configuration */
     private static boolean enabled = true;
     private static boolean logCommands = true;
-    private static String noPermissionMessage = "<red>❌ You don't have permission to switch servers!</red>";
+    private static final String DEFAULT_NO_PERMISSION =
+            "<red>❌ You don't have permission to switch servers!</red>";
+    private static String noPermissionMessage = DEFAULT_NO_PERMISSION;
 
     /** State */
     private static final String HANDLER_NAME = ":ui_proxy_server";
@@ -64,13 +67,23 @@ public class ProxyServerListener implements Listener {
     }
 
     public static void reloadConfig() {
+        // Message lives in messages.proxy_server / messages_en.proxy_server
+        String legacy = Main.getInstance().getConfig()
+                .getString("proxy_server.no_permission_message", null);
+        String localized = MessagesManager.getString("proxy_server.no_permission", null);
+        if (localized != null && !localized.isBlank()) {
+            noPermissionMessage = localized;
+        } else if (legacy != null && !legacy.isBlank()) {
+            noPermissionMessage = legacy; // backward compatibility with the old key
+        } else {
+            noPermissionMessage = DEFAULT_NO_PERMISSION;
+        }
+
         var cfg = Main.getInstance().getConfig().getConfigurationSection("proxy_server");
         if (cfg == null) return;
 
         enabled = cfg.getBoolean("enabled", true);
         logCommands = cfg.getBoolean("log_commands", true);
-        noPermissionMessage = cfg.getString("no_permission_message",
-                "<red>❌ You don't have permission to switch servers!</red>");
     }
 
     public static ProxyServerListener getInstance() {

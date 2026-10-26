@@ -105,9 +105,13 @@ priority_max_joins_per_window = 5
 # /ui chgdim world switching: cooldowns and permissions.
 
 [messages.packet_guard]
-# Message text (MiniMessage).
-# Default: <dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>
-kick_message = "<dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>"
+# Kick message shown when the outgoing packet exceeds the limit.
+kick_message = "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>"
+
+[messages.proxy_server]
+# Shown when a player has no ui.proxy.server permission and tries a proxy
+# server switch (BungeeCord/Velocity packet is dropped).
+no_permission = "<red>❌ У вас нет прав на переключение серверов!</red>"
 
 # bot protection section.
 # Placeholders: %count%, %seconds%
@@ -125,9 +129,13 @@ rejoin_cooldown = "<red>❌ You left too recently! Wait</red> <yellow>%seconds%<
 # Placeholders: %sub%, %count%
 
 [messages_en.packet_guard]
-# Message text (MiniMessage).
-# Default: <dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>
+# Kick message shown when the outgoing packet exceeds the limit.
 kick_message = "<dark_red>❌</dark_red> <red>Packet too large!</red>\\n<gray>Please reconnect to the server.</gray>"
+
+[messages_en.proxy_server]
+# Shown when a player has no ui.proxy.server permission and tries a proxy
+# server switch (BungeeCord/Velocity packet is dropped).
+no_permission = "<red>❌ You don't have permission to switch servers!</red>"
 
 # bot protection section.
 # Placeholders: %count%, %seconds%
@@ -814,6 +822,17 @@ chunk_frozen = "<red>⚠</red> <white>Ваш чанк </white><yellow>#%number% 
 # Placeholders: %number%, %chunk%.
 chunk_unlocked = "<white>Чанк </white><yellow>#%number% </yellow><gray>(%chunk%) </gray><green>разблокирован</green>"
 
+[messages.server_overload_warning]
+# Alert when MSPT crosses the critical threshold. Placeholder: %mspt%.
+critical = "<white>Показатель MSPT сервера превышает максимальные рабочие параметры! <dark_gray>(<yellow>%mspt%<dark_gray>)"
+# Alert when MSPT crosses the high (safe-operation) threshold. Placeholder: %mspt%.
+high = "<white>Показатель MSPT сервера вышел за безопасные рабочие параметры! <dark_gray>(<yellow>%mspt%<dark_gray>)"
+
+[messages.emergency_entity_kill]
+# Alert about an emergency entity cleanup.
+# Placeholders: %count%, %type%, %mspt%.
+entity_removed = "<white>Удалено </white><yellow>%count% </yellow><white>%type%</white> <gray>(MSPT </gray><red>%mspt%</red><gray>)</gray>"
+
 # stresstest section (/ui stresstest — server benchmarks).
 
 [messages.stresstest]
@@ -911,6 +930,17 @@ chunk_frozen = "<red>⚠</red> <white>Your chunk </white><yellow>#%number% </yel
 # Alert to staff when a chunk is unblocked.
 # Placeholders: %number%, %chunk%.
 chunk_unlocked = "<white>Chunk </white><yellow>#%number% </yellow><gray>(%chunk%) </gray><green>unblocked</green>"
+
+[messages_en.server_overload_warning]
+# Alert when MSPT crosses the critical threshold. Placeholder: %mspt%.
+critical = "<white>Server MSPT is exceeding maximum operation parameters! <dark_gray>(<yellow>%mspt%<dark_gray>)"
+# Alert when MSPT crosses the high (safe-operation) threshold. Placeholder: %mspt%.
+high = "<white>Server MSPT is exceeding safe operation parameters! <dark_gray>(<yellow>%mspt%<dark_gray>)"
+
+[messages_en.emergency_entity_kill]
+# Alert about an emergency entity cleanup.
+# Placeholders: %count%, %type%, %mspt%.
+entity_removed = "<white>Removed </white><yellow>%count% </yellow><white>%type%</white> <gray>(MSPT </gray><red>%mspt%</red><gray>)</gray>"
 
 # stresstest section (/ui stresstest — server benchmarks).
 
