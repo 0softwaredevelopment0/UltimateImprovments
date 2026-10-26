@@ -15,6 +15,18 @@
 # Default: 20
 check_interval_ticks = 20
 
+# BLOCK punishment — soft, dialog-only lock.
+# The blocked player is NOT kicked: they stay online behind a modal dialog and
+# cannot move, interact, chat or run commands until the block expires or an
+# admin runs /ui punish unblock <player>. The block is stored in the database
+# (punishments.type = 'block'), so it survives restarts and reconnects.
+[punish.block]
+# How often (ticks) the block dialog is re-sent while the block is active, so a
+# dismissed dialog (ESC / Close button) pops back up. 20 ticks = 1 second.
+# 0 = re-send only on join and on any attempted action (move/interact/chat/command).
+# Default: 20
+reopen_interval_ticks = 20
+
 # Operator lists — OP whitelist + OP blacklist share ONE periodic check task.
 # Both checks run in a single pass with the interval below.
 [op_lists]

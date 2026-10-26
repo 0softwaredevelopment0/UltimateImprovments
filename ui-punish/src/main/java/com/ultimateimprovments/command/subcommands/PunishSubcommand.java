@@ -32,8 +32,10 @@ import java.util.stream.Collectors;
  * /ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
  * /ui punish kick <player> <reason> [-ip] [-hw]
  * /ui punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
+ * /ui punish block <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
  * /ui punish listwarns <player>
  * /ui punish unban <player>
+ * /ui punish unblock <player>
  * /ui punish unmute <player>
  * /ui punish actionlist [tab] [page] — all active punishments with tabs & pages
  * </pre>
@@ -88,11 +90,13 @@ public final class PunishSubcommand {
 
         return switch (action) {
             case "ban" -> handleBan(sender, args);
+            case "block" -> handleBlock(sender, args);
             case "mute" -> handleMute(sender, args);
             case "kick" -> handleKick(sender, args);
             case "warn" -> handleWarn(sender, args);
             case "listwarns" -> handleListWarns(sender, args);
             case "unban" -> handleUnban(sender, args);
+            case "unblock" -> handleUnblock(sender, args);
             case "unmute" -> handleUnmute(sender, args);
             case "unwarn" -> handleUnwarn(sender, args);
             case "actionlist" -> handleActionList(sender, args);
@@ -474,6 +478,153 @@ public final class PunishSubcommand {
     }
 
     // =========================
+    // BLOCK
+    // =========================
+    /**
+     * /ui punish block &lt;player&gt; &lt;reason&gt; [-time:&lt;N&gt;s|m|h|d] [-permanent] [-ip] [-hw]
+     * <p>
+     * <b>Soft</b> punishment with the same flags as the ban: the player is NOT kicked.
+     * They stay online behind a modal dialog (see
+     * {@link com.ultimateimprovments.punish.BlockEnforcer}) and cannot move, interact,
+     * chat or run commands until the block expires or an admin lifts it. The dialog is
+     * removed when the player closes it and immediately shown again.
+     */
+    private static boolean handleBlock(CommandSender sender, String[] args) {
+        if (!canBlock(sender)) return true;
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/ui punish block <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+            ));
+            return true;
+        }
+
+        PunishArgs parsed = parsePunishArgs(sender, args, 3);
+        if (parsed == null) return true;
+
+        String targetName = args[2];
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(targetName);
+        String uuid;
+        String name;
+
+        if (target != null) {
+            uuid = target.getUniqueId().toString();
+            name = target.getName();
+        } else {
+            uuid = resolveTargetUuid(targetName);
+            name = targetName;
+        }
+
+        String ip = null;
+        String hwId = null;
+
+        if (parsed.ip) {
+            ip = target != null && target.getAddress() != null
+                    ? target.getAddress().getAddress().getHostAddress()
+                    : "0.0.0.0";
+        }
+        if (parsed.hw) {
+            String targetIp = target != null && target.getAddress() != null
+                    ? target.getAddress().getAddress().getHostAddress()
+                    : "0.0.0.0";
+            hwId = PunishmentManager.computeHwId(targetIp, name);
+        }
+
+        boolean ok = PunishmentManager.punish(
+                PunishmentManager.PunishType.BLOCK,
+                uuid, name, parsed.reason,
+                sender.getName(), parsed.expiresAt,
+                ip, hwId
+        );
+
+        if (!ok) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Failed to block " + name + "</red>"));
+            return true;
+        }
+
+        // Lock the target right away (the dialog pops up on their screen).
+        if (target != null && target.isOnline()) {
+            com.ultimateimprovments.punish.BlockEnforcer.refresh(target);
+        }
+
+        // If -ip or -hw — block every matching online player as well.
+        if (parsed.ip || parsed.hw) {
+            for (Player p : PunishmentManager.findPlayersByIpOrHw(ip, hwId)) {
+                if (target != null && p.getUniqueId().equals(target.getUniqueId())) continue;
+                com.ultimateimprovments.punish.BlockEnforcer.refresh(p);
+                sender.sendMessage(MessageUtil.parse(
+                        "<yellow>⚠</yellow> <white>Also blocked</white> <yellow>" + p.getName() + "</yellow> <white>(IP/HW match)</white>"
+                ));
+            }
+        }
+
+        String scope = parsed.ip ? " [IP]" : parsed.hw ? " [HW]" : "";
+        sender.sendMessage(MessageUtil.parse(
+                "<green>✔</green> <white>Player</white> <yellow>" + name + "</yellow> <white>has been blocked.</white>" + scope
+        ));
+
+        // Notify operators
+        String duration = parsed.isPermanent ? "<red>permanent</red>" : "<yellow>" + parsed.timeStr + "</yellow>";
+        broadcastToModerators(
+                "<red>🚫</red> <yellow>" + name + "</yellow> <gray>blocked by</gray> <white>" + sender.getName() + "</white>" +
+                "<gray> | Reason:</gray> <white>" + parsed.reason + "</white>" +
+                "<gray> | Duration:</gray> " + duration +
+                scope
+        );
+        return true;
+    }
+
+    /**
+     * /ui punish unblock &lt;player&gt; — lifts the block (dialog + DB record).
+     */
+    private static boolean handleUnblock(CommandSender sender, String[] args) {
+        if (!canBlock(sender)) return true;
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/ui punish unblock <player></white>"
+            ));
+            return true;
+        }
+
+        String targetName = args[2];
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(targetName);
+        String uuid = target != null ? target.getUniqueId().toString() : resolveTargetUuid(targetName);
+
+        boolean ok = PunishmentManager.unpunish(PunishmentManager.PunishType.BLOCK, uuid, null, null, targetName);
+
+        // Close the live dialog even when the DB row was already inactive.
+        if (target != null && target.isOnline()) {
+            com.ultimateimprovments.punish.BlockEnforcer.release(target, true);
+        }
+
+        if (ok) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<green>✔</green> <white>Player</white> <yellow>" + targetName + "</yellow> <white>has been unblocked.</white>"
+            ));
+            broadcastToModerators(
+                    "<green>✔</green> <yellow>" + targetName + "</yellow> <gray>unblocked by</gray> <white>" + sender.getName() + "</white>"
+            );
+        } else {
+            sender.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠</yellow> <white>No active block found for</white> <yellow>" + targetName + "</yellow>"
+            ));
+        }
+        return true;
+    }
+
+    /**
+     * Block permission: the dedicated {@code ui.command.punish.block} node is
+     * granted implicitly to everyone who can already ban.
+     */
+    private static boolean canBlock(CommandSender sender) {
+        if (sender.hasPermission(Permissions.CMD_PUNISH_BLOCK)) return true;
+        if (sender.hasPermission(Permissions.CMD_PUNISH_BAN)) return true;
+        CommandErrors.noPermission(sender, Permissions.CMD_PUNISH_BLOCK);
+        return false;
+    }
+
+    // =========================
     // LISTWARNS
     // =========================
     private static boolean handleListWarns(CommandSender sender, String[] args) {
@@ -738,7 +889,7 @@ public final class PunishSubcommand {
     /** How many punishments fit on one actionlist page. */
     private static final int ACTIONLIST_PAGE_SIZE = 5;
     /** Valid actionlist tabs (dynamic switching via clickable tabs). */
-    private static final List<String> ACTIONLIST_TABS = List.of("all", "ban", "mute", "warn", "kick");
+    private static final List<String> ACTIONLIST_TABS = List.of("all", "ban", "block", "mute", "warn", "kick");
 
     /**
      * Shows ALL active punishments of every player with tabs and pagination:
@@ -764,7 +915,7 @@ public final class PunishSubcommand {
         if (!ACTIONLIST_TABS.contains(tab)) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Unknown tab: </red><yellow>" + escape(args[2]) + "</yellow><red>.</red> "
-                    + "<gray>Available: </gray><white>all, ban, mute, warn, kick</white>"
+                    + "<gray>Available: </gray><white>all, ban, block, mute, warn, kick</white>"
             ));
             return true;
         }
@@ -772,6 +923,7 @@ public final class PunishSubcommand {
         List<PunishmentManager.PunishmentRecord> all = PunishmentManager.getAllActivePunishments();
         List<PunishmentManager.PunishmentRecord> filtered = switch (tab) {
             case "ban" -> filterByType(all, PunishmentManager.PunishType.BAN);
+            case "block" -> filterByType(all, PunishmentManager.PunishType.BLOCK);
             case "mute" -> filterByType(all, PunishmentManager.PunishType.MUTE);
             case "warn" -> filterByType(all, PunishmentManager.PunishType.WARN);
             case "kick" -> filterByType(all, PunishmentManager.PunishType.KICK);
@@ -795,6 +947,7 @@ public final class PunishSubcommand {
         for (String t : ACTIONLIST_TABS) {
             String label = switch (t) {
                 case "ban" -> "<red>⛔ Bans</red>";
+                case "block" -> "<dark_red>🚫 Blocks</dark_red>";
                 case "mute" -> "<red>🔇 Mutes</red>";
                 case "warn" -> "<yellow>⚠ Warns</yellow>";
                 case "kick" -> "<gray>👢 Kicks</gray>";
@@ -845,6 +998,7 @@ public final class PunishSubcommand {
     private static String actionListItem(PunishmentManager.PunishmentRecord r) {
         String badge = switch (r.type) {
             case BAN -> "<red>⛔ Ban</red>";
+            case BLOCK -> "<dark_red>🚫 Block</dark_red>";
             case MUTE -> "<red>🔇 Mute</red>";
             case WARN -> "<yellow>⚠ Warn</yellow>";
             case KICK -> "<gray>👢 Kick</gray>";
@@ -1231,11 +1385,13 @@ public final class PunishSubcommand {
                 "<white>/ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
                 "<white>/ui punish kick <player> <reason> [-ip] [-hw]</white>\n" +
                 "<white>/ui punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
+                "<white>/ui punish block <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
                 "<white>/ui punish listwarns [player]</white>\n" +
                 "<white>/ui punish unban <player></white>\n" +
+                "<white>/ui punish unblock <player></white>\n" +
                 "<white>/ui punish unmute <player></white>\n" +
                 "<white>/ui punish unwarn <player> <reason> <warnId></white>\n" +
-                "<white>/ui punish actionlist [tab] [page]</white> <gray>(tabs: all, ban, mute, warn, kick)</gray>\n" +
+                "<white>/ui punish actionlist [tab] [page]</white> <gray>(tabs: all, ban, block, mute, warn, kick)</gray>\n" +
                 "<white>/ui punish crash <method> <player></white> <gray>(requires confirm)</gray>\n" +
                 "<gray>Flags: -time:<N>s|m|h|d, -permanent, -ip, -hw</gray>"
         ));
@@ -1249,7 +1405,7 @@ public final class PunishSubcommand {
 
         if (args.length == 2) {
             String prefix = args[1].toLowerCase();
-            for (String action : List.of("ban", "mute", "kick", "warn", "listwarns", "unban", "unmute", "unwarn", "actionlist", "crash")) {
+            for (String action : List.of("ban", "block", "mute", "kick", "warn", "listwarns", "unban", "unblock", "unmute", "unwarn", "actionlist", "crash")) {
                 if (action.startsWith(prefix)) {
                     completions.add(action);
                 }
@@ -1264,7 +1420,7 @@ public final class PunishSubcommand {
             } else if (action.equals("actionlist")) {
                 // actionlist tabs
                 completions.addAll(ACTIONLIST_TABS);
-            } else if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns").contains(action)) {
+            } else if (List.of("ban", "block", "mute", "kick", "warn", "unban", "unblock", "unmute", "unwarn", "listwarns").contains(action)) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     completions.add(p.getName());
                 }
@@ -1304,7 +1460,7 @@ public final class PunishSubcommand {
         if (action.equals("crash")) {
             return;
         }
-        if (List.of("ban", "mute", "warn").contains(action)) {
+        if (List.of("ban", "block", "mute", "warn").contains(action)) {
             boolean hasTime = false, hasPerm = false, hasIp = false, hasHw = false;
             for (int i = 3; i < args.length; i++) {
                 String a = args[i].toLowerCase();

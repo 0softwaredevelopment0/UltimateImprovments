@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * PunishmentManager — punishment system (ban/mute/kick/warn).
+ * PunishmentManager — punishment system (ban/mute/kick/warn/block).
  * <p>
  * Supported flags:
  * <ul>
@@ -107,7 +107,14 @@ public class PunishmentManager {
     // =========================
 
     public enum PunishType {
-        BAN, MUTE, KICK, WARN
+        BAN, MUTE, KICK, WARN,
+        /**
+         * BLOCK — soft punishment: the player stays online but is locked behind a
+         * modal dialog (see {@link BlockEnforcer}) and cannot move or interact.
+         * Never expires into a kick: the dialog is shown on join and re-opened
+         * whenever the player dismisses it, until the block is removed or expires.
+         */
+        BLOCK
     }
 
     // =========================
@@ -546,6 +553,13 @@ public class PunishmentManager {
      */
     public static PunishmentRecord getActiveMute(String uuid, String ip, String hwId) {
         return getActivePunishment(PunishType.MUTE, uuid, ip, hwId);
+    }
+
+    /**
+     * Checks whether the player is blocked and returns the block record if so.
+     */
+    public static PunishmentRecord getActiveBlock(String uuid, String ip, String hwId) {
+        return getActivePunishment(PunishType.BLOCK, uuid, ip, hwId);
     }
 
     // =========================

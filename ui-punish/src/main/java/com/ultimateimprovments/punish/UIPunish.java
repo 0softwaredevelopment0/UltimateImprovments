@@ -19,6 +19,7 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
     @Override
     public void onDisable() {
         // AccessListCheckTask is owned by UI-Other — do not stop it here.
+        BlockEnforcer.shutdown();
         org.bukkit.event.HandlerList.unregisterAll(this);
         com.ultimateimprovments.server.OpListsCheckTask.stop();
         getLogger().info("UI-Punish disabled!");
@@ -34,6 +35,7 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
     @Override
     public void softReload() {
         getLogger().info("UI-Punish soft reload (in place)...");
+        BlockEnforcer.shutdown();
         org.bukkit.event.HandlerList.unregisterAll(this);
         runStartup();
     }
@@ -51,6 +53,10 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
 
         // Register punishment listener
         pm.registerEvents(new PunishJoinListener(), main);
+
+        // BLOCK punishment: join check, modal dialog, movement/interaction lock
+        // and the periodic dialog re-open task.
+        BlockEnforcer.init(main);
 
         // Register /ui punish in the shared SubCommandRegistry. The CommandScanner
         // only scans the UI-Core JAR, so module subcommands must register
