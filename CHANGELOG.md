@@ -3,6 +3,37 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.22] - since 1.8.5-alpha.21 (2026-10-26)
+
+### Added
+- **Protected scoreboard nickname** (ui-display / ui-other, `[scoreboard.nick]`
+  in UI-Display.toml): new command `/ui scoreboardnick "<text>"` stores a
+  player-defined nickname (MiniMessage allowed, e.g.
+  `<gradient:#00AAFF:#FF55FF>Hero</gradient>`) that the scoreboard shows through
+  the new `%player_scoreboard_nick%` placeholder — every player sees their own.
+  `/ui scoreboardnick off` shows the real name again, `on` restores the stored
+  nickname, no argument prints the current state; `ui.scoreboardnick.others`
+  allows `<player> <text|on|off>` for others. The nickname is stored as typed in
+  `player_settings` (two new migrated columns) and reused by PAPI as
+  `%ui_player_scoreboard_nick%`.
+- **Nickname forbidden-syntax filter** (`[scoreboard.nick.filter]`, default
+  OFF): `blacklist` (block on ANY match) or `whitelist` (allow only when EVERY
+  rule matches) over two rule arrays — `wildcard` (a plain word blocks a
+  standalone word only; `test*`/`*test`/`*test*` anchor left/right/anywhere) and
+  `regex` (Java patterns). Both length and filter run on the VISIBLE text only:
+  MiniMessage tags are parsed away first, so `<red>nick` is checked as `nick`.
+  New error codes: 019 forbidden syntax (names the rule that blocked it, or the
+  whitelist rule it failed), 020 wrong length, 021 unparsable input
+  (`%` placeholders and legacy `§` codes are rejected). Visible length limits
+  (default 1–16) live in `min_length`/`max_length`.
+- **Bypass permissions**: `ui.scoreboardnick.bypass.filter` (whole filter),
+  `ui.scoreboardnick.bypass.wildcard`, `ui.scoreboardnick.bypass.regex`,
+  `ui.scoreboardnick.bypass.length` (both ends),
+  `ui.scoreboardnick.bypass.length.min`, `ui.scoreboardnick.bypass.length.max`,
+  plus `ui.scoreboardnick.toggle` (on/off) and `ui.scoreboardnick.others`.
+  All nickname messages are bilingual (`messages.scoreboard.nick` RU /
+  `messages_en.scoreboard.nick` EN).
+
 ## [1.8.5-alpha.21] - since 1.8.5-alpha.20 (2026-10-26)
 
 ### Added

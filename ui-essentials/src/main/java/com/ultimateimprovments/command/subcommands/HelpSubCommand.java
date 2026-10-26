@@ -355,6 +355,10 @@ public class HelpSubCommand implements SubCommand {
         // ── Toggles / UI ──
         cmd("bossbar", "Show or hide the bossbar").u("<on|off>", "");
         cmd("scoreboard", "Show or hide the scoreboard").u("<on|off>", "");
+        cmd("scoreboardnick", "Set your protected scoreboard nickname")
+                .u("\"<text>\"", "MiniMessage allowed, shown via %player_scoreboard_nick%")
+                .u("on|off", "switch the stored nickname on or off")
+                .u("<player> <text|on|off>", "the same for another player (ui.scoreboardnick.others)");
         cmd("pingsound", "Toggle the chat ping sound").u("<on|off>", "");
         cmd("wirelessbind", "Wireless redstone bind mode").u("<on|off>", "default: off");
         cmd("craftrecipe", "Free-craft any recipe (admin)")

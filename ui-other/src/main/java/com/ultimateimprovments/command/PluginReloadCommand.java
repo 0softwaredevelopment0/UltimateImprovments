@@ -75,6 +75,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(new ClearSubcommand()); // /ui clear <chat|attributes> — replaces /ui clearchat
         registry.register(new ChatChannelSubcommand());
         registry.register(new CmdLogSubcommand());
+        registry.register(new ScoreboardNickSubcommand()); // /ui scoreboardnick — protected scoreboard nickname
         registry.register(new TurretSubcommand());
         registry.register(LegacySubCommandAdapter.of("reload",
                 (s, a) -> ReloadSubcommand.execute(s, a),
@@ -114,6 +115,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("scoreboard",
                 (s, a) -> { MiscSubcommand.scoreboard(s, a); return true; },
                 tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
+        // /ui scoreboardnick — see ScoreboardNickSubcommand (registered above)
+
         registry.register(LegacySubCommandAdapter.of("pingsound",
                 (s, a) -> { MiscSubcommand.pingsound(s, a); return true; },
                 tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
