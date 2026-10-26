@@ -671,6 +671,10 @@ unknown_status = "<red>❌ Неизвестный статус! Доступны
 # URL.
 # Default: https://dsc.gg/softwaredev
 discord_url = "https://dsc.gg/softwaredev"
+# Chat hint when the player presses Close / ESC while the block is still active
+# (the dialog is then re-opened). Placeholder: %duration%.
+# Default: ["<red>Your block has not expired yet! </red><gray>Time remaining: </gray><white>%duration%</white>"]
+block_still_active = ["<red>Your block has not expired yet! </red><gray>Time remaining: </gray><white>%duration%</white>"]
 # Block — modal dialog shown to a blocked account: the player stays online but
 # cannot move or interact. Each list entry = ONE dialog line.
 # Default: ["<red>This account has been blocked!", "<gray>Blocked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
@@ -1315,6 +1319,10 @@ time_left = "<gray>┃ </gray><gray>Time left: </gray><gold>%duration%</gold>"
 # URL.
 # Default: https://dsc.gg/softwaredev
 discord_url = "https://dsc.gg/softwaredev"
+# Chat hint when the player presses Close / ESC while the block is still active
+# (the dialog is then re-opened). Placeholder: %duration%.
+# Default: ["<red>Your block has not expired yet! </red><gray>Time remaining: </gray><white>%duration%</white>"]
+block_still_active = ["<red>Your block has not expired yet! </red><gray>Time remaining: </gray><white>%duration%</white>"]
 # Block — modal dialog shown to a blocked account: the player stays online but
 # cannot move or interact. Each list entry = ONE dialog line.
 # Default: ["<red>This account has been blocked!", "<gray>Blocked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
