@@ -3,7 +3,20 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
-## [1.8.5-alpha.27] - since 1.8.5-alpha.26 (2026-10-26)
+## [1.8.5-alpha.28] - since 1.8.5-alpha.27 (2026-10-26)
+
+### Changed
+- **Guard `server/` alerts are configurable** (`messages.packet_guard` /
+  `messages_en.packet_guard`, new `messages.proxy_server`,
+  `messages.emergency_entity_kill`, `messages.server_overload_warning` sections
+  in `configs/UI-Guard.toml`): remaining hardcoded texts of the guard package
+  moved to the composite config. `PacketGuard` no longer carries a Russian
+  kick-message fallback, `ProxyServerListener` reads
+  `proxy_server.no_permission` (old `proxy_server.no_permission_message` still
+  honoured as a legacy fallback), `EmergencyEntitiesKill` reports through
+  `emergency_entity_kill.entity_removed` (`%count%`, `%type%`, `%mspt%`) and
+  `ServerOverloadWarning` uses `server_overload_warning.critical` / `.high`
+  (`%mspt%`).
 
 ### Changed
 - **Redstone guard messages are configurable** (`messages.redstone_guard` /
