@@ -3,6 +3,17 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.27] - since 1.8.5-alpha.26 (2026-10-26)
+
+### Changed
+- **Redstone guard messages are configurable** (`messages.redstone_guard` /
+  `messages_en.redstone_guard` in `configs/UI-Guard.toml`): the forever-block
+  alert, the "your chunk is frozen" notice for players standing in the blocked
+  chunk and the unlock alert previously were hardcoded Russian strings inside
+  `RedstoneGuard`. Each one now has RU/EN config entries with placeholders
+  (`%mspt%`, `%number%`, `%chunk%`, `%iterations%`, `%limit%`), built-in
+  defaults keep the old wording.
+
 ## [1.8.5-alpha.26] - since 1.8.5-alpha.25 (2026-10-26)
 
 ### Added
