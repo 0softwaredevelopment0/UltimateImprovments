@@ -133,9 +133,7 @@ public class PunishJoinListener implements Listener {
     // =========================
 
     private static String buildBanMessage(PunishmentManager.PunishmentRecord ban) {
-        String duration = ban.isPermanent()
-                ? "Permanent"
-                : PunishmentMessages.formatTime(ban.getRemainingMs());
+        String duration = PunishmentMessages.durationLabel(ban.expiresAt);
         return PunishmentMessages.buildBanKickMessage(
                 ban.playerName, ban.punishedBy, ban.reason, duration,
                 PunishmentMessages.getDiscordUrl());

@@ -72,9 +72,7 @@ public final class BlockScreen {
         ServerPlayer serverPlayer = craftPlayer.getHandle();
         if (serverPlayer.connection == null) return;
 
-        String duration = block.isPermanent()
-                ? "Permanent"
-                : PunishmentMessages.formatTime(block.getRemainingMs());
+        String duration = PunishmentMessages.durationLabel(block.expiresAt);
 
         // ─── Configurable texts ───
         net.minecraft.network.chat.Component title = toNative(MM.deserialize(
