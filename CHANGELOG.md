@@ -3,7 +3,21 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
-## [1.8.5-alpha.29] - since 1.8.5-alpha.28 (2026-10-26)
+## [1.8.5-alpha.30] - since 1.8.5-alpha.29 (2026-10-26)
+
+### Changed
+- **`/ui redstone` and `/ui codepane` output is configurable** (`messages.redstone_guard`,
+  `messages.codepanel.players_only`, `messages.codepanel.key.list_title` /
+  `.list_entry`, new `messages.codepanel.units` in `configs/UI-Guard.toml`): the
+  last hardcoded texts of the guard commands moved out of the code. Redstone list
+  header/empty line, teleport and unlock hovers, pagination hovers and page line,
+  unlock usage/errors/success now read `redstone_guard.*`
+  (`%count%`, `%page%`, `%total%`, `%number%`, `%value%`, `%command%`); the
+  console-only code panel message and the key list title/entry switched to
+  `codepanel.*`; key expiry durations use localised units (`%days%д %hours%ч` in
+  RU, `%days%d %hours%h` in EN) instead of hardcoded `д/ч/м/с`. The Russian
+  section of `redstone_guard` is fully translated again (was a mix of English
+  literals and leftover Russian).
 
 ### Fixed
 - **`/ui oplist` printed the literal `</gray>` after every nick**: the entry line

@@ -19,7 +19,13 @@ public final class CodePaneSubcommand {
         if (args.length >= 2 && args[1].equalsIgnoreCase("key")) {
             return CodePaneKeyCommand.execute(sender, args);
         }
-        if (!(sender instanceof Player player)) { sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Только игрок может открыть кодовую панель.")); return true; }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse(
+                    com.ultimateimprovments.util.MessageUtil.raw(
+                            "codepanel.players_only",
+                            "<dark_red>❌</dark_red> <red>Only a player can open the code panel.</red>")));
+            return true;
+        }
         if (!player.hasPermission("ui.command.codepane")) { CommandErrors.noPermission(player, "ui.command.codepane"); return true; }
 
         // Open a dialog with clean input
