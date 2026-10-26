@@ -39,24 +39,30 @@ import java.util.Locale;
  *   /ui kit import &lt;kit&gt; &lt;player&gt;
  *   /ui kit export &lt;kit&gt; &lt;player&gt; [-f]
  *   /ui kit cooldown &lt;kit&gt; &lt;seconds&gt;
+ *   /ui kit globalcd &lt;kit&gt; &lt;seconds&gt;
+ *   /ui kit resetcd &lt;player&gt; -c
  * </pre>
  * Permission model:
  * <ul>
  *   <li>{@code ui.command.kit} — base access (list); missing → error 002 before
  *       any dialog opens;</li>
  *   <li>{@code ui.command.kit.<action>} — per action (give/create/rename/delete/
- *       import/export/cooldown), also error 002 before the dialog opens;</li>
+ *       import/export/cooldown/globalcd/resetcd), also error 002 before the
+ *       dialog opens;</li>
  *   <li>{@code ui.command.kit.give.other} — required when the recipient is not
  *       the sender himself;</li>
  *   <li>{@code ui.command.kit.give.force} — the {@code -f} flag of give/export;</li>
- *   <li>{@code ui.command.kit.cooldown.bypass} — the player ignores kit
- *       cooldowns when receiving a kit.</li>
+ *   <li>{@code ui.command.kit.cooldown.bypass} — the player ignores per-player
+ *       kit cooldowns when receiving a kit;</li>
+ *   <li>{@code ui.command.kit.globalcd.bypass} — the player ignores the
+ *       server-wide kit cooldown when receiving a kit.</li>
  * </ul>
  */
 public final class KitSubcommand implements SubCommand {
 
     private static final List<String> ACTIONS = List.of(
-            "list", "give", "create", "rename", "delete", "import", "export", "cooldown");
+            "list", "give", "create", "rename", "delete", "import", "export",
+            "cooldown", "globalcd", "resetcd");
 
     @Override
     public String getName() {
@@ -86,7 +92,7 @@ public final class KitSubcommand implements SubCommand {
             String arg = args[i];
             if (isFlag(arg, "-f", "--force")) {
                 force = true;
-            } else if (isFlag(arg, "-y", "--yes", "--confirm")) {
+            } else if (isFlag(arg, "-y", "--yes", "-c", "--confirm")) {
                 confirmed = true;
             } else {
                 rest.add(arg);
@@ -202,6 +208,30 @@ public final class KitSubcommand implements SubCommand {
                 }
                 return KitService.setCooldown(sender, rest.get(0), rest.get(1));
             }
+            case "globalcd" -> {
+                if (!requirePermission(sender, Permissions.CMD_KIT_GLOBALCD)) return true;
+                if (player != null) {
+                    KitDialogs.openGlobalCooldown(player);
+                    return true;
+                }
+                if (rest.size() < 2) {
+                    CommandErrors.syntaxError(sender);
+                    return true;
+                }
+                return KitService.setGlobalCooldown(sender, rest.get(0), rest.get(1));
+            }
+            case "resetcd" -> {
+                if (!requirePermission(sender, Permissions.CMD_KIT_RESETCD)) return true;
+                if (player != null) {
+                    KitDialogs.openResetCooldown(player);
+                    return true;
+                }
+                if (rest.isEmpty()) {
+                    CommandErrors.syntaxError(sender);
+                    return true;
+                }
+                return KitService.resetCooldowns(sender, rest.get(0), confirmed);
+            }
             default -> {
                 CommandErrors.syntaxError(sender);
                 return true;
@@ -264,11 +294,18 @@ public final class KitSubcommand implements SubCommand {
                     out.addAll(filter(List.of("-y"), partial));
                 }
             }
-            case "cooldown" -> {
+            case "cooldown", "globalcd" -> {
                 if (position == 0) {
                     out.addAll(kitKeys(partial));
                 } else if (position == 1) {
                     out.addAll(filter(List.of("0", "60", "300", "3600", "86400"), partial));
+                }
+            }
+            case "resetcd" -> {
+                if (position == 0) {
+                    out.addAll(playerNames(partial));
+                } else {
+                    out.addAll(filter(List.of("-c"), partial));
                 }
             }
             default -> {

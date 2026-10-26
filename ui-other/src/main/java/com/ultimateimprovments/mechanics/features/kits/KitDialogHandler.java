@@ -39,6 +39,8 @@ public class KitDialogHandler implements Listener {
     private static final Key EXPORT_SUBMIT = Key.key(NS, "kit_export_submit");
     private static final Key EXPORT_SUBMIT_FORCE = Key.key(NS, "kit_export_submit_force");
     private static final Key COOLDOWN_SUBMIT = Key.key(NS, "kit_cooldown_submit");
+    private static final Key GLOBALCD_SUBMIT = Key.key(NS, "kit_globalcd_submit");
+    private static final Key RESETCD_SUBMIT = Key.key(NS, "kit_resetcd_submit");
     private static final Key CANCEL = Key.key(NS, "kit_cancel");
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -112,6 +114,19 @@ public class KitDialogHandler implements Listener {
         if (identifier.equals(COOLDOWN_SUBMIT)) {
             KitService.setCooldown(player, text(response, KitDialogs.KEY_NAME),
                     text(response, KitDialogs.KEY_SECONDS));
+            return;
+        }
+
+        if (identifier.equals(GLOBALCD_SUBMIT)) {
+            KitService.setGlobalCooldown(player, text(response, KitDialogs.KEY_NAME),
+                    text(response, KitDialogs.KEY_SECONDS));
+            return;
+        }
+
+        if (identifier.equals(RESETCD_SUBMIT)) {
+            Boolean confirmed = response.getBoolean(KitDialogs.KEY_CONFIRM);
+            KitService.resetCooldowns(player, text(response, KitDialogs.KEY_TARGET),
+                    confirmed != null && confirmed);
         }
     }
 

@@ -3,6 +3,30 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.25] - since 1.8.5-alpha.24 (2026-10-26)
+
+### Added
+- **Global kit cooldowns** (`/ui kit globalcd`, `ui.command.kit.globalcd`): a
+  kit can now carry a server-wide cooldown (`kits.global_cooldown_seconds`,
+  migrated automatically) next to the per-recipient one. Once anyone receives
+  the kit, nobody may receive it again until it expires; holders of
+  `ui.command.kit.globalcd.bypass` are exempt. Players set it through a dialog
+  (kit name + seconds, `0` removes it and stops the running timer), console uses
+  `/ui kit globalcd <kit> <seconds>`. The running timer lives in the new
+  `kit_global_cooldowns` table, follows kit renames and is deleted with the kit;
+  `/ui kit list` now shows both cooldowns — `[Ns]` for the per-player one and
+  `[global Ns]` for the server-wide one — and omits the absent ones.
+- **`/ui kit resetcd`** (`ui.command.kit.resetcd`): clears every per-player kit
+  cooldown of one player. Players use a dialog (nickname + confirmation
+  checkbox), console uses `/ui kit resetcd <player> -c`; global cooldowns are
+  left untouched. A missing confirmation reuses error 028, a missing nickname is
+  033 and an offline player is 026.
+
+### Changed
+- `/ui kit cooldown` and `/ui kit globalcd` now stop the running timer when set
+  to `0` (the corresponding rows are dropped from `kit_cooldowns` /
+  `kit_global_cooldowns`).
+
 ## [1.8.5-alpha.24] - since 1.8.5-alpha.23 (2026-10-26)
 
 ### Added

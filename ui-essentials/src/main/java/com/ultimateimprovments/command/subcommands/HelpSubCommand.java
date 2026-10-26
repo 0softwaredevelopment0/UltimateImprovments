@@ -141,13 +141,17 @@ public class HelpSubCommand implements SubCommand {
                 .u("import", "copy the shulker box from your main hand into a kit (dialog)")
                 .u("export [-f]", "write a kit into a shulker box in your main hand (dialog)")
                 .u("cooldown", "set a kit's per-recipient cooldown in seconds (dialog, 0 = off)")
+                .u("globalcd", "set a kit's server-wide cooldown in seconds (dialog, 0 = off)")
+                .u("resetcd", "reset a player's kit cooldowns — nickname + confirmation (dialog)")
                 .u("console: give <kit> <player> [-f]", "console form of give")
                 .u("console: create <name> [description]", "console form of create")
                 .u("console: rename <old> <new>", "console form of rename")
                 .u("console: delete <kit> [-y]", "console form of delete (-y confirms)")
                 .u("console: import <kit> <player>", "console form of import")
                 .u("console: export <kit> <player> [-f]", "console form of export")
-                .u("console: cooldown <kit> <seconds>", "console form of cooldown");
+                .u("console: cooldown <kit> <seconds>", "console form of cooldown")
+                .u("console: globalcd <kit> <seconds>", "console form of globalcd")
+                .u("console: resetcd <player> -c", "console form of resetcd (-c confirms)");
 
         // ── Essentials: player state ──
         cmd("heal", "Heal a player").u("[player]", "defaults to yourself");

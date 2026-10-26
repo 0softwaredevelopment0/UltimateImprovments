@@ -2276,6 +2276,30 @@ kit_label = "<gray>Kit name</gray>"
 # Default: <gray>Cooldown (seconds, 0 = off)</gray>
 seconds_label = "<gray>Cooldown (seconds, 0 = off)</gray>"
 
+# global cooldown dialog section.
+[kits.dialog.globalcd]
+# Body text (MiniMessage).
+# Default: <white>Enter the kit name and its global cooldown in seconds <gray>(0 = no cooldown)</gray><white>:</white>
+body = "<white>Enter the kit name and its global cooldown in seconds <gray>(0 = no cooldown)</gray><white>:</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+kit_label = "<gray>Kit name</gray>"
+# Global cooldown field label.
+# Default: <gray>Global cooldown (seconds, 0 = off)</gray>
+seconds_label = "<gray>Global cooldown (seconds, 0 = off)</gray>"
+
+# reset cooldowns dialog section.
+[kits.dialog.resetcd]
+# Body text (MiniMessage).
+# Default: <white>Enter the player nickname and tick the confirmation checkbox:</white>
+body = "<white>Enter the player nickname and tick the confirmation checkbox:</white>"
+# Player nickname field label.
+# Default: <gray>Player nickname</gray>
+player_label = "<gray>Player nickname</gray>"
+# Confirmation checkbox label.
+# Default: <red>I really want to reset this player's cooldowns</red>
+checkbox_label = "<red>I really want to reset this player's cooldowns</red>"
+
 # Kits messages (ru).
 # Placeholders: %kit%, %player%, %count%, %slots%
 [messages.kits]
@@ -2395,6 +2419,30 @@ exported_received = "<green>✔</green> <white>Ты получил шалкер 
 # Cooldown badge appended to a kit list row.
 # Default:  <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>
 list_row_cooldown = " <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>"
+# The kit is on its server-wide cooldown.
+# Default: <red>Kit</red> <white>%kit%</white> <red>is on a global cooldown — </red><yellow>%seconds%</yellow><red>s left.</red>
+globalcd_active = "<red>Кит</red> <white>%kit%</white> <red>на глобальном кулдауне — осталось</red> <yellow>%seconds%</yellow><red> с.</red>"
+# Server-wide kit cooldown was set.
+# Default: <green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>
+globalcd_set = "<green>✔</green> <white>Глобальный кулдаун кита</white> <yellow>%kit%</yellow> <white>установлен на</white> <yellow>%seconds%</yellow> <white>секунд(ы).</white>"
+# Server-wide kit cooldown was removed.
+# Default: <green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>removed.</white>
+globalcd_removed = "<green>✔</green> <white>Глобальный кулдаун кита</white> <yellow>%kit%</yellow> <white>снят.</white>"
+# Player cooldowns were reset. Placeholders: %player%, %count%
+# Default: <green>✔</green> <white>Kit cooldowns reset for</white> <yellow>%player%</yellow> <gray>(</gray><yellow>%count%</yellow> <gray>cooldown(s) cleared).</gray>
+resetcd_done = "<green>✔</green> <white>Кулдауны китов сброшены игроку</white> <yellow>%player%</yellow> <gray>(снято: </gray><yellow>%count%</yellow><gray>).</gray>"
+# The player was told their cooldowns were reset.
+# Default: <gray>✦ Your kit cooldowns were reset by</gray> <yellow>%player%</yellow><gray>.</gray>
+resetcd_notify = "<gray>✦ Твои кулдауны китов сброшены игроком</gray> <yellow>%player%</yellow><gray>.</gray>"
+# Reset command without a player nickname.
+# Default: <red>Specify the player whose kit cooldowns should be reset!</red>
+resetcd_target_required = "<red>Укажи игрока, которому нужно сбросить кулдауны!</red>"
+# Reset confirmation checkbox was not ticked.
+# Default: <red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>
+not_confirmed_reset = "<red>Сброс не подтверждён — поставь галочку (консоль: добавь</red> <white>-c</white><red>).</red>"
+# Global cooldown badge appended to a kit list row.
+# Default:  <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>
+list_row_global_cooldown = " <gold>[</gold><yellow>глобально %seconds%s</yellow><gold>]</gold>"
 
 # Kits messages (en).
 # Placeholders: %kit%, %player%, %count%, %slots%
@@ -2475,3 +2523,19 @@ imported_holder = "<gray>✦ Your shulker box was copied into kit</gray> <yellow
 exported_received = "<green>✔</green> <white>You received a shulker box with kit</white> <yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>"
 # Default:  <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>
 list_row_cooldown = " <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>"
+# Default: <red>Kit</red> <white>%kit%</white> <red>is on a global cooldown — </red><yellow>%seconds%</yellow><red>s left.</red>
+globalcd_active = "<red>Kit</red> <white>%kit%</white> <red>is on a global cooldown — </red><yellow>%seconds%</yellow><red>s left.</red>"
+# Default: <green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>
+globalcd_set = "<green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>"
+# Default: <green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>removed.</white>
+globalcd_removed = "<green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>removed.</white>"
+# Default: <green>✔</green> <white>Kit cooldowns reset for</white> <yellow>%player%</yellow> <gray>(</gray><yellow>%count%</yellow> <gray>cooldown(s) cleared).</gray>
+resetcd_done = "<green>✔</green> <white>Kit cooldowns reset for</white> <yellow>%player%</yellow> <gray>(</gray><yellow>%count%</yellow> <gray>cooldown(s) cleared).</gray>"
+# Default: <gray>✦ Your kit cooldowns were reset by</gray> <yellow>%player%</yellow><gray>.</gray>
+resetcd_notify = "<gray>✦ Your kit cooldowns were reset by</gray> <yellow>%player%</yellow><gray>.</gray>"
+# Default: <red>Specify the player whose kit cooldowns should be reset!</red>
+resetcd_target_required = "<red>Specify the player whose kit cooldowns should be reset!</red>"
+# Default: <red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>
+not_confirmed_reset = "<red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>"
+# Default:  <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>
+list_row_global_cooldown = " <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>"
