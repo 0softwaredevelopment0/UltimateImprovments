@@ -21,9 +21,12 @@ check_interval_ticks = 20
 # admin runs /ui punish unblock <player>. The block is stored in the database
 # (punishments.type = 'block'), so it survives restarts and reconnects.
 [punish.block]
-# How often (ticks) the block dialog is re-sent while the block is active, so a
-# dismissed dialog (ESC / Close button) pops back up. 20 ticks = 1 second.
-# 0 = re-send only on join and on any attempted action (move/interact/chat/command).
+# How often (ticks) the block dialog is re-sent (refreshed) while the block is
+# active: 20 ticks = 1 second. The refresh also re-opens a dialog the player
+# closed and keeps the remaining time current. Every refresh pass also checks
+# whether the block has expired and lifts it automatically.
+# 0 = no periodic refresh (the dialog is re-sent only on join and on any
+# attempted action; expiry is still checked once per second).
 # Default: 20
 reopen_interval_ticks = 20
 

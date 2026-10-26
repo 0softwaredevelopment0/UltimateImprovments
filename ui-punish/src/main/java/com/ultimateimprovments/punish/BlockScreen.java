@@ -2,16 +2,19 @@ package com.ultimateimprovments.punish;
 
 import com.ultimateimprovments.util.ConsoleLogger;
 
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.dialog.ActionButton;
 import net.minecraft.server.dialog.CommonButtonData;
 import net.minecraft.server.dialog.CommonDialogData;
 import net.minecraft.server.dialog.DialogAction;
 import net.minecraft.server.dialog.MultiActionDialog;
+import net.minecraft.server.dialog.action.CustomAll;
 import net.minecraft.server.dialog.body.DialogBody;
 import net.minecraft.server.dialog.body.PlainMessage;
 import net.minecraft.server.level.ServerPlayer;
@@ -33,12 +36,21 @@ import java.util.Optional;
  * the client closes the window itself, instantly, without the
  * «Waiting for server…» screen.
  * <p>
- * Closing the dialog does not lift the block — {@link BlockEnforcer} re-opens it
- * while the punishment is active.
+ * Both the Close button and the dialog exit action (ESC) fire the
+ * {@link #BLOCK_CLOSE_ID} custom click, so {@link BlockEnforcer} can run the
+ * server-side check: block still active → chat hint + re-open; block expired or
+ * lifted → release the player.
  */
 public final class BlockScreen {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
+
+    /** Custom action fired by the Close button and by the dialog exit action (ESC). */
+    public static final Identifier BLOCK_CLOSE_ID =
+            Identifier.fromNamespaceAndPath("ultimateimprovments", "block_close");
+
+    /** Same action as an Adventure {@link Key} — what {@code PlayerCustomClickEvent} delivers. */
+    public static final Key BLOCK_CLOSE_KEY = Key.key("ultimateimprovments", "block_close");
 
     /** Width of a body line in the dialog (vanilla default for full-width text). */
     private static final int BODY_WIDTH = 310;
@@ -84,23 +96,26 @@ public final class BlockScreen {
             body.add(new PlainMessage(toNative(Component.text("This account has been blocked!")), BODY_WIDTH));
         }
 
-        // ─── Single Close button: no action → afterAction (CLOSE) closes instantly ───
+        // ─── Close button: fires the BLOCK_CLOSE custom action ───
+        // The server decides whether the block is over (see BlockEnforcer#onCustomClick).
         ActionButton closeBtn = new ActionButton(
                 new CommonButtonData(toNative(MM.deserialize(
                         PunishmentMessages.blockCloseButton())), 150),
-                Optional.empty());
+                Optional.of(new CustomAll(BLOCK_CLOSE_ID, Optional.empty())));
 
         CommonDialogData data = new CommonDialogData(
                 title,
                 Optional.of(externalTitle),
-                true,                       // canCloseWithEscape — the player may dismiss it, we re-open
+                true,                       // canCloseWithEscape — ESC leaves the dialog and triggers the exit action
                 true,                       // pause
                 DialogAction.CLOSE,         // client closes the window itself (no "Waiting for server")
                 body,
                 List.of()                   // no inputs
         );
 
-        MultiActionDialog dialog = new MultiActionDialog(data, List.of(closeBtn), Optional.empty(), 1);
+        // The exit action (ESC / window close) runs the same server-side check as the Close button.
+        MultiActionDialog dialog = new MultiActionDialog(
+                data, List.of(closeBtn), Optional.of(closeBtn), 1);
 
         serverPlayer.openDialog(Holder.direct(dialog));
     }

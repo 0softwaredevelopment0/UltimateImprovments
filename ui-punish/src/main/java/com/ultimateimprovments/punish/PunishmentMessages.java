@@ -215,6 +215,18 @@ public final class PunishmentMessages {
         return scalar("block_close", "<red>✖ Close</red>");
     }
 
+    /**
+     * Chat hint sent when the player presses Close / ESC while the block is still
+     * active. Placeholder: {@code %duration%} (time remaining).
+     */
+    public static Component buildBlockStillActive(String duration) {
+        String msg = raw("block_still_active");
+        if (msg.isEmpty()) {
+            msg = "<red>Your block has not expired yet! </red><gray>Time remaining: </gray><white>%duration%</white>";
+        }
+        return MessageUtil.parse(msg.replace(DURATION, duration == null ? "" : duration));
+    }
+
     // =========================
     // UTILITY
     // =========================

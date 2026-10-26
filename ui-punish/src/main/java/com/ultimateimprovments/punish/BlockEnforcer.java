@@ -3,7 +3,9 @@ package com.ultimateimprovments.punish;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 
+import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import io.papermc.paper.event.player.PlayerCustomClickEvent;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -37,9 +39,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * behind a modal {@link BlockScreen} dialog and cannot play:
  * <ul>
  *   <li>the dialog is shown on join (the record is read from the database);</li>
- *   <li>dismissing it (ESC / Close button) does not help — it is re-sent by a
- *       periodic task ({@code punish.block.reopen_interval_ticks}) and immediately
- *       on any attempt to move, interact, use an inventory, chat or run a command;</li>
+ *   <li>the dialog is re-sent (refreshed) every {@code punish.block.reopen_interval_ticks}
+ *       ticks — 20 ticks (1 s) by default — and immediately on any attempt to move,
+ *       interact, use an inventory, chat or run a command;</li>
+ *   <li>the Close button and ESC do not lift the block: they fire the
+ *       {@link BlockScreen#BLOCK_CLOSE_ID} custom action, the server re-checks the
+ *       record and either shows «not expired yet» + re-opens the dialog or releases
+ *       the player when the block is really over;</li>
  *   <li>movement is blocked: every positional change is reverted at the event level,
  *       so the player cannot walk away even with the dialog dismissed by a modified client.</li>
  * </ul>
@@ -82,10 +88,20 @@ public final class BlockEnforcer implements Listener {
         shutdown();
         listener = new BlockEnforcer();
         plugin.getServer().getPluginManager().registerEvents(listener, plugin);
-        task = Bukkit.getScheduler().runTaskTimer(plugin, BlockEnforcer::tick, TASK_PERIOD_TICKS, TASK_PERIOD_TICKS);
+        long period = taskPeriodTicks();
+        task = Bukkit.getScheduler().runTaskTimer(plugin, BlockEnforcer::tick, period, period);
         for (Player player : Bukkit.getOnlinePlayers()) {
             refresh(player);
         }
+    }
+
+    /**
+     * Period of the housekeeping task: the dialog refresh interval (20 ticks = 1 s by
+     * default), clamped to at least one second so expiry checks stay cheap.
+     */
+    private static long taskPeriodTicks() {
+        int ticks = reopenIntervalTicks();
+        return ticks <= 0 ? TASK_PERIOD_TICKS : Math.max(TASK_PERIOD_TICKS, ticks);
     }
 
     /**
@@ -179,6 +195,7 @@ public final class BlockEnforcer implements Listener {
     private static void tick() {
         if (blocked.isEmpty()) return;
         long now = System.currentTimeMillis();
+        boolean refreshDialog = reopenIntervalTicks() > 0;
         for (Map.Entry<UUID, PunishmentManager.PunishmentRecord> entry : blocked.entrySet()) {
             Player player = Bukkit.getPlayer(entry.getKey());
             if (player == null) continue;
@@ -190,7 +207,9 @@ public final class BlockEnforcer implements Listener {
                 release(player, true);
                 continue;
             }
-            show(player, record, now, false);
+            // Periodic refresh: re-send the dialog so a dismissed one pops back up
+            // (and the remaining time in it stays current).
+            if (refreshDialog) show(player, record, now, true);
         }
     }
 
@@ -211,17 +230,22 @@ public final class BlockEnforcer implements Listener {
         BlockScreen.open(player, record);
     }
 
-    /** Re-open interval from {@code punish.block.reopen_interval_ticks} (0 = event-driven only). */
+    /** Re-open interval from {@code punish.block.reopen_interval_ticks}. */
     private static long reopenIntervalMs() {
-        Main main = Main.getInstance();
-        int ticks = main != null
-                ? main.getConfig().getInt("punish.block.reopen_interval_ticks", 20)
-                : 20;
+        int ticks = reopenIntervalTicks();
         if (ticks <= 0) {
             // 0 disables the periodic re-open; keep the event throttle sensible anyway.
             return Math.max(EVENT_RESEND_THROTTLE_MS, DEFAULT_REOPEN_INTERVAL_MS);
         }
         return Math.max(EVENT_RESEND_THROTTLE_MS, ticks * 50L);
+    }
+
+    /** {@code punish.block.reopen_interval_ticks} (default 20 ticks = 1 s; 0 = off). */
+    private static int reopenIntervalTicks() {
+        Main main = Main.getInstance();
+        return main != null
+                ? main.getConfig().getInt("punish.block.reopen_interval_ticks", 20)
+                : 20;
     }
 
     // =========================
@@ -336,6 +360,61 @@ public final class BlockEnforcer implements Listener {
                 show(player, record, System.currentTimeMillis(), false);
             }
         });
+    }
+
+    // =========================
+    // CLOSE BUTTON / ESC — server-side check
+    // =========================
+
+    /**
+     * Close button and ESC both fire {@link BlockScreen#BLOCK_CLOSE_ID}. The block is
+     * lifted only when the record is really gone/expired; otherwise the player gets a
+     * chat hint and the dialog is re-opened right away.
+     */
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onCustomClick(PlayerCustomClickEvent event) {
+        if (!BlockScreen.BLOCK_CLOSE_KEY.equals(event.getIdentifier())) return;
+        Player player = playerOf(event);
+        if (player == null) return;
+        if (!blocked.containsKey(player.getUniqueId())) return;
+        // Let the client finish closing the window before re-opening it.
+        Bukkit.getScheduler().runTask(Main.getInstance(), () -> handleClose(player));
+    }
+
+    /** Resolves the Bukkit player behind a {@link PlayerCustomClickEvent}. */
+    private static Player playerOf(PlayerCustomClickEvent event) {
+        if (event.getCommonConnection() instanceof PlayerGameConnection gameConn) {
+            return gameConn.getPlayer();
+        }
+        return null;
+    }
+
+    /** Checks whether the block is still active and reacts to the Close/ESC press. */
+    private static void handleClose(Player player) {
+        if (!player.isOnline()) return;
+        PunishmentManager.PunishmentRecord cached = blocked.get(player.getUniqueId());
+
+        // Always re-read the database: the block may have been lifted elsewhere.
+        String ip = player.getAddress() != null
+                ? player.getAddress().getAddress().getHostAddress() : "";
+        String hwId = PunishmentManager.computeHwId(ip, player.getName());
+        PunishmentManager.PunishmentRecord fresh = PunishmentManager.getActivePunishment(
+                PunishmentManager.PunishType.BLOCK,
+                player.getUniqueId().toString(), player.getName(), ip, hwId);
+
+        if (fresh == null || fresh.isExpired()) {
+            if (cached != null) PunishmentManager.unpunishById(cached.id);
+            if (fresh != null) PunishmentManager.unpunishById(fresh.id);
+            release(player, true);
+            return;
+        }
+
+        blocked.put(player.getUniqueId(), fresh);
+        String duration = fresh.isPermanent()
+                ? "Permanent"
+                : PunishmentMessages.formatTime(fresh.getRemainingMs());
+        player.sendMessage(PunishmentMessages.buildBlockStillActive(duration));
+        show(player, fresh, System.currentTimeMillis(), true);
     }
 
     /** Cancels a world action for a blocked player and re-opens the dialog. */
