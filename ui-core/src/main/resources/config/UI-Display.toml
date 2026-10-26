@@ -73,6 +73,51 @@ worlds = []
 # Default: ""
 permission = ""
 
+# Custom scoreboard nickname (/ui scoreboardnick "<text>", placeholder %player_scoreboard_nick%).
+#
+# Players set a nickname with /ui scoreboardnick "<text>" (MiniMessage allowed,
+# e.g. <gradient:#00AAFF:#FF55FF>Hero</gradient>), switch it off with
+# /ui scoreboardnick off (the real name is shown again) and back on with
+# /ui scoreboardnick on. The stored string keeps its styles, while the length
+# limit and the forbidden-syntax filter below are checked against the VISIBLE
+# text only — tags like <dark_gray> are neither counted nor filtered.
+# Both limits and both filter sections are bypassable per permission:
+# ui.scoreboardnick.bypass.length[.min|.max], ui.scoreboardnick.bypass.filter,
+# ui.scoreboardnick.bypass.wildcard, ui.scoreboardnick.bypass.regex.
+
+[scoreboard.nick]
+# Master switch: players may set a scoreboard nickname.
+# Default: true
+enabled = true
+# Minimum visible length (MiniMessage tags are not counted).
+# Default: 1
+min_length = 1
+# Maximum visible length (MiniMessage tags are not counted).
+# Default: 16
+max_length = 16
+
+# Forbidden-syntax filter for scoreboard nicknames.
+
+[scoreboard.nick.filter]
+# Master switch: check nicknames against the rules below.
+# Default: false
+enabled = false
+# Mode.
+# "blacklist" — block as soon as ANY rule matches.
+# "whitelist" — allow only when EVERY rule matches.
+# Default: "blacklist"
+mode = "blacklist"
+# Wildcard rules (case-insensitive, applied to the visible text).
+# A plain word ("test") blocks only a STANDALONE word.
+# Stars add "any text": "test*" = text starts with it, "*test" = text ends with it,
+# "*test*" = anywhere (even inside a word).
+# Default: []
+wildcard = []
+# Java regex rules (case-insensitive, applied to the visible text).
+# An invalid pattern is ignored with a console warning.
+# Default: []
+regex = []
+
 # Server boss bar shown to all players.
 
 [bossbar]
@@ -101,3 +146,78 @@ progress_increasing = true
 update_interval_ticks = 20
 
 # Wireless redstone transmitters/receivers.
+
+# ==================================================================
+# SCOREBOARD NICKNAME MESSAGES
+# ==================================================================
+
+# Scoreboard nickname command (/ui scoreboardnick).
+# Placeholders: %player%, %nick%, %state%, %length%, %min%, %max%, %rule%, %section%, %error%
+
+[messages.scoreboard.nick]
+# Default: <red>❌ Usage: </red><white>/ui scoreboardnick "<text>" | <on|off></white>
+usage = "<red>❌ Usage: </red><white>/ui scoreboardnick \"<text>\" | <on|off></white>"
+# Default: <green>✔</green> <white>Ник в скорборде для</white> <yellow>%player%</yellow><white>:</white> %nick%
+set = "<green>✔</green> <white>Ник в скорборде для</white> <yellow>%player%</yellow><white>:</white> %nick%"
+# Default: <green>✔</green> <white>Ник в скорборде для</white> <yellow>%player%</yellow><white>:</white> <green>ON</green> <gray>(</gray>%nick%<gray>)</gray>
+enabled = "<green>✔</green> <white>Ник в скорборде для</white> <yellow>%player%</yellow><white>:</white> <green>ON</green> <gray>(</gray>%nick%<gray>)</gray>"
+# Default: <red>❌</red> <white>Ник в скорборде для</white> <yellow>%player%</yellow><white>:</white> <red>OFF</red> <gray>(показывается настоящий ник)</gray>
+disabled = "<red>❌</red> <white>Ник в скорборде для</white> <yellow>%player%</yellow><white>:</white> <red>OFF</red> <gray>(показывается настоящий ник)</gray>"
+# Default: <red>❌</red> <white>Для</white> <yellow>%player%</yellow> <white>ещё не сохранён ник в скорборде</white>
+no_nick = "<red>❌</red> <white>Для</white> <yellow>%player%</yellow> <white>ещё не сохранён ник в скорборде</white>"
+# Default: <gray>Ник в скорборде</gray> <yellow>%player%</yellow><gray>:</gray> %nick% <gray>(</gray><white>%state%</white><gray>, символов: %length%)</gray>
+current = "<gray>Ник в скорборде</gray> <yellow>%player%</yellow><gray>:</gray> %nick% <gray>(</gray><white>%state%</white><gray>, символов: %length%)</gray>"
+# Default: <gray>Ник в скорборде</gray> <yellow>%player%</yellow><gray>:</gray> <white>не задан</white> <gray>(показывается настоящий ник)</gray>
+current_none = "<gray>Ник в скорборде</gray> <yellow>%player%</yellow><gray>:</gray> <white>не задан</white> <gray>(показывается настоящий ник)</gray>"
+# Default: ON
+state_on = "ON"
+# Default: OFF
+state_off = "OFF"
+# Default: <red>Ник слишком короткий: %length% симв., минимум %min%</red>
+too_short = "<red>Ник слишком короткий: %length% симв., минимум %min%</red>"
+# Default: <red>Ник слишком длинный: %length% симв., максимум %max%</red>
+too_long = "<red>Ник слишком длинный: %length% симв., максимум %max%</red>"
+# Default: <red>В нике запрещённый синтаксис — сработало правило %section% "<white>%rule%</white>"</red>
+forbidden_blacklist = "<red>В нике запрещённый синтаксис — сработало правило %section% \"<white>%rule%</white>\"</red>"
+# Default: <red>Ник не проходит обязательное правило %section% "<white>%rule%</white>" (белый список)</red>
+forbidden_whitelist = "<red>Ник не проходит обязательное правило %section% \"<white>%rule%</white>\" (белый список)</red>"
+# Default: <red>Плейсхолдеры ('%') в нике запрещены</red>
+error_percent = "<red>Плейсхолдеры ('%') в нике запрещены</red>"
+# Default: <red>Устаревшие цветокоды '§' запрещены — используйте теги MiniMessage, например &lt;red&gt;</red>
+error_legacy = "<red>Устаревшие цветокоды '§' запрещены — используйте теги MiniMessage, например &lt;red&gt;</red>"
+# Default: <red>Некорректный MiniMessage: </red><white>%error%</white>
+error_minimessage = "<red>Некорректный MiniMessage: </red><white>%error%</white>"
+
+[messages_en.scoreboard.nick]
+# Default: <red>❌ Usage: </red><white>/ui scoreboardnick "<text>" | <on|off></white>
+usage = "<red>❌ Usage: </red><white>/ui scoreboardnick \"<text>\" | <on|off></white>"
+# Default: <green>✔</green> <white>Scoreboard nickname for</white> <yellow>%player%</yellow><white>:</white> %nick%
+set = "<green>✔</green> <white>Scoreboard nickname for</white> <yellow>%player%</yellow><white>:</white> %nick%"
+# Default: <green>✔</green> <white>Scoreboard nickname for</white> <yellow>%player%</yellow><white>:</white> <green>ON</green> <gray>(</gray>%nick%<gray>)</gray>
+enabled = "<green>✔</green> <white>Scoreboard nickname for</white> <yellow>%player%</yellow><white>:</white> <green>ON</green> <gray>(</gray>%nick%<gray>)</gray>"
+# Default: <red>❌</red> <white>Scoreboard nickname for</white> <yellow>%player%</yellow><white>:</white> <red>OFF</red> <gray>(the real name is shown)</gray>
+disabled = "<red>❌</red> <white>Scoreboard nickname for</white> <yellow>%player%</yellow><white>:</white> <red>OFF</red> <gray>(the real name is shown)</gray>"
+# Default: <red>❌</red> <white>No scoreboard nickname saved for</white> <yellow>%player%</yellow> <white>yet</white>
+no_nick = "<red>❌</red> <white>No scoreboard nickname saved for</white> <yellow>%player%</yellow> <white>yet</white>"
+# Default: <gray>Scoreboard nickname of</gray> <yellow>%player%</yellow><gray>:</gray> %nick% <gray>(</gray><white>%state%</white><gray>, %length% chars)</gray>
+current = "<gray>Scoreboard nickname of</gray> <yellow>%player%</yellow><gray>:</gray> %nick% <gray>(</gray><white>%state%</white><gray>, %length% chars)</gray>"
+# Default: <gray>Scoreboard nickname of</gray> <yellow>%player%</yellow><gray>:</gray> <white>not set</white> <gray>(the real name is shown)</gray>
+current_none = "<gray>Scoreboard nickname of</gray> <yellow>%player%</yellow><gray>:</gray> <white>not set</white> <gray>(the real name is shown)</gray>"
+# Default: ON
+state_on = "ON"
+# Default: OFF
+state_off = "OFF"
+# Default: <red>Nickname is too short: %length% chars, minimum is %min%</red>
+too_short = "<red>Nickname is too short: %length% chars, minimum is %min%</red>"
+# Default: <red>Nickname is too long: %length% chars, maximum is %max%</red>
+too_long = "<red>Nickname is too long: %length% chars, maximum is %max%</red>"
+# Default: <red>Nickname contains forbidden syntax — blocked by the %section% rule "<white>%rule%</white>"</red>
+forbidden_blacklist = "<red>Nickname contains forbidden syntax — blocked by the %section% rule \"<white>%rule%</white>\"</red>"
+# Default: <red>Nickname does not match the %section% rule "<white>%rule%</white>" required by the whitelist</red>
+forbidden_whitelist = "<red>Nickname does not match the %section% rule \"<white>%rule%</white>\" required by the whitelist</red>"
+# Default: <red>Placeholders ('%') are not allowed in a nickname</red>
+error_percent = "<red>Placeholders ('%') are not allowed in a nickname</red>"
+# Default: <red>Legacy '§' colour codes are not allowed — use MiniMessage tags like &lt;red&gt;</red>
+error_legacy = "<red>Legacy '§' colour codes are not allowed — use MiniMessage tags like &lt;red&gt;</red>"
+# Default: <red>Invalid MiniMessage: </red><white>%error%</white>
+error_minimessage = "<red>Invalid MiniMessage: </red><white>%error%</white>"

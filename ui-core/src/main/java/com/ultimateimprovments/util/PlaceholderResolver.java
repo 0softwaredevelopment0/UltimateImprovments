@@ -89,6 +89,10 @@ public class PlaceholderResolver {
     static {
         // ── Player ──
         BUILTIN.put("player_name",          (p, s) -> p != null ? p.getName() : "?");
+        // Custom scoreboard nickname (/ui scoreboardnick): own nickname when set and switched
+        // on, the real name otherwise. Raw MiniMessage, so styles survive into the scoreboard.
+        BUILTIN.put("player_scoreboard_nick", (p, s) -> p != null
+                ? com.ultimateimprovments.database.PlayerSettingsDB.displayScoreboardNick(p) : "?");
         BUILTIN.put("player_displayname",   (p, s) -> p != null ? net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(p.displayName()) : "?");
         BUILTIN.put("player_uuid",          (p, s) -> p != null ? p.getUniqueId().toString() : "?");
         BUILTIN.put("player_ping",          (p, s) -> p != null ? String.valueOf(p.getPing()) : "0");

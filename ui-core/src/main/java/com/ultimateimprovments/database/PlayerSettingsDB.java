@@ -19,7 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   bossbar_enabled INTEGER DEFAULT 1,
  *   scoreboard_enabled INTEGER DEFAULT 1,
  *   ping_enabled INTEGER DEFAULT 1,
- *   wireless_bind_enabled INTEGER DEFAULT 0 (bind is opt-in: /ui wirelessbind on)
+ *   wireless_bind_enabled INTEGER DEFAULT 0 (bind is opt-in: /ui wirelessbind on),
+ *   scoreboard_nick TEXT (custom scoreboard nickname, MiniMessage, NULL = none),
+ *   scoreboard_nick_enabled INTEGER DEFAULT 1 (nickname switched off with /ui scoreboardnick off)
  */
 public class PlayerSettingsDB {
 
@@ -36,19 +38,29 @@ public class PlayerSettingsDB {
             boolean bossbarEnabled,
             boolean scoreboardEnabled,
             boolean pingEnabled,
-            boolean wirelessBindEnabled
+            boolean wirelessBindEnabled,
+            String scoreboardNick,
+            boolean scoreboardNickEnabled
     ) {
         public PlayerSettings withBossbar(boolean val) {
-            return new PlayerSettings(uuid, val, scoreboardEnabled, pingEnabled, wirelessBindEnabled);
+            return new PlayerSettings(uuid, val, scoreboardEnabled, pingEnabled, wirelessBindEnabled,
+                    scoreboardNick, scoreboardNickEnabled);
         }
         public PlayerSettings withScoreboard(boolean val) {
-            return new PlayerSettings(uuid, bossbarEnabled, val, pingEnabled, wirelessBindEnabled);
+            return new PlayerSettings(uuid, bossbarEnabled, val, pingEnabled, wirelessBindEnabled,
+                    scoreboardNick, scoreboardNickEnabled);
         }
         public PlayerSettings withPing(boolean val) {
-            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, val, wirelessBindEnabled);
+            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, val, wirelessBindEnabled,
+                    scoreboardNick, scoreboardNickEnabled);
         }
         public PlayerSettings withWirelessBind(boolean val) {
-            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, pingEnabled, val);
+            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, pingEnabled, val,
+                    scoreboardNick, scoreboardNickEnabled);
+        }
+        public PlayerSettings withScoreboardNick(String nick, boolean enabled) {
+            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, pingEnabled,
+                    wirelessBindEnabled, nick, enabled);
         }
     }
 
@@ -70,16 +82,31 @@ public class PlayerSettingsDB {
                      "bossbar_enabled INTEGER DEFAULT 1," +
                      "scoreboard_enabled INTEGER DEFAULT 1," +
                      "ping_enabled INTEGER DEFAULT 1," +
-                     "wireless_bind_enabled INTEGER DEFAULT 0" +
+                     "wireless_bind_enabled INTEGER DEFAULT 0," +
+                     "scoreboard_nick TEXT," +
+                     "scoreboard_nick_enabled INTEGER DEFAULT 1" +
                      ")")) {
             ps.executeUpdate();
         } catch (SQLException e) {
             ConsoleLogger.error("[PlayerSettings] Create table failed: " + e.getMessage());
         }
-        // Migrations: tables created before ping/wireless-bind columns existed.
+        // Migrations: tables created before ping/wireless-bind/nick columns existed.
         // CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
         migrateAddColumn("ping_enabled", 1);
         migrateAddColumn("wireless_bind_enabled", 0);
+        migrateAddTextColumn("scoreboard_nick");
+        migrateAddColumn("scoreboard_nick_enabled", 1);
+    }
+
+    /** Adds a nullable TEXT column (no default value) — used by the nickname migration. */
+    private static void migrateAddTextColumn(String column) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "ALTER TABLE player_settings ADD COLUMN " + column + " TEXT")) {
+            ps.executeUpdate();
+        } catch (SQLException ignored) {
+            // Column already exists
+        }
     }
 
     private static void migrateAddColumn(String column, int defaultValue) {
@@ -95,7 +122,7 @@ public class PlayerSettingsDB {
     private static void loadAll() {
         cache.clear();
         try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT uuid, bossbar_enabled, scoreboard_enabled, ping_enabled, wireless_bind_enabled FROM player_settings");
+             PreparedStatement ps = con.prepareStatement("SELECT uuid, bossbar_enabled, scoreboard_enabled, ping_enabled, wireless_bind_enabled, scoreboard_nick, scoreboard_nick_enabled FROM player_settings");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 try {
@@ -104,7 +131,9 @@ public class PlayerSettingsDB {
                     boolean sb = rs.getInt("scoreboard_enabled") == 1;
                     boolean ping = rs.getInt("ping_enabled") == 1;
                     boolean wb = rs.getInt("wireless_bind_enabled") == 1;
-                    cache.put(uuid, new PlayerSettings(uuid, bb, sb, ping, wb));
+                    String nick = rs.getString("scoreboard_nick");
+                    boolean nickOn = rs.getInt("scoreboard_nick_enabled") == 1;
+                    cache.put(uuid, new PlayerSettings(uuid, bb, sb, ping, wb, nick, nickOn));
                 } catch (IllegalArgumentException ignored) {}
             }
             ConsoleLogger.info("[PlayerSettings] Loaded " + cache.size() + " player settings from DB");
@@ -151,7 +180,7 @@ public class PlayerSettingsDB {
 
     public static PlayerSettings get(UUID uuid) {
         return cache.computeIfAbsent(uuid, u ->
-                new PlayerSettings(u, true, true, true, false));
+                new PlayerSettings(u, true, true, true, false, null, true));
     }
 
     public static boolean isBossbarEnabled(UUID uuid) {
@@ -251,8 +280,67 @@ public class PlayerSettingsDB {
     }
 
     // =========================
+    // SCOREBOARD NICKNAME
+    // =========================
+
+    /** The stored nickname (raw MiniMessage) or {@code null} when none was ever set. */
+    public static String getScoreboardNick(UUID uuid) {
+        return get(uuid).scoreboardNick();
+    }
+
+    /** Whether the stored nickname is switched on (see {@code /ui scoreboardnick off}). */
+    public static boolean isScoreboardNickEnabled(UUID uuid) {
+        return get(uuid).scoreboardNickEnabled();
+    }
+
+    /** Stores a nickname and switches it on in one step. */
+    public static void setScoreboardNick(UUID uuid, String nick) {
+        PlayerSettings cur = get(uuid);
+        cache.put(uuid, cur.withScoreboardNick(nick, true));
+        saveNick(uuid, nick, true);
+    }
+
+    /** Switches the stored nickname on/off without touching the stored text. */
+    public static void setScoreboardNickEnabled(UUID uuid, boolean enabled) {
+        PlayerSettings cur = get(uuid);
+        cache.put(uuid, cur.withScoreboardNick(cur.scoreboardNick(), enabled));
+        saveNick(uuid, cur.scoreboardNick(), enabled);
+    }
+
+    /**
+     * The nickname a player should see in their own scoreboard: the custom
+     * nickname when it is set and switched on, the real name otherwise.
+     */
+    public static String displayScoreboardNick(org.bukkit.entity.Player player) {
+        if (player == null) return "?";
+        PlayerSettings settings = get(player.getUniqueId());
+        String nick = settings.scoreboardNick();
+        if (nick == null || nick.isBlank() || !settings.scoreboardNickEnabled()) {
+            return player.getName();
+        }
+        return nick;
+    }
+
+    // =========================
     // DB PERSISTENCE
     // =========================
+
+    /** Persists the nickname pair; {@code nick} may be {@code null} (SQL NULL). */
+    private static void saveNick(UUID uuid, String nick, boolean enabled) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO player_settings (uuid, scoreboard_nick, scoreboard_nick_enabled) VALUES (?, ?, ?) " +
+                     "ON CONFLICT(uuid) DO UPDATE SET scoreboard_nick = ?, scoreboard_nick_enabled = ?")) {
+            ps.setString(1, uuid.toString());
+            ps.setString(2, nick);
+            ps.setInt(3, enabled ? 1 : 0);
+            ps.setString(4, nick);
+            ps.setInt(5, enabled ? 1 : 0);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            ConsoleLogger.error("[PlayerSettings] Save nickname failed: " + e.getMessage());
+        }
+    }
 
     private static void saveSetting(UUID uuid, String column, boolean value) {
         try (Connection con = DatabaseManager.getConnection();

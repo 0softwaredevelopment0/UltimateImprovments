@@ -523,6 +523,15 @@ final class ConfigRules {
             bool("scoreboard.enabled"),
             integer("scoreboard.update_interval_ticks", 1, 72000),
 
+            // Custom scoreboard nickname (/ui scoreboardnick, %player_scoreboard_nick%)
+            bool("scoreboard.nick.enabled"),
+            integer("scoreboard.nick.min_length", 1, 1024, "Минимальная длина видимого текста ника (теги MiniMessage не считаются)"),
+            integer("scoreboard.nick.max_length", 1, 1024, "Максимальная длина видимого текста ника (теги MiniMessage не считаются)"),
+            bool("scoreboard.nick.filter.enabled"),
+            notBlank("scoreboard.nick.filter.mode", 32),
+            stringList("scoreboard.nick.filter.wildcard"),
+            stringList("scoreboard.nick.filter.regex"),
+
             bool("bossbar.enabled"),
             notBlank("bossbar.format", 512),
             notBlank("bossbar.color", 32),

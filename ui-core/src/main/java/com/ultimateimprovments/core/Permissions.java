@@ -68,6 +68,24 @@ public final class Permissions {
     public static final String CMD_ELYTRABOOST = "ui.command.elytraboost";
     public static final String CMD_BOSSBAR = "ui.command.bossbar";
     public static final String CMD_SCOREBOARD = "ui.command.scoreboard";
+    /** /ui scoreboardnick — set/inspect your custom scoreboard nickname (cosmetic, TRUE by default). */
+    public static final String CMD_SCOREBOARDNICK = "ui.command.scoreboardnick";
+    /** /ui scoreboardnick on|off — switch the stored nickname on or off. */
+    public static final String SCOREBOARDNICK_TOGGLE = "ui.scoreboardnick.toggle";
+    /** /ui scoreboardnick <player> <text> — set another player's nickname. */
+    public static final String SCOREBOARDNICK_OTHERS = "ui.scoreboardnick.others";
+    /** Bypass the whole forbidden-syntax filter (wildcard + regex sections). */
+    public static final String SCOREBOARDNICK_BYPASS_FILTER = "ui.scoreboardnick.bypass.filter";
+    /** Bypass only the wildcard rule section of the filter. */
+    public static final String SCOREBOARDNICK_BYPASS_WILDCARD = "ui.scoreboardnick.bypass.wildcard";
+    /** Bypass only the regex rule section of the filter. */
+    public static final String SCOREBOARDNICK_BYPASS_REGEX = "ui.scoreboardnick.bypass.regex";
+    /** Bypass both nickname length limits (min and max). */
+    public static final String SCOREBOARDNICK_BYPASS_LENGTH = "ui.scoreboardnick.bypass.length";
+    /** Bypass only the minimum nickname length. */
+    public static final String SCOREBOARDNICK_BYPASS_LENGTH_MIN = "ui.scoreboardnick.bypass.length.min";
+    /** Bypass only the maximum nickname length. */
+    public static final String SCOREBOARDNICK_BYPASS_LENGTH_MAX = "ui.scoreboardnick.bypass.length.max";
     public static final String CMD_PINGSOUND = "ui.command.pingsound";
     /** Unbreakable breaker: may damage/break ANY configured unbreakable block. */
     public static final String BREAKER_USE = "ui.breaker.use";
@@ -298,6 +316,15 @@ public final class Permissions {
                 new Permission(CMD_ELYTRABOOST, "Toggle the elytra boost on jump (/ui elytraboost <on|off>)", PermissionDefault.FALSE),
                 new Permission(CMD_BOSSBAR, "Show or hide your BossBar (/ui bossbar <on|off>)", PermissionDefault.TRUE),
                 new Permission(CMD_SCOREBOARD, "Show or hide your scoreboard (/ui scoreboard <on|off>)", PermissionDefault.TRUE),
+                new Permission(CMD_SCOREBOARDNICK, "Set your custom scoreboard nickname (/ui scoreboardnick <text>)", PermissionDefault.TRUE),
+                new Permission(SCOREBOARDNICK_TOGGLE, "Switch your scoreboard nickname on or off (/ui scoreboardnick on|off)", PermissionDefault.TRUE),
+                new Permission(SCOREBOARDNICK_OTHERS, "Set or toggle another player's scoreboard nickname", PermissionDefault.FALSE),
+                new Permission(SCOREBOARDNICK_BYPASS_FILTER, "Bypass the whole scoreboard-nickname forbidden-syntax filter (wildcard + regex)", PermissionDefault.FALSE),
+                new Permission(SCOREBOARDNICK_BYPASS_WILDCARD, "Bypass only the wildcard section of the scoreboard-nickname filter", PermissionDefault.FALSE),
+                new Permission(SCOREBOARDNICK_BYPASS_REGEX, "Bypass only the regex section of the scoreboard-nickname filter", PermissionDefault.FALSE),
+                new Permission(SCOREBOARDNICK_BYPASS_LENGTH, "Bypass both scoreboard-nickname length limits (min and max)", PermissionDefault.FALSE),
+                new Permission(SCOREBOARDNICK_BYPASS_LENGTH_MIN, "Bypass only the minimum scoreboard-nickname length", PermissionDefault.FALSE),
+                new Permission(SCOREBOARDNICK_BYPASS_LENGTH_MAX, "Bypass only the maximum scoreboard-nickname length", PermissionDefault.FALSE),
                 new Permission(CMD_PINGSOUND, "Toggle the chat ping sound (/ui pingsound <on|off>)", PermissionDefault.TRUE),
                 new Permission(BREAKER_USE, "Damage and break ANY configured unbreakable block", PermissionDefault.FALSE),
                 new Permission(BREAKER_USE_BLOCK + "<material>", "Damage and break ONLY this configured unbreakable block (e.g. ui.breaker.use.bedrock)", PermissionDefault.FALSE),
