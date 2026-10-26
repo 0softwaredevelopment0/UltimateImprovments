@@ -296,9 +296,8 @@ public final class PunishSubcommand {
             }
 
             // Notify the target
-            String durationFmt = parsed.isPermanent
-                    ? "Permanent"
-                    : parsed.timeStr;
+            String durationFmt = com.ultimateimprovments.punish.PunishmentMessages
+                    .durationLabel(parsed.expiresAt);
             target.sendMessage(com.ultimateimprovments.punish.PunishmentMessages.buildMuteChatMessage(
                     sender.getName(), parsed.reason, durationFmt,
                     com.ultimateimprovments.punish.PunishmentMessages.getDiscordUrl()));
@@ -429,9 +428,8 @@ public final class PunishSubcommand {
         }
 
         if (target != null && target.isOnline()) {
-            String durationFmt = parsed.isPermanent
-                    ? "Permanent"
-                    : parsed.timeStr;
+            String durationFmt = com.ultimateimprovments.punish.PunishmentMessages
+                    .durationLabel(parsed.expiresAt);
             target.sendMessage(com.ultimateimprovments.punish.PunishmentMessages.buildWarnChatMessage(
                     sender.getName(), parsed.reason, durationFmt,
                     com.ultimateimprovments.punish.PunishmentMessages.getDiscordUrl()));

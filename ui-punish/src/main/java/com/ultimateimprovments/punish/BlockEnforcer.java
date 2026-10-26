@@ -410,9 +410,7 @@ public final class BlockEnforcer implements Listener {
         }
 
         blocked.put(player.getUniqueId(), fresh);
-        String duration = fresh.isPermanent()
-                ? "Permanent"
-                : PunishmentMessages.formatTime(fresh.getRemainingMs());
+        String duration = PunishmentMessages.durationLabel(fresh.expiresAt);
         player.sendMessage(PunishmentMessages.buildBlockStillActive(duration));
         show(player, fresh, System.currentTimeMillis(), true);
     }

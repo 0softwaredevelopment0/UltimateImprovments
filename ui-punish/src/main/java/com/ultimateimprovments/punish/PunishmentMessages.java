@@ -231,6 +231,19 @@ public final class PunishmentMessages {
     // UTILITY
     // =========================
 
+    /**
+     * Duration marker used by every punishment message ({@code %duration%}):
+     * the formatted remaining time, or the red “Permanent” label when the
+     * punishment never expires ({@code expiresAt == 0}).
+     *
+     * @param expiresAt expiration unixMillis (0 = permanent)
+     */
+    public static String durationLabel(long expiresAt) {
+        if (expiresAt == 0) return "<red>Permanent</red>";
+        long remaining = Math.max(0, expiresAt - System.currentTimeMillis());
+        return PunishmentManager.formatRemaining(remaining);
+    }
+
     /** Reads a single-line punishment message, falling back to {@code def}. */
     private static String scalar(String key, String def) {
         List<String> lines = getConfig().getStringList(path(key));
