@@ -2300,6 +2300,18 @@ player_label = "<gray>Player nickname</gray>"
 # Default: <red>I really want to reset this player's cooldowns</red>
 checkbox_label = "<red>I really want to reset this player's cooldowns</red>"
 
+# reset global cooldown dialog section.
+[kits.dialog.resetglobalcd]
+# Body text (MiniMessage).
+# Default: <white>Enter the kit name and tick the confirmation checkbox:</white>
+body = "<white>Enter the kit name and tick the confirmation checkbox:</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+kit_label = "<gray>Kit name</gray>"
+# Confirmation checkbox label.
+# Default: <red>I really want to reset this kit's global cooldown</red>
+checkbox_label = "<red>I really want to reset this kit's global cooldown</red>"
+
 # Kits messages (ru).
 # Placeholders: %kit%, %player%, %count%, %slots%
 [messages.kits]
@@ -2440,6 +2452,12 @@ resetcd_target_required = "<red>Укажи игрока, которому нуж
 # Reset confirmation checkbox was not ticked.
 # Default: <red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>
 not_confirmed_reset = "<red>Сброс не подтверждён — поставь галочку (консоль: добавь</red> <white>-c</white><red>).</red>"
+# The kit's running global cooldown was reset.
+# Default: <green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>reset.</white>
+resetglobalcd_done = "<green>✔</green> <white>Глобальный кулдаун кита</white> <yellow>%kit%</yellow> <white>сброшен.</white>"
+# Global cooldown reset was not confirmed.
+# Default: <red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>
+not_confirmed_reset_global = "<red>Сброс не подтверждён — поставь галочку (консоль: добавь</red> <white>-c</white><red>).</red>"
 # Global cooldown badge appended to a kit list row.
 # Default:  <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>
 list_row_global_cooldown = " <gold>[</gold><yellow>глобально %seconds%s</yellow><gold>]</gold>"
@@ -2537,5 +2555,9 @@ resetcd_notify = "<gray>✦ Your kit cooldowns were reset by</gray> <yellow>%pla
 resetcd_target_required = "<red>Specify the player whose kit cooldowns should be reset!</red>"
 # Default: <red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>
 not_confirmed_reset = "<red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>"
+# Default: <green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>reset.</white>
+resetglobalcd_done = "<green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> <white>reset.</white>"
+# Default: <red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>
+not_confirmed_reset_global = "<red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>"
 # Default:  <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>
 list_row_global_cooldown = " <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>"
