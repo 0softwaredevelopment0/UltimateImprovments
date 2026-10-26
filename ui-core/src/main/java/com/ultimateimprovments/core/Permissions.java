@@ -117,6 +117,7 @@ public final class Permissions {
     public static final String CMD_PUNISH_BAN = "ui.command.punish.ban";
     public static final String CMD_PUNISH_MUTE = "ui.command.punish.mute";
     public static final String CMD_PUNISH_WARN = "ui.command.punish.warn";
+    public static final String CMD_PUNISH_BLOCK = "ui.command.punish.block";
     public static final String CMD_PUNISH_CRASH = "ui.command.punish.crash";
     public static final String CMD_PUNISH_LISTWARNS_SELF = "ui.command.punish.listwarns.self";
     public static final String CMD_PUNISH_LISTWARNS_OTHER = "ui.command.punish.listwarns.other";
@@ -385,6 +386,7 @@ public final class Permissions {
                 new Permission(CMD_PUNISH_BAN, "Ban players", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_MUTE, "Mute players", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_WARN, "Warn players", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_BLOCK, "Block players (modal dialog lock, also granted by ui.command.punish.ban)", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_CRASH, "Crash a player's client", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_SELF, "View your own warnings", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_OTHER, "View other players' warnings", PermissionDefault.FALSE),

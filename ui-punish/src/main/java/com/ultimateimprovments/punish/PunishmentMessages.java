@@ -10,6 +10,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * PunishmentMessages — configurable default punishment messages from config.yml.
@@ -175,8 +177,55 @@ public final class PunishmentMessages {
     }
 
     // =========================
+    // BLOCK (modal dialog — one config list entry per dialog body line)
+    // =========================
+
+    /**
+     * Returns the block dialog body lines with all placeholders substituted.
+     * Each entry of {@code messages[_en].punishment.block} becomes one dialog line,
+     * so the multi-line block notice stays fully configurable.
+     */
+    public static List<String> buildBlockLines(String player, String punisher, String reason,
+                                                String duration, String discordUrl) {
+        List<String> lines = getConfig().getStringList(path("block"));
+        List<String> out = new ArrayList<>(lines.size());
+        for (String line : lines) {
+            out.add(line
+                    .replace(PLAYER,   player == null ? "" : player)
+                    .replace(PUNISHER, punisher == null ? "" : punisher)
+                    .replace(REASON,   reason == null ? "" : reason)
+                    .replace(DURATION, duration == null ? "" : duration)
+                    .replace(DISCORD,  discordUrl == null ? "" : discordUrl));
+        }
+        return out;
+    }
+
+    /** Dialog title of the block screen ({@code punishment.block_title}). */
+    public static String blockTitle() {
+        return scalar("block_title", "<red>⛔ Blocked</red>");
+    }
+
+    /** Dialog header (top label) of the block screen ({@code punishment.block_header}). */
+    public static String blockHeader() {
+        return scalar("block_header", "<dark_gray>Access restricted</dark_gray>");
+    }
+
+    /** Close button label of the block screen ({@code punishment.block_close}). */
+    public static String blockCloseButton() {
+        return scalar("block_close", "<red>✖ Close</red>");
+    }
+
+    // =========================
     // UTILITY
     // =========================
+
+    /** Reads a single-line punishment message, falling back to {@code def}. */
+    private static String scalar(String key, String def) {
+        List<String> lines = getConfig().getStringList(path(key));
+        if (!lines.isEmpty()) return String.join("\n", lines);
+        String single = getConfig().getString(path(key));
+        return single != null && !single.isEmpty() ? single : def;
+    }
 
     /**
      * Converts a miniMessage string to a Component, then makes the Discord URL

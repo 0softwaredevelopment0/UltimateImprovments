@@ -671,6 +671,19 @@ unknown_status = "<red>❌ Неизвестный статус! Доступны
 # URL.
 # Default: https://dsc.gg/softwaredev
 discord_url = "https://dsc.gg/softwaredev"
+# Block — modal dialog shown to a blocked account: the player stays online but
+# cannot move or interact. Each list entry = ONE dialog line.
+# Default: ["<red>This account has been blocked!", "<gray>Blocked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
+block = ["<red>This account has been blocked!", "<gray>Blocked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
+# Block dialog title.
+# Default: ["<red>⛔ Blocked</red>"]
+block_title = ["<red>⛔ Blocked</red>"]
+# Block dialog header (small label in the window corner).
+# Default: ["<dark_gray>Access restricted</dark_gray>"]
+block_header = ["<dark_gray>Access restricted</dark_gray>"]
+# Block dialog close button.
+# Default: ["<red>✖ Close</red>"]
+block_close = ["<red>✖ Close</red>"]
 # Default: ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 ban = ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 # Default: ["<red>This account has been kicked!", "<gray>Kicked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
@@ -1302,6 +1315,19 @@ time_left = "<gray>┃ </gray><gray>Time left: </gray><gold>%duration%</gold>"
 # URL.
 # Default: https://dsc.gg/softwaredev
 discord_url = "https://dsc.gg/softwaredev"
+# Block — modal dialog shown to a blocked account: the player stays online but
+# cannot move or interact. Each list entry = ONE dialog line.
+# Default: ["<red>This account has been blocked!", "<gray>Blocked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
+block = ["<red>This account has been blocked!", "<gray>Blocked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
+# Block dialog title.
+# Default: ["<red>⛔ Blocked</red>"]
+block_title = ["<red>⛔ Blocked</red>"]
+# Block dialog header (small label in the window corner).
+# Default: ["<dark_gray>Access restricted</dark_gray>"]
+block_header = ["<dark_gray>Access restricted</dark_gray>"]
+# Block dialog close button.
+# Default: ["<red>✖ Close</red>"]
+block_close = ["<red>✖ Close</red>"]
 # Default: ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 ban = ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 # Default: ["<red>This account has been kicked!", "<gray>Kicked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
