@@ -41,14 +41,15 @@ import java.util.Locale;
  *   /ui kit cooldown &lt;kit&gt; &lt;seconds&gt;
  *   /ui kit globalcd &lt;kit&gt; &lt;seconds&gt;
  *   /ui kit resetcd &lt;player&gt; -c
+ *   /ui kit resetglobalcd &lt;kit&gt; -c
  * </pre>
  * Permission model:
  * <ul>
  *   <li>{@code ui.command.kit} — base access (list); missing → error 002 before
  *       any dialog opens;</li>
  *   <li>{@code ui.command.kit.<action>} — per action (give/create/rename/delete/
- *       import/export/cooldown/globalcd/resetcd), also error 002 before the
- *       dialog opens;</li>
+ *       import/export/cooldown/globalcd/resetcd/resetglobalcd), also error 002
+ *       before the dialog opens;</li>
  *   <li>{@code ui.command.kit.give.other} — required when the recipient is not
  *       the sender himself;</li>
  *   <li>{@code ui.command.kit.give.force} — the {@code -f} flag of give/export;</li>
@@ -62,7 +63,7 @@ public final class KitSubcommand implements SubCommand {
 
     private static final List<String> ACTIONS = List.of(
             "list", "give", "create", "rename", "delete", "import", "export",
-            "cooldown", "globalcd", "resetcd");
+            "cooldown", "globalcd", "resetcd", "resetglobalcd");
 
     @Override
     public String getName() {
@@ -232,6 +233,18 @@ public final class KitSubcommand implements SubCommand {
                 }
                 return KitService.resetCooldowns(sender, rest.get(0), confirmed);
             }
+            case "resetglobalcd" -> {
+                if (!requirePermission(sender, Permissions.CMD_KIT_RESETGLOBALCD)) return true;
+                if (player != null) {
+                    KitDialogs.openResetGlobalCooldown(player);
+                    return true;
+                }
+                if (rest.isEmpty()) {
+                    CommandErrors.syntaxError(sender);
+                    return true;
+                }
+                return KitService.resetGlobalCooldown(sender, rest.get(0), confirmed);
+            }
             default -> {
                 CommandErrors.syntaxError(sender);
                 return true;
@@ -304,6 +317,13 @@ public final class KitSubcommand implements SubCommand {
             case "resetcd" -> {
                 if (position == 0) {
                     out.addAll(playerNames(partial));
+                } else {
+                    out.addAll(filter(List.of("-c"), partial));
+                }
+            }
+            case "resetglobalcd" -> {
+                if (position == 0) {
+                    out.addAll(kitKeys(partial));
                 } else {
                     out.addAll(filter(List.of("-c"), partial));
                 }

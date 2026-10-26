@@ -601,6 +601,45 @@ public final class KitService {
         return true;
     }
 
+    // =========================================================================
+    // RESET GLOBAL COOLDOWN
+    // =========================================================================
+
+    /**
+     * Stops the running server-wide cooldown of one kit while keeping the
+     * configured cooldown value — the counterpart of {@link #resetCooldowns}
+     * for the global cooldown.
+     *
+     * @param confirmed the confirmation checkbox / the {@code -c} flag
+     */
+    public static boolean resetGlobalCooldown(CommandSender sender, String rawKit, boolean confirmed) {
+        if (!sender.hasPermission(Permissions.CMD_KIT_RESETGLOBALCD)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_RESETGLOBALCD);
+            return false;
+        }
+        if (!confirmed) {
+            error(sender, ERR_NOT_CONFIRMED, get("not_confirmed_reset_global",
+                    "<red>Reset was not confirmed — tick the checkbox "
+                            + "(console: append </red><white>-c</white><red>).</red>"));
+            return false;
+        }
+
+        Kit kit = KitStore.get(rawKit);
+        if (kit == null) {
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
+                    "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
+                    "%kit%", plainOr(rawKit)));
+            return false;
+        }
+
+        KitStore.clearGlobalCooldown(kit.key());
+        send(sender, get("resetglobalcd_done",
+                "<green>✔</green> <white>Global cooldown of kit</white> <yellow>%kit%</yellow> "
+                        + "<white>reset.</white>",
+                "%kit%", kit.name()));
+        return true;
+    }
+
     /** Parses a whole non-negative number of seconds; -1 when the text is not a number. */
     private static long parseSeconds(String raw) {
         if (raw == null) return -1;

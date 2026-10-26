@@ -35,7 +35,8 @@ import java.util.Optional;
  *   <li>{@link #openExport(Player, boolean)} — kit name (result goes to the main hand);</li>
  *   <li>{@link #openCooldown(Player)} — kit name + cooldown in seconds;</li>
  *   <li>{@link #openGlobalCooldown(Player)} — kit name + server-wide cooldown in seconds;</li>
- *   <li>{@link #openResetCooldown(Player)} — player nickname + a confirmation checkbox.</li>
+ *   <li>{@link #openResetCooldown(Player)} — player nickname + a confirmation checkbox;</li>
+ *   <li>{@link #openResetGlobalCooldown(Player)} — kit name + a confirmation checkbox.</li>
  * </ul>
  * <p>
  * All dialogs use {@link DialogAction#CLOSE} (NOT {@code WAIT_FOR_RESPONSE}): with
@@ -72,6 +73,8 @@ public final class KitDialogs {
     public static final Identifier GLOBALCD_SUBMIT = id("kit_globalcd_submit");
     /** Reset cooldowns → submit. */
     public static final Identifier RESETCD_SUBMIT = id("kit_resetcd_submit");
+    /** Reset global cooldown → submit. */
+    public static final Identifier RESETGLOBALCD_SUBMIT = id("kit_resetglobalcd_submit");
     /** Cancel (any dialog). */
     public static final Identifier CANCEL = id("kit_cancel");
 
@@ -197,6 +200,21 @@ public final class KitDialogs {
                                 "<gray>Player nickname</gray>"), maxName()),
                         new Input(KEY_CONFIRM, confirmInput)),
                 RESETCD_SUBMIT);
+    }
+
+    /** Reset the global cooldown: kit name + a confirmation checkbox. */
+    public static void openResetGlobalCooldown(Player player) {
+        var checkboxLabel = nativeText(cfgString("kits.dialog.resetglobalcd.checkbox_label",
+                "<red>I really want to reset this kit's global cooldown</red>"));
+        BooleanInput confirmInput = new BooleanInput(checkboxLabel, false, "true", "false");
+
+        open(player,
+                "resetglobalcd", "<white>Enter the kit name and tick the confirmation checkbox:</white>",
+                List.of(
+                        input(KEY_NAME, cfgString("kits.dialog.resetglobalcd.kit_label",
+                                "<gray>Kit name</gray>"), maxName()),
+                        new Input(KEY_CONFIRM, confirmInput)),
+                RESETGLOBALCD_SUBMIT);
     }
 
     // =========================================================================

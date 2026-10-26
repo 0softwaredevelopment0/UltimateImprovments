@@ -3,6 +3,18 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.26] - since 1.8.5-alpha.25 (2026-10-26)
+
+### Added
+- **`/ui kit resetglobalcd`** (`ui.command.kit.resetglobalcd`): stops the running
+  server-wide cooldown of one kit while keeping the configured cooldown value —
+  the counterpart of `/ui kit resetcd` for the global cooldown. Players use a
+  dialog (kit name + confirmation checkbox), console uses
+  `/ui kit resetglobalcd <kit> -c`; an unticked checkbox / missing `-c` reuses
+  error 028 and an unknown kit is 022. Unlike `/ui kit globalcd <kit> 0` this
+  does not clear the kit's configured global cooldown, so the next give starts
+  a fresh timer.
+
 ## [1.8.5-alpha.25] - since 1.8.5-alpha.24 (2026-10-26)
 
 ### Added
