@@ -5,6 +5,7 @@ import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -67,7 +68,7 @@ public final class OpListSubcommand {
                 "<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</dark_gray>"
         ));
         sender.sendMessage(MessageUtil.parse(
-                "<dark_gray>┃</dark_gray> <gold>✦ <white>Operator List</white> <gray>— Page " + page + "/" + totalPages + "</gray>"
+                "<dark_gray>┃</dark_gray> <gold>✦</gold> <white>Operator List</white> <gray>— Page " + page + "/" + totalPages + "</gray>"
         ));
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>┃</dark_gray> <gray>Total: </gray><white>" + totalEntries + "</white><gray> | Online OPs: </gray><gold>" + onlineOpCount + "</gold>"
@@ -90,16 +91,21 @@ public final class OpListSubcommand {
 
                 String statusDot = isOnline ? "<green>●</green>" : "<dark_gray>●</dark_gray>";
                 String nameColor = isOnline ? "<white>" : "<gray>";
+                // The closing tag must match the opening one: an unpaired </gray>
+                // after <white> leaked into the message as literal text.
+                String nameColorClose = isOnline ? "</white>" : "</gray>";
+                String safeName = MiniMessage.miniMessage().escapeTags(name);
                 String opTag = isOp ? " <gold>[OP]</gold>" : "";
                 String onlineTag = isOnline ? "" : " <dark_gray>(offline)</dark_gray>";
 
                 Component line = MessageUtil.parse(
-                        "<dark_gray>┃</dark_gray> " + statusDot + " " + nameColor + "#" + idx + " " + name + "</gray>" + opTag + onlineTag
+                        "<dark_gray>┃</dark_gray> " + statusDot + " " + nameColor + "#" + idx + " " + safeName
+                                + nameColorClose + opTag + onlineTag
                 );
 
                 if (isOnline) {
                     line = line.hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                            MessageUtil.parse("<white>" + name + "</white>\n<gray>Click to grant/revoke OP</gray>")));
+                            MessageUtil.parse("<white>" + safeName + "</white>\n<gray>Click to grant/revoke OP</gray>")));
                     line = line.clickEvent(ClickEvent.runCommand("/ui op " + name));
                 }
 
