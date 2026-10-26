@@ -2163,3 +2163,253 @@ text = "<red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>second
 # packet guard section.
 # enchant section.
 # Item Stealing action-bar feedback (en).
+
+# ==========================================================================
+# Kits (/ui kit) — named 27-slot item sets (shulker-box layout)
+# ==========================================================================
+
+# kits section.
+[kits]
+# Kits shown per /ui kit list page.
+# Default: 7
+list_page_size = 7
+# Maximum kit name length (MiniMessage tags included).
+# Default: 48
+max_name_length = 48
+# Maximum kit description length (MiniMessage tags included).
+# Default: 128
+max_description_length = 128
+
+# dialog section.
+[kits.dialog]
+# Dialog title (MiniMessage).
+# Default: <gold>✦ Kits</gold>
+title = "<gold>✦ Kits</gold>"
+# External title shown in the dialog header.
+# Default: <gray>Kit manager</gray>
+external_title = "<gray>Kit manager</gray>"
+# Confirm button label.
+# Default: <green>✔ Confirm</green>
+confirm_button = "<green>✔ Confirm</green>"
+# Cancel button label.
+# Default: <red>❌ Cancel</red>
+cancel_button = "<red>❌ Cancel</red>"
+
+# give dialog section.
+[kits.dialog.give]
+# Body text (MiniMessage).
+# Default: <white>Enter the kit name and the recipient (leave it empty to give the kit to yourself):</white>
+body = "<white>Enter the kit name and the recipient (leave it empty to give the kit to yourself):</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+kit_label = "<gray>Kit name</gray>"
+# Recipient field label.
+# Default: <gray>Recipient (empty = yourself)</gray>
+target_label = "<gray>Recipient (empty = yourself)</gray>"
+
+# create dialog section.
+[kits.dialog.create]
+# Body text (MiniMessage).
+# Default: <white>Enter the new kit name and its description (MiniMessage tags are allowed):</white>
+body = "<white>Enter the new kit name and its description <gray>(MiniMessage tags are allowed)</gray><white>:</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+name_label = "<gray>Kit name</gray>"
+# Description field label.
+# Default: <gray>Description</gray>
+description_label = "<gray>Description</gray>"
+
+# rename dialog section.
+[kits.dialog.rename]
+# Body text (MiniMessage).
+# Default: <white>Enter the current kit name and the new one:</white>
+body = "<white>Enter the current kit name and the new one:</white>"
+# Old name field label.
+# Default: <gray>Current name</gray>
+old_label = "<gray>Current name</gray>"
+# New name field label.
+# Default: <gray>New name</gray>
+new_label = "<gray>New name</gray>"
+
+# delete dialog section.
+[kits.dialog.delete]
+# Body text (MiniMessage).
+# Default: <white>Enter the kit name and tick the confirmation checkbox:</white>
+body = "<white>Enter the kit name and tick the confirmation checkbox:</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+kit_label = "<gray>Kit name</gray>"
+# Confirmation checkbox label.
+# Default: <red>I really want to delete this kit</red>
+checkbox_label = "<red>I really want to delete this kit</red>"
+
+# import dialog section.
+[kits.dialog.import]
+# Body text (MiniMessage).
+# Default: <white>Enter the kit name that the shulker box in your main hand should be copied into:</white>
+body = "<white>Enter the kit name that the shulker box in your </white><yellow>main hand</yellow><white> should be copied into:</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+kit_label = "<gray>Kit name</gray>"
+
+# export dialog section.
+[kits.dialog.export]
+# Body text (MiniMessage).
+# Default: <white>Enter the kit name that should be exported into a shulker box:</white>
+body = "<white>Enter the kit name that should be exported into a shulker box:</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+kit_label = "<gray>Kit name</gray>"
+
+# Kits messages (ru).
+# Placeholders: %kit%, %player%, %count%, %slots%
+[messages.kits]
+# Kit with that name does not exist.
+# Default: <red>Kit</red> <white>"%kit%"</white> <red>not found!</red>
+kit_not_found = "<red>Кит</red> <white>\"%kit%\"</white> <red>не найден!</red>"
+# Player is not online.
+# Default: <red>Player</red> <white>"%player%"</white> <red>is not online!</red>
+player_not_found = "<red>Игрок</red> <white>\"%player%\"</white> <red>не в сети!</red>"
+# Kit has no items yet.
+# Default: <red>Kit</red> <white>%kit%</white> <red>has no items — import a shulker box first!</red>
+kit_empty = "<red>Кит</red> <white>%kit%</white> <red>пуст — сначала импортируй шалкер!</red>"
+# Inventory has no space for the kit.
+# Default: <red>Not enough space in</red> <white>%player%</white><red>'s inventory! Occupied slots: </red><yellow>%slots%</yellow><red>. Use </red><white>/ui kit give -f</white><red> to overwrite them.</red>
+no_space = "<red>Недостаточно места в инвентаре</red> <white>%player%</white><red>! Занятые слоты: </red><yellow>%slots%</yellow><red>. Используй </red><white>/ui kit give -f</white><red>, чтобы перезаписать их.</red>"
+# No free slot for the exported shulker box.
+# Default: <red>No free slot for the shulker box — free a slot or use </red><white>/ui kit export -f</white><red>.</red>
+no_space_export = "<red>Нет свободного слота для шалкера — освободи слот или используй </red><white>/ui kit export -f</white><red>.</red>"
+# Kit given successfully.
+# Default: <green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>given to</white> <yellow>%player%</yellow><white>.</white>
+given = "<green>✔</green> <white>Кит</white> <yellow>%kit%</yellow> <white>выдан игроку</white> <yellow>%player%</yellow><white>.</white>"
+# Kit force-given (occupied slots overwritten).
+# Default: <green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>force-given to</white> <yellow>%player%</yellow><white>: overwritten</white> <red>%count%</red> <white>slot(s).</white>
+given_force = "<green>✔</green> <white>Кит</white> <yellow>%kit%</yellow> <white>принудительно выдан игроку</white> <yellow>%player%</yellow><white>: перезаписано</white> <red>%count%</red> <white>слот(ов).</white>"
+# List of overwritten slots.
+# Default: <gray>↳ overwritten slots: </gray><yellow>%slots%</yellow>
+overwritten = "<gray>↳ перезаписанные слоты: </gray><yellow>%slots%</yellow>"
+# Kit received notification.
+# Default: <green>✔</green> <white>You received kit</white> <yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>
+received = "<green>✔</green> <white>Ты получил кит</white> <yellow>%kit%</yellow> <white>от</white> <yellow>%player%</yellow><white>.</white>"
+# Kit name is empty.
+# Default: <red>The kit name must not be empty!</red>
+invalid_name = "<red>Название кита не может быть пустым!</red>"
+# Name/description too long.
+# Default: <red>Name must be ≤</red><yellow>%name%</yellow><red> and description ≤</red><yellow>%desc%</yellow><red> characters.</red>
+input_too_long = "<red>Название должно быть ≤</red><yellow>%name%</yellow><red> и описание ≤</red><yellow>%desc%</yellow><red> символов.</red>"
+# Kit with that name already exists.
+# Default: <red>A kit named</red> <white>%kit%</white> <red>already exists!</red>
+kit_exists = "<red>Кит с названием</red> <white>%kit%</white> <red>уже существует!</red>"
+# Kit created.
+# Default: <green>✔</green> <white>Kit created:</white> <yellow>%kit%</yellow><gray> (use </gray><white>/ui kit import</white><gray> to fill it)</gray>
+created = "<green>✔</green> <white>Кит создан:</white> <yellow>%kit%</yellow><gray> (используй </gray><white>/ui kit import</white><gray>, чтобы заполнить его)</gray>"
+# Kit renamed.
+# Default: <green>✔</green> <white>Kit</white> <yellow>%old%</yellow> <white>renamed to</white> <yellow>%new%</yellow><white>.</white>
+renamed = "<green>✔</green> <white>Кит</white> <yellow>%old%</yellow> <white>переименован в</white> <yellow>%new%</yellow><white>.</white>"
+# Delete confirmation checkbox was not ticked.
+# Default: <red>Deletion was not confirmed — tick the checkbox first.</red>
+not_confirmed = "<red>Удаление не подтверждено — поставь галочку в чекбоксе.</red>"
+# Kit deleted.
+# Default: <green>✔</green> <white>Kit deleted:</white> <yellow>%kit%</yellow>
+deleted = "<green>✔</green> <white>Кит удалён:</white> <yellow>%kit%</yellow>"
+# No shulker box in the main hand.
+# Default: <red>You must hold a shulker box in your main hand!</red>
+no_shulker = "<red>В правой руке должен быть шалкер!</red>"
+# The shulker box in the main hand is empty.
+# Default: <red>The shulker box in your hand is empty!</red>
+shulker_empty = "<red>Шалкер в руке пуст!</red>"
+# Shulker contents copied into the kit.
+# Default: <green>✔</green> <white>Copied</white> <yellow>%count%</yellow> <white>item(s) from the shulker box into kit</white> <yellow>%kit%</yellow><white>.</white>
+imported = "<green>✔</green> <white>Скопировано</white> <yellow>%count%</yellow> <white>предмет(ов) из шалкера в кит</white> <yellow>%kit%</yellow><white>.</white>"
+# Kit exported into a shulker box.
+# Default: <green>✔</green> <white>Shulker box with kit</white> <yellow>%kit%</yellow> <white>handed to you.</white>
+exported = "<green>✔</green> <white>Шалкер с китом</white> <yellow>%kit%</yellow> <white>выдан тебе.</white>"
+# Action cancelled.
+# Default: <gray>✦ Kit action cancelled.</gray>
+cancelled = "<gray>✦ Действие с китом отменено.</gray>"
+# Kit list header.
+# Default: <gold>══════════════════════════════════\n  ✦ <white>Kits</white> <gray>(%total%)</gray>\n══════════════════════════════════
+list_header = "<gold>══════════════════════════════════\n  ✦ <white>Киты</white> <gray>(%total%)</gray>\n══════════════════════════════════"
+# No kits exist yet.
+# Default: <gray>No kits yet — create one with</gray> <white>/ui kit create</white><gray>.</gray>
+list_empty = "<gray>Китов пока нет — создай первый через</gray> <white>/ui kit create</white><gray>.</gray>"
+# One kit row: %number% — line number, %kit% — display name, %description% — description.
+# Default: <gray>%number%.</gray> %kit%%description%
+list_row = "<gray>%number%.</gray> %kit%%description%"
+# Description part of a kit row.
+# Default:  <dark_gray>—</dark_gray> <gray>%description%</gray>
+list_row_description = " <dark_gray>—</dark_gray> <gray>%description%</gray>"
+# Kit list footer.
+# Default: <gold>══════════════════════════════════
+list_footer = "<gold>══════════════════════════════════"
+# Previous page button.
+# Default: <yellow>◀ Prev</yellow>
+list_prev = "<yellow>◀ Назад</yellow>"
+# Next page button.
+# Default: <yellow>Next ▶</yellow>
+list_next = "<yellow>Вперёд ▶</yellow>"
+# Page label.
+# Default: <gray>page %current%/%total%</gray>
+list_page = "<gray>страница %current%/%total%</gray>"
+
+# Kits messages (en).
+# Placeholders: %kit%, %player%, %count%, %slots%
+[messages_en.kits]
+# Default: <red>Kit</red> <white>"%kit%"</white> <red>not found!</red>
+kit_not_found = "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>"
+# Default: <red>Player</red> <white>"%player%"</white> <red>is not online!</red>
+player_not_found = "<red>Player</red> <white>\"%player%\"</white> <red>is not online!</red>"
+# Default: <red>Kit</red> <white>%kit%</white> <red>has no items — import a shulker box first!</red>
+kit_empty = "<red>Kit</red> <white>%kit%</white> <red>has no items — import a shulker box first!</red>"
+# Default: <red>Not enough space in</red> <white>%player%</white><red>'s inventory! Occupied slots: </red><yellow>%slots%</yellow><red>. Use </red><white>/ui kit give -f</white><red> to overwrite them.</red>
+no_space = "<red>Not enough space in</red> <white>%player%</white><red>'s inventory! Occupied slots: </red><yellow>%slots%</yellow><red>. Use </red><white>/ui kit give -f</white><red> to overwrite them.</red>"
+# Default: <red>No free slot for the shulker box — free a slot or use </red><white>/ui kit export -f</white><red>.</red>
+no_space_export = "<red>No free slot for the shulker box — free a slot or use </red><white>/ui kit export -f</white><red>.</red>"
+# Default: <green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>given to</white> <yellow>%player%</yellow><white>.</white>
+given = "<green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>given to</white> <yellow>%player%</yellow><white>.</white>"
+# Default: <green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>force-given to</white> <yellow>%player%</yellow><white>: overwritten</white> <red>%count%</red> <white>slot(s).</white>
+given_force = "<green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>force-given to</white> <yellow>%player%</yellow><white>: overwritten</white> <red>%count%</red> <white>slot(s).</white>"
+# Default: <gray>↳ overwritten slots: </gray><yellow>%slots%</yellow>
+overwritten = "<gray>↳ overwritten slots: </gray><yellow>%slots%</yellow>"
+# Default: <green>✔</green> <white>You received kit</white> <yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>
+received = "<green>✔</green> <white>You received kit</white> <yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>"
+# Default: <red>The kit name must not be empty!</red>
+invalid_name = "<red>The kit name must not be empty!</red>"
+# Default: <red>Name must be ≤</red><yellow>%name%</yellow><red> and description ≤</red><yellow>%desc%</yellow><red> characters.</red>
+input_too_long = "<red>Name must be ≤</red><yellow>%name%</yellow><red> and description ≤</red><yellow>%desc%</yellow><red> characters.</red>"
+# Default: <red>A kit named</red> <white>%kit%</white> <red>already exists!</red>
+kit_exists = "<red>A kit named</red> <white>%kit%</white> <red>already exists!</red>"
+# Default: <green>✔</green> <white>Kit created:</white> <yellow>%kit%</yellow><gray> (use </gray><white>/ui kit import</white><gray> to fill it)</gray>
+created = "<green>✔</green> <white>Kit created:</white> <yellow>%kit%</yellow><gray> (use </gray><white>/ui kit import</white><gray> to fill it)</gray>"
+# Default: <green>✔</green> <white>Kit</white> <yellow>%old%</yellow> <white>renamed to</white> <yellow>%new%</yellow><white>.</white>
+renamed = "<green>✔</green> <white>Kit</white> <yellow>%old%</yellow> <white>renamed to</white> <yellow>%new%</yellow><white>.</white>"
+# Default: <red>Deletion was not confirmed — tick the checkbox first.</red>
+not_confirmed = "<red>Deletion was not confirmed — tick the checkbox first.</red>"
+# Default: <green>✔</green> <white>Kit deleted:</white> <yellow>%kit%</yellow>
+deleted = "<green>✔</green> <white>Kit deleted:</white> <yellow>%kit%</yellow>"
+# Default: <red>You must hold a shulker box in your main hand!</red>
+no_shulker = "<red>You must hold a shulker box in your main hand!</red>"
+# Default: <red>The shulker box in your hand is empty!</red>
+shulker_empty = "<red>The shulker box in your hand is empty!</red>"
+# Default: <green>✔</green> <white>Copied</white> <yellow>%count%</yellow> <white>item(s) from the shulker box into kit</white> <yellow>%kit%</yellow><white>.</white>
+imported = "<green>✔</green> <white>Copied</white> <yellow>%count%</yellow> <white>item(s) from the shulker box into kit</white> <yellow>%kit%</yellow><white>.</white>"
+# Default: <green>✔</green> <white>Shulker box with kit</white> <yellow>%kit%</yellow> <white>handed to you.</white>
+exported = "<green>✔</green> <white>Shulker box with kit</white> <yellow>%kit%</yellow> <white>handed to you.</white>"
+# Default: <gray>✦ Kit action cancelled.</gray>
+cancelled = "<gray>✦ Kit action cancelled.</gray>"
+# Default: <gold>══════════════════════════════════\n  ✦ <white>Kits</white> <gray>(%total%)</gray>\n══════════════════════════════════
+list_header = "<gold>══════════════════════════════════\n  ✦ <white>Kits</white> <gray>(%total%)</gray>\n══════════════════════════════════"
+# Default: <gray>No kits yet — create one with</gray> <white>/ui kit create</white><gray>.</gray>
+list_empty = "<gray>No kits yet — create one with</gray> <white>/ui kit create</white><gray>.</gray>"
+# Default: <gray>%number%.</gray> %kit%%description%
+list_row = "<gray>%number%.</gray> %kit%%description%"
+# Default:  <dark_gray>—</dark_gray> <gray>%description%</gray>
+list_row_description = " <dark_gray>—</dark_gray> <gray>%description%</gray>"
+# Default: <gold>══════════════════════════════════
+list_footer = "<gold>══════════════════════════════════"
+# Default: <yellow>◀ Prev</yellow>
+list_prev = "<yellow>◀ Prev</yellow>"
+# Default: <yellow>Next ▶</yellow>
+list_next = "<yellow>Next ▶</yellow>"
+# Default: <gray>page %current%/%total%</gray>
+list_page = "<gray>page %current%/%total%</gray>"

@@ -132,6 +132,14 @@ public class HelpSubCommand implements SubCommand {
                 .u("<player>", "sends a dialog; the player decides to share or not");
         cmd("chgdim", null); // duplicate guard — remove below
         COMMANDS.remove("chgdim"); // keep the core entry only
+        cmd("kit", "Kits — named 27-slot item sets (shulker-box layout)")
+                .u("list [page]", "paginated list of kits with their display names")
+                .u("give [-f]", "give a kit to yourself or to another player (dialog); -f overwrites occupied slots")
+                .u("create", "create a kit — name + description (dialog, MiniMessage allowed)")
+                .u("rename", "rename a kit — current + new name (dialog)")
+                .u("delete", "delete a kit — name + confirmation checkbox (dialog)")
+                .u("import", "copy the shulker box from your main hand into a kit (dialog)")
+                .u("export [-f]", "write a kit into a shulker box in your main hand (dialog)");
 
         // ── Essentials: player state ──
         cmd("heal", "Heal a player").u("[player]", "defaults to yourself");
