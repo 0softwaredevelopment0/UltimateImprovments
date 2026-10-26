@@ -201,7 +201,7 @@ public final class AddonConfigManager {
      * {@link CommentedTomlTemplate}).
      */
     private static FileConfiguration loadAddonToml(String addon, File toml) {
-        TomlCrashSalvage.salvageFile(toml, m -> ConsoleLogger.warn("[ConfigSalvage/" + addon + "] " + m));
+        TomlCrashSalvage.salvageFile(toml, m -> logSalvage(addon, m));
         YamlConfiguration view = new YamlConfiguration();
         if (toml.exists()) {
             if (!parseIntoView(toml, view)) {
@@ -319,6 +319,25 @@ public final class AddonConfigManager {
                     + ": inserted the \"Time remaining\" line into the block dialog template");
         }
         return upgraded;
+    }
+
+    /**
+     * Routes one crash-salvage report line to the matching console level instead of
+     * painting every line yellow: a healthy file (✔) is a success, a commented broken
+     * line (⚠) is a warning, a failed salvage (✗) is an error and the remaining lines
+     * (e.g. «file does not exist on first run») are plain info.
+     */
+    private static void logSalvage(String addon, String message) {
+        String line = "[ConfigSalvage/" + addon + "] " + message;
+        if (message.startsWith("✔")) {
+            ConsoleLogger.success(line);
+        } else if (message.startsWith("✗")) {
+            ConsoleLogger.error(line);
+        } else if (message.startsWith("⚠")) {
+            ConsoleLogger.warn(line);
+        } else {
+            ConsoleLogger.info(line);
+        }
     }
 
     /** Writes the in-memory view back to {@code configs/<addon>.toml}, preserving comments. */
