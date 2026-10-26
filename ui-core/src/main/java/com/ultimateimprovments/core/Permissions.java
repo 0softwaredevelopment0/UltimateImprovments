@@ -225,6 +225,10 @@ public final class Permissions {
     public static final String CMD_KIT_IMPORT = "ui.command.kit.import";
     /** /ui kit export — write a kit into a shulker box. */
     public static final String CMD_KIT_EXPORT = "ui.command.kit.export";
+    /** /ui kit cooldown — set/clear a kit's per-recipient cooldown. */
+    public static final String CMD_KIT_COOLDOWN = "ui.command.kit.cooldown";
+    /** Ignores kit cooldowns when receiving a kit. */
+    public static final String CMD_KIT_COOLDOWN_BYPASS = "ui.command.kit.cooldown.bypass";
 
     // ═══════════ Features and modifiers ═══════════
     public static final String UI_ALERTS = "ui.alerts";
@@ -432,6 +436,8 @@ public final class Permissions {
                 new Permission(CMD_KIT_DELETE, "Delete kits (/ui kit delete)", PermissionDefault.FALSE),
                 new Permission(CMD_KIT_IMPORT, "Import a shulker box into a kit (/ui kit import)", PermissionDefault.FALSE),
                 new Permission(CMD_KIT_EXPORT, "Export a kit into a shulker box (/ui kit export)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_COOLDOWN, "Set a kit's cooldown (/ui kit cooldown)", PermissionDefault.FALSE),
+                new Permission(CMD_KIT_COOLDOWN_BYPASS, "Ignore kit cooldowns when receiving a kit", PermissionDefault.FALSE),
                 new Permission(CMD_ITEM, "Manage items", PermissionDefault.FALSE),
                 new Permission(CMD_DURA, "Scale the held item's durability (/ui dura multiply|divide [raw])", PermissionDefault.FALSE),
                 new Permission(CMD_ENCHANT, "Enchant items", PermissionDefault.FALSE),

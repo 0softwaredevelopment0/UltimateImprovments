@@ -7,10 +7,12 @@ import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.MessageUtil;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -24,15 +26,22 @@ import java.util.StringJoiner;
 
 /**
  * KitService — all kit operations (give / create / rename / delete / import /
- * export / list) with their command-error codes and chat feedback.
+ * export / list / cooldown) with their command-error codes and chat feedback.
  * <p>
- * Invoked from {@link KitDialogHandler} (dialog submissions) and from
- * {@code /ui kit list}. Every method sends its own result message (success or
- * error 022-030) and returns whether the operation succeeded.
+ * Invoked from {@link KitDialogHandler} (dialog submissions, players only) and
+ * from {@code /ui kit ...} — players go through dialogs, console and other
+ * non-player senders use plain arguments/flags (see {@code KitSubcommand}).
+ * Every method sends its own result message (success or error 022-033) and
+ * returns whether the operation succeeded.
  * <p>
  * Slot map: kit slot {@code i} (0..26, i.e. shulker slot {@code i+1}) is written
  * into the target's inventory slot {@code 9 + i} — the top three inventory rows,
  * which is exactly the shulker-box GUI layout.
+ * <p>
+ * Cooldown: a kit may carry {@link Kit#cooldownSeconds()} (0 = none). The
+ * cooldown is <b>per recipient and per kit</b>: once a player receives the kit
+ * (give/export) they may not receive it again until it expires, unless they
+ * hold {@code ui.command.kit.cooldown.bypass}.
  */
 public final class KitService {
 
@@ -60,9 +69,18 @@ public final class KitService {
     public static final int ERR_KIT_EMPTY = 29;
     /** 030 — the shulker box in the main hand is empty. */
     public static final int ERR_SHULKER_EMPTY = 30;
+    /** 031 — the recipient is still on the kit's cooldown. */
+    public static final int ERR_COOLDOWN = 31;
+    /** 032 — the cooldown value is not a whole number of seconds in range. */
+    public static final int ERR_INVALID_COOLDOWN = 32;
+    /** 033 — a non-player sender must name the player (no main hand / inventory). */
+    public static final int ERR_TARGET_REQUIRED = 33;
 
     /** Inventory offset of the top three inventory rows (the "27 slots"). */
     public static final int INVENTORY_OFFSET = 9;
+
+    /** Fallback cap for kit cooldowns when the config key is missing. */
+    private static final int DEFAULT_MAX_COOLDOWN_SECONDS = 2_592_000;
 
     private KitService() {}
 
@@ -73,19 +91,20 @@ public final class KitService {
     /**
      * Gives a kit to the giver (empty target field) or to a third party.
      *
-     * @param giver     the staff member running /ui kit give
+     * @param sender    the staff member / console running /ui kit give
      * @param rawKit    the kit name as entered (MiniMessage tags allowed)
-     * @param rawTarget the recipient nickname; blank = the giver himself
+     * @param rawTarget the recipient nickname; blank = the sender himself
+     *                  (players only, console must name the recipient)
      * @param force     {@code -f}: overwrite occupied slots instead of failing
      * @return true when the kit was handed out
      */
-    public static boolean give(Player giver, String rawKit, String rawTarget, boolean force) {
-        if (!giver.hasPermission(Permissions.CMD_KIT_GIVE)) {
-            CommandErrors.noPermission(giver, Permissions.CMD_KIT_GIVE);
+    public static boolean give(CommandSender sender, String rawKit, String rawTarget, boolean force) {
+        if (!sender.hasPermission(Permissions.CMD_KIT_GIVE)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_GIVE);
             return false;
         }
-        if (force && !giver.hasPermission(Permissions.CMD_KIT_GIVE_FORCE)) {
-            CommandErrors.noPermission(giver, Permissions.CMD_KIT_GIVE_FORCE);
+        if (force && !sender.hasPermission(Permissions.CMD_KIT_GIVE_FORCE)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_GIVE_FORCE);
             return false;
         }
 
@@ -93,38 +112,30 @@ public final class KitService {
 
         // Non-empty target field → third-party give, which needs its own node
         // (per spec: even when the nickname happens to be the giver's own).
-        if (!targetName.isEmpty() && !giver.hasPermission(Permissions.CMD_KIT_GIVE_OTHER)) {
-            CommandErrors.noPermission(giver, Permissions.CMD_KIT_GIVE_OTHER);
+        if (!targetName.isEmpty() && !sender.hasPermission(Permissions.CMD_KIT_GIVE_OTHER)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_GIVE_OTHER);
             return false;
         }
 
         Kit kit = KitStore.get(rawKit);
         if (kit == null) {
-            error(giver, ERR_KIT_NOT_FOUND, get("kit_not_found",
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
                     "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
                     "%kit%", plainOr(rawKit)));
             return false;
         }
 
-        Player target;
-        if (targetName.isEmpty()) {
-            target = giver;
-        } else {
-            target = Bukkit.getPlayerExact(targetName);
-            if (target == null) {
-                error(giver, ERR_PLAYER_NOT_FOUND, get("player_not_found",
-                        "<red>Player</red> <white>\"%player%\"</white> <red>is not online!</red>",
-                        "%player%", targetName));
-                return false;
-            }
-        }
+        Player target = resolveTarget(sender, targetName, true);
+        if (target == null) return false;
 
         if (!kit.hasItems()) {
-            error(giver, ERR_KIT_EMPTY, get("kit_empty",
+            error(sender, ERR_KIT_EMPTY, get("kit_empty",
                     "<red>Kit</red> <white>%kit%</white> <red>has no items — import a shulker box first!</red>",
                     "%kit%", kit.name()));
             return false;
         }
+
+        if (cooldownBlocked(sender, kit, target)) return false;
 
         ItemStack[] items = kit.items();
         PlayerInventory inv = target.getInventory();
@@ -137,7 +148,7 @@ public final class KitService {
         }
 
         if (!occupied.isEmpty() && !force) {
-            error(giver, ERR_NO_SPACE, get("no_space",
+            error(sender, ERR_NO_SPACE, get("no_space",
                     "<red>Not enough space in</red> <white>%player%</white><red>'s inventory! "
                             + "Occupied slots: </red><yellow>%slots%</yellow><red>. "
                             + "Use </red><white>/ui kit give -f</white><red> to overwrite them.</red>",
@@ -151,30 +162,31 @@ public final class KitService {
             inv.setItem(INVENTORY_OFFSET + i, items[i].clone());
         }
         target.updateInventory();
+        startCooldown(kit, target);
 
         // ── Feedback ──
         if (occupied.isEmpty()) {
-            send(giver, get("given",
+            send(sender, get("given",
                     "<green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>given to</white> "
                             + "<yellow>%player%</yellow><white>.</white>",
                     "%kit%", kit.name(), "%player%", target.getName()));
         } else {
-            send(giver, get("given_force",
+            send(sender, get("given_force",
                     "<green>✔</green> <white>Kit</white> <yellow>%kit%</yellow> <white>force-given to</white> "
                             + "<yellow>%player%</yellow><white>: overwritten</white> <red>%count%</red> "
                             + "<white>slot(s).</white>",
                     "%kit%", kit.name(), "%player%", target.getName(),
                     "%count%", String.valueOf(occupied.size())));
-            send(giver, get("overwritten",
+            send(sender, get("overwritten",
                     "<gray>↳ overwritten slots: </gray><yellow>%slots%</yellow>",
                     "%slots%", slotList(occupied)));
         }
 
-        if (target != giver) {
+        if (!(sender instanceof Player giverPlayer) || target != giverPlayer) {
             send(target, get("received",
                     "<green>✔</green> <white>You received kit</white> <yellow>%kit%</yellow> "
                             + "<white>from</white> <yellow>%player%</yellow><white>.</white>",
-                    "%kit%", kit.name(), "%player%", giver.getName()));
+                    "%kit%", kit.name(), "%player%", senderName(sender)));
         }
         return true;
     }
@@ -183,37 +195,38 @@ public final class KitService {
     // CREATE
     // =========================================================================
 
-    public static boolean create(Player creator, String rawName, String rawDescription) {
+    public static boolean create(CommandSender sender, String rawName, String rawDescription) {
         String key = Kit.keyOf(rawName);
         if (key.isEmpty()) {
-            error(creator, ERR_INVALID_INPUT, get("invalid_name",
+            error(sender, ERR_INVALID_INPUT, get("invalid_name",
                     "<red>The kit name must not be empty!</red>"));
             return false;
         }
         int maxName = config().getInt("kits.max_name_length", 48);
         int maxDesc = config().getInt("kits.max_description_length", 128);
-        if (rawName.trim().length() > maxName || (rawDescription != null && rawDescription.length() > maxDesc)) {
-            error(creator, ERR_INVALID_INPUT, get("input_too_long",
+        String name = rawName == null ? "" : rawName.trim();
+        if (name.length() > maxName || (rawDescription != null && rawDescription.length() > maxDesc)) {
+            error(sender, ERR_INVALID_INPUT, get("input_too_long",
                     "<red>Name must be ≤</red><yellow>%name%</yellow><red> and description ≤</red>"
                             + "<yellow>%desc%</yellow><red> characters.</red>",
                     "%name%", String.valueOf(maxName), "%desc%", String.valueOf(maxDesc)));
             return false;
         }
         if (KitStore.exists(rawName)) {
-            error(creator, ERR_KIT_EXISTS, get("kit_exists",
+            error(sender, ERR_KIT_EXISTS, get("kit_exists",
                     "<red>A kit named</red> <white>%kit%</white> <red>already exists!</red>",
                     "%kit%", plainOr(rawName)));
             return false;
         }
 
-        Kit kit = new Kit(key, rawName.trim(), rawDescription == null ? "" : rawDescription.trim(),
-                new ItemStack[Kit.SLOTS], creator.getName(),
-                System.currentTimeMillis(), System.currentTimeMillis());
+        Kit kit = new Kit(key, name, rawDescription == null ? "" : rawDescription.trim(),
+                new ItemStack[Kit.SLOTS], senderName(sender),
+                System.currentTimeMillis(), System.currentTimeMillis(), 0);
         if (!KitStore.save(kit)) {
-            CommandErrors.unknownError(creator);
+            CommandErrors.unknownError(sender);
             return false;
         }
-        send(creator, get("created",
+        send(sender, get("created",
                 "<green>✔</green> <white>Kit created:</white> <yellow>%kit%</yellow>"
                         + "<gray> (use </gray><white>/ui kit import</white><gray> to fill it)</gray>",
                 "%kit%", kit.name()));
@@ -224,17 +237,18 @@ public final class KitService {
     // RENAME
     // =========================================================================
 
-    public static boolean rename(Player player, String rawOld, String rawNew) {
+    public static boolean rename(CommandSender sender, String rawOld, String rawNew) {
         String oldKey = Kit.keyOf(rawOld);
         String newKey = Kit.keyOf(rawNew);
         if (oldKey.isEmpty() || newKey.isEmpty()) {
-            error(player, ERR_INVALID_INPUT, get("invalid_name",
+            error(sender, ERR_INVALID_INPUT, get("invalid_name",
                     "<red>The kit name must not be empty!</red>"));
             return false;
         }
         int maxName = config().getInt("kits.max_name_length", 48);
-        if (rawNew.trim().length() > maxName) {
-            error(player, ERR_INVALID_INPUT, get("input_too_long",
+        String newName = rawNew == null ? "" : rawNew.trim();
+        if (newName.length() > maxName) {
+            error(sender, ERR_INVALID_INPUT, get("input_too_long",
                     "<red>Name must be ≤</red><yellow>%name%</yellow><red> and description ≤</red>"
                             + "<yellow>%desc%</yellow><red> characters.</red>",
                     "%name%", String.valueOf(maxName),
@@ -244,26 +258,26 @@ public final class KitService {
 
         Kit kit = KitStore.getByKey(oldKey);
         if (kit == null) {
-            error(player, ERR_KIT_NOT_FOUND, get("kit_not_found",
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
                     "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
                     "%kit%", plainOr(rawOld)));
             return false;
         }
         if (!newKey.equals(oldKey) && KitStore.getByKey(newKey) != null) {
-            error(player, ERR_KIT_EXISTS, get("kit_exists",
+            error(sender, ERR_KIT_EXISTS, get("kit_exists",
                     "<red>A kit named</red> <white>%kit%</white> <red>already exists!</red>",
                     "%kit%", plainOr(rawNew)));
             return false;
         }
 
-        if (!KitStore.rename(kit, newKey, rawNew.trim())) {
-            CommandErrors.unknownError(player);
+        if (!KitStore.rename(kit, newKey, newName)) {
+            CommandErrors.unknownError(sender);
             return false;
         }
-        send(player, get("renamed",
+        send(sender, get("renamed",
                 "<green>✔</green> <white>Kit</white> <yellow>%old%</yellow> <white>renamed to</white> "
                         + "<yellow>%new%</yellow><white>.</white>",
-                "%old%", kit.name(), "%new%", rawNew.trim()));
+                "%old%", kit.name(), "%new%", newName));
         return true;
     }
 
@@ -271,24 +285,25 @@ public final class KitService {
     // DELETE
     // =========================================================================
 
-    public static boolean delete(Player player, String rawKit, boolean confirmed) {
+    public static boolean delete(CommandSender sender, String rawKit, boolean confirmed) {
         if (!confirmed) {
-            error(player, ERR_NOT_CONFIRMED, get("not_confirmed",
-                    "<red>Deletion was not confirmed — tick the checkbox first.</red>"));
+            error(sender, ERR_NOT_CONFIRMED, get("not_confirmed_console",
+                    "<red>Deletion was not confirmed — tick the checkbox "
+                            + "(console: append </red><white>-y</white><red>).</red>"));
             return false;
         }
         Kit kit = KitStore.get(rawKit);
         if (kit == null) {
-            error(player, ERR_KIT_NOT_FOUND, get("kit_not_found",
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
                     "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
                     "%kit%", plainOr(rawKit)));
             return false;
         }
         if (!KitStore.delete(kit.key())) {
-            CommandErrors.unknownError(player);
+            CommandErrors.unknownError(sender);
             return false;
         }
-        send(player, get("deleted",
+        send(sender, get("deleted",
                 "<green>✔</green> <white>Kit deleted:</white> <yellow>%kit%</yellow>",
                 "%kit%", kit.name()));
         return true;
@@ -298,18 +313,28 @@ public final class KitService {
     // IMPORT (shulker in the main hand → kit)
     // =========================================================================
 
-    public static boolean importFromHand(Player player, String rawKit) {
+    /**
+     * Copies the shulker box from a player's main hand into the kit.
+     *
+     * @param sender    executor (player = own hand, console = the named player)
+     * @param rawKit    the kit name
+     * @param rawPlayer the holder nickname; blank = the sender himself
+     */
+    public static boolean importFromHand(CommandSender sender, String rawKit, String rawPlayer) {
         Kit kit = KitStore.get(rawKit);
         if (kit == null) {
-            error(player, ERR_KIT_NOT_FOUND, get("kit_not_found",
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
                     "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
                     "%kit%", plainOr(rawKit)));
             return false;
         }
 
-        ItemStack inHand = player.getInventory().getItemInMainHand();
+        Player holder = resolveTarget(sender, rawPlayer, true);
+        if (holder == null) return false;
+
+        ItemStack inHand = holder.getInventory().getItemInMainHand();
         if (!isShulker(inHand)) {
-            error(player, ERR_NO_SHULKER, get("no_shulker",
+            error(sender, ERR_NO_SHULKER, get("no_shulker",
                     "<red>You must hold a shulker box in your main hand!</red>"));
             return false;
         }
@@ -320,46 +345,78 @@ public final class KitService {
             if (Kit.isFilled(item)) filled++;
         }
         if (filled == 0) {
-            error(player, ERR_SHULKER_EMPTY, get("shulker_empty",
+            error(sender, ERR_SHULKER_EMPTY, get("shulker_empty",
                     "<red>The shulker box in your hand is empty!</red>"));
             return false;
         }
 
         // The shulker box itself stays untouched in the player's hand.
         Kit updated = new Kit(kit.key(), kit.name(), kit.description(), contents,
-                kit.createdBy(), kit.createdAt(), System.currentTimeMillis());
+                kit.createdBy(), kit.createdAt(), System.currentTimeMillis(), kit.cooldownSeconds());
         if (!KitStore.save(updated)) {
-            CommandErrors.unknownError(player);
+            CommandErrors.unknownError(sender);
             return false;
         }
-        send(player, get("imported",
+        send(sender, get("imported",
                 "<green>✔</green> <white>Copied</white> <yellow>%count%</yellow> "
                         + "<white>item(s) from the shulker box into kit</white> <yellow>%kit%</yellow><white>.</white>",
                 "%kit%", kit.name(), "%count%", String.valueOf(filled)));
+        if (!(sender instanceof Player senderPlayer) || holder != senderPlayer) {
+            send(holder, get("imported_holder",
+                    "<gray>✦ Your shulker box was copied into kit</gray> <yellow>%kit%</yellow>"
+                            + " <gray>by</gray> <yellow>%player%</yellow><gray>.</gray>",
+                    "%kit%", kit.name(), "%player%", senderName(sender)));
+        }
         return true;
     }
 
     // =========================================================================
-    // EXPORT (kit → shulker into the main hand)
+    // EXPORT (kit → shulker into the recipient's main hand)
     // =========================================================================
 
-    public static boolean exportToHand(Player player, String rawKit, boolean force) {
+    /**
+     * Builds a shulker box from the kit and hands it to a player.
+     *
+     * @param sender    executor (player = own inventory, console = the named player)
+     * @param rawKit    the kit name
+     * @param rawPlayer the recipient nickname; blank = the sender himself
+     * @param force     {@code -f}: overwrite the item in the recipient's main hand
+     */
+    public static boolean exportToHand(CommandSender sender, String rawKit, String rawPlayer, boolean force) {
+        if (force && !sender.hasPermission(Permissions.CMD_KIT_GIVE_FORCE)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_GIVE_FORCE);
+            return false;
+        }
+
         Kit kit = KitStore.get(rawKit);
         if (kit == null) {
-            error(player, ERR_KIT_NOT_FOUND, get("kit_not_found",
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
                     "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
                     "%kit%", plainOr(rawKit)));
             return false;
         }
         if (!kit.hasItems()) {
-            error(player, ERR_KIT_EMPTY, get("kit_empty",
+            error(sender, ERR_KIT_EMPTY, get("kit_empty",
                     "<red>Kit</red> <white>%kit%</white> <red>has no items — import a shulker box first!</red>",
                     "%kit%", kit.name()));
             return false;
         }
 
+        Player target = resolveTarget(sender, rawPlayer, true);
+        if (target == null) return false;
+
+        // A player exporting to someone else needs the third-party node as well.
+        if (!(sender instanceof Player self) || target != self) {
+            if (!sender.hasPermission(Permissions.CMD_KIT_GIVE_OTHER)) {
+                CommandErrors.noPermission(sender, Permissions.CMD_KIT_GIVE_OTHER);
+                return false;
+            }
+        }
+
+        if (cooldownBlocked(sender, kit, target)) return false;
+
         ItemStack shulker = buildShulker(kit);
-        PlayerInventory inv = player.getInventory();
+        PlayerInventory inv = target.getInventory();
         int handSlot = inv.getHeldItemSlot();
         boolean handBusy = Kit.isFilled(inv.getItem(handSlot));
 
@@ -371,18 +428,119 @@ public final class KitService {
         } else if (firstFreeSlot(inv) >= 0) {
             inv.addItem(shulker);
         } else {
-            error(player, ERR_NO_SPACE, get("no_space_export",
+            error(sender, ERR_NO_SPACE, get("no_space_export",
                     "<red>No free slot for the shulker box — free a slot or use </red>"
                             + "<white>/ui kit export -f</white><red>.</red>"));
             return false;
         }
-        player.updateInventory();
+        target.updateInventory();
+        startCooldown(kit, target);
 
-        send(player, get("exported",
+        send(sender, get("exported",
                 "<green>✔</green> <white>Shulker box with kit</white> <yellow>%kit%</yellow> "
-                        + "<white>handed to you.</white>",
-                "%kit%", kit.name()));
+                        + "<white>handed to</white> <yellow>%player%</yellow><white>.</white>",
+                "%kit%", kit.name(), "%player%", target.getName()));
+        if (!(sender instanceof Player self) || target != self) {
+            send(target, get("exported_received",
+                    "<green>✔</green> <white>You received a shulker box with kit</white> "
+                            + "<yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>",
+                    "%kit%", kit.name(), "%player%", senderName(sender)));
+        }
         return true;
+    }
+
+    // =========================================================================
+    // COOLDOWN
+    // =========================================================================
+
+    /**
+     * Sets or clears the per-recipient cooldown of a kit.
+     *
+     * @param rawSeconds whole seconds, {@code 0} removes the cooldown
+     */
+    public static boolean setCooldown(CommandSender sender, String rawKit, String rawSeconds) {
+        if (!sender.hasPermission(Permissions.CMD_KIT_COOLDOWN)) {
+            CommandErrors.noPermission(sender, Permissions.CMD_KIT_COOLDOWN);
+            return false;
+        }
+        Kit kit = KitStore.get(rawKit);
+        if (kit == null) {
+            error(sender, ERR_KIT_NOT_FOUND, get("kit_not_found",
+                    "<red>Kit</red> <white>\"%kit%\"</white> <red>not found!</red>",
+                    "%kit%", plainOr(rawKit)));
+            return false;
+        }
+
+        long seconds = parseSeconds(rawSeconds);
+        int max = maxCooldownSeconds();
+        if (seconds < 0 || seconds > max) {
+            error(sender, ERR_INVALID_COOLDOWN, invalidCooldownText(max));
+            return false;
+        }
+
+        Kit updated = new Kit(kit.key(), kit.name(), kit.description(), kit.items(),
+                kit.createdBy(), kit.createdAt(), System.currentTimeMillis(), (int) seconds);
+        if (!KitStore.save(updated)) {
+            CommandErrors.unknownError(sender);
+            return false;
+        }
+
+        if (seconds == 0) {
+            send(sender, get("cooldown_removed",
+                    "<green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> "
+                            + "<white>removed.</white>",
+                    "%kit%", kit.name()));
+        } else {
+            send(sender, get("cooldown_set",
+                    "<green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> "
+                            + "<white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>",
+                    "%kit%", kit.name(), "%seconds%", String.valueOf(seconds)));
+        }
+        return true;
+    }
+
+    /** Parses a whole non-negative number of seconds; -1 when the text is not a number. */
+    private static long parseSeconds(String raw) {
+        if (raw == null) return -1;
+        String text = raw.trim();
+        if (text.isEmpty()) return -1;
+        try {
+            long value = Long.parseLong(text);
+            return value < 0 ? -1 : value;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private static int maxCooldownSeconds() {
+        return Math.max(0, config().getInt("kits.max_cooldown_seconds", DEFAULT_MAX_COOLDOWN_SECONDS));
+    }
+
+    private static String invalidCooldownText(int max) {
+        return get("invalid_cooldown",
+                "<red>The cooldown must be a whole number of seconds between</red> <yellow>0</yellow> "
+                        + "<red>and</red> <yellow>%max%</yellow><red> (0 = no cooldown).</red>",
+                "%max%", String.valueOf(max));
+    }
+
+    /** Reports error 031 when the recipient is still on the kit's cooldown. */
+    private static boolean cooldownBlocked(CommandSender sender, Kit kit, Player target) {
+        if (!kit.hasCooldown() || target.hasPermission(Permissions.CMD_KIT_COOLDOWN_BYPASS)) return false;
+        long remaining = KitStore.remainingCooldownSeconds(target.getUniqueId(), kit.key());
+        if (remaining <= 0) return false;
+        error(sender, ERR_COOLDOWN, get("cooldown_active",
+                "<red>Kit</red> <white>%kit%</white> <red>is on cooldown for</red> <white>%player%</white>"
+                        + "<red> — </red><yellow>%seconds%</yellow><red>s left.</red>",
+                "%kit%", kit.name(), "%player%", target.getName(),
+                "%seconds%", String.valueOf(remaining)));
+        return true;
+    }
+
+    /** Starts the kit cooldown for the recipient (no-op for cooldown-free kits). */
+    private static void startCooldown(Kit kit, Player target) {
+        if (!kit.hasCooldown()) return;
+        if (target.hasPermission(Permissions.CMD_KIT_COOLDOWN_BYPASS)) return;
+        KitStore.markCooldown(target.getUniqueId(), kit.key());
     }
 
     // =========================================================================
@@ -390,20 +548,20 @@ public final class KitService {
     // =========================================================================
 
     /** Renders one page of the kit list ({@code kits.list_page_size} rows). */
-    public static boolean list(Player player, int page) {
+    public static boolean list(CommandSender sender, int page) {
         List<Kit> kits = KitStore.all();
         int perPage = Math.max(1, config().getInt("kits.list_page_size", 7));
         int totalPages = Math.max(1, (kits.size() + perPage - 1) / perPage);
         int current = Math.max(1, Math.min(page, totalPages));
 
-        send(player, get("list_header",
+        send(sender, get("list_header",
                 "<gold>══════════════════════════════════\n"
                         + "  ✦ <white>Kits</white> <gray>(%total%)</gray>\n"
                         + "══════════════════════════════════",
                 "%total%", String.valueOf(kits.size())));
 
         if (kits.isEmpty()) {
-            send(player, get("list_empty",
+            send(sender, get("list_empty",
                     "<gray>No kits yet — create one with</gray> <white>/ui kit create</white><gray>.</gray>"));
             return true;
         }
@@ -421,17 +579,24 @@ public final class KitService {
             // The display name is inserted as a parsed component so its own
             // MiniMessage colours are rendered exactly as stored.
             int nameAt = row.indexOf("%kit%");
+            Component rowComponent;
             if (nameAt < 0) {
-                player.sendMessage(MessageUtil.parse(row, player));
+                rowComponent = MessageUtil.parse(row, playerOrNull(sender));
             } else {
                 Component prefix = MessageUtil.parse(row.substring(0, nameAt));
                 Component suffix = MessageUtil.parse(row.substring(nameAt + "%kit%".length()));
-                player.sendMessage(prefix.append(kit.displayName()).append(suffix));
+                rowComponent = prefix.append(kit.displayName()).append(suffix);
             }
+            if (kit.hasCooldown()) {
+                rowComponent = rowComponent.append(MessageUtil.parse(get("list_row_cooldown",
+                        " <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>")
+                        .replace("%seconds%", String.valueOf(kit.cooldownSeconds()))));
+            }
+            sender.sendMessage(rowComponent);
         }
 
         String footer = get("list_footer", "<gold>══════════════════════════════════");
-        player.sendMessage(MessageUtil.parse(footer));
+        sender.sendMessage(MessageUtil.parse(footer));
 
         if (totalPages > 1) {
             String prev = get("list_prev", "<yellow>◀ Prev</yellow>");
@@ -441,20 +606,23 @@ public final class KitService {
                     .replace("%total%", String.valueOf(totalPages))
                     .replace("%per_page%", String.valueOf(perPage));
 
-            Component prevComp = current > 1
-                    ? MessageUtil.parse(prev).clickEvent(net.kyori.adventure.text.event.ClickEvent
-                            .runCommand("/ui kit list " + (current - 1)))
-                    : Component.empty();
-            Component nextComp = current < totalPages
-                    ? MessageUtil.parse(next).clickEvent(net.kyori.adventure.text.event.ClickEvent
-                            .runCommand("/ui kit list " + (current + 1)))
-                    : Component.empty();
-
-            player.sendMessage(prevComp
-                    .append(Component.text("  "))
-                    .append(MessageUtil.parse(pageLabel))
-                    .append(Component.text("  "))
-                    .append(nextComp));
+            // Clickable navigation only makes sense for players (chat is the
+            // only surface with click events); the console gets the plain hint.
+            if (sender instanceof Player) {
+                Component prevComp = current > 1
+                        ? MessageUtil.parse(prev).clickEvent(ClickEvent.runCommand("/ui kit list " + (current - 1)))
+                        : Component.empty();
+                Component nextComp = current < totalPages
+                        ? MessageUtil.parse(next).clickEvent(ClickEvent.runCommand("/ui kit list " + (current + 1)))
+                        : Component.empty();
+                sender.sendMessage(prevComp
+                        .append(Component.text("  "))
+                        .append(MessageUtil.parse(pageLabel))
+                        .append(Component.text("  "))
+                        .append(nextComp));
+            } else {
+                sender.sendMessage(MessageUtil.parse(pageLabel));
+            }
         }
         return true;
     }
@@ -513,6 +681,45 @@ public final class KitService {
     // HELPERS
     // =========================================================================
 
+    /**
+     * Resolves the player a kit operation works with.
+     * <p>
+     * Blank nickname = the sender himself, but only for player senders —
+     * console has no hand/inventory, so it must name the player (error 033).
+     * A named but offline player is error 026.
+     *
+     * @param allowSelf true when a blank nickname may resolve to a player sender;
+     *                  false when a blank nickname is simply "no target"
+     */
+    private static Player resolveTarget(CommandSender sender, String rawPlayer, boolean allowSelf) {
+        String name = rawPlayer == null ? "" : rawPlayer.trim();
+        if (name.isEmpty()) {
+            if (allowSelf && sender instanceof Player player) return player;
+            error(sender, ERR_TARGET_REQUIRED, get("target_required",
+                    "<red>This form of the command must name a player "
+                            + "(console has no inventory / main hand)!</red>"));
+            return null;
+        }
+        Player target = Bukkit.getPlayerExact(name);
+        if (target == null) {
+            error(sender, ERR_PLAYER_NOT_FOUND, get("player_not_found",
+                    "<red>Player</red> <white>\"%player%\"</white> <red>is not online!</red>",
+                    "%player%", name));
+            return null;
+        }
+        return target;
+    }
+
+    /** Display name of a sender for feedback texts (console → "console"). */
+    private static String senderName(CommandSender sender) {
+        return sender instanceof Player player ? player.getName() : "console";
+    }
+
+    /** Player form of a sender, used only for MiniMessage placeholders. */
+    private static Player playerOrNull(CommandSender sender) {
+        return sender instanceof Player player ? player : null;
+    }
+
     /** "3, 5, 12" — kit slot numbers (1-based, shulker layout). */
     private static String slotList(List<Integer> zeroBasedSlots) {
         StringJoiner joiner = new StringJoiner(", ");
@@ -538,11 +745,11 @@ public final class KitService {
         return text;
     }
 
-    private static void send(Player player, String miniMessage) {
-        player.sendMessage(MessageUtil.parse(miniMessage, player));
+    private static void send(CommandSender sender, String miniMessage) {
+        sender.sendMessage(MessageUtil.parse(miniMessage, playerOrNull(sender)));
     }
 
-    private static void error(Player player, int code, String miniMessage) {
-        CommandErrors.custom(player, code, miniMessage);
+    private static void error(CommandSender sender, int code, String miniMessage) {
+        CommandErrors.custom(sender, code, miniMessage);
     }
 }

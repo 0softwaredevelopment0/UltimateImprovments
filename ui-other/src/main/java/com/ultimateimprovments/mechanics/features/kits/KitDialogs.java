@@ -32,7 +32,8 @@ import java.util.Optional;
  *   <li>{@link #openRename(Player)} — old name + new name;</li>
  *   <li>{@link #openDelete(Player)} — kit name + confirmation checkbox;</li>
  *   <li>{@link #openImport(Player)} — kit name (contents come from the main hand);</li>
- *   <li>{@link #openExport(Player, boolean)} — kit name (result goes to the main hand).</li>
+ *   <li>{@link #openExport(Player, boolean)} — kit name (result goes to the main hand);</li>
+ *   <li>{@link #openCooldown(Player)} — kit name + cooldown in seconds.</li>
  * </ul>
  * <p>
  * All dialogs use {@link DialogAction#CLOSE} (NOT {@code WAIT_FOR_RESPONSE}): with
@@ -63,6 +64,8 @@ public final class KitDialogs {
     public static final Identifier EXPORT_SUBMIT = id("kit_export_submit");
     /** Export → submit with {@code -f}. */
     public static final Identifier EXPORT_SUBMIT_FORCE = id("kit_export_submit_force");
+    /** Cooldown → submit. */
+    public static final Identifier COOLDOWN_SUBMIT = id("kit_cooldown_submit");
     /** Cancel (any dialog). */
     public static final Identifier CANCEL = id("kit_cancel");
 
@@ -73,6 +76,7 @@ public final class KitDialogs {
     public static final String KEY_OLD = "kit_old";
     public static final String KEY_NEW = "kit_new";
     public static final String KEY_CONFIRM = "kit_confirm";
+    public static final String KEY_SECONDS = "kit_seconds";
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
@@ -148,6 +152,18 @@ public final class KitDialogs {
                 "export", "<white>Enter the kit name that should be exported into a shulker box:</white>",
                 List.of(input(KEY_NAME, cfgString("kits.dialog.export.kit_label", "<gray>Kit name</gray>"), maxName())),
                 force ? EXPORT_SUBMIT_FORCE : EXPORT_SUBMIT);
+    }
+
+    /** Cooldown: kit name + cooldown in seconds (0 = no cooldown). */
+    public static void openCooldown(Player player) {
+        open(player,
+                "cooldown", "<white>Enter the kit name and its cooldown in seconds "
+                        + "<gray>(0 = no cooldown)</gray><white>:</white>",
+                List.of(
+                        input(KEY_NAME, cfgString("kits.dialog.cooldown.kit_label", "<gray>Kit name</gray>"), maxName()),
+                        input(KEY_SECONDS, cfgString("kits.dialog.cooldown.seconds_label",
+                                "<gray>Cooldown (seconds, 0 = off)</gray>"), 12)),
+                COOLDOWN_SUBMIT);
     }
 
     // =========================================================================

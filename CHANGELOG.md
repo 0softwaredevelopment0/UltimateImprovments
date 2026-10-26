@@ -3,6 +3,27 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.24] - since 1.8.5-alpha.23 (2026-10-26)
+
+### Added
+- **Kit cooldowns** (`/ui kit cooldown`, `ui.command.kit.cooldown`): a kit now
+  carries a per-recipient cooldown in seconds (new `kits.cooldown_seconds`
+  column, migrated automatically). Players set it through a dialog (kit name +
+  seconds, `0` removes it); console uses `/ui kit cooldown <kit> <seconds>`.
+  The cooldown applies when a player receives the kit (`give`/`export`), is kept
+  per player + per kit in the new SQLite table `kit_cooldowns` (survives
+  restarts) and is skipped for holders of `ui.command.kit.cooldown.bypass`.
+  New error codes: 031 cooldown active, 032 invalid cooldown value, 033 a
+  non-player sender must name the player. `/ui kit list` marks kits that have a
+  cooldown with a `[Ns]` badge; `kits.max_cooldown_seconds` caps the value.
+- **Console alternatives for every kit action** — non-player senders no longer
+  get error 004; they use plain arguments and flags instead of dialogs:
+  `/ui kit list [page]`, `give <kit> <player> [-f]`, `create <name>
+  [description]`, `rename <old> <new>`, `delete <kit> [-y]`,
+  `import <kit> <player>` (reads that player's main hand), `export <kit>
+  <player> [-f]`, `cooldown <kit> <seconds>`. Tab completion suggests kit names,
+  online players, flags and cooldown values for console senders.
+
 ## [1.8.5-alpha.23] - since 1.8.5-alpha.22 (2026-10-26)
 
 ### Added

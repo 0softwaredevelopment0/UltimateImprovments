@@ -31,9 +31,10 @@ public final class Kit {
     private final String createdBy;
     private final long createdAt;
     private long updatedAt;
+    private final int cooldownSeconds;
 
     public Kit(String key, String name, String description, ItemStack[] items,
-               String createdBy, long createdAt, long updatedAt) {
+               String createdBy, long createdAt, long updatedAt, int cooldownSeconds) {
         this.key = key;
         this.name = name;
         this.description = description == null ? "" : description;
@@ -41,6 +42,7 @@ public final class Kit {
         this.createdBy = createdBy == null ? "" : createdBy;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.cooldownSeconds = Math.max(0, cooldownSeconds);
     }
 
     // =========================================================================
@@ -81,6 +83,20 @@ public final class Kit {
 
     public long updatedAt() {
         return updatedAt;
+    }
+
+    /**
+     * Per-recipient cooldown of the kit in seconds; {@code 0} = no cooldown.
+     * The value lives on the kit; the per-player usage timestamps are kept by
+     * {@code KitStore} (table {@code kit_cooldowns}).
+     */
+    public int cooldownSeconds() {
+        return cooldownSeconds;
+    }
+
+    /** True when the kit restricts how often a player may receive it. */
+    public boolean hasCooldown() {
+        return cooldownSeconds > 0;
     }
 
     public void touch() {

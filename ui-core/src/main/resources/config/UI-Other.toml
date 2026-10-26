@@ -2179,6 +2179,9 @@ max_name_length = 48
 # Maximum kit description length (MiniMessage tags included).
 # Default: 128
 max_description_length = 128
+# Maximum kit cooldown in seconds (0 = cooldowns cannot be set).
+# Default: 2592000
+max_cooldown_seconds = 2592000
 
 # dialog section.
 [kits.dialog]
@@ -2260,6 +2263,18 @@ body = "<white>Enter the kit name that should be exported into a shulker box:</w
 # Kit name field label.
 # Default: <gray>Kit name</gray>
 kit_label = "<gray>Kit name</gray>"
+
+# cooldown dialog section.
+[kits.dialog.cooldown]
+# Body text (MiniMessage).
+# Default: <white>Enter the kit name and its cooldown in seconds <gray>(0 = no cooldown)</gray><white>:</white>
+body = "<white>Enter the kit name and its cooldown in seconds <gray>(0 = no cooldown)</gray><white>:</white>"
+# Kit name field label.
+# Default: <gray>Kit name</gray>
+kit_label = "<gray>Kit name</gray>"
+# Cooldown field label.
+# Default: <gray>Cooldown (seconds, 0 = off)</gray>
+seconds_label = "<gray>Cooldown (seconds, 0 = off)</gray>"
 
 # Kits messages (ru).
 # Placeholders: %kit%, %player%, %count%, %slots%
@@ -2351,6 +2366,35 @@ list_next = "<yellow>Вперёд ▶</yellow>"
 # Page label.
 # Default: <gray>page %current%/%total%</gray>
 list_page = "<gray>страница %current%/%total%</gray>"
+# Kit with that name does not exist (cooldown messages reuse kit_not_found).
+# Placeholders: %kit%, %player%, %seconds%, %max%
+# Non-player sender must name the player.
+# Default: <red>This form of the command must name a player (console has no inventory / main hand)!</red>
+target_required = "<red>Эта форма команды требует указать игрока (у консоли нет инвентаря и правой руки)!</red>"
+# The recipient is still on the kit's cooldown.
+# Default: <red>Kit</red> <white>%kit%</white> <red>is on cooldown for</red> <white>%player%</white><red> — </red><yellow>%seconds%</yellow><red>s left.</red>
+cooldown_active = "<red>Кит</red> <white>%kit%</white> <red>на кулдауне у</red> <white>%player%</white><red> — осталось</red> <yellow>%seconds%</yellow><red> с.</red>"
+# Kit cooldown was set.
+# Default: <green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> <white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>
+cooldown_set = "<green>✔</green> <white>Кулдаун кита</white> <yellow>%kit%</yellow> <white>установлен на</white> <yellow>%seconds%</yellow> <white>секунд(ы).</white>"
+# Kit cooldown was removed.
+# Default: <green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> <white>removed.</white>
+cooldown_removed = "<green>✔</green> <white>Кулдаун кита</white> <yellow>%kit%</yellow> <white>снят.</white>"
+# Cooldown value is out of range or not a number.
+# Default: <red>The cooldown must be a whole number of seconds between</red> <yellow>0</yellow> <red>and</red> <yellow>%max%</yellow><red> (0 = no cooldown).</red>
+invalid_cooldown = "<red>Кулдаун должен быть целым числом секунд от</red> <yellow>0</yellow> <red>до</red> <yellow>%max%</yellow><red> (0 = без кулдауна).</red>"
+# Deletion was not confirmed (console form).
+# Default: <red>Deletion was not confirmed — tick the checkbox (console: append </red><white>-y</white><red>).</red>
+not_confirmed_console = "<red>Удаление не подтверждено — поставь галочку (консоль: добавь</red> <white>-y</white><red>).</red>"
+# The player was told whose shulker was imported into a kit.
+# Default: <gray>✦ Your shulker box was copied into kit</gray> <yellow>%kit%</yellow> <gray>by</gray> <yellow>%player%</yellow><gray>.</gray>
+imported_holder = "<gray>✦ Твой шалкер скопирован в кит</gray> <yellow>%kit%</yellow> <gray>игроком</gray> <yellow>%player%</yellow><gray>.</gray>"
+# The player was told a shulker box with a kit was exported to them.
+# Default: <green>✔</green> <white>You received a shulker box with kit</white> <yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>
+exported_received = "<green>✔</green> <white>Ты получил шалкер с китом</white> <yellow>%kit%</yellow> <white>от</white> <yellow>%player%</yellow><white>.</white>"
+# Cooldown badge appended to a kit list row.
+# Default:  <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>
+list_row_cooldown = " <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>"
 
 # Kits messages (en).
 # Placeholders: %kit%, %player%, %count%, %slots%
@@ -2413,3 +2457,21 @@ list_prev = "<yellow>◀ Prev</yellow>"
 list_next = "<yellow>Next ▶</yellow>"
 # Default: <gray>page %current%/%total%</gray>
 list_page = "<gray>page %current%/%total%</gray>"
+# Default: <red>This form of the command must name a player (console has no inventory / main hand)!</red>
+target_required = "<red>This form of the command must name a player (console has no inventory / main hand)!</red>"
+# Default: <red>Kit</red> <white>%kit%</white> <red>is on cooldown for</red> <white>%player%</white><red> — </red><yellow>%seconds%</yellow><red>s left.</red>
+cooldown_active = "<red>Kit</red> <white>%kit%</white> <red>is on cooldown for</red> <white>%player%</white><red> — </red><yellow>%seconds%</yellow><red>s left.</red>"
+# Default: <green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> <white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>
+cooldown_set = "<green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> <white>set to</white> <yellow>%seconds%</yellow> <white>second(s).</white>"
+# Default: <green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> <white>removed.</white>
+cooldown_removed = "<green>✔</green> <white>Cooldown of kit</white> <yellow>%kit%</yellow> <white>removed.</white>"
+# Default: <red>The cooldown must be a whole number of seconds between</red> <yellow>0</yellow> <red>and</red> <yellow>%max%</yellow><red> (0 = no cooldown).</red>
+invalid_cooldown = "<red>The cooldown must be a whole number of seconds between</red> <yellow>0</yellow> <red>and</red> <yellow>%max%</yellow><red> (0 = no cooldown).</red>"
+# Default: <red>Deletion was not confirmed — tick the checkbox (console: append </red><white>-y</white><red>).</red>
+not_confirmed_console = "<red>Deletion was not confirmed — tick the checkbox (console: append </red><white>-y</white><red>).</red>"
+# Default: <gray>✦ Your shulker box was copied into kit</gray> <yellow>%kit%</yellow> <gray>by</gray> <yellow>%player%</yellow><gray>.</gray>
+imported_holder = "<gray>✦ Your shulker box was copied into kit</gray> <yellow>%kit%</yellow> <gray>by</gray> <yellow>%player%</yellow><gray>.</gray>"
+# Default: <green>✔</green> <white>You received a shulker box with kit</white> <yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>
+exported_received = "<green>✔</green> <white>You received a shulker box with kit</white> <yellow>%kit%</yellow> <white>from</white> <yellow>%player%</yellow><white>.</white>"
+# Default:  <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>
+list_row_cooldown = " <gold>[</gold><yellow>%seconds%s</yellow><gold>]</gold>"
