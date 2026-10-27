@@ -99,9 +99,11 @@ public final class PardonCommand {
         PardonManager.Target target = allOnline
                 ? PardonManager.Target.online()
                 : resolveTarget(targetArg);
-        String reason = flags.reason != null
-                ? flags.reason
-                : PardonMessages.defaultReason(sender.getName());
+        if (flags.reason == null || flags.reason.isBlank()) {
+            sender.sendMessage(MessageUtil.parse(PardonMessages.reasonRequired()));
+            return true;
+        }
+        String reason = flags.reason.trim();
 
         PardonManager.Outcome outcome = PardonManager.pardon(new PardonManager.Request(
                 types, target, reason, sender.getName(),
@@ -178,7 +180,19 @@ public final class PardonCommand {
             if (lower.startsWith("-r:") || lower.startsWith("-reason:")) {
                 String value = unquote(arg.substring(arg.indexOf(':') + 1)).trim();
                 if (value.isEmpty()) {
-                    sender.sendMessage(MessageUtil.parse(PardonMessages.usage()));
+                    sender.sendMessage(MessageUtil.parse(PardonMessages.reasonRequired()));
+                    return null;
+                }
+                flags.reason = flags.reason == null ? value : flags.reason + " " + value;
+            } else if (lower.equals("-r") || lower.equals("-reason")) {
+                // -r "<text>" — the value is the NEXT argument (quotes kept by the tokenizer)
+                if (i + 1 >= args.length) {
+                    sender.sendMessage(MessageUtil.parse(PardonMessages.reasonRequired()));
+                    return null;
+                }
+                String value = unquote(args[++i]).trim();
+                if (value.isEmpty()) {
+                    sender.sendMessage(MessageUtil.parse(PardonMessages.reasonRequired()));
                     return null;
                 }
                 flags.reason = flags.reason == null ? value : flags.reason + " " + value;
@@ -318,6 +332,11 @@ public final class PardonCommand {
             }
             if (lower.startsWith("-r:") || lower.startsWith("-reason:")) {
                 String value = unquote(arg.substring(arg.indexOf(':') + 1));
+                command.append(" -r:\"").append(value.replace("\"", "")).append('"');
+                continue;
+            }
+            if (lower.equals("-r") || lower.equals("-reason")) {
+                String value = i + 1 < args.length ? unquote(args[++i]) : "";
                 command.append(" -r:\"").append(value.replace("\"", "")).append('"');
                 continue;
             }

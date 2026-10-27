@@ -160,6 +160,10 @@ public class PunishmentManager {
             ConsoleLogger.info("[Punish] " + type.name() + " " + targetName
                     + " by " + punisher + " reason: " + reason);
 
+            // Event log (/ui punish logs): one row per punishment handed out.
+            logEvent(con, LogAction.PUNISH, type, targetUuid, targetName, punisher, reason,
+                    lastInsertId(con), now);
+
             // Reputation hook: warn/mute/ban lower the numeric reputation
             // (config-toggled amounts; 0 disables the source).
             String repSource = switch (type) {
@@ -401,19 +405,42 @@ public class PunishmentManager {
      */
     public static int deactivatePunishments(Collection<Integer> ids, String actor, String reason) {
         if (ids == null || ids.isEmpty()) return 0;
-        String sql = "UPDATE punishments SET active = 0, removed_at = ?, removed_by = ?, remove_reason = ?"
+        String resolvedActor = actor != null ? actor : "SYSTEM";
+        long now = System.currentTimeMillis();
+        String selectSql = "SELECT * FROM punishments WHERE active = 1 AND id IN ("
+                + placeholders(ids.size()) + ")";
+        String updateSql = "UPDATE punishments SET active = 0, removed_at = ?, removed_by = ?, remove_reason = ?"
                 + " WHERE active = 1 AND id IN (" + placeholders(ids.size()) + ")";
 
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement st = con.prepareStatement(sql)) {
-            int idx = 1;
-            st.setLong(idx++, System.currentTimeMillis());
-            st.setString(idx++, actor != null ? actor : "SYSTEM");
-            st.setString(idx++, reason != null ? reason : "");
-            for (int id : ids) {
-                st.setInt(idx++, id);
+        try (Connection con = DatabaseManager.getConnection()) {
+            // Read the rows first: the log needs type/player of every lifted record.
+            List<PunishmentRecord> rows = new ArrayList<>();
+            try (PreparedStatement sel = con.prepareStatement(selectSql)) {
+                int idx = 1;
+                for (int id : ids) sel.setInt(idx++, id);
+                try (ResultSet rs = sel.executeQuery()) {
+                    while (rs.next()) rows.add(mapRecord(rs));
+                }
             }
-            return st.executeUpdate();
+
+            int updated;
+            try (PreparedStatement st = con.prepareStatement(updateSql)) {
+                int idx = 1;
+                st.setLong(idx++, now);
+                st.setString(idx++, resolvedActor);
+                st.setString(idx++, reason != null ? reason : "");
+                for (int id : ids) st.setInt(idx++, id);
+                updated = st.executeUpdate();
+            }
+
+            if (updated > 0) {
+                LogAction action = isSystemActor(resolvedActor) ? LogAction.EXPIRE : LogAction.PARDON;
+                for (PunishmentRecord row : rows) {
+                    logEvent(con, action, row.type, row.playerUuid, row.playerName,
+                            resolvedActor, reason, row.id, now);
+                }
+            }
+            return updated;
         } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING,
                     "[Punish] Failed to deactivate punishments " + ids, e);
@@ -433,20 +460,43 @@ public class PunishmentManager {
      */
     public static int deactivateWarns(Collection<Integer> ids, String actor, String reason) {
         if (ids == null || ids.isEmpty()) return 0;
-        String sql = "UPDATE warns SET expires_at = 1, removed_at = ?, removed_by = ?, remove_reason = ?"
+        String resolvedActor = actor != null ? actor : "SYSTEM";
+        long now = System.currentTimeMillis();
+        String selectSql = "SELECT * FROM warns WHERE (expires_at = 0 OR expires_at > ?) AND id IN ("
+                + placeholders(ids.size()) + ")";
+        String updateSql = "UPDATE warns SET expires_at = 1, removed_at = ?, removed_by = ?, remove_reason = ?"
                 + " WHERE (expires_at = 0 OR expires_at > ?) AND id IN (" + placeholders(ids.size()) + ")";
 
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement st = con.prepareStatement(sql)) {
-            int idx = 1;
-            st.setLong(idx++, System.currentTimeMillis());
-            st.setString(idx++, actor != null ? actor : "SYSTEM");
-            st.setString(idx++, reason != null ? reason : "");
-            st.setLong(idx++, System.currentTimeMillis());
-            for (int id : ids) {
-                st.setInt(idx++, id);
+        try (Connection con = DatabaseManager.getConnection()) {
+            List<WarnRecord> rows = new ArrayList<>();
+            try (PreparedStatement sel = con.prepareStatement(selectSql)) {
+                int idx = 1;
+                sel.setLong(idx++, now);
+                for (int id : ids) sel.setInt(idx++, id);
+                try (ResultSet rs = sel.executeQuery()) {
+                    while (rs.next()) rows.add(mapWarn(rs));
+                }
             }
-            return st.executeUpdate();
+
+            int updated;
+            try (PreparedStatement st = con.prepareStatement(updateSql)) {
+                int idx = 1;
+                st.setLong(idx++, now);
+                st.setString(idx++, resolvedActor);
+                st.setString(idx++, reason != null ? reason : "");
+                st.setLong(idx++, now);
+                for (int id : ids) st.setInt(idx++, id);
+                updated = st.executeUpdate();
+            }
+
+            if (updated > 0) {
+                LogAction action = isSystemActor(resolvedActor) ? LogAction.EXPIRE : LogAction.PARDON;
+                for (WarnRecord row : rows) {
+                    logEvent(con, action, PunishType.WARN, row.playerUuid, row.playerName,
+                            resolvedActor, reason, row.id, now);
+                }
+            }
+            return updated;
         } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING,
                     "[Punish] Failed to deactivate warns " + ids, e);
@@ -480,67 +530,189 @@ public class PunishmentManager {
     }
 
     // =========================
-    // ALL ACTIVE PUNISHMENTS (for /ui punish actionlist)
+    // PUNISHMENT LOG (append-only event history for /ui punish logs)
     // =========================
 
+    /** What happened to a punishment: it was handed out, pardoned, or expired. */
+    public enum LogAction {
+        PUNISH, PARDON, EXPIRE;
+
+        public String db() { return name().toLowerCase(); }
+
+        public static LogAction parse(String raw) {
+            if (raw == null) return null;
+            return switch (raw.toLowerCase()) {
+                case "punish" -> PUNISH;
+                case "pardon" -> PARDON;
+                case "expire" -> EXPIRE;
+                default -> null;
+            };
+        }
+    }
+
+    /** One row of the {@code punishment_log} table. */
+    public static class LogEntry {
+        public final int id;
+        public final LogAction action;
+        public final PunishType type;
+        public final String playerUuid;
+        public final String playerName;
+        public final String actor;
+        public final String reason;
+        public final int recordId;
+        public final long createdAt;
+
+        public LogEntry(int id, LogAction action, PunishType type, String playerUuid,
+                        String playerName, String actor, String reason, int recordId, long createdAt) {
+            this.id = id;
+            this.action = action;
+            this.type = type;
+            this.playerUuid = playerUuid;
+            this.playerName = playerName;
+            this.actor = actor;
+            this.reason = reason;
+            this.recordId = recordId;
+            this.createdAt = createdAt;
+        }
+    }
+
+    /** Whether the actor is the system itself (automatic expiry). */
+    private static boolean isSystemActor(String actor) {
+        return actor != null && actor.equalsIgnoreCase("SYSTEM");
+    }
+
     /**
-     * Returns ALL active punishments of every player, unified into one list:
-     * bans/mutes/kicks from the {@code punishments} table and warns from the
-     * {@code warns} table (warns live in a separate table).
-     * Expired records are excluded. Newest first.
+     * Appends one event to the punishment log. Never throws: a failed log write must
+     * not break the punishment itself (the log is history, not enforcement).
      */
-    public static List<PunishmentRecord> getAllActivePunishments() {
-        List<PunishmentRecord> result = new ArrayList<>();
-        long now = System.currentTimeMillis();
+    private static void logEvent(Connection con, LogAction action, PunishType type,
+                                 String playerUuid, String playerName, String actor,
+                                 String reason, int recordId, long when) {
+        try (PreparedStatement st = con.prepareStatement("""
+                INSERT INTO punishment_log (action, type, player_uuid, player_name,
+                    actor, reason, record_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """)) {
+            st.setString(1, action.db());
+            st.setString(2, type.name().toLowerCase());
+            st.setString(3, playerUuid != null ? playerUuid : "");
+            st.setString(4, playerName != null ? playerName : "");
+            st.setString(5, actor != null ? actor : "");
+            st.setString(6, reason != null ? reason : "");
+            st.setInt(7, recordId);
+            st.setLong(8, when);
+            st.executeUpdate();
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.FINE, "[Punish] Failed to write the punishment log", e);
+        }
+    }
 
-        // bans / mutes / kicks
+    /** {@code SELECT last_insert_rowid()} on the given connection (0 when unavailable). */
+    private static int lastInsertId(Connection con) {
+        try (PreparedStatement st = con.prepareStatement("SELECT last_insert_rowid()");
+             ResultSet rs = st.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Reads one page of the punishment log, newest first.
+     *
+     * @param typeFilter a punishment type name ({@code ban|mute|block|warn|kick}), or
+     *                   null/blank/"all" for every type
+     * @param offset     rows to skip
+     * @param limit      page size
+     */
+    public static List<LogEntry> findLogEntries(String typeFilter, int offset, int limit) {
+        List<LogEntry> result = new ArrayList<>();
+        String type = normalizeLogType(typeFilter);
+        String sql = "SELECT * FROM punishment_log"
+                + (type != null ? " WHERE type = ?" : "")
+                + " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?";
+
         try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement st = con.prepareStatement("""
-                     SELECT * FROM punishments
-                     WHERE active = 1 AND (expires_at = 0 OR expires_at > ?)
-                     ORDER BY punished_at DESC
-                     """)) {
-            st.setLong(1, now);
+             PreparedStatement st = con.prepareStatement(sql)) {
+            int idx = 1;
+            if (type != null) st.setString(idx++, type);
+            st.setInt(idx++, Math.max(1, limit));
+            st.setInt(idx, Math.max(0, offset));
             try (ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    result.add(mapRecord(rs));
+                    result.add(mapLogEntry(rs));
                 }
             }
         } catch (SQLException e) {
-            Main.getInstance().getLogger().log(Level.FINE, "[Punish] Failed to list active punishments", e);
+            Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to read the punishment log", e);
         }
-
-        // warns (separate table)
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement st = con.prepareStatement("""
-                     SELECT * FROM warns
-                     WHERE (expires_at = 0 OR expires_at > ?)
-                     ORDER BY warned_at DESC
-                     """)) {
-            st.setLong(1, now);
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    result.add(new PunishmentRecord(
-                            rs.getInt("id"),
-                            PunishType.WARN,
-                            rs.getString("player_uuid"),
-                            rs.getString("player_name"),
-                            rs.getString("reason"),
-                            "",   // ipAddress — warns have no IP/HW scope
-                            "",   // hwId
-                            rs.getString("warned_by"),
-                            rs.getLong("warned_at"),
-                            rs.getLong("expires_at"),
-                            true
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            Main.getInstance().getLogger().log(Level.FINE, "[Punish] Failed to list active warns", e);
-        }
-
-        result.sort((a, b) -> Long.compare(b.punishedAt, a.punishedAt));
         return result;
+    }
+
+    /** Number of log rows for the given type filter (null/"all" = every type). */
+    public static int countLogEntries(String typeFilter) {
+        String type = normalizeLogType(typeFilter);
+        String sql = "SELECT COUNT(*) FROM punishment_log" + (type != null ? " WHERE type = ?" : "");
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(sql)) {
+            if (type != null) st.setString(1, type);
+            try (ResultSet rs = st.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to count the punishment log", e);
+            return 0;
+        }
+    }
+
+    /**
+     * Deletes punishment log rows. Only the LOG is touched — active bans/mutes/blocks
+     * and their audit columns stay intact.
+     *
+     * @param all          delete every row
+     * @param beforeMillis delete rows created strictly before this timestamp
+     *                     (ignored when {@code all} is true)
+     * @return deleted rows
+     */
+    public static int purgeLogs(boolean all, long beforeMillis) {
+        String sql = all ? "DELETE FROM punishment_log" : "DELETE FROM punishment_log WHERE created_at < ?";
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(sql)) {
+            if (!all) st.setLong(1, beforeMillis);
+            int rows = st.executeUpdate();
+            ConsoleLogger.info("[Punish] Purged " + rows + " punishment log row(s)"
+                    + (all ? " (all)" : " older than " + beforeMillis));
+            return rows;
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to purge the punishment log", e);
+            return 0;
+        }
+    }
+
+    /**
+     * Normalizes a log type filter: null when the filter means "every type",
+     * otherwise the lower-case type name.
+     */
+    private static String normalizeLogType(String typeFilter) {
+        if (typeFilter == null || typeFilter.isBlank() || typeFilter.equalsIgnoreCase("all")) {
+            return null;
+        }
+        return typeFilter.toLowerCase();
+    }
+
+    private static LogEntry mapLogEntry(ResultSet rs) throws SQLException {
+        return new LogEntry(
+                rs.getInt("id"),
+                LogAction.parse(rs.getString("action")) != null
+                        ? LogAction.parse(rs.getString("action")) : LogAction.PUNISH,
+                PunishType.valueOf(rs.getString("type").toUpperCase()),
+                rs.getString("player_uuid"),
+                rs.getString("player_name"),
+                rs.getString("actor"),
+                rs.getString("reason"),
+                rs.getInt("record_id"),
+                rs.getLong("created_at")
+        );
     }
 
     // =========================
@@ -858,7 +1030,7 @@ public class PunishmentManager {
 
     /**
      * Formats a remaining duration as a compact string: 45s / 2m 30s / 5h 10m / 3d 4h.
-     * Shared by {@link WarnRecord#formatRemaining()} and the actionlist view.
+     * Shared by {@link WarnRecord#formatRemaining()} and the punishment log view.
      */
     public static String formatRemaining(long remainingMs) {
         long secs = remainingMs / 1000;

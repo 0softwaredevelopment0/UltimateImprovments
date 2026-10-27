@@ -121,7 +121,10 @@ public final class Permissions {
     public static final String CMD_PUNISH_CRASH = "ui.command.punish.crash";
     public static final String CMD_PUNISH_LISTWARNS_SELF = "ui.command.punish.listwarns.self";
     public static final String CMD_PUNISH_LISTWARNS_OTHER = "ui.command.punish.listwarns.other";
-    public static final String CMD_PUNISH_ACTIONLIST = "ui.command.punish.actionlist";
+    /** /ui punish logs view — read the punishment event log. */
+    public static final String CMD_PUNISH_LOGS = "ui.command.punish.logs";
+    /** /ui punish logs purge — delete punishment log entries. */
+    public static final String CMD_PUNISH_LOGS_PURGE = "ui.command.punish.logs.purge";
     /** /ui punish pardon — base node of the unified pardon command (never granted by default). */
     public static final String CMD_PUNISH_PARDON = "ui.command.punish.pardon";
     /** /ui punish pardon ban — lift bans. */
@@ -404,7 +407,8 @@ public final class Permissions {
                 new Permission(CMD_PUNISH_CRASH, "Crash a player's client", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_SELF, "View your own warnings", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_OTHER, "View other players' warnings", PermissionDefault.FALSE),
-                new Permission(CMD_PUNISH_ACTIONLIST, "View all active punishments (paginated list with tabs)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_LOGS, "View the punishment event log (/ui punish logs view)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_LOGS_PURGE, "Delete punishment log entries (/ui punish logs purge)", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_PARDON, "Use the unified pardon command (/ui punish pardon)", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_PARDON_UNBAN, "Pardon bans (/ui punish pardon ban)", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_PARDON_UNMUTE, "Pardon mutes (/ui punish pardon mute)", PermissionDefault.FALSE),

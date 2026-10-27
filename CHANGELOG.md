@@ -3,6 +3,37 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.38] - since 1.8.5-alpha.37 (2026-10-27)
+
+### Added
+- **`/ui punish logs` — punishment EVENT log** (replaces `/ui punish actionlist`,
+  no alias). A new append-only `punishment_log` table records every event: a
+  punishment handed out (`punish`), lifted by a moderator (`pardon`) and lifted by
+  automatic expiry (`expire`). A purge deletes LOG rows only — active
+  bans/mutes/blocks/warns and their audit columns are never touched.
+  - `view [-p <page>] [-t <type>]` — paginated list in the `/ui help` style:
+    clickable type filter buttons (all/ban/mute/block/warn/kick) on top and
+    clickable `« Prev` / `Next »` arrows below, page size 8. An entry line shows
+    `#id type player applied by / lifted by / expired | timestamp` plus the reason.
+  - `purge -a [-confirm] | -t <1h|30m|7d|2w>` — `-a` wipes the whole log and
+    ALWAYS asks for confirmation (clickable `[✔ Confirm]`, then re-runs with
+    `-confirm`); `-t` deletes entries older than the given duration back
+    (suffixes `s`/`m`/`h`/`d`/`w`).
+  - Permissions `ui.command.punish.logs` and `ui.command.punish.logs.purge`
+    (FALSE; `ui.command.punish.actionlist` removed).
+  - Texts: `messages.punish.logs` (RU) / `messages_en.punish.logs` (EN) in
+    `configs/UI-Punish.toml`.
+
+### Changed
+- **`-r "<reason>"` is mandatory for every punishment and every pardon.**
+  Free-standing reason words are rejected, so nothing can be issued or lifted
+  without a recorded reason. Both `-r "text"` and `-r:<text>` work (`-reason:`
+  alias); quotes are stripped, and the text is stored and rendered as
+  MiniMessage — e.g. `/ui punish pardon ban steve -r "<red>test"`. Punish usage
+  lines and flag tab-completion (`-r:`) updated to match.
+- `getAllActivePunishments()` (actionlist-only query) removed; the log has its
+  own `findLogEntries` / `countLogEntries` / `purgeLogs` API.
+
 ## [1.8.5-alpha.37] - since 1.8.5-alpha.36 (2026-10-26)
 
 ### Added

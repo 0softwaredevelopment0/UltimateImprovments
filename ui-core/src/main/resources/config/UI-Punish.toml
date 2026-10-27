@@ -73,7 +73,7 @@ enabled = true
 # notices sent to the pardoned player.
 # Placeholders: %player%, %actor%, %type%, %types%, %reason%, %count%, %id%, %flag%, %command%
 [messages.punish.pardon]
-usage = "<red>❌ Использование:</red> <white>/ui punish pardon <ban|mute|block|warn|all> <игрок|all> [-r:<причина>] [-id:<n>] [-s] [-dry] [-confirm]</white>"
+usage = "<red>❌ Использование:</red> <white>/ui punish pardon <ban|mute|block|warn|all> <игрок|all> -r \"<причина>\" [-id:<n>] [-s] [-dry] [-confirm]</white>"
 unknown_type = "<red>❌ Неизвестный тип наказания: </red><yellow>%type%</yellow><red>.</red> <gray>Доступно: </gray><white>ban, mute, block, warn, all</white>"
 unknown_flag = "<red>❌ Неизвестный флаг: </red><yellow>%flag%</yellow>"
 kick_not_pardonable = "<red>❌ Кики — записи лога, их нельзя снять.</red> <gray>Доступно: </gray><white>ban, mute, block, warn, all</white>"
@@ -91,7 +91,7 @@ notice_mute = "<green>✔</green> <white>С вас снят мут.</white>"
 notice_block = "<green>✔</green> <white>Блокировка снята.</white>"
 notice_warn = "<green>✔</green> <white>С вашего аккаунта снято предупреждение.</white>"
 notice_other = "<green>✔</green> <white>Наказание снято.</white>"
-default_reason = "Помилован: %actor%"
+reason_required = "<red>❌ Требуется причина: </red><white>-r \"<причина>\"</white>"
 type_ban = "<red>бан</red>"
 type_mute = "<red>мут</red>"
 type_block = "<dark_red>блок</dark_red>"
@@ -100,12 +100,30 @@ type_kick = "<gray>кик</gray>"
 type_all = "<white>все</white>"
 all_players = "все игроки онлайн"
 
+# Punishment event log (/ui punish logs): the history of punishments handed out,
+# pardoned by a moderator and expired on their own.
+# Placeholders: %id%, %type%, %player%, %actor%, %time%, %reason%, %count%,
+# %page%, %total%, %command%, %value%
+[messages.punish.logs]
+usage = "<red>❌ Использование:</red> <white>/ui punish logs view [-p <страница>] [-t <тип>]</white>\n<white>/ui punish logs purge -a|-t <1h|30m|7d|2w> [-confirm]</white>"
+unknown_type = "<red>❌ Неизвестный тип: </red><yellow>%type%</yellow><red>.</red> <gray>Доступно: </gray><white>all, ban, mute, block, warn, kick</white>"
+header = "<gray>═══ <white>📜 Логи наказаний</white> <dark_gray>(%count% записей, %type%)</dark_gray> ═══</gray>"
+empty = "  <dark_gray>(записей нет)</dark_gray>"
+page = "<white>Страница %page%/%total%</white>"
+entry_punish = "  <white>#%id%</white> %type% <yellow>%player%</yellow> <gray>выдал</gray> <white>%actor%</white> <dark_gray>| %time%</dark_gray>\n      <gray>%reason%</gray>"
+entry_pardon = "  <white>#%id%</white> %type% <yellow>%player%</yellow> <green>снято</green> <gray>—</gray> <white>%actor%</white> <dark_gray>| %time%</dark_gray>\n      <gray>%reason%</gray>"
+entry_expire = "  <white>#%id%</white> %type% <yellow>%player%</yellow> <dark_gray>истекло | %time%</dark_gray>"
+purge_usage = "<red>❌ Использование:</red> <white>/ui punish logs purge -a [-confirm]</white> <gray>|</gray> <white>/ui punish logs purge -t <1h|30m|7d|2w></white>"
+purge_confirm = "<yellow>⚠</yellow> <white>Это удалит ВСЕ логи наказаний</white> <dark_gray>(%count% записей)</dark_gray><white>.</white> <click:run_command:%command%><dark_aqua>[✔ Подтвердить]</dark_aqua></click>"
+purge_done = "<green>✔</green> <white>Удалено записей лога:</white> <yellow>%count%</yellow>"
+purge_invalid_time = "<red>❌ Неверное время: </red><yellow>%value%</yellow> <gray>— число с суффиксом: s, m, h, d, w (например 30m, 12h, 7d)</gray>"
+
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
 # ==================================================================
 
 [messages_en.punish.pardon]
-usage = "<red>❌ Usage:</red> <white>/ui punish pardon <ban|mute|block|warn|all> <player|all> [-r:<reason>] [-id:<n>] [-s] [-dry] [-confirm]</white>"
+usage = "<red>❌ Usage:</red> <white>/ui punish pardon <ban|mute|block|warn|all> <player|all> -r \"<reason>\" [-id:<n>] [-s] [-dry] [-confirm]</white>"
 unknown_type = "<red>❌ Unknown punishment type: </red><yellow>%type%</yellow><red>.</red> <gray>Available: </gray><white>ban, mute, block, warn, all</white>"
 unknown_flag = "<red>❌ Unknown flag: </red><yellow>%flag%</yellow>"
 kick_not_pardonable = "<red>❌ Kicks are log entries and cannot be pardoned.</red> <gray>Available: </gray><white>ban, mute, block, warn, all</white>"
@@ -123,7 +141,7 @@ notice_mute = "<green>✔</green> <white>You have been unmuted.</white>"
 notice_block = "<green>✔</green> <white>You have been unblocked.</white>"
 notice_warn = "<green>✔</green> <white>A warning has been removed from your account.</white>"
 notice_other = "<green>✔</green> <white>A punishment has been lifted.</white>"
-default_reason = "Pardoned by %actor%"
+reason_required = "<red>❌ A reason is required: </red><white>-r \"<reason>\"</white>"
 type_ban = "<red>ban</red>"
 type_mute = "<red>mute</red>"
 type_block = "<dark_red>block</dark_red>"
@@ -131,4 +149,18 @@ type_warn = "<yellow>warn</yellow>"
 type_kick = "<gray>kick</gray>"
 type_all = "<white>all</white>"
 all_players = "all online players"
+
+[messages_en.punish.logs]
+usage = "<red>❌ Usage:</red> <white>/ui punish logs view [-p <page>] [-t <type>]</white>\n<white>/ui punish logs purge -a|-t <1h|30m|7d|2w> [-confirm]</white>"
+unknown_type = "<red>❌ Unknown type: </red><yellow>%type%</yellow><red>.</red> <gray>Available: </gray><white>all, ban, mute, block, warn, kick</white>"
+header = "<gray>═══ <white>📜 Punishment logs</white> <dark_gray>(%count% entries, %type%)</dark_gray> ═══</gray>"
+empty = "  <dark_gray>(no log entries)</dark_gray>"
+page = "<white>Page %page%/%total%</white>"
+entry_punish = "  <white>#%id%</white> %type% <yellow>%player%</yellow> <gray>applied by</gray> <white>%actor%</white> <dark_gray>| %time%</dark_gray>\n      <gray>%reason%</gray>"
+entry_pardon = "  <white>#%id%</white> %type% <yellow>%player%</yellow> <green>lifted</green> <gray>by</gray> <white>%actor%</white> <dark_gray>| %time%</dark_gray>\n      <gray>%reason%</gray>"
+entry_expire = "  <white>#%id%</white> %type% <yellow>%player%</yellow> <dark_gray>expired | %time%</dark_gray>"
+purge_usage = "<red>❌ Usage:</red> <white>/ui punish logs purge -a [-confirm]</white> <gray>|</gray> <white>/ui punish logs purge -t <1h|30m|7d|2w></white>"
+purge_confirm = "<yellow>⚠</yellow> <white>This deletes ALL punishment logs</white> <dark_gray>(%count% entries)</dark_gray><white>.</white> <click:run_command:%command%><dark_aqua>[✔ Confirm]</dark_aqua></click>"
+purge_done = "<green>✔</green> <white>Deleted</white> <yellow>%count%</yellow> <white>punishment log entries.</white>"
+purge_invalid_time = "<red>❌ Invalid time: </red><yellow>%value%</yellow> <gray>— use a number with a suffix: s, m, h, d, w (e.g. 30m, 12h, 7d)</gray>"
 
