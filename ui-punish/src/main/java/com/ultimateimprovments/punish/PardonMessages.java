@@ -37,7 +37,13 @@ public final class PardonMessages {
     public static String usage() {
         return raw("usage",
                 "<red>❌ Usage:</red> <white>/ui punish pardon <ban|mute|block|warn|all> "
-                + "<player|all> [-r:<reason>] [-id:<n>] [-s] [-dry] [-confirm]</white>");
+                + "<player|all> -r \"<reason>\" [-id:<n>] [-s] [-dry] [-confirm]</white>");
+    }
+
+    /** Error shown when the mandatory {@code -r} reason is missing. */
+    public static String reasonRequired() {
+        return raw("reason_required",
+                "<red>❌ A reason is required: </red><white>-r \"<reason>\"</white>");
     }
 
     public static String unknownType(String type) {
@@ -84,7 +90,7 @@ public final class PardonMessages {
                 .replace("%player%", esc(player));
     }
 
-    /** One record line of the preview/result list. */
+    /** One record line of the preview/result list. The reason is MiniMessage. */
     public static String line(String typeLabel, int id, String player, String reason) {
         return raw("line",
                 "  <white>#%id%</white> <gray>%type%</gray> <yellow>%player%</yellow> "
@@ -92,7 +98,7 @@ public final class PardonMessages {
                 .replace("%id%", Integer.toString(id))
                 .replace("%type%", typeLabel)
                 .replace("%player%", esc(player))
-                .replace("%reason%", esc(reason == null || reason.isEmpty() ? "-" : reason));
+                .replace("%reason%", reason == null || reason.isEmpty() ? "-" : reason);
     }
 
     public static String previewMore(int count) {
@@ -130,7 +136,7 @@ public final class PardonMessages {
                 .replace("%player%", esc(player))
                 .replace("%types%", typesLabel)
                 .replace("%actor%", esc(actor))
-                .replace("%reason%", esc(reason == null || reason.isEmpty() ? "-" : reason));
+                .replace("%reason%", reason == null || reason.isEmpty() ? "-" : reason);
     }
 
     /** Message shown to the pardoned player, per punishment type. */
@@ -143,10 +149,6 @@ public final class PardonMessages {
                     "<green>✔</green> <white>A warning has been removed from your account.</white>");
             default -> raw("notice_other", "<green>✔</green> <white>A punishment has been lifted.</white>");
         };
-    }
-
-    public static String defaultReason(String actor) {
-        return raw("default_reason", "Pardoned by %actor%").replace("%actor%", esc(actor));
     }
 
     // =========================

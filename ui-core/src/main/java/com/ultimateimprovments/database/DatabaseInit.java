@@ -725,6 +725,37 @@ public class DatabaseInit {
         }
 
         // =========================
+        // 📜 PUNISHMENT LOG — append-only history of punish/pardon/expire events
+        // =========================
+        // Separate from the punishments/warns tables on purpose: the log is an
+        // EVENT stream (a punishment produces one 'punish' row, its lifting one
+        // 'pardon'/'expire' row), so /ui punish logs can show both, and a purge
+        // never touches the records that actually enforce anything.
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS punishment_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                action TEXT NOT NULL,
+                type TEXT NOT NULL,
+                player_uuid TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                actor TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                record_id INTEGER DEFAULT 0,
+                created_at INTEGER NOT NULL
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_punishment_log_created
+            ON punishment_log(created_at);
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_punishment_log_type
+            ON punishment_log(type, created_at);
+        """);
+
+        // =========================
         // 📋 CUSTOM WHITELIST (UltimateImprovments, not vanilla)
         // =========================
         st.execute("""

@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * /ui punish block <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
  * /ui punish listwarns <player>
  * /ui punish pardon <ban|mute|block|warn|all> <player|all> [-r:<reason>] [-id:<n>] [-s] [-dry] [-confirm]
- * /ui punish actionlist [tab] [page] — all active punishments with tabs & pages
+ * /ui punish logs view [-p <page>] [-t <type>] | purge -a|-t <time> — punishment event log
  * </pre>
  * <p>
  * Flag rules:
@@ -94,7 +94,7 @@ public final class PunishSubcommand {
             case "warn" -> handleWarn(sender, args);
             case "listwarns" -> handleListWarns(sender, args);
             case "pardon" -> PardonCommand.execute(sender, args);
-            case "actionlist" -> handleActionList(sender, args);
+            case "logs" -> LogsCommand.execute(sender, args);
             case "crash" -> handleCrash(sender, args);
             default -> {
                 sendUsage(sender);
@@ -131,7 +131,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish ban <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>"
             ));
             return true;
         }
@@ -233,7 +233,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish mute <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>"
             ));
             return true;
         }
@@ -324,7 +324,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui punish kick <player> <reason> [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish kick <player> [-ip] [-hw] -r \"<reason>\"</white>"
             ));
             return true;
         }
@@ -393,7 +393,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish warn <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>"
             ));
             return true;
         }
@@ -486,7 +486,7 @@ public final class PunishSubcommand {
         if (!canBlock(sender)) return true;
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui punish block <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish block <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>"
             ));
             return true;
         }
@@ -687,157 +687,6 @@ public final class PunishSubcommand {
     }
 
     // =========================
-    // ACTIONLIST — all active punishments (tabs + pages)
-    // =========================
-
-    /** How many punishments fit on one actionlist page. */
-    private static final int ACTIONLIST_PAGE_SIZE = 5;
-    /** Valid actionlist tabs (dynamic switching via clickable tabs). */
-    private static final List<String> ACTIONLIST_TABS = List.of("all", "ban", "block", "mute", "warn", "kick");
-
-    /**
-     * Shows ALL active punishments of every player with tabs and pagination:
-     * {@code /ui punish actionlist [tab] [page]}. Tabs and arrows are clickable for players
-     * (the state is encoded in the command arguments — no in-memory session needed).
-     */
-    private static boolean handleActionList(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.CMD_PUNISH_ACTIONLIST)) {
-            CommandErrors.noPermission(sender, Permissions.CMD_PUNISH_ACTIONLIST);
-            return true;
-        }
-
-        String tab = "all";
-        int page = 1;
-        if (args.length >= 3) tab = args[2].toLowerCase();
-        if (args.length >= 4) {
-            try {
-                page = Math.max(1, Integer.parseInt(args[3]));
-            } catch (NumberFormatException ignored) {
-                // keep page 1
-            }
-        }
-        if (!ACTIONLIST_TABS.contains(tab)) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Unknown tab: </red><yellow>" + escape(args[2]) + "</yellow><red>.</red> "
-                    + "<gray>Available: </gray><white>all, ban, block, mute, warn, kick</white>"
-            ));
-            return true;
-        }
-
-        List<PunishmentManager.PunishmentRecord> all = PunishmentManager.getAllActivePunishments();
-        List<PunishmentManager.PunishmentRecord> filtered = switch (tab) {
-            case "ban" -> filterByType(all, PunishmentManager.PunishType.BAN);
-            case "block" -> filterByType(all, PunishmentManager.PunishType.BLOCK);
-            case "mute" -> filterByType(all, PunishmentManager.PunishType.MUTE);
-            case "warn" -> filterByType(all, PunishmentManager.PunishType.WARN);
-            case "kick" -> filterByType(all, PunishmentManager.PunishType.KICK);
-            default -> all;
-        };
-
-        int totalPages = Math.max(1, (int) Math.ceil(filtered.size() / (double) ACTIONLIST_PAGE_SIZE));
-        page = Math.min(page, totalPages);
-        int from = (page - 1) * ACTIONLIST_PAGE_SIZE;
-        int to = Math.min(from + ACTIONLIST_PAGE_SIZE, filtered.size());
-        boolean clickable = sender instanceof Player;
-
-        // Header
-        sender.sendMessage(MessageUtil.parse(
-                "<gray>═══ <white>⚖ Active punishments</white> "
-                + "<dark_gray>(" + filtered.size() + " shown, " + all.size() + " total)</dark_gray> ═══</gray>"
-        ));
-
-        // Tabs — the active one is highlighted, the rest are clickable
-        StringBuilder tabs = new StringBuilder();
-        for (String t : ACTIONLIST_TABS) {
-            String label = switch (t) {
-                case "ban" -> "<red>⛔ Bans</red>";
-                case "block" -> "<dark_red>🚫 Blocks</dark_red>";
-                case "mute" -> "<red>🔇 Mutes</red>";
-                case "warn" -> "<yellow>⚠ Warns</yellow>";
-                case "kick" -> "<gray>👢 Kicks</gray>";
-                default -> "<white>All</white>";
-            };
-            if (t.equals(tab)) {
-                tabs.append("<dark_aqua>[</dark_aqua>").append(label).append("<dark_aqua>]</dark_aqua> ");
-            } else if (clickable) {
-                tabs.append("<click:run_command:/ui punish actionlist ").append(t).append(" 1>")
-                        .append("<gray>[</gray>").append(label).append("<gray>]</gray></click> ");
-            } else {
-                tabs.append("<gray>[</gray>").append(label).append("<gray>]</gray> ");
-            }
-        }
-        sender.sendMessage(MessageUtil.parse(tabs.toString()));
-
-        // Items
-        if (filtered.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse("  <dark_gray>(no active punishments)</dark_gray>"));
-        } else {
-            for (int i = from; i < to; i++) {
-                sender.sendMessage(MessageUtil.parse(actionListItem(filtered.get(i))));
-            }
-        }
-
-        // Footer: prev / page / next
-        String prev = page > 1
-                ? (clickable
-                    ? "<click:run_command:/ui punish actionlist " + tab + " " + (page - 1) + "><dark_aqua>[« Prev]</dark_aqua></click>"
-                    : "<dark_aqua>[« Prev]</dark_aqua>")
-                : "<dark_gray>[« Prev]</dark_gray>";
-        String next = page < totalPages
-                ? (clickable
-                    ? "<click:run_command:/ui punish actionlist " + tab + " " + (page + 1) + "><dark_aqua>[Next »]</dark_aqua></click>"
-                    : "<dark_aqua>[Next »]</dark_aqua>")
-                : "<dark_gray>[Next »]</dark_gray>";
-        sender.sendMessage(MessageUtil.parse(prev + "  <white>Page " + page + "/" + totalPages + "</white>  " + next));
-        return true;
-    }
-
-    /** Filters a record list by punishment type. */
-    private static List<PunishmentManager.PunishmentRecord> filterByType(
-            List<PunishmentManager.PunishmentRecord> records, PunishmentManager.PunishType type) {
-        return records.stream().filter(r -> r.type == type).collect(Collectors.toList());
-    }
-
-    /** Renders one punishment item (badge, player, reason, duration, scope). */
-    private static String actionListItem(PunishmentManager.PunishmentRecord r) {
-        String badge = switch (r.type) {
-            case BAN -> "<red>⛔ Ban</red>";
-            case BLOCK -> "<dark_red>🚫 Block</dark_red>";
-            case MUTE -> "<red>🔇 Mute</red>";
-            case WARN -> "<yellow>⚠ Warn</yellow>";
-            case KICK -> "<gray>👢 Kick</gray>";
-        };
-        String scope = r.isIpScope() && r.isHwScope() ? " [IP+HW]"
-                : r.isIpScope() ? " [IP]"
-                : r.isHwScope() ? " [HW]" : "";
-        return "  <white>#" + r.id + ".</white> " + badge + " <yellow>" + r.playerName + "</yellow>" + scope
-                + "\n      <gray>" + actionListReason(r.reason) + "</gray>\n"
-                + "      <dark_gray>By: " + r.punishedBy + " | " + actionListDuration(r) + "</dark_gray>";
-    }
-
-    /** Truncates long reasons for a tidy list. */
-    private static String actionListReason(String reason) {
-        if (reason == null || reason.isEmpty()) return "(no reason)";
-        reason = reason.length() > 100 ? reason.substring(0, 100) + "…" : reason;
-        // Reasons are arbitrary admin text — escape MiniMessage tags so they render as plain text
-        return MiniMessage.miniMessage().escapeTags(reason);
-    }
-
-    /** Escapes MiniMessage tags in user-supplied text. */
-    private static String escape(String text) {
-        return text == null ? "" : MiniMessage.miniMessage().escapeTags(text);
-    }
-
-    /** Duration text: permanent / instant (kick) / remaining time. */
-    private static String actionListDuration(PunishmentManager.PunishmentRecord r) {
-        if (r.type == PunishmentManager.PunishType.KICK) return "<gray>instant</gray>";
-        if (r.isPermanent()) return "<red>permanent</red>";
-        long remaining = r.getRemainingMs();
-        if (remaining <= 0) return "<dark_gray>expired</dark_gray>";
-        return "<yellow>" + PunishmentManager.formatRemaining(remaining) + " left</yellow>";
-    }
-
-    // =========================
     // FLAG PARSING
     // =========================
 
@@ -863,12 +712,19 @@ public final class PunishSubcommand {
     }
 
     /**
-     * Parses arguments for ban/mute/warn (require -time or -permanent).
-     * Sends error messages to the sender on invalid flags.
+     * Parses arguments for ban/mute/warn/block.
+     * <p>
+     * The reason is <b>mandatory</b> and comes only from {@code -r "text"} /
+     * {@code -r:<text>} (alias {@code -reason:}) — loose words are rejected, so a
+     * punishment can never be issued without a reason. The value keeps its
+     * MiniMessage markup (it is stored and rendered as-is); surrounding quotes are
+     * stripped.
+     * <p>
+     * Sends error messages to the sender on invalid flags and returns null.
      */
     private static PunishArgs parsePunishArgs(CommandSender sender, String[] args, int startIndex) {
         PunishArgs result = new PunishArgs();
-        StringBuilder reasonBuilder = new StringBuilder();
+        String reason = null;
         boolean hasTime = false;
         boolean hasPermanent = false;
         boolean hasIp = false;
@@ -877,29 +733,46 @@ public final class PunishSubcommand {
 
         for (int i = startIndex; i < args.length; i++) {
             String arg = args[i];
+            String lower = arg.toLowerCase();
 
-            if (arg.toLowerCase().startsWith("-time:")) {
-                String timeVal = arg.substring(6);
+            if (lower.startsWith("-time:")) {
+                String timeVal = arg.substring(6).trim();
                 if (timeVal.isEmpty()) {
-                    // -time without a value — error
                     sender.sendMessage(MessageUtil.parse("<red>❌ -time flag requires a value (e.g. -time:30m)</red>"));
                     return null;
                 }
                 timeStr = timeVal;
                 hasTime = true;
-            } else if (arg.equalsIgnoreCase("-permanent")) {
+            } else if (lower.equals("-permanent")) {
                 hasPermanent = true;
-            } else if (arg.equalsIgnoreCase("-ip")) {
+            } else if (lower.equals("-ip")) {
                 hasIp = true;
-            } else if (arg.equalsIgnoreCase("-hw")) {
+            } else if (lower.equals("-hw")) {
                 hasHw = true;
+            } else if (lower.startsWith("-r:") || lower.startsWith("-reason:")) {
+                reason = appendReason(reason, unquote(arg.substring(arg.indexOf(':') + 1)));
+            } else if (lower.equals("-r") || lower.equals("-reason")) {
+                if (i + 1 >= args.length) {
+                    sender.sendMessage(MessageUtil.parse(
+                            "<red>❌ </red><white>-r</white><red> requires a reason: </red><white>-r \"<reason>\"</white>"));
+                    return null;
+                }
+                reason = appendReason(reason, unquote(args[++i]));
             } else {
-                if (reasonBuilder.length() > 0) reasonBuilder.append(" ");
-                reasonBuilder.append(arg);
+                sender.sendMessage(MessageUtil.parse(
+                        "<red>❌ Unexpected argument: </red><yellow>" + esc(arg) + "</yellow>"
+                        + "<red>. The reason must be given with </red><white>-r \"<reason>\"</white>"));
+                return null;
             }
         }
 
         // Validation
+        if (reason == null || reason.isBlank()) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ You must specify a reason: </red><white>-r \"<reason>\"</white>"
+            ));
+            return null;
+        }
         if (!hasTime && !hasPermanent) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You must specify either </red><white>-time:<N>s|m|h|d</white><red> or </red><white>-permanent</white><red>.</red>"
@@ -919,14 +792,7 @@ public final class PunishSubcommand {
             return null;
         }
 
-        if (reasonBuilder.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You must specify a reason!</red>"
-            ));
-            return null;
-        }
-
-        result.reason = reasonBuilder.toString().trim();
+        result.reason = reason.trim();
         result.ip = hasIp;
         result.hw = hasHw;
         result.timeStr = timeStr != null ? timeStr : "permanent";
@@ -948,27 +814,39 @@ public final class PunishSubcommand {
     }
 
     /**
-     * Parses arguments for kick (no time/permanent).
-     * Sends error messages to the sender on invalid flags.
+     * Parses arguments for kick. The reason is mandatory ({@code -r "text"}), the
+     * same rules as {@link #parsePunishArgs}; {@code -time}/{@code -permanent} are
+     * ignored because a kick has no duration.
      */
     private static FlagParseResult parseFlags(CommandSender sender, String[] args, int startIndex) {
         FlagParseResult result = new FlagParseResult();
-        StringBuilder reasonBuilder = new StringBuilder();
+        String reason = null;
         boolean hasIp = false;
         boolean hasHw = false;
 
         for (int i = startIndex; i < args.length; i++) {
             String arg = args[i];
-            if (arg.equalsIgnoreCase("-ip")) {
+            String lower = arg.toLowerCase();
+            if (lower.equals("-ip")) {
                 hasIp = true;
-            } else if (arg.equalsIgnoreCase("-hw")) {
+            } else if (lower.equals("-hw")) {
                 hasHw = true;
-            } else if (arg.toLowerCase().startsWith("-time:") || arg.equalsIgnoreCase("-permanent")) {
-                // These flags are ignored for kick
-                continue;
+            } else if (lower.startsWith("-time:") || lower.equals("-permanent")) {
+                // Kick has no duration — these flags are ignored
+            } else if (lower.startsWith("-r:") || lower.startsWith("-reason:")) {
+                reason = appendReason(reason, unquote(arg.substring(arg.indexOf(':') + 1)));
+            } else if (lower.equals("-r") || lower.equals("-reason")) {
+                if (i + 1 >= args.length) {
+                    sender.sendMessage(MessageUtil.parse(
+                            "<red>❌ </red><white>-r</white><red> requires a reason: </red><white>-r \"<reason>\"</white>"));
+                    return null;
+                }
+                reason = appendReason(reason, unquote(args[++i]));
             } else {
-                if (reasonBuilder.length() > 0) reasonBuilder.append(" ");
-                reasonBuilder.append(arg);
+                sender.sendMessage(MessageUtil.parse(
+                        "<red>❌ Unexpected argument: </red><yellow>" + esc(arg) + "</yellow>"
+                        + "<red>. The reason must be given with </red><white>-r \"<reason>\"</white>"));
+                return null;
             }
         }
 
@@ -979,17 +857,38 @@ public final class PunishSubcommand {
             return null;
         }
 
-        if (reasonBuilder.isEmpty()) {
+        if (reason == null || reason.isBlank()) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You must specify a reason!</red>"
+                    "<red>❌ You must specify a reason: </red><white>-r \"<reason>\"</white>"
             ));
             return null;
         }
 
-        result.reason = reasonBuilder.toString().trim();
+        result.reason = reason.trim();
         result.ip = hasIp;
         result.hw = hasHw;
         return result;
+    }
+
+    /** Appends a reason fragment (repeated -r flags are space-joined). */
+    private static String appendReason(String current, String fragment) {
+        String value = fragment == null ? "" : fragment.trim();
+        if (value.isEmpty()) return current;
+        return current == null || current.isEmpty() ? value : current + " " + value;
+    }
+
+    /** Strips surrounding double quotes kept by the dispatcher's tokenizer. */
+    private static String unquote(String value) {
+        if (value == null || value.length() < 2) return value == null ? "" : value;
+        if (value.startsWith("\"") && value.endsWith("\"")) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
+    }
+
+    /** Escapes plain text (raw arguments) for MiniMessage. */
+    private static String esc(String text) {
+        return text == null ? "" : MiniMessage.miniMessage().escapeTags(text);
     }
 
     // =========================
@@ -1185,14 +1084,15 @@ public final class PunishSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n" +
-                "<white>/ui punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
-                "<white>/ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
-                "<white>/ui punish kick <player> <reason> [-ip] [-hw]</white>\n" +
-                "<white>/ui punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
-                "<white>/ui punish block <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
+                "<white>/ui punish ban <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>\n" +
+                "<white>/ui punish mute <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>\n" +
+                "<white>/ui punish kick <player> [-ip] [-hw] -r \"<reason>\"</white>\n" +
+                "<white>/ui punish warn <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>\n" +
+                "<white>/ui punish block <player> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw] -r \"<reason>\"</white>\n" +
                 "<white>/ui punish listwarns [player]</white>\n" +
                 "<white>/ui punish pardon <ban|mute|block|warn|all> <player|all> [-r:<reason>] [-id:<n>] [-s] [-dry] [-confirm]</white>\n" +
-                "<white>/ui punish actionlist [tab] [page]</white> <gray>(tabs: all, ban, block, mute, warn, kick)</gray>\n" +
+                "<white>/ui punish logs view [-p <page>] [-t <type>]</white> <gray>(types: all, ban, mute, block, warn, kick)</gray>\n" +
+                "<white>/ui punish logs purge -a|-t <1h|30m|7d|2w> [-confirm]</white>\n" +
                 "<white>/ui punish crash <method> <player></white> <gray>(requires confirm)</gray>\n" +
                 "<gray>Flags: -time:<N>s|m|h|d, -permanent, -ip, -hw</gray>"
         ));
@@ -1206,7 +1106,7 @@ public final class PunishSubcommand {
 
         if (args.length == 2) {
             String prefix = args[1].toLowerCase();
-            for (String action : List.of("ban", "block", "mute", "kick", "warn", "listwarns", "pardon", "actionlist", "crash")) {
+            for (String action : List.of("ban", "block", "mute", "kick", "warn", "listwarns", "pardon", "logs", "crash")) {
                 if (action.startsWith(prefix)) {
                     completions.add(action);
                 }
@@ -1218,9 +1118,9 @@ public final class PunishSubcommand {
                 completions.addAll(CRASH_METHODS);
                 completions.add("confirm");
                 completions.add("cancel");
-            } else if (action.equals("actionlist")) {
-                // actionlist tabs
-                completions.addAll(ACTIONLIST_TABS);
+            } else if (action.equals("logs")) {
+                // /ui punish logs <view|purge> [flags]
+                completions.addAll(LogsCommand.tabComplete(args));
             } else if (action.equals("pardon")) {
                 // /ui punish pardon <type> <player> [flags] — types, players, then flags
                 completions.addAll(PardonCommand.tabComplete(args));
@@ -1245,6 +1145,9 @@ public final class PunishSubcommand {
             } else if (action.equals("pardon")) {
                 // /ui punish pardon <type> <tab> → player names + "all"
                 completions.addAll(PardonCommand.tabComplete(args));
+            } else if (action.equals("logs")) {
+                // /ui punish logs <view|purge> <tab> → flags / values
+                completions.addAll(LogsCommand.tabComplete(args));
             } else {
                 // after the player name → punishment flags
                 addFlagCompletions(action, args, completions);
@@ -1252,7 +1155,13 @@ public final class PunishSubcommand {
         } else if (args.length >= 5) {
             // Flags
             String action = args[1].toLowerCase();
-            addFlagCompletions(action, args, completions);
+            if (action.equals("logs")) {
+                completions.addAll(LogsCommand.tabComplete(args));
+            } else if (action.equals("pardon")) {
+                completions.addAll(PardonCommand.tabComplete(args));
+            } else {
+                addFlagCompletions(action, args, completions);
+            }
         }
 
         String last = args[args.length - 1].toLowerCase();
@@ -1280,6 +1189,7 @@ public final class PunishSubcommand {
             if (!hasPerm) completions.add("-permanent");
             if (!hasIp) completions.add("-ip");
             if (!hasHw) completions.add("-hw");
+            if (!hasReason(args)) completions.add("-r:");
         } else if (action.equals("kick")) {
             boolean hasIp = false, hasHw = false;
             for (int i = 3; i < args.length; i++) {
@@ -1289,6 +1199,19 @@ public final class PunishSubcommand {
             }
             if (!hasIp) completions.add("-ip");
             if (!hasHw) completions.add("-hw");
+            if (!hasReason(args)) completions.add("-r:");
         }
+    }
+
+    /** Whether a reason flag (-r / -r: / -reason:) is already present. */
+    private static boolean hasReason(String[] args) {
+        for (int i = 3; i < args.length; i++) {
+            String a = args[i].toLowerCase();
+            if (a.equals("-r") || a.equals("-reason")
+                    || a.startsWith("-r:") || a.startsWith("-reason:")) {
+                return true;
+            }
+        }
+        return false;
     }
 }
