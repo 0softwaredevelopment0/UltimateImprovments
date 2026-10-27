@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -265,74 +266,217 @@ public class PunishmentManager {
     }
 
     // =========================
-    // UNPUNISH (remove a punishment)
+    // PARDON — FIND ACTIVE RECORDS
     // =========================
 
     /**
-     * Deactivates all active punishments of the given type for UUID/IP/HW.
-     * If uuid starts with "offline:" — also searches by player name.
+     * Returns EVERY active punishment of the given types that belongs to the player
+     * (all rows — a player may carry stacked bans/mutes/blocks). Rows are matched by
+     * UUID or by {@code LOWER(player_name)}, which covers legacy {@code offline:<name>}
+     * pseudo-UUIDs and punishments issued under a different name casing.
      *
-     * @param playerName the player name (used for the search if uuid starts with "offline:")
+     * @param types        punishment types to include (empty → nothing found)
+     * @param uuid         the player UUID (may be a legacy offline: pseudo-UUID)
+     * @param fallbackName the player name to match when the UUID misses (may be null)
+     * @return the matching records, newest first (never null)
      */
-    public static boolean unpunish(PunishType type, String uuid, String ip, String hwId, String playerName) {
-        boolean isOffline = uuid != null && uuid.startsWith("offline:");
+    public static List<PunishmentRecord> findActivePunishments(Collection<PunishType> types,
+                                                               String uuid, String fallbackName) {
+        List<PunishmentRecord> result = new ArrayList<>();
+        if (types == null || types.isEmpty()) return result;
+
+        List<PunishType> typeList = new ArrayList<>(types);
+        long now = System.currentTimeMillis();
+        boolean nameFallback = fallbackName != null && !fallbackName.isEmpty();
 
         StringBuilder sql = new StringBuilder("""
-                UPDATE punishments SET active = 0
-                WHERE type = ? AND active = 1
-                AND (player_uuid = ?
-                """);
-
-        // For offline players add a name search (a real UUID may have been used at ban time)
-        if (isOffline && playerName != null && !playerName.isEmpty()) {
-            sql.append(" OR LOWER(player_name) = ?");
-        }
-
-        if (ip != null && !ip.isEmpty()) {
-            sql.append(" OR ip_address = ?");
-        }
-        if (hwId != null && !hwId.isEmpty()) {
-            sql.append(" OR hw_id = ?");
-        }
-        sql.append(")");
+                SELECT * FROM punishments
+                WHERE active = 1 AND (expires_at = 0 OR expires_at > ?)
+                AND type IN (""");
+        sql.append(placeholders(typeList.size())).append(")");
+        sql.append(" AND (player_uuid = ?");
+        if (nameFallback) sql.append(" OR LOWER(player_name) = ?");
+        sql.append(") ORDER BY id DESC");
 
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement st = con.prepareStatement(sql.toString())) {
-            st.setString(1, type.name().toLowerCase());
-            st.setString(2, uuid);
+            int idx = 1;
+            st.setLong(idx++, now);
+            for (PunishType type : typeList) {
+                st.setString(idx++, type.name().toLowerCase());
+            }
+            st.setString(idx++, uuid);
+            if (nameFallback) st.setString(idx, fallbackName.toLowerCase());
 
-            int idx = 3;
-            if (isOffline && playerName != null && !playerName.isEmpty()) {
-                st.setString(idx++, playerName.toLowerCase());
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRecord(rs));
+                }
             }
-            if (ip != null && !ip.isEmpty()) {
-                st.setString(idx++, ip);
-            }
-            if (hwId != null && !hwId.isEmpty()) {
-                st.setString(idx, hwId);
-            }
-
-            int rows = st.executeUpdate();
-            return rows > 0;
         } catch (SQLException e) {
-            Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to unpunish " + uuid, e);
-            return false;
+            Main.getInstance().getLogger().log(Level.WARNING,
+                    "[Punish] Failed to find active punishments for " + uuid, e);
+        }
+        return result;
+    }
+
+    /** Returns one punishment row by ID (active or not), or {@code null}. */
+    public static PunishmentRecord findPunishmentById(int id) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT * FROM punishments WHERE id = ?")) {
+            st.setInt(1, id);
+            try (ResultSet rs = st.executeQuery()) {
+                return rs.next() ? mapRecord(rs) : null;
+            }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.FINE, "[Punish] Lookup by id=" + id + " failed", e);
+            return null;
         }
     }
 
     /**
-     * Deactivates a punishment by ID.
+     * Returns every active warn of the player, newest first.
+     * Matched by UUID or by {@code LOWER(player_name)} (same fallback as punishments).
      */
-    public static boolean unpunishById(int id) {
+    public static List<WarnRecord> findActiveWarns(String uuid, String fallbackName) {
+        List<WarnRecord> result = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        boolean nameFallback = fallbackName != null && !fallbackName.isEmpty();
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT * FROM warns
+                WHERE (expires_at = 0 OR expires_at > ?)
+                AND (player_uuid = ?""");
+        if (nameFallback) sql.append(" OR LOWER(player_name) = ?");
+        sql.append(") ORDER BY id DESC");
+
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(sql.toString())) {
+            int idx = 1;
+            st.setLong(idx++, now);
+            st.setString(idx++, uuid);
+            if (nameFallback) st.setString(idx, fallbackName.toLowerCase());
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapWarn(rs));
+                }
+            }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING,
+                    "[Punish] Failed to find active warns for " + uuid, e);
+        }
+        return result;
+    }
+
+    /** Returns one warn row by ID (active or not), or {@code null}. */
+    public static WarnRecord findWarnById(int id) {
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement st = con.prepareStatement(
-                     "UPDATE punishments SET active = 0 WHERE id = ?")) {
+                     "SELECT * FROM warns WHERE id = ?")) {
             st.setInt(1, id);
-            return st.executeUpdate() > 0;
+            try (ResultSet rs = st.executeQuery()) {
+                return rs.next() ? mapWarn(rs) : null;
+            }
         } catch (SQLException e) {
-            Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to unpunish id=" + id, e);
-            return false;
+            Main.getInstance().getLogger().log(Level.FINE, "[Punish] Warn lookup by id=" + id + " failed", e);
+            return null;
         }
+    }
+
+    // =========================
+    // PARDON — DEACTIVATE (with audit)
+    // =========================
+
+    /**
+     * Lifts punishments by ID: {@code active = 0} plus the pardon audit trail
+     * ({@code removed_at / removed_by / remove_reason}). This is the ONLY write
+     * path for lifting a punishment — the old per-command UPDATEs are gone.
+     *
+     * @param ids    punishment row IDs (empty → no-op)
+     * @param actor  who lifted them ({@code SYSTEM} for automatic expiry)
+     * @param reason the pardon reason (may be empty)
+     * @return the number of rows actually deactivated
+     */
+    public static int deactivatePunishments(Collection<Integer> ids, String actor, String reason) {
+        if (ids == null || ids.isEmpty()) return 0;
+        String sql = "UPDATE punishments SET active = 0, removed_at = ?, removed_by = ?, remove_reason = ?"
+                + " WHERE active = 1 AND id IN (" + placeholders(ids.size()) + ")";
+
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(sql)) {
+            int idx = 1;
+            st.setLong(idx++, System.currentTimeMillis());
+            st.setString(idx++, actor != null ? actor : "SYSTEM");
+            st.setString(idx++, reason != null ? reason : "");
+            for (int id : ids) {
+                st.setInt(idx++, id);
+            }
+            return st.executeUpdate();
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING,
+                    "[Punish] Failed to deactivate punishments " + ids, e);
+            return 0;
+        }
+    }
+
+    /**
+     * Lifts warns by ID. Warns have no {@code active} flag: they are deactivated by
+     * moving {@code expires_at} into the past ({@code 1}) — the same marker the old
+     * {@code /ui punish unwarn} used, so existing reads keep working.
+     *
+     * @param ids    warn row IDs (empty → no-op)
+     * @param actor  who lifted them ({@code SYSTEM} for automatic expiry)
+     * @param reason the pardon reason (may be empty)
+     * @return the number of rows actually deactivated
+     */
+    public static int deactivateWarns(Collection<Integer> ids, String actor, String reason) {
+        if (ids == null || ids.isEmpty()) return 0;
+        String sql = "UPDATE warns SET expires_at = 1, removed_at = ?, removed_by = ?, remove_reason = ?"
+                + " WHERE (expires_at = 0 OR expires_at > ?) AND id IN (" + placeholders(ids.size()) + ")";
+
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(sql)) {
+            int idx = 1;
+            st.setLong(idx++, System.currentTimeMillis());
+            st.setString(idx++, actor != null ? actor : "SYSTEM");
+            st.setString(idx++, reason != null ? reason : "");
+            st.setLong(idx++, System.currentTimeMillis());
+            for (int id : ids) {
+                st.setInt(idx++, id);
+            }
+            return st.executeUpdate();
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING,
+                    "[Punish] Failed to deactivate warns " + ids, e);
+            return 0;
+        }
+    }
+
+    /**
+     * Deactivates a punishment by ID as a system action (automatic expiry).
+     */
+    public static boolean unpunishById(int id) {
+        return unpunishById(id, "SYSTEM", "expired");
+    }
+
+    /**
+     * Deactivates a punishment by ID with an explicit actor/reason
+     * (the audit trail is written either way).
+     */
+    public static boolean unpunishById(int id, String actor, String reason) {
+        return deactivatePunishments(List.of(id), actor, reason) > 0;
+    }
+
+    /** Builds {@code ?,?,?} for an SQL {@code IN (...)} clause. */
+    private static String placeholders(int count) {
+        StringBuilder sb = new StringBuilder(count * 2);
+        for (int i = 0; i < count; i++) {
+            if (i > 0) sb.append(',');
+            sb.append('?');
+        }
+        return sb.toString();
     }
 
     // =========================
@@ -664,6 +808,19 @@ public class PunishmentManager {
                 rs.getLong("punished_at"),
                 rs.getLong("expires_at"),
                 rs.getInt("active") == 1
+        );
+    }
+
+    /** Maps one row of the {@code warns} table (same columns as the old inline constructors). */
+    private static WarnRecord mapWarn(ResultSet rs) throws SQLException {
+        return new WarnRecord(
+                rs.getInt("id"),
+                rs.getString("player_uuid"),
+                rs.getString("player_name"),
+                rs.getString("reason"),
+                rs.getString("warned_by"),
+                rs.getLong("warned_at"),
+                rs.getLong("expires_at")
         );
     }
 

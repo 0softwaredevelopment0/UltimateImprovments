@@ -122,6 +122,20 @@ public final class Permissions {
     public static final String CMD_PUNISH_LISTWARNS_SELF = "ui.command.punish.listwarns.self";
     public static final String CMD_PUNISH_LISTWARNS_OTHER = "ui.command.punish.listwarns.other";
     public static final String CMD_PUNISH_ACTIONLIST = "ui.command.punish.actionlist";
+    /** /ui punish pardon — base node of the unified pardon command (never granted by default). */
+    public static final String CMD_PUNISH_PARDON = "ui.command.punish.pardon";
+    /** /ui punish pardon ban — lift bans. */
+    public static final String CMD_PUNISH_PARDON_UNBAN = "ui.command.punish.pardon.unban";
+    /** /ui punish pardon mute — lift mutes. */
+    public static final String CMD_PUNISH_PARDON_UNMUTE = "ui.command.punish.pardon.unmute";
+    /** /ui punish pardon block — lift blocks (modal dialog lock). */
+    public static final String CMD_PUNISH_PARDON_UNBLOCK = "ui.command.punish.pardon.unblock";
+    /** /ui punish pardon warn — lift warnings. */
+    public static final String CMD_PUNISH_PARDON_UNWARN = "ui.command.punish.pardon.unwarn";
+    /** /ui punish pardon … all — mass pardon of every online player. */
+    public static final String CMD_PUNISH_PARDON_MASS = "ui.command.punish.pardon.mass";
+    /** /ui punish pardon … -confirm — confirm a batch above the configured threshold. */
+    public static final String CMD_PUNISH_PARDON_CONFIRM = "ui.command.punish.pardon.confirm";
     public static final String CMD_INVSEE = "ui.command.invsee";
     public static final String CMD_ENDERSEE = "ui.command.endersee";
     public static final String CMD_INV_EDIT = "ui.command.inv.edit";
@@ -391,6 +405,13 @@ public final class Permissions {
                 new Permission(CMD_PUNISH_LISTWARNS_SELF, "View your own warnings", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_OTHER, "View other players' warnings", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_ACTIONLIST, "View all active punishments (paginated list with tabs)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_PARDON, "Use the unified pardon command (/ui punish pardon)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_PARDON_UNBAN, "Pardon bans (/ui punish pardon ban)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_PARDON_UNMUTE, "Pardon mutes (/ui punish pardon mute)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_PARDON_UNBLOCK, "Pardon blocks (/ui punish pardon block)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_PARDON_UNWARN, "Pardon warnings (/ui punish pardon warn)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_PARDON_MASS, "Pardon every online player at once (/ui punish pardon <type> all)", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_PARDON_CONFIRM, "Confirm batches above punish.pardon.confirm_threshold", PermissionDefault.FALSE),
                 new Permission(CMD_INVSEE, "View player inventories (online and offline)", PermissionDefault.FALSE),
                 new Permission(CMD_ENDERSEE, "View player ender chests (online and offline)", PermissionDefault.FALSE),
                 new Permission(CMD_INV_EDIT, "Edit offline player inventories (with backup)", PermissionDefault.FALSE),

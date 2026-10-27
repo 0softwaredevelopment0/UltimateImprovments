@@ -574,6 +574,11 @@ final class ConfigRules {
 
             integer("access_control.check_interval_ticks", 1, 72000),
 
+            // Unified pardon (/ui punish pardon): a batch above this many active
+            // records needs -confirm (a mass pardon of "all" always does).
+            integer("punish.pardon.confirm_threshold", 1, 1000,
+                    "Records a single pardon may lift without -confirm"),
+
             // Kits (/ui kit) — page size, input limits and cooldown cap
             integer("kits.list_page_size", 1, 50, "Kits shown per /ui kit list page"),
             integer("kits.max_name_length", 1, 64, "Max kit name length (MiniMessage tags included)"),

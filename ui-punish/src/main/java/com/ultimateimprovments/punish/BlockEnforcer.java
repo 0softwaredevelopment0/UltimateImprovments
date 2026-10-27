@@ -188,6 +188,33 @@ public final class BlockEnforcer implements Listener {
         return blocked.containsKey(player.getUniqueId());
     }
 
+    /**
+     * Releases every player whose enforced block RECORD was just deactivated in the
+     * database (used by {@code /ui punish pardon}): the dialog is closed and the
+     * player is told the block is gone. Keyed by record ID rather than by player, so
+     * everyone locked through an IP/HW-scoped record is released too.
+     *
+     * @param recordIds punishment row IDs that were lifted
+     * @return how many players were released
+     */
+    public static int releaseByRecordIds(java.util.Collection<Integer> recordIds) {
+        if (recordIds == null || recordIds.isEmpty()) return 0;
+        int released = 0;
+        for (Map.Entry<UUID, PunishmentManager.PunishmentRecord> entry : blocked.entrySet()) {
+            PunishmentManager.PunishmentRecord record = entry.getValue();
+            if (record == null || !recordIds.contains(record.id)) continue;
+            Player player = Bukkit.getPlayer(entry.getKey());
+            if (player != null) {
+                release(player, true);
+            } else {
+                blocked.remove(entry.getKey());
+                lastShown.remove(entry.getKey());
+            }
+            released++;
+        }
+        return released;
+    }
+
     // =========================
     // PERIODIC TASK (re-open + expiry)
     // =========================

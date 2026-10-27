@@ -631,7 +631,10 @@ public class DatabaseInit {
                 punished_by TEXT NOT NULL,
                 punished_at INTEGER NOT NULL,
                 expires_at INTEGER DEFAULT 0,
-                active INTEGER DEFAULT 1
+                active INTEGER DEFAULT 1,
+                removed_at INTEGER DEFAULT 0,
+                removed_by TEXT DEFAULT '',
+                remove_reason TEXT DEFAULT ''
             );
         """);
 
@@ -665,7 +668,13 @@ public class DatabaseInit {
             {"hw_id", "TEXT DEFAULT ''"},
             {"expires_at", "INTEGER DEFAULT 0"},
             {"active", "INTEGER DEFAULT 1"},
-            {"punished_by", "TEXT DEFAULT ''"}
+            {"punished_by", "TEXT DEFAULT ''"},
+            // Pardon audit: who lifted the punishment, when and why. Written by
+            // PunishmentManager#deactivatePunishments (also for automatic expiry,
+            // with removed_by = 'SYSTEM').
+            {"removed_at", "INTEGER DEFAULT 0"},
+            {"removed_by", "TEXT DEFAULT ''"},
+            {"remove_reason", "TEXT DEFAULT ''"}
         };
         for (String[] col : punishmentCols) {
             try {
@@ -686,7 +695,10 @@ public class DatabaseInit {
                 warned_at INTEGER NOT NULL,
                 expires_at INTEGER DEFAULT 0,
                 ip_address TEXT DEFAULT '',
-                hw_id TEXT DEFAULT ''
+                hw_id TEXT DEFAULT '',
+                removed_at INTEGER DEFAULT 0,
+                removed_by TEXT DEFAULT '',
+                remove_reason TEXT DEFAULT ''
             );
         """);
 
@@ -694,6 +706,23 @@ public class DatabaseInit {
             CREATE INDEX IF NOT EXISTS idx_warns_uuid
             ON warns(player_uuid);
         """);
+
+        // Schema drift on old databases: expires_at/ip_address/hw_id appeared over
+        // time, and the pardon audit columns are new. Each column migrates in its
+        // own try/catch — a duplicate-column error on a newer DB just skips it.
+        String[][] warnCols = {
+            {"expires_at", "INTEGER DEFAULT 0"},
+            {"ip_address", "TEXT DEFAULT ''"},
+            {"hw_id", "TEXT DEFAULT ''"},
+            {"removed_at", "INTEGER DEFAULT 0"},
+            {"removed_by", "TEXT DEFAULT ''"},
+            {"remove_reason", "TEXT DEFAULT ''"}
+        };
+        for (String[] col : warnCols) {
+            try {
+                st.execute("ALTER TABLE warns ADD COLUMN " + col[0] + " " + col[1]);
+            } catch (Exception ignored) { /* already exists */ }
+        }
 
         // =========================
         // 📋 CUSTOM WHITELIST (UltimateImprovments, not vanilla)

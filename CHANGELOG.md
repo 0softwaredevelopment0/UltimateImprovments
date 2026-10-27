@@ -3,6 +3,54 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.37] - since 1.8.5-alpha.36 (2026-10-26)
+
+### Added
+- **Unified pardon system: `/ui punish pardon <ban|mute|block|warn|all> <player|all>`**
+  (UI-Punish). One command and ONE code path lift punishments — the per-type
+  import of the old removal code is gone:
+  - target is a player name (online or offline, resolved through the shared
+    name→UUID resolver with a `LOWER(player_name)` fallback) or `all` = every
+    online player;
+  - **every** matching active record is lifted, not just the newest one (stacked
+    bans/mutes/blocks/warns all go); warns are matched too and DO validate that
+    the record belongs to the target — the old `unwarn` accepted any warn ID;
+  - flags: `-r:<reason>` (audit + broadcast), `-id:<n>` (one specific record),
+    `-s`/`-silent` (no moderator broadcast), `-dry` (preview only),
+    `-confirm` (confirmation for large/mass batches);
+  - safety rails: a mass pardon (`<player> = all`) and any batch above
+    `punish.pardon.confirm_threshold` (default 5, UI-Punish.toml) print a preview
+    with a clickable `[✔ Confirm]` button instead of writing;
+  - runtime state is invalidated centrally by RECORD ID — the in-memory mute
+    cache (`PunishJoinListener`) and the live block dialog (`BlockEnforcer`), so
+    an alt muted/blocked through an `-ip`/`-hw` scope is released too. The old
+    per-command calls only touched the named online player.
+- **Pardon audit trail**: `punishments` and `warns` got `removed_at`, `removed_by`,
+  `remove_reason` (schema + per-column migration in `DatabaseInit`). Every lift —
+  moderator pardon or automatic expiry (`SYSTEM` / `expired`) — is recorded.
+- **Pardon messages are configurable and bilingual**: `messages.punish.pardon`
+  (RU) and `messages_en.punish.pardon` (EN) in `configs/UI-Punish.toml`, EN by
+  default (follows `messages.lang`); no hardcoded texts left in the command.
+- **Permissions** `ui.command.punish.pardon.<action>`: `unban`, `unmute`,
+  `unblock`, `unwarn` (one per punish type; `pardon all` needs all four), `mass`
+  (target `all`) and `confirm` (confirming a batch). All FALSE by default.
+
+### Removed
+- **`/ui punish unban`, `/ui punish unblock`, `/ui punish unmute` and
+  `/ui punish unwarn` are gone** — replaced by `/ui punish pardon`. No aliases:
+  the old handlers, their permission checks, usage lines and tab-completion
+  entries were deleted (~600 lines removed from `PunishSubcommand`).
+- `PunishmentManager#unpunish(type, uuid, ip, hwId, name)` (the boolean UPDATE
+  used by the old commands) — replaced by `findActivePunishments`,
+  `findActiveWarns`, `deactivatePunishments`, `deactivateWarns`.
+- `PunishmentManager#removeWarnById` — warns now go through `deactivateWarns`
+  (same `expires_at = 1` marker, plus the audit trail).
+
+### Changed
+- Automatic expiry (`PunishJoinListener` mute cleanup, `BlockEnforcer` block
+  expiry) now writes the audit trail through the same deactivation path with
+  `removed_by = 'SYSTEM'`, `remove_reason = 'expired'`.
+
 ## [1.8.5-alpha.30] - since 1.8.5-alpha.29 (2026-10-26)
 
 ### Changed
