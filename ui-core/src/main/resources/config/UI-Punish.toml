@@ -30,6 +30,17 @@ check_interval_ticks = 20
 # Default: 20
 reopen_interval_ticks = 20
 
+# Unified pardon — lifting punishments (bans, mutes, blocks, warnings).
+# /ui punish pardon <ban|mute|block|warn|all> <player|all> [-r:<reason>] [-id:<n>] [-s] [-dry] [-confirm]
+# Every removal path goes through one manager: the audit trail (who lifted the
+# punishment, when and why) is written to the punishments/warns tables.
+[punish.pardon]
+# How many active records a single pardon may lift WITHOUT -confirm.
+# A larger batch only prints a preview with a clickable confirmation button.
+# A mass pardon (<player> = all) ALWAYS asks for -confirm, whatever this value is.
+# Default: 5
+confirm_threshold = 5
+
 # Operator lists — OP whitelist + OP blacklist share ONE periodic check task.
 # Both checks run in a single pass with the interval below.
 [op_lists]
@@ -58,9 +69,66 @@ enabled = true
 # MESSAGES — RUSSIAN (active when lang = "ru")
 # ==================================================================
 
+# Unified pardon (/ui punish pardon): feedback, preview, audit broadcast and the
+# notices sent to the pardoned player.
+# Placeholders: %player%, %actor%, %type%, %types%, %reason%, %count%, %id%, %flag%, %command%
+[messages.punish.pardon]
+usage = "<red>❌ Использование:</red> <white>/ui punish pardon <ban|mute|block|warn|all> <игрок|all> [-r:<причина>] [-id:<n>] [-s] [-dry] [-confirm]</white>"
+unknown_type = "<red>❌ Неизвестный тип наказания: </red><yellow>%type%</yellow><red>.</red> <gray>Доступно: </gray><white>ban, mute, block, warn, all</white>"
+unknown_flag = "<red>❌ Неизвестный флаг: </red><yellow>%flag%</yellow>"
+kick_not_pardonable = "<red>❌ Кики — записи лога, их нельзя снять.</red> <gray>Доступно: </gray><white>ban, mute, block, warn, all</white>"
+nothing_found = "<yellow>⚠</yellow> <white>Активных наказаний (%types%) не найдено для</white> <yellow>%player%</yellow>"
+invalid_id = "<red>❌ Неверный ID: </red><yellow>%id%</yellow>"
+preview_header = "<gray>═══ <white>⚖ Предпросмотр снятия</white> <dark_gray>(%count% записей, %player%)</dark_gray> ═══</gray>"
+line = "  <white>#%id%</white> <gray>%type%</gray> <yellow>%player%</yellow> <dark_gray>|</dark_gray> <gray>%reason%</gray>"
+preview_more = "  <dark_gray>… и ещё %count%</dark_gray>"
+confirm_hint = "<gray>Ничего не изменено. </gray><click:run_command:%command%><dark_aqua>[✔ Подтвердить]</dark_aqua></click>"
+dry_run = "<yellow>⚠</yellow> <gray>Пробный запуск — ничего не изменено.</gray>"
+result = "<green>✔</green> <white>Снято наказаний:</white> <yellow>%count%</yellow> <white>у</white> <yellow>%player%</yellow>"
+broadcast = "<green>✔</green> <yellow>%player%</yellow> <gray>помилован (%types%) —</gray> <white>%actor%</white><gray> | Причина:</gray> <white>%reason%</white>"
+notice_ban = "<green>✔</green> <white>Вы разбанены.</white>"
+notice_mute = "<green>✔</green> <white>С вас снят мут.</white>"
+notice_block = "<green>✔</green> <white>Блокировка снята.</white>"
+notice_warn = "<green>✔</green> <white>С вашего аккаунта снято предупреждение.</white>"
+notice_other = "<green>✔</green> <white>Наказание снято.</white>"
+default_reason = "Помилован: %actor%"
+type_ban = "<red>бан</red>"
+type_mute = "<red>мут</red>"
+type_block = "<dark_red>блок</dark_red>"
+type_warn = "<yellow>варн</yellow>"
+type_kick = "<gray>кик</gray>"
+type_all = "<white>все</white>"
+all_players = "все игроки онлайн"
 
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
 # ==================================================================
 
+[messages_en.punish.pardon]
+usage = "<red>❌ Usage:</red> <white>/ui punish pardon <ban|mute|block|warn|all> <player|all> [-r:<reason>] [-id:<n>] [-s] [-dry] [-confirm]</white>"
+unknown_type = "<red>❌ Unknown punishment type: </red><yellow>%type%</yellow><red>.</red> <gray>Available: </gray><white>ban, mute, block, warn, all</white>"
+unknown_flag = "<red>❌ Unknown flag: </red><yellow>%flag%</yellow>"
+kick_not_pardonable = "<red>❌ Kicks are log entries and cannot be pardoned.</red> <gray>Available: </gray><white>ban, mute, block, warn, all</white>"
+nothing_found = "<yellow>⚠</yellow> <white>No active %types% punishment found for</white> <yellow>%player%</yellow>"
+invalid_id = "<red>❌ Invalid ID: </red><yellow>%id%</yellow>"
+preview_header = "<gray>═══ <white>⚖ Pardon preview</white> <dark_gray>(%count% record(s), %player%)</dark_gray> ═══</gray>"
+line = "  <white>#%id%</white> <gray>%type%</gray> <yellow>%player%</yellow> <dark_gray>|</dark_gray> <gray>%reason%</gray>"
+preview_more = "  <dark_gray>… and %count% more</dark_gray>"
+confirm_hint = "<gray>Nothing was changed. </gray><click:run_command:%command%><dark_aqua>[✔ Confirm]</dark_aqua></click>"
+dry_run = "<yellow>⚠</yellow> <gray>Dry run — nothing was changed.</gray>"
+result = "<green>✔</green> <white>Pardoned</white> <yellow>%count%</yellow> <white>punishment(s) of</white> <yellow>%player%</yellow>"
+broadcast = "<green>✔</green> <yellow>%player%</yellow> <gray>pardoned (%types%) by</gray> <white>%actor%</white><gray> | Reason:</gray> <white>%reason%</white>"
+notice_ban = "<green>✔</green> <white>You have been unbanned.</white>"
+notice_mute = "<green>✔</green> <white>You have been unmuted.</white>"
+notice_block = "<green>✔</green> <white>You have been unblocked.</white>"
+notice_warn = "<green>✔</green> <white>A warning has been removed from your account.</white>"
+notice_other = "<green>✔</green> <white>A punishment has been lifted.</white>"
+default_reason = "Pardoned by %actor%"
+type_ban = "<red>ban</red>"
+type_mute = "<red>mute</red>"
+type_block = "<dark_red>block</dark_red>"
+type_warn = "<yellow>warn</yellow>"
+type_kick = "<gray>kick</gray>"
+type_all = "<white>all</white>"
+all_players = "all online players"
 

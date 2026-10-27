@@ -128,6 +128,29 @@ public class PunishJoinListener implements Listener {
         mutedPlayers.remove(player.getUniqueId());
     }
 
+    /**
+     * Drops every cached mute whose DATABASE record was just deactivated — the
+     * {@code /ui punish pardon} path calls this with the lifted record IDs, so an
+     * alt muted through an IP/HW scope is released as well (a per-player call
+     * would only clear the single online name).
+     *
+     * @param recordIds punishment row IDs that were lifted
+     * @return how many cached entries were dropped
+     */
+    public static int removeMuteCacheByRecordIds(java.util.Collection<Integer> recordIds) {
+        if (recordIds == null || recordIds.isEmpty()) return 0;
+        int removed = 0;
+        for (java.util.Iterator<Map.Entry<UUID, PunishmentManager.PunishmentRecord>> it =
+                mutedPlayers.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<UUID, PunishmentManager.PunishmentRecord> entry = it.next();
+            if (entry.getValue() != null && recordIds.contains(entry.getValue().id)) {
+                it.remove();
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     // =========================
     // BUILD MESSAGES
     // =========================
