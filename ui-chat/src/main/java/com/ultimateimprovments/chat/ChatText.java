@@ -35,9 +35,6 @@ public final class ChatText {
     /** Suffix appended to the last line when the message was cut by a limit. */
     public static final String TRUNCATED_SUFFIX = "\u2026";
 
-    /** A message needs at least this many letters before caps are judged. */
-    public static final int MIN_LETTERS_FOR_CAPS = 10;
-
     /**
      * Minimum token length (code points) before it is judged for "randomness":
      * short tokens are statistically meaningless (2-3 letters already look
@@ -81,6 +78,30 @@ public final class ChatText {
      */
     private static final Pattern NEWLINE_TAG =
             Pattern.compile("(?i)<\\s*/?\\s*(?:newline|br)\\s*/?\\s*>");
+
+    /**
+     * Number of code points (one emoji = 1, one Cyrillic letter = 1).
+     * Used for the «too short to judge» gate of the CAPS check.
+     */
+    public static int charCount(String text) {
+        if (text == null || text.isEmpty()) return 0;
+        return text.codePointCount(0, text.length());
+    }
+
+    /**
+     * Returns true when the text contains at least one Cyrillic letter.
+     * Backs the optional «no Cyrillic» chat mode (chat.limits.block_cyrillic),
+     * which is off by default.
+     */
+    public static boolean containsCyrillic(String text) {
+        if (text == null || text.isEmpty()) return false;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (Character.UnicodeScript.of(cp) == Character.UnicodeScript.CYRILLIC) return true;
+        }
+        return false;
+    }
 
     /** Legacy section-sign colour codes ({@code §a}, {@code §l}, ...), removed with their letter. */
     private static final Pattern LEGACY_CODES = Pattern.compile("\u00A7[0-9a-fk-orx]");

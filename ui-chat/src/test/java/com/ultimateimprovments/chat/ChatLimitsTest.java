@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -63,12 +64,33 @@ class ChatLimitsTest {
     }
 
     @Test
-    @DisplayName("Letter count gates the CAPS check on short shouts")
-    void letterCountGatesCapsCheck() {
+    @DisplayName("Letter count counts letters only")
+    void letterCountCountsLetters() {
         assertEquals(6, ChatText.letterCount("ПРИВЕТ"));
-        assertTrue(ChatText.letterCount("ПРИВЕТ") < ChatText.MIN_LETTERS_FOR_CAPS);
         assertEquals(26, ChatText.letterCount("ПРИВЕТ ВСЕМ ПРИВЕТ ВСЕМ ПРИВЕТ"));
-        assertTrue(ChatText.letterCount("ПРИВЕТ ВСЕМ ПРИВЕТ ВСЕМ ПРИВЕТ") >= ChatText.MIN_LETTERS_FOR_CAPS);
+        assertEquals(0, ChatText.letterCount("12345 ???"));
+    }
+
+    @Test
+    @DisplayName("Character count backs the CAPS ignore-threshold")
+    void charCountCountsCodePoints() {
+        assertEquals(6, ChatText.charCount("ПРИВЕТ"));
+        assertEquals(11, ChatText.charCount("ГО НА АРЕНУ"));
+        // One emoji is one character
+        assertEquals(2, ChatText.charCount("\uD83D\uDE00\uD83D\uDE00"));
+        assertEquals(0, ChatText.charCount(""));
+        assertEquals(0, ChatText.charCount(null));
+    }
+
+    @Test
+    @DisplayName("Cyrillic detection backs the optional no-Cyrillic mode")
+    void cyrillicDetection() {
+        assertTrue(ChatText.containsCyrillic("привет"));
+        assertTrue(ChatText.containsCyrillic("hello привет"));
+        assertTrue(ChatText.containsCyrillic("ЁЖИК"));
+        assertFalse(ChatText.containsCyrillic("hello world 123"));
+        assertFalse(ChatText.containsCyrillic(""));
+        assertFalse(ChatText.containsCyrillic(null));
     }
 
     // ========================= RANDOMNESS =========================
