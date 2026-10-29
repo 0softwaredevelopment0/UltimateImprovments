@@ -185,4 +185,30 @@ class ChatLimitsTest {
         assertEquals(0, ChatText.randomnessPercent("контрстрайк"));
         assertEquals(0, ChatText.randomnessPercent("автоматизировать"));
     }
+
+    // ========================= DUPLICATES =========================
+
+    @Test
+    @DisplayName("Duplicate similarity ignores case and extra whitespace")
+    void similarityIgnoresCaseAndWhitespace() {
+        assertEquals(100, ChatText.similarityPercent("Привет  мир", "привет мир"));
+        assertEquals(100, ChatText.similarityPercent("  hello   world ", "Hello World"));
+        assertEquals(100, ChatText.similarityPercent("", ""));
+        assertEquals(0, ChatText.similarityPercent("", "hello"));
+        assertEquals(0, ChatText.similarityPercent(null, "hello"));
+        assertEquals(0, ChatText.similarityPercent("hello", null));
+    }
+
+    @Test
+    @DisplayName("Duplicate similarity is Levenshtein-based, emoji = one character")
+    void similarityIsLevenshteinBased() {
+        // One changed letter out of 10 -> 90%
+        assertEquals(90, ChatText.similarityPercent("abcdefghij", "abcdefghiX"));
+        // Two changed letters out of 10 -> 80%
+        assertEquals(80, ChatText.similarityPercent("abcdefghij", "abcdefghXY"));
+        // Unrelated text of the same length -> 0%
+        assertEquals(0, ChatText.similarityPercent("abcdefghij", "zyxwvutsrq"));
+        // One emoji of three missing -> 67%
+        assertEquals(67, ChatText.similarityPercent("\uD83D\uDE00\uD83D\uDE00", "\uD83D\uDE00\uD83D\uDE00\uD83D\uDE00"));
+    }
 }

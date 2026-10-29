@@ -476,6 +476,8 @@ final class ConfigRules {
             integer("chat.limits.caps_ignore_max_chars", 0, 64),
             integer("chat.limits.max_entropy_percent", 0, 100),
             integer("chat.limits.cooldown_ms", 0, 60000),
+            integer("chat.limits.duplicate_window_ms", 0, 600000),
+            integer("chat.limits.duplicate_percent", 0, 100),
             bool("chat.limits.block_cyrillic"),
             string("chat.limits.bypass_permission", false, 64),
             integer("chat.channels.local.radius", 1, 10000),

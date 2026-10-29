@@ -103,6 +103,72 @@ public final class ChatText {
         return false;
     }
 
+    /**
+     * Similarity of two messages in percent (0..100), backing the duplicate
+     * message guard (chat.limits.duplicate_percent).
+     * <p>
+     * Both texts are normalized first (trimmed, inner whitespace collapsed,
+     * case-folded), so {@code "Привет  мир"} and {@code "привет мир"} count as
+     * identical. The percentage is Levenshtein-based:
+     * {@code 100 * (1 - distance / max(length))}, computed on code points, so
+     * one changed letter in a 20-character message scores 95%. {@code 100} means
+     * a normalized exact match; two empty texts are also 100% similar, while an
+     * empty text against a non-empty one is 0%.
+     *
+     * @param first  the previous message (may be null)
+     * @param second the new message (may be null)
+     * @return 0..100 — how much the messages overlap
+     */
+    public static int similarityPercent(String first, String second) {
+        String a = normalizeForCompare(first);
+        String b = normalizeForCompare(second);
+        if (a.isEmpty() && b.isEmpty()) return 100;
+        if (a.isEmpty() || b.isEmpty()) return 0;
+        if (a.equals(b)) return 100;
+
+        int[] ca = a.codePoints().toArray();
+        int[] cb = b.codePoints().toArray();
+        int max = Math.max(ca.length, cb.length);
+        if (max == 0) return 100;
+
+        // Levenshtein similarity: 1 edit in 20 chars = 95%, fully different
+        // strings of the same length = 0%.
+        int distance = levenshtein(ca, cb);
+        int similarity = (int) Math.round(100.0 * (max - distance) / max);
+        return Math.max(0, Math.min(100, similarity));
+    }
+
+    /** Trim, collapse inner whitespace and case-fold: "  Привет   МИР " → "привет мир". */
+    private static String normalizeForCompare(String text) {
+        if (text == null || text.isEmpty()) return "";
+        return text.strip().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** Edit distance between two code point sequences (two-row DP, O(min) memory). */
+    private static int levenshtein(int[] a, int[] b) {
+        if (a.length > b.length) {
+            int[] swap = a;
+            a = b;
+            b = swap;
+        }
+        int[] previous = new int[a.length + 1];
+        int[] current = new int[a.length + 1];
+        for (int i = 0; i <= a.length; i++) previous[i] = i;
+        for (int j = 1; j <= b.length; j++) {
+            current[0] = j;
+            for (int i = 1; i <= a.length; i++) {
+                int cost = a[i - 1] == b[j - 1] ? 0 : 1;
+                current[i] = Math.min(
+                        Math.min(current[i - 1] + 1, previous[i] + 1),
+                        previous[i - 1] + cost);
+            }
+            int[] swap = previous;
+            previous = current;
+            current = swap;
+        }
+        return previous[a.length];
+    }
+
     /** Legacy section-sign colour codes ({@code §a}, {@code §l}, ...), removed with their letter. */
     private static final Pattern LEGACY_CODES = Pattern.compile("\u00A7[0-9a-fk-orx]");
 
