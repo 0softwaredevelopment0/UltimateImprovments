@@ -17,6 +17,7 @@ import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -54,19 +56,26 @@ import java.util.UUID;
  * </ol>
  * Pending pours live in SQLite ({@link ConcreteBucketDatabase}) — see
  * {@link #loadFromDatabase()} / {@link #flushDatabase()}.
+ * <p>
+ * Every timing and visual can be tuned in {@code configs/UI-Items.toml} under
+ * {@code [concrete_bucket]} — see {@link #reloadConfig()}.
  */
 public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
     private static ConcreteBucketManager instance;
     private static Main plugin;
-    private static final long CONCRETE_DELAY_MS = 60_000; // 60 seconds
 
-    // Hint burst spawned on every still-liquid block — shows which blocks will harden
-    private static final Particle HINT_PARTICLE = Particle.CRIT;
-    private static final int HINT_PARTICLE_COUNT = 1;
-    private static final double HINT_PARTICLE_OFFSET = 0.25;
+    // ── Settings — configs/UI-Items.toml → [concrete_bucket] (see reloadConfig) ──
+    private static boolean enabled = true;
+    private static long delayMs = 60_000; // 60 seconds
+    private static Material hardenMaterial = Material.GRAY_CONCRETE;
+    private static Biome tintBiome = Biome.PALE_GARDEN;
+    // Hint particle on every still-liquid block — shows which blocks will harden
+    private static Particle hintParticle = Particle.CRIT;
+    private static int hintCount = 1;
+    private static double hintOffset = 0.25;
     // Hint particle interval (ticks). Half a second keeps the marks continuous
-    private static final long TICK_INTERVAL = 10L;
+    private static long tickInterval = 10L;
 
     // Tracked water blocks: location -> {originalBiome, groupId}
     private static final Map<Location, TrackedWater> trackedWater = new HashMap<>();
@@ -101,12 +110,43 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     // =========================
     public static void init(Main plugin) {
         ConcreteBucketManager.plugin = plugin;
+        // In-place reload (soft /ui reload): drop the old task, the DB keeps the
+        // live pours and loadFromDatabase() below restores them
+        if (instance != null) shutdown();
+
+        reloadConfig();
+
         instance = new ConcreteBucketManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         loadFromDatabase();
-        // Twice per second: tinting, hardening and the liquid-state hint particles
-        instance.runTaskTimer(plugin, 20L, TICK_INTERVAL);
+        instance.runTaskTimer(plugin, 20L, tickInterval);
         ConsoleLogger.info("[ConcreteBucket] Initialized");
+    }
+
+    /**
+     * Reads the {@code [concrete_bucket]} section of {@code configs/UI-Items.toml}.
+     * Invalid names fall back to the defaults instead of breaking the mechanic.
+     */
+    public static void reloadConfig() {
+        Main main = Main.getInstance();
+        if (main == null) return;
+        FileConfiguration cfg = main.getConfig();
+
+        enabled = cfg.getBoolean("concrete_bucket.enabled", true);
+        delayMs = Math.max(1L, cfg.getLong("concrete_bucket.harden_delay_seconds", 60L)) * 1000L;
+        hardenMaterial = resolveMaterial(
+                cfg.getString("concrete_bucket.harden_block"), Material.GRAY_CONCRETE);
+        String tintName = cfg.getString("concrete_bucket.tint_biome", "PALE_GARDEN");
+        tintBiome = resolveBiome("minecraft:" + tintName.trim().toLowerCase(Locale.ROOT), Biome.PALE_GARDEN);
+        hintParticle = resolveParticle(cfg.getString("concrete_bucket.particle"), Particle.CRIT);
+        hintCount = Math.max(1, cfg.getInt("concrete_bucket.particle_count", 1));
+        hintOffset = Math.max(0.0, cfg.getDouble("concrete_bucket.particle_offset", 0.25));
+        tickInterval = Math.max(1L, cfg.getLong("concrete_bucket.particle_interval_ticks", 10L));
+    }
+
+    /** Hardening delay in whole seconds (used by the craft listener's item lore). */
+    public static long delaySeconds() {
+        return Math.max(1L, delayMs / 1000L);
     }
 
     /**
@@ -125,6 +165,8 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBucketEmpty(PlayerBucketEmptyEvent e) {
         if (e.getBucket() != Material.WATER_BUCKET) return;
+        // Feature off: the bucket behaves like a plain water bucket
+        if (!enabled) return;
 
         // Check the PDC on the item the player used
         if (!isConcreteBucket(e.getItemStack())
@@ -145,7 +187,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         // group, so both pours harden together and the tinted biome is not
         // mistaken for the "original" one.
         if (trackedWater.containsKey(waterLoc)) {
-            pendingBiomes.put(waterLoc, Biome.PALE_GARDEN);
+            pendingBiomes.put(waterLoc, tintBiome);
             return;
         }
 
@@ -243,7 +285,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         // ════════════════════════════════════════
         long now = System.currentTimeMillis();
         for (PourGroup group : new ArrayList<>(groups.values())) {
-            if (now - group.startTime >= CONCRETE_DELAY_MS) {
+            if (now - group.startTime >= delayMs) {
                 harden(group);
             }
         }
@@ -253,8 +295,10 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         // ════════════════════════════════════════
         // Runs after harden(): hardened blocks already left trackedWater, so the
         // marks vanish exactly when the block turns into concrete.
-        for (Location loc : trackedWater.keySet()) {
-            spawnHintParticles(loc);
+        if (enabled) {
+            for (Location loc : trackedWater.keySet()) {
+                spawnHintParticles(loc);
+            }
         }
     }
 
@@ -266,7 +310,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         for (Location loc : new ArrayList<>(group.blocks)) {
             Block block = loc.getBlock();
             if (block.getType() == Material.WATER) {
-                block.setType(Material.GRAY_CONCRETE);
+                block.setType(hardenMaterial);
             }
 
             TrackedWater data = trackedWater.remove(loc);
@@ -287,12 +331,12 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         if (world == null) return;
         Location center = loc.clone().add(0.5, 0.5, 0.5);
         world.spawnParticle(
-                HINT_PARTICLE,
+                hintParticle,
                 center,
-                HINT_PARTICLE_COUNT,
-                HINT_PARTICLE_OFFSET,
-                HINT_PARTICLE_OFFSET,
-                HINT_PARTICLE_OFFSET,
+                hintCount,
+                hintOffset,
+                hintOffset,
+                hintOffset,
                 0.0
         );
     }
@@ -313,7 +357,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         Biome originalBiome = world.getBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         trackedWater.put(loc, new TrackedWater(originalBiome, group.id));
         group.blocks.add(loc);
-        pendingBiomes.put(loc, Biome.PALE_GARDEN);
+        pendingBiomes.put(loc, tintBiome);
         markInserted(loc, originalBiome, group);
     }
 
@@ -345,7 +389,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     }
 
     private static void restoreBiome(Location loc, Biome biome) {
-        if (biome == null || biome == Biome.PALE_GARDEN) return;
+        if (biome == null || biome == tintBiome) return;
         applyBiome(loc, biome);
     }
 
@@ -363,6 +407,31 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
                     .get(namespacedKey);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private static Biome resolveBiome(String key, Biome def) {
+        Biome biome = resolveBiome(key);
+        return biome != null ? biome : def;
+    }
+
+    private static Material resolveMaterial(String name, Material def) {
+        if (name == null || name.isBlank()) return def;
+        Material material = Material.matchMaterial(name.trim());
+        if (material == null) {
+            ConsoleLogger.warn("[ConcreteBucket] Unknown block '" + name + "' in config — using " + def.name());
+            return def;
+        }
+        return material;
+    }
+
+    private static Particle resolveParticle(String name, Particle def) {
+        if (name == null || name.isBlank()) return def;
+        try {
+            return Particle.valueOf(name.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            ConsoleLogger.warn("[ConcreteBucket] Unknown particle '" + name + "' in config — using " + def.name());
+            return def;
         }
     }
 

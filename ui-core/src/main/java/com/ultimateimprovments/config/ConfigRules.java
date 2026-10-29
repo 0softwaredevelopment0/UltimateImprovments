@@ -667,6 +667,17 @@ final class ConfigRules {
             integer("meteor.interval.max", 1, 100000),
             bool("meteor.log_scheduler"),
 
+            // ── UI-Items · concrete bucket ──
+            bool("concrete_bucket.enabled"),
+            integer("concrete_bucket.harden_delay_seconds", 1, 3600,
+                    "Сколько секунд цемент остаётся жидким до твердения"),
+            notBlank("concrete_bucket.harden_block", 64),
+            notBlank("concrete_bucket.tint_biome", 64),
+            notBlank("concrete_bucket.particle", 64),
+            integer("concrete_bucket.particle_count", 1, 100),
+            dbl("concrete_bucket.particle_offset", 0, 10),
+            integer("concrete_bucket.particle_interval_ticks", 1, 200),
+
             notBlank("plugin_version", 32),
             string("prefix", false, 512)
     );
