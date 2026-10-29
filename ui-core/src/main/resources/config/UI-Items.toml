@@ -30,6 +30,13 @@ particle_offset = 0.25
 # Hint particle interval in ticks (10 = twice per second).
 # Default: 10
 particle_interval_ticks = 10
+# Dull sound when a bucket / bottle / dispenser tries to take the liquid cement.
+# Bukkit Sound name. Empty = silent.
+# Default: BLOCK_MUD_HIT
+blocked_sound = "BLOCK_MUD_HIT"
+# Pitch of that sound (0.5 do 2.0, ниже = глуше).
+# Default: 0.6
+blocked_sound_pitch = 0.6
 
 # Custom netherite upgrade recipe.
 [netherite_upgrade]
