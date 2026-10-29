@@ -528,6 +528,30 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🧊 CONCRETE BUCKET — poured water waiting to harden (persist)
+        // =========================
+        // original_biome — the biome the block had BEFORE the gray PALE_GARDEN
+        // tint, restored when the water hardens or disappears. start_time is the
+        // pour group's timestamp, so a restart does not reset the 60s timer.
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS concrete_bucket_water (
+                world TEXT NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                original_biome TEXT NOT NULL DEFAULT '',
+                group_id TEXT NOT NULL,
+                start_time INTEGER NOT NULL,
+                PRIMARY KEY(world, x, y, z)
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_concrete_bucket_water_group
+            ON concrete_bucket_water(group_id);
+        """);
+
+        // =========================
         // 🔄 UPDATER STATE (last commit SHA / release tag)
         // =========================
         st.execute("""

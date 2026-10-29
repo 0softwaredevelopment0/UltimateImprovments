@@ -2,10 +2,17 @@ package com.ultimateimprovments.mechanics.features.world;
 
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mechanics.features.world.ConcreteBucketDatabase.BlockPos;
+import com.ultimateimprovments.mechanics.features.world.ConcreteBucketDatabase.StoredWater;
 import com.ultimateimprovments.util.ConsoleLogger;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
@@ -25,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,9 +47,12 @@ import java.util.UUID;
  *   <li>The original biome is saved for restoration</li>
  *   <li>Every block the water flows into joins the same pour group and is tinted too</li>
  *   <li>After 60 seconds the <b>whole</b> pour group turns into concrete at once,
- *       each hardened block emitting a crit particle burst</li>
- *   <li>If water disappears earlier → the biome is restored</li>
+ *       each hardened block emitting a crit particle burst and getting its
+ *       original biome back</li>
+ *   <li>If water disappears earlier → the biome is restored right away</li>
  * </ol>
+ * Pending pours live in SQLite ({@link ConcreteBucketDatabase}) — see
+ * {@link #loadFromDatabase()} / {@link #flushDatabase()}.
  */
 public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
@@ -61,12 +72,25 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     // Pending biome sets (the water appears a tick after the pour/flow event)
     private static final Map<Location, Biome> pendingBiomes = new HashMap<>();
 
+    // DB write buffer, flushed once per second (and on shutdown)
+    private static final Set<StoredWater> pendingInserts = new LinkedHashSet<>();
+    private static final Set<BlockPos> pendingDeletes = new LinkedHashSet<>();
+
     private record TrackedWater(Biome originalBiome, UUID groupId) {}
 
     private static final class PourGroup {
-        private final UUID id = UUID.randomUUID();
-        private final long startTime = System.currentTimeMillis();
+        private final UUID id;
+        private final long startTime;
         private final Set<Location> blocks = new HashSet<>();
+
+        private PourGroup() {
+            this(UUID.randomUUID(), System.currentTimeMillis());
+        }
+
+        private PourGroup(UUID id, long startTime) {
+            this.id = id;
+            this.startTime = startTime;
+        }
     }
 
     // =========================
@@ -76,6 +100,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         ConcreteBucketManager.plugin = plugin;
         instance = new ConcreteBucketManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
+        loadFromDatabase();
         // Once per second is enough for tinting and hardening
         instance.runTaskTimer(plugin, 20L, 20L);
         ConsoleLogger.info("[ConcreteBucket] Initialized");
@@ -165,10 +190,15 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // ⏱ TICK — deferred biomes + hardening
+    // ⏱ TICK — deferred biomes + hardening + DB flush
     // =========================
     @Override
     public void run() {
+        tick();
+        flushDatabase();
+    }
+
+    private void tick() {
         // ════════════════════════════════════════
         // Apply the deferred biome tints
         // ════════════════════════════════════════
@@ -179,7 +209,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
                 Location loc = entry.getKey();
                 if (isWater(loc)) {
                     // World.setBiome() sends an update to the client (unlike Block.setBiome())
-                    loc.getWorld().setBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), entry.getValue());
+                    applyBiome(loc, entry.getValue());
                     pit.remove();
                 }
                 // If the water hasn't appeared yet — wait for the next tick.
@@ -217,18 +247,25 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // 🧱 HARDENING — water -> concrete, with crit particles
+    // 🧱 HARDENING — water -> concrete, crit particles, biome rollback
     // =========================
     private static void harden(PourGroup group) {
-        for (Location loc : group.blocks) {
+        // Copy: replacing the water triggers block updates that may untrack neighbours
+        for (Location loc : new ArrayList<>(group.blocks)) {
             Block block = loc.getBlock();
             if (block.getType() == Material.WATER) {
                 block.setType(Material.GRAY_CONCRETE);
                 spawnHardenParticles(block.getLocation());
             }
-            trackedWater.remove(loc);
+
+            TrackedWater data = trackedWater.remove(loc);
             pendingBiomes.remove(loc);
-            // Do NOT restore the biome — the concrete keeps the tinted look
+            markDeleted(loc);
+
+            // The water is gone — give the column its original biome back
+            if (data != null) {
+                restoreBiome(loc, data.originalBiome());
+            }
         }
         group.blocks.clear();
         groups.remove(group.id);
@@ -266,6 +303,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         trackedWater.put(loc, new TrackedWater(originalBiome, group.id));
         group.blocks.add(loc);
         pendingBiomes.put(loc, Biome.PALE_GARDEN);
+        markInserted(loc, originalBiome, group);
     }
 
     private static void untrack(Location loc) {
@@ -279,6 +317,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         }
 
         pendingBiomes.remove(loc);
+        markDeleted(loc);
         restoreBiome(loc, data.originalBiome());
     }
 
@@ -287,11 +326,114 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // 🔄 BIOME RESTORATION
+    // 🔄 BIOME HANDLING
     // =========================
+    private static void applyBiome(Location loc, Biome biome) {
+        if (biome == null || loc.getWorld() == null) return;
+        loc.getWorld().setBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), biome);
+    }
+
     private static void restoreBiome(Location loc, Biome biome) {
-        if (biome != null && biome != Biome.PALE_GARDEN && loc.getWorld() != null) {
-            loc.getWorld().setBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), biome);
+        if (biome == null || biome == Biome.PALE_GARDEN) return;
+        applyBiome(loc, biome);
+    }
+
+    private static String biomeKey(Biome biome) {
+        return biome == null ? "" : biome.getKey().toString();
+    }
+
+    private static Biome resolveBiome(String key) {
+        if (key == null || key.isEmpty()) return null;
+        NamespacedKey namespacedKey = NamespacedKey.fromString(key);
+        if (namespacedKey == null) return null;
+        try {
+            return RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.BIOME)
+                    .get(namespacedKey);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // =========================
+    // 💾 PERSISTENCE
+    // =========================
+    private static void markInserted(Location loc, Biome originalBiome, PourGroup group) {
+        World world = loc.getWorld();
+        if (world == null) return;
+        BlockPos pos = new BlockPos(world.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        pendingDeletes.remove(pos);
+        pendingInserts.add(new StoredWater(pos, biomeKey(originalBiome), group.id.toString(), group.startTime));
+    }
+
+    private static void markDeleted(Location loc) {
+        World world = loc.getWorld();
+        if (world == null) return;
+        BlockPos pos = new BlockPos(world.getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        pendingInserts.removeIf(row -> row.pos().equals(pos));
+        pendingDeletes.add(pos);
+    }
+
+    private static void flushDatabase() {
+        if (pendingInserts.isEmpty() && pendingDeletes.isEmpty()) return;
+        // Keep the buffers if the DB is not reachable — the next tick retries
+        if (!ConcreteBucketDatabase.isAvailable()) return;
+
+        List<BlockPos> deletes = new ArrayList<>(pendingDeletes);
+        List<StoredWater> inserts = new ArrayList<>(pendingInserts);
+        pendingDeletes.clear();
+        pendingInserts.clear();
+
+        // Deletes first: a block that was untracked and re-tracked in the same
+        // second must end up as the fresh row, not as a deleted one.
+        ConcreteBucketDatabase.deleteAll(deletes);
+        ConcreteBucketDatabase.insertAll(inserts);
+    }
+
+    /**
+     * Restores pours that were still liquid when the server stopped: their tint
+     * and their remaining hardening time are read back from SQLite.
+     */
+    private static void loadFromDatabase() {
+        List<StoredWater> rows = ConcreteBucketDatabase.loadAll();
+        if (rows.isEmpty()) return;
+
+        int restored = 0;
+        int skipped = 0;
+
+        for (StoredWater row : rows) {
+            World world = Bukkit.getWorld(row.pos().world());
+            if (world == null) {
+                // World not loaded (yet) — keep the row, the water is still there
+                skipped++;
+                continue;
+            }
+
+            UUID groupId;
+            try {
+                groupId = UUID.fromString(row.groupId());
+            } catch (IllegalArgumentException ex) {
+                continue;
+            }
+
+            PourGroup group = groups.get(groupId);
+            if (group == null) {
+                group = new PourGroup(groupId, row.startTime());
+                groups.put(group.id, group);
+            }
+
+            Location loc = new Location(world, row.pos().x(), row.pos().y(), row.pos().z());
+            trackedWater.put(loc, new TrackedWater(resolveBiome(row.originalBiome()), groupId));
+            group.blocks.add(loc);
+            // The tint is already saved in the world — no pending biome needed
+            restored++;
+        }
+
+        if (restored > 0) {
+            ConsoleLogger.info("[ConcreteBucket] Restored " + restored + " pending water block(s) from DB.");
+        }
+        if (skipped > 0) {
+            ConsoleLogger.warn("[ConcreteBucket] " + skipped + " pending water block(s) belong to unloaded worlds.");
         }
     }
 
@@ -303,6 +445,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
             instance.cancel();
             instance = null;
         }
+        flushDatabase();
         trackedWater.clear();
         groups.clear();
         pendingBiomes.clear();

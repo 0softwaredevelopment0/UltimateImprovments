@@ -82,6 +82,12 @@ public final class ItemsModules {
 
                 ConsoleLogger.info("[CraftingModule] Recipes initialized.");
             }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                // Flush pending concrete-bucket pours to the DB before the module goes down
+                ConcreteBucketManager.shutdown();
+            }
         });
 
         // EntityLocator
