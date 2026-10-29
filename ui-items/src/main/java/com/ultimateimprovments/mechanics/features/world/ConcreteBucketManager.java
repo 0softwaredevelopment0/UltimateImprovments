@@ -10,6 +10,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 
 import org.bukkit.Bukkit;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -17,18 +18,24 @@ import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.SpongeAbsorbEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -233,6 +240,76 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         if (isCement(clicked) || isCement(clicked.getRelative(e.getBlockFace()))) {
             e.setCancelled(true);
         }
+    }
+
+    // =========================
+    // 🍶 GLASS BOTTLE — the same rule as the bucket
+    // =========================
+    // Bukkit has no bottle-fill event (only BucketFill) and the vanilla fill
+    // raycasts for water on its own, so the interaction is inspected instead:
+    // the clicked block plus the block the player is actually aiming at.
+    @EventHandler(ignoreCancelled = true)
+    public void onBottleFill(PlayerInteractEvent e) {
+        ItemStack item = e.getItem();
+        if (item == null || item.getType() != Material.GLASS_BOTTLE) return;
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+
+        Block clicked = e.getClickedBlock();
+        if (clicked != null && isCement(clicked)) {
+            e.setCancelled(true);
+            return;
+        }
+
+        // The client raytrace ignores fluids, so the click usually lands on the
+        // block behind the puddle — mirror the vanilla fill ray (fluids included).
+        if (isCement(aimedBlock(e.getPlayer()))) {
+            e.setCancelled(true);
+        }
+    }
+
+    /** First block (fluids included) the player is aiming at within reach. */
+    private static Block aimedBlock(Player player) {
+        if (player == null) return null;
+        World world = player.getWorld();
+        RayTraceResult hit = world.rayTraceBlocks(
+                player.getEyeLocation(),
+                player.getEyeLocation().getDirection(),
+                5.0,
+                FluidCollisionMode.ALWAYS,
+                true
+        );
+        return hit == null ? null : hit.getHitBlock();
+    }
+
+    // =========================
+    // 🧽 SPONGE — it must not drink the cement
+    // =========================
+    // SpongeAbsorbEvent fires BEFORE the water is removed, so cancelling it here
+    // keeps every block of the puddle in place. The sponge is then broken
+    // naturally (loot-table path, so a data pack or drop override still decides
+    // the items) instead of silently swallowing the cement.
+    @EventHandler(ignoreCancelled = true)
+    public void onSpongeAbsorb(SpongeAbsorbEvent e) {
+        boolean cement = false;
+        for (BlockState state : e.getBlocks()) {
+            if (trackedWater.containsKey(state.getLocation())) {
+                cement = true;
+                break;
+            }
+        }
+        if (!cement) return;
+
+        // Cancel first — nothing is absorbed
+        e.setCancelled(true);
+
+        Block sponge = e.getBlock();
+        // Next tick: let the cancelled absorb finish before the block disappears
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            Material type = sponge.getType();
+            if (type == Material.SPONGE || type == Material.WET_SPONGE) {
+                sponge.breakNaturally();
+            }
+        });
     }
 
     // =========================
