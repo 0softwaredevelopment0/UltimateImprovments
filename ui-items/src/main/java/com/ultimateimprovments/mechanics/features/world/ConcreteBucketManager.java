@@ -6,6 +6,8 @@ import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -19,7 +21,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * 🧊 Manages the "Concrete Bucket" mechanic.
@@ -28,8 +37,10 @@ import java.util.*;
  * <ol>
  *   <li>The water is tinted gray by setting the biome to {@code PALE_GARDEN}</li>
  *   <li>The original biome is saved for restoration</li>
- *   <li>If the water stays &gt; 60 seconds → it turns into cobblestone (concrete)</li>
- *   <li>If the water disappears earlier → the biome is restored</li>
+ *   <li>Every block the water flows into joins the same pour group and is tinted too</li>
+ *   <li>After 60 seconds the <b>whole</b> pour group turns into concrete at once,
+ *       each hardened block emitting a crit particle burst</li>
+ *   <li>If water disappears earlier → the biome is restored</li>
  * </ol>
  */
 public class ConcreteBucketManager extends BukkitRunnable implements Listener {
@@ -38,12 +49,25 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     private static Main plugin;
     private static final long CONCRETE_DELAY_MS = 60_000; // 60 seconds
 
-    // Tracked water blocks: location -> {originalBiome, placeTime}
-    private static final Map<Location, ConcreteWater> trackedWater = new HashMap<>();
-    // Pending biome sets (the water appears after 1 tick)
+    // Crit burst spawned on every block that hardens into concrete
+    private static final Particle HARDEN_PARTICLE = Particle.CRIT;
+    private static final int HARDEN_PARTICLE_COUNT = 1;
+    private static final double HARDEN_PARTICLE_OFFSET = 0.25;
+
+    // Tracked water blocks: location -> {originalBiome, groupId}
+    private static final Map<Location, TrackedWater> trackedWater = new HashMap<>();
+    // One pour = one group; the whole group hardens at the same moment
+    private static final Map<UUID, PourGroup> groups = new HashMap<>();
+    // Pending biome sets (the water appears a tick after the pour/flow event)
     private static final Map<Location, Biome> pendingBiomes = new HashMap<>();
 
-    private record ConcreteWater(Biome originalBiome, long placeTime, UUID groupId) {}
+    private record TrackedWater(Biome originalBiome, UUID groupId) {}
+
+    private static final class PourGroup {
+        private final UUID id = UUID.randomUUID();
+        private final long startTime = System.currentTimeMillis();
+        private final Set<Location> blocks = new HashSet<>();
+    }
 
     // =========================
     // INIT
@@ -52,7 +76,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         ConcreteBucketManager.plugin = plugin;
         instance = new ConcreteBucketManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
-        // Check every tick (smooth conversion)
+        // Once per second is enough for tinting and hardening
         instance.runTaskTimer(plugin, 20L, 20L);
         ConsoleLogger.info("[ConcreteBucket] Initialized");
     }
@@ -74,11 +98,11 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     public void onBucketEmpty(PlayerBucketEmptyEvent e) {
         if (e.getBucket() != Material.WATER_BUCKET) return;
 
-        // Check the PDC on the item in the player's hand
-        ItemStack mainHand = e.getPlayer().getInventory().getItemInMainHand();
-        if (!isConcreteBucket(mainHand)) {
-            ItemStack offHand = e.getPlayer().getInventory().getItemInOffHand();
-            if (!isConcreteBucket(offHand)) return;
+        // Check the PDC on the item the player used
+        if (!isConcreteBucket(e.getItemStack())
+                && !isConcreteBucket(e.getPlayer().getInventory().getItemInMainHand())
+                && !isConcreteBucket(e.getPlayer().getInventory().getItemInOffHand())) {
+            return;
         }
 
         // Position where the water is placed (blockClicked + blockFace)
@@ -89,142 +113,177 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         Location waterLoc = waterBlock.getLocation();
         if (waterLoc.getWorld() == null) return;
 
-        // Save the original biome
-        Biome originalBiome = waterLoc.getWorld().getBiome(waterLoc.getBlockX(), waterLoc.getBlockY(), waterLoc.getBlockZ());
-        // If the location was already tracked — reuse the original biome (otherwise PALE_GARDEN would count as the "original")
-        ConcreteWater existing = trackedWater.get(waterLoc);
-        if (existing != null) {
-            originalBiome = existing.originalBiome();
+        // Already tracked (second pour into the same puddle): keep the original
+        // group, so both pours harden together and the tinted biome is not
+        // mistaken for the "original" one.
+        if (trackedWater.containsKey(waterLoc)) {
+            pendingBiomes.put(waterLoc, Biome.PALE_GARDEN);
+            return;
         }
 
-        // The water is NOT placed yet — defer the biome set by 1 tick
-        pendingBiomes.put(waterLoc, Biome.PALE_GARDEN);
-        // Track the water block with a unique groupId for this pour
-        UUID groupId = UUID.randomUUID();
-        trackedWater.put(waterLoc, new ConcreteWater(originalBiome, System.currentTimeMillis(), groupId));
+        PourGroup group = new PourGroup();
+        groups.put(group.id, group);
+        trackBlock(waterLoc, group);
 
         // 🪣 Paper itself replaces WATER_BUCKET with a plain BUCKET after this event.
         // The PDC is lost on replacement, so the bucket becomes a normal one.
     }
 
     // =========================
-    // 💧 WATER FLOW — new water also gets the PALE_GARDEN biome
+    // 💧 WATER FLOW — every block the water reaches joins the pour group
     // =========================
     @EventHandler(ignoreCancelled = true)
     public void onBlockFromTo(BlockFromToEvent e) {
-        Block toBlock = e.getToBlock();
-        Location toLoc = toBlock.getLocation();
+        TrackedWater from = trackedWater.get(e.getBlock().getLocation());
+        if (from == null) return;
 
-        // If the water flows onto an already-tracked block — that's our new water block
-        Block fromBlock = e.getBlock();
-        Location fromLoc = fromBlock.getLocation();
+        PourGroup group = groups.get(from.groupId());
+        if (group == null) return;
 
-        ConcreteWater fromData = trackedWater.get(fromLoc);
-        if (fromData != null && toBlock.getType() == Material.WATER) {
-            // A new water batch — inherit the groupId from the source
-            pendingBiomes.put(toLoc, Biome.PALE_GARDEN);
-            trackedWater.put(toLoc, new ConcreteWater(fromData.originalBiome(), System.currentTimeMillis(), fromData.groupId()));
-        }
-
-        // If the destination block was tracked water but is now replaced by something
-        // else (e.g. lava) — restore the biome
-        ConcreteWater toData = trackedWater.remove(toLoc);
-        if (toData != null && toBlock.getType() != Material.WATER) {
-            restoreBiome(toLoc, toData.originalBiome());
-        }
+        // BlockFromToEvent is fired right before the destination is replaced, so
+        // the destination is still air here — a type check would reject every flow.
+        // The destination joins the group and is tinted; if it never turns into
+        // water the ticking task drops it again and restores the biome.
+        trackBlock(e.getToBlock().getLocation(), group);
     }
 
     // =========================
-    // 🔥 WATER DISAPPEARANCE — the block physics changed
+    // 🔥 WATER DISAPPEARANCE — the block stopped being water
     // =========================
     @EventHandler(ignoreCancelled = true)
     public void onBlockPhysics(BlockPhysicsEvent e) {
-        Location loc = e.getBlock().getLocation();
-        ConcreteWater data = trackedWater.get(loc);
-        if (data == null) return;
-
-        if (e.getBlock().getType() != Material.WATER) {
-            trackedWater.remove(loc);
-            restoreBiome(loc, data.originalBiome());
-        }
+        if (e.getBlock().getType() == Material.WATER) return;
+        untrack(e.getBlock().getLocation());
     }
 
     // =========================
-    // 🔨 BLOCK BROKEN — if water is broken (with a bucket or by hand)
+    // 🔨 BLOCK BROKEN
     // =========================
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
-        Location loc = e.getBlock().getLocation();
-        ConcreteWater data = trackedWater.remove(loc);
-        if (data == null) return;
-        restoreBiome(loc, data.originalBiome());
+        untrack(e.getBlock().getLocation());
     }
 
     // =========================
-    // ⏱ TICK — applying deferred biomes + concrete check
+    // ⏱ TICK — deferred biomes + hardening
     // =========================
     @Override
     public void run() {
         // ════════════════════════════════════════
-        // Process the deferred biomes
+        // Apply the deferred biome tints
         // ════════════════════════════════════════
         if (!pendingBiomes.isEmpty()) {
             Iterator<Map.Entry<Location, Biome>> pit = pendingBiomes.entrySet().iterator();
             while (pit.hasNext()) {
                 Map.Entry<Location, Biome> entry = pit.next();
                 Location loc = entry.getKey();
-                if (loc.getBlock().getType() == Material.WATER) {
+                if (isWater(loc)) {
                     // World.setBiome() sends an update to the client (unlike Block.setBiome())
                     loc.getWorld().setBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), entry.getValue());
                     pit.remove();
                 }
-                // If the water hasn't appeared yet — wait for the next tick
+                // If the water hasn't appeared yet — wait for the next tick.
+                // Entries that never become water are removed by untrack() below.
             }
         }
 
-        // ════════════════════════════════════════
-        // Check for concrete conversion after 60 seconds
-        // ════════════════════════════════════════
         if (trackedWater.isEmpty()) return;
 
+        // ════════════════════════════════════════
+        // Drop blocks that are no longer water (evaporated, replaced, ...)
+        // ════════════════════════════════════════
+        List<Location> vanished = null;
+        for (Location loc : trackedWater.keySet()) {
+            if (!isWater(loc)) {
+                if (vanished == null) vanished = new ArrayList<>();
+                vanished.add(loc);
+            }
+        }
+        if (vanished != null) {
+            vanished.forEach(ConcreteBucketManager::untrack);
+        }
+
+        if (groups.isEmpty()) return;
+
+        // ════════════════════════════════════════
+        // Harden whole pour groups whose timer ran out
+        // ════════════════════════════════════════
         long now = System.currentTimeMillis();
-        // Collect the groupIds of blocks ready to become concrete
-        Set<UUID> readyGroups = new HashSet<>();
-        Iterator<Map.Entry<Location, ConcreteWater>> it = trackedWater.entrySet().iterator();
-
-        while (it.hasNext()) {
-            Map.Entry<Location, ConcreteWater> entry = it.next();
-            Location loc = entry.getKey();
-            ConcreteWater data = entry.getValue();
-
-            // Still water?
-            if (loc.getBlock().getType() != Material.WATER) {
-                it.remove();
-                restoreBiome(loc, data.originalBiome());
-                continue;
-            }
-
-            // 60 seconds passed? Add the WHOLE group to readyGroups
-            if (now - data.placeTime() >= CONCRETE_DELAY_MS) {
-                readyGroups.add(data.groupId());
+        for (PourGroup group : new ArrayList<>(groups.values())) {
+            if (now - group.startTime >= CONCRETE_DELAY_MS) {
+                harden(group);
             }
         }
+    }
 
-        // Convert ALL water in readyGroups to concrete at once
-        if (!readyGroups.isEmpty()) {
-            it = trackedWater.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<Location, ConcreteWater> entry = it.next();
-                if (readyGroups.contains(entry.getValue().groupId())) {
-                    Location loc = entry.getKey();
-                    if (loc.getBlock().getType() == Material.WATER) {
-                        loc.getBlock().setType(Material.GRAY_CONCRETE);
-                    }
-                    it.remove();
-                    // Do NOT restore the biome — the concrete tinted the ground
-                }
+    // =========================
+    // 🧱 HARDENING — water -> concrete, with crit particles
+    // =========================
+    private static void harden(PourGroup group) {
+        for (Location loc : group.blocks) {
+            Block block = loc.getBlock();
+            if (block.getType() == Material.WATER) {
+                block.setType(Material.GRAY_CONCRETE);
+                spawnHardenParticles(block.getLocation());
             }
+            trackedWater.remove(loc);
+            pendingBiomes.remove(loc);
+            // Do NOT restore the biome — the concrete keeps the tinted look
         }
+        group.blocks.clear();
+        groups.remove(group.id);
+    }
+
+    private static void spawnHardenParticles(Location loc) {
+        World world = loc.getWorld();
+        if (world == null) return;
+        Location center = loc.clone().add(0.5, 0.5, 0.5);
+        world.spawnParticle(
+                HARDEN_PARTICLE,
+                center,
+                HARDEN_PARTICLE_COUNT,
+                HARDEN_PARTICLE_OFFSET,
+                HARDEN_PARTICLE_OFFSET,
+                HARDEN_PARTICLE_OFFSET,
+                0.0
+        );
+    }
+
+    // =========================
+    // 🧾 TRACKING HELPERS
+    // =========================
+    /**
+     * Starts tracking a block as poured water and tints it gray.
+     * <p>
+     * The block is still air at event time — the water itself appears on the next
+     * tick, so the ticking task drops entries that never became water.
+     */
+    private static void trackBlock(Location loc, PourGroup group) {
+        World world = loc.getWorld();
+        if (world == null || trackedWater.containsKey(loc)) return;
+
+        Biome originalBiome = world.getBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        trackedWater.put(loc, new TrackedWater(originalBiome, group.id));
+        group.blocks.add(loc);
+        pendingBiomes.put(loc, Biome.PALE_GARDEN);
+    }
+
+    private static void untrack(Location loc) {
+        TrackedWater data = trackedWater.remove(loc);
+        if (data == null) return;
+
+        PourGroup group = groups.get(data.groupId());
+        if (group != null) {
+            group.blocks.remove(loc);
+            if (group.blocks.isEmpty()) groups.remove(group.id);
+        }
+
+        pendingBiomes.remove(loc);
+        restoreBiome(loc, data.originalBiome());
+    }
+
+    private static boolean isWater(Location loc) {
+        return loc.getBlock().getType() == Material.WATER;
     }
 
     // =========================
@@ -245,6 +304,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
             instance = null;
         }
         trackedWater.clear();
+        groups.clear();
         pendingBiomes.clear();
     }
 }
