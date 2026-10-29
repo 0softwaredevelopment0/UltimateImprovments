@@ -55,12 +55,38 @@ message_placeholders = true
 # Permission node.
 # Default: ""
 bypass_permission = ""
-# Maximum rendered lines for ONE player message. Every line of a player
-# message is rendered through the full chat format (prefix + nick), so a
-# <newline> in the message cannot produce a prefix-less "fake server"
-# line. Longer messages are cut with an ellipsis.
+
+# Chat abuse limits. Applied to every player message, even when the custom
+# chat is disabled (chat.enabled = false) — these are protections, not
+# formatting. Console/terminal channels run trusted staff commands and are
+# NOT limited.
+[chat.limits]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Max rendered lines of ONE message
+# (each line is rendered through the full chat format).
 # Default: 3
 max_lines = 3
+# Max characters in ONE message, counted across all lines ("…" included).
+# Default: 512
+max_chars = 512
+# Max share of CAPITAL letters among the letters of the message, %.
+# Short messages (< 10 letters) are never judged.
+# 0 disables the check, 100 allows everything.
+# Default: 50
+max_caps_percent = 50
+# Max share of "random characters" (machine-made soup), %.
+# Measured as the share of message characters inside random-looking tokens:
+# near-maximal per-character entropy PLUS a machine-made structure
+# (a run of 7+ consonants, letters and digits interleaved, or no vowels).
+# URLs are ignored, and a digit group at the edge of a nick (Steve123)
+# does not count as interleaving. 0 disables the check, 100 allows everything.
+# Default: 50
+max_entropy_percent = 50
+# Permission that skips all the limits above.
+# Default: "ui.chat.limits.bypass"
+bypass_permission = "ui.chat.limits.bypass"
 
 # channels section.
 [chat.channels]
@@ -282,6 +308,12 @@ violation_highlight = "<gray>→ </gray><white>%message%</white>"
 # Default: <gray>└</gray> <white>Match:</white> %source%
 violation_match = "<gray>└</gray> <white>Match:</white> %source%"
 
+# chat limits section.
+# Placeholders: %caps%, %limit%
+[messages.chat_limits]
+caps = "<dark_red>❌</dark_red> <red>Слишком много КАПСА: %caps% из %limit% допустимых. Пиши обычным текстом.</red>"
+random = "<dark_red>❌</dark_red> <red>Сообщение выглядит как случайный набор символов и не отправлено.</red>"
+
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
 # ==================================================================
@@ -303,3 +335,9 @@ message = "<dark_red>❌</dark_red> <red>Your message was flagged for prohibited
 violation_highlight = "<gray>→ </gray><white>%message%</white>"
 # Default: <gray>└</gray> <white>Match:</white> %source%
 violation_match = "<gray>└</gray> <white>Match:</white> %source%"
+
+# chat limits section.
+# Placeholders: %caps%, %limit%
+[messages_en.chat_limits]
+caps = "<dark_red>❌</dark_red> <red>Too many capital letters: %caps% of the allowed %limit%. Please write normally.</red>"
+random = "<dark_red>❌</dark_red> <red>Your message looks like random characters and was not sent.</red>"

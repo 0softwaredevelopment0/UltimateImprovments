@@ -5,27 +5,66 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Hardening of player-supplied chat text.
- * <p>
+ * Hardening and analysis of player-supplied chat text.
+ *
+ * <h2>Line breaks</h2>
  * Minecraft chat renders a component's child lines one under another. If a
  * player manages to smuggle a line break into the <em>message</em> part of a
  * chat format, every following line is rendered WITHOUT the chat prefix and
  * looks like a server/system line — e.g. typing
  * {@code <newline>[Server] Restart in 5s} (possible while
  * {@code chat.player_minimessage: true}) forges a fake "[Server]" line.
- * <p>
- * Convention: player text is never rendered as one blob. It is split into
- * single-line pieces here, and {@link ChatManager} renders EVERY piece through
- * the full channel format, so each line carries its prefix and sender name.
- * The number of pieces is capped to keep chat readable and flood-proof.
+ * Convention: player text is never rendered as one blob; it is split into
+ * single-line pieces here and {@link ChatManager} renders EVERY piece through
+ * the full channel format.
+ *
+ * <h2>Abuse metrics</h2>
+ * {@link #charsToKeep}, {@link #capsPercent} and {@link #randomnessPercent}
+ * implement the configurable chat limits (total length, capital letters,
+ * "random character soup"). They are pure functions on strings so they can be
+ * unit-tested without a server.
  */
 public final class ChatText {
 
     /** Default cap for the number of rendered lines of a single message. */
     public static final int DEFAULT_MAX_LINES = 3;
 
-    /** Suffix appended to the last line when the message was cut by the cap. */
-    private static final String TRUNCATED_SUFFIX = "\u2026";
+    /** Default cap for the total number of characters of a single message. */
+    public static final int DEFAULT_MAX_CHARS = 512;
+
+    /** Suffix appended to the last line when the message was cut by a limit. */
+    public static final String TRUNCATED_SUFFIX = "\u2026";
+
+    /** A message needs at least this many letters before caps are judged. */
+    public static final int MIN_LETTERS_FOR_CAPS = 10;
+
+    /**
+     * Minimum token length (code points) before it is judged for "randomness":
+     * short tokens are statistically meaningless (2-3 letters already look
+     * "unique"), so spam-like soup is only detected on longer tokens.
+     */
+    public static final int MIN_TOKEN_FOR_RANDOM = 8;
+
+    /**
+     * Symbol budget used to normalize entropy. Chat text is written with a
+     * printable alphabet far below the full Unicode set; 64 is the size of the
+     * "typical" machine-generated alphabet (letters + digits + a few symbols)
+     * and keeps the percentage comparable between messages of different length.
+     */
+    public static final int RANDOM_ALPHABET = 64;
+
+    /** Minimum entropy share (0..1) for a token to be considered random-like. */
+    public static final double RANDOM_MIN_ENTROPY_SHARE = 0.70;
+
+    /** A run of this many consonants in a row is untypable for a real word. */
+    public static final int RANDOM_CONSONANT_RUN = 7;
+
+    /**
+     * Letters and digits must be interleaved at least this many times: a digit
+     * group at the edge of a token ({@code Steve123}, {@code Dave2024}) is a
+     * nickname, not machine soup ({@code asdk123zxcv}).
+     */
+    public static final int RANDOM_DIGIT_TRANSITIONS = 2;
 
     /**
      * Raw line separators. Client-typed chat cannot contain them, but chat text
@@ -46,17 +85,22 @@ public final class ChatText {
     /** Legacy section-sign colour codes ({@code §a}, {@code §l}, ...), removed with their letter. */
     private static final Pattern LEGACY_CODES = Pattern.compile("\u00A7[0-9a-fk-orx]");
 
+    /** Whitespace used to split a message into tokens (all Unicode whitespace). */
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
     private ChatText() {}
+
+    // ========================= LINE SPLITTING =========================
 
     /**
      * Splits a message into the lines that must be rendered individually.
      *
-     * @param text           the message text (placeholders already resolved)
-     * @param miniMessage    {@code true} when the player may use MiniMessage, so
-     *                       newline-producing tags also count as line breaks
-     * @param maxLines       hard cap of returned lines ({@code <= 0} → default);
-     *                       when the message is longer, the last kept line gets
-     *                       an ellipsis marker
+     * @param text        the message text (placeholders already resolved)
+     * @param miniMessage {@code true} when the player may use MiniMessage, so
+     *                    newline-producing tags also count as line breaks
+     * @param maxLines    hard cap of returned lines ({@code <= 0} → default);
+     *                    when the message is longer, the last kept line gets an
+     *                    ellipsis marker
      * @return the lines to render; never empty (a blank message yields one empty
      *         line so the chat format itself is still shown)
      */
@@ -83,6 +127,210 @@ public final class ChatText {
         }
         return lines;
     }
+
+    // ========================= LENGTH LIMIT =========================
+
+    /**
+     * Cuts the message to the configured total character budget (counted in
+     * code points, so one emoji is one character). The marker itself is counted,
+     * therefore {@code charsToKeep} never returns a string longer than
+     * {@code maxChars}.
+     *
+     * @param text     the message text
+     * @param maxChars total character budget ({@code <= 0} → no limit)
+     * @return the text itself when it fits, otherwise a cut ending with an
+     *         ellipsis
+     */
+    public static String charsToKeep(String text, int maxChars) {
+        if (text == null || text.isEmpty() || maxChars <= 0) return text;
+        int count = text.codePointCount(0, text.length());
+        if (count <= maxChars) return text;
+        int keep = Math.max(0, maxChars - TRUNCATED_SUFFIX.length());
+        int end = text.offsetByCodePoints(0, Math.min(keep, count));
+        return text.substring(0, end) + TRUNCATED_SUFFIX;
+    }
+
+    // ========================= CAPS =========================
+
+    /** Number of letters (any script) in the text. */
+    public static int letterCount(String text) {
+        if (text == null || text.isEmpty()) return 0;
+        int letters = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (Character.isLetter(cp)) letters++;
+        }
+        return letters;
+    }
+
+    /**
+     * Percentage of capital letters among all letters (0..100).
+     * <p>
+     * Only letters are counted, so digits, spaces and punctuation never dilute
+     * the number. Returns {@code 0} when the message has no letters.
+     */
+    public static int capsPercent(String text) {
+        if (text == null || text.isEmpty()) return 0;
+        int letters = 0;
+        int upper = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (!Character.isLetter(cp)) continue;
+            letters++;
+            if (Character.isUpperCase(cp)) upper++;
+        }
+        if (letters == 0) return 0;
+        return (int) Math.round(100.0 * upper / letters);
+    }
+
+    // ========================= RANDOMNESS ("entropy") =========================
+
+    /**
+     * Percentage (0..100) of the message's characters that belong to tokens
+     * looking like a random character soup.
+     * <p>
+     * Why not the plain Shannon entropy of the whole message: a chat message is
+     * short (tens of characters), and on such samples the per-character entropy
+     * of natural text ("координаты") and of a machine-generated token
+     * ("asdkjghqwe") is almost identical — long distinct-letter words are
+     * statistically "unique" too. So a token is only reported as random when
+     * its entropy is near the maximum for its length <b>and</b> it shows a
+     * structural sign of being machine-made:
+     * <ul>
+     *   <li>a run of {@value #RANDOM_CONSONANT_RUN}+ consonants in a row
+     *       (nobody types "asdkjgh");</li>
+     *   <li>letters and digits interleaved inside one token
+     *       ({@code asdk123zxcv}); a digit group at the edge is a nickname
+     *       ({@code Steve123}) and is not counted;</li>
+     *   <li>a letter-only token without a single vowel.</li>
+     * </ul>
+     * URLs are skipped: a link legitimately mixes letters, digits and symbols.
+     * <p>
+     * The result is a share of the message, not a flag, so "купи алмазы тут
+     * asdkjghqwe123" is caught (68% random) while a normal sentence with a
+     * coordinate list is not (0%).
+     *
+     * @param text the message text
+     * @return 0..100 — percentage of characters inside random-looking tokens
+     */
+    public static int randomnessPercent(String text) {
+        if (text == null || text.isEmpty()) return 0;
+
+        int randomChars = 0;
+        int totalChars = 0;
+
+        for (String token : WHITESPACE.split(text.strip())) {
+            if (token.isEmpty()) continue;
+            int tokenChars = token.codePointCount(0, token.length());
+            totalChars += tokenChars;
+
+            if (tokenChars < MIN_TOKEN_FOR_RANDOM) continue;
+            if (isLink(token)) continue;
+            if (looksRandom(token)) randomChars += tokenChars;
+        }
+
+        if (totalChars == 0) return 0;
+        return (int) Math.round(100.0 * randomChars / totalChars);
+    }
+
+    /** Links legitimately mix letters, digits and symbols — never judged as soup. */
+    private static boolean isLink(String token) {
+        String lower = token.toLowerCase(java.util.Locale.ROOT);
+        return lower.contains("://") || lower.startsWith("www.");
+    }
+
+    /** One token: near-maximal entropy for its length plus a machine-made structure sign. */
+    private static boolean looksRandom(String token) {
+        int[] cps = token.codePoints().toArray();
+        int n = cps.length;
+
+        double entropyShare = shannonEntropy(cps) / log2(Math.min(RANDOM_ALPHABET, n));
+        if (entropyShare < RANDOM_MIN_ENTROPY_SHARE) return false;
+
+        int letters = 0;
+        int digits = 0;
+        int vowels = 0;
+        for (int cp : cps) {
+            if (Character.isDigit(cp)) {
+                digits++;
+            } else if (Character.isLetter(cp)) {
+                letters++;
+                if (isVowel(cp)) vowels++;
+            }
+        }
+
+        // No vowels at all in a longer letter-only token.
+        if (letters >= 8 && digits == 0 && vowels == 0) return true;
+
+        // Un-typable consonant cluster.
+        if (longestConsonantRun(cps) >= RANDOM_CONSONANT_RUN) return true;
+
+        // Letters and digits interleaved (a nick like "Steve123" has them at
+        // the edge only, so it does not qualify).
+        return digitTransitions(cps) >= RANDOM_DIGIT_TRANSITIONS;
+    }
+
+    /**
+     * Number of letter↔digit switches inside a token. "Steve123" → 1 (edge),
+     * "asdk123zxcv" → 2, "a1b2c3" → 5.
+     */
+    private static int digitTransitions(int[] cps) {
+        int transitions = 0;
+        int previous = -1;
+        for (int cp : cps) {
+            if (!Character.isLetterOrDigit(cp)) continue;
+            int kind = Character.isDigit(cp) ? 1 : 0;
+            if (previous != -1 && kind != previous) transitions++;
+            previous = kind;
+        }
+        return transitions;
+    }
+
+    /** Shannon entropy in bits per code point. */
+    private static double shannonEntropy(int[] cps) {
+        int n = cps.length;
+        if (n == 0) return 0;
+        java.util.Map<Integer, Integer> counts = new java.util.HashMap<>();
+        for (int cp : cps) counts.merge(cp, 1, Integer::sum);
+        double sum = 0;
+        for (int count : counts.values()) {
+            double p = (double) count / n;
+            sum -= p * log2(p);
+        }
+        return sum;
+    }
+
+    private static double log2(double value) {
+        return Math.log(value) / Math.log(2);
+    }
+
+    /** Longest run of consonants in Latin/Cyrillic (digits and symbols break the run). */
+    private static int longestConsonantRun(int[] cps) {
+        int best = 0;
+        int current = 0;
+        for (int cp : cps) {
+            if (Character.isLetter(cp) && !isVowel(cp)) {
+                current++;
+                best = Math.max(best, current);
+            } else {
+                current = 0;
+            }
+        }
+        return best;
+    }
+
+    /** Vowels of the Latin and Cyrillic alphabets (y/й count as consonants). */
+    private static boolean isVowel(int cp) {
+        return switch (Character.toLowerCase(cp)) {
+            case 'a', 'e', 'i', 'o', 'u',
+                 'а', 'е', 'ё', 'и', 'о', 'у', 'ы', 'э', 'ю', 'я' -> true;
+            default -> false;
+        };
+    }
+
+    // ========================= ESCAPING =========================
 
     /**
      * Escapes MiniMessage syntax so player text renders literally.

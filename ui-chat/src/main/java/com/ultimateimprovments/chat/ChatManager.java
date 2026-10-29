@@ -2,6 +2,7 @@ package com.ultimateimprovments.chat;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.api.CheckBridge;
+import com.ultimateimprovments.config.MessagesManager;
 
 import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.util.MessageUtil;
@@ -53,8 +54,23 @@ public class ChatManager implements Listener {
     // ===== CHANNELS =====
     private Map<ChatChannel, String> channelFormats;
     private int localRadius;
-    /** Max number of rendered lines for a single player message (see {@link ChatText}). */
+    // ===== LIMITS (chat.limits.*) =====
+    /**
+     * Abuse limits applied to every player message: rendered line count, total
+     * characters, share of capital letters and share of "random characters".
+     * See {@link ChatText} for the metrics.
+     */
+    private boolean limitsEnabled = true;
+    /** Max number of rendered lines for a single player message. */
     private int maxLines = ChatText.DEFAULT_MAX_LINES;
+    /** Max characters of a single message, counted across all rendered lines. */
+    private int maxChars = ChatText.DEFAULT_MAX_CHARS;
+    /** Max share of capital letters (0 disables the check, 100 = allow everything). */
+    private int maxCapsPercent = 50;
+    /** Max share of "random looking" characters (0 disables the check, 100 = allow everything). */
+    private int maxEntropyPercent = 50;
+    private String limitsBypassPermission = "ui.chat.limits.bypass";
+
     private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
     private AccessControl consoleAccessControl = AccessControl.disabled();
@@ -109,9 +125,16 @@ public class ChatManager implements Listener {
         // CHANNELS
         this.channelFormats = new HashMap<>();
         this.localRadius = cfg.getInt("chat.channels.local.radius", 100);
-        // A player message is rendered line by line (each line through the full
-        // format), so the number of lines must be capped against chat flooding.
-        this.maxLines = Math.max(1, cfg.getInt("chat.max_lines", ChatText.DEFAULT_MAX_LINES));
+        // LIMITS — one player message is rendered line by line, so its size and
+        // shape must be capped; caps/random checks stop abuse that formatting
+        // cannot repair. Legacy key chat.max_lines (alpha.39) is still honoured.
+        this.limitsEnabled = cfg.getBoolean("chat.limits.enabled", true);
+        int defaultLines = Math.max(1, cfg.getInt("chat.max_lines", ChatText.DEFAULT_MAX_LINES));
+        this.maxLines = Math.max(1, cfg.getInt("chat.limits.max_lines", defaultLines));
+        this.maxChars = cfg.getInt("chat.limits.max_chars", ChatText.DEFAULT_MAX_CHARS);
+        this.maxCapsPercent = cfg.getInt("chat.limits.max_caps_percent", 50);
+        this.maxEntropyPercent = cfg.getInt("chat.limits.max_entropy_percent", 50);
+        this.limitsBypassPermission = cfg.getString("chat.limits.bypass_permission", "ui.chat.limits.bypass");
 
         // Console channel settings (loaded in both modes so the toggle can validate)
         this.consoleEnabled = cfg.getBoolean("chat.channels.console.enabled", true);
@@ -197,6 +220,47 @@ public class ChatManager implements Listener {
                     "<red>⛔ You are muted!</red>"
                             + (duration.isEmpty() ? "" : " <gray>Time remaining:</gray> <white>" + duration + "</white>")));
             return;
+        }
+
+        // CHAT LIMITS — length / CAPS / random-soup abuse.
+        // Enforced even when the custom chat is disabled (chat.enabled: false):
+        // these are protections, not formatting. CONSOLE/TERMINAL channels run
+        // trusted staff command input and are left untouched.
+        if (limitsEnabled
+                && (limitsBypassPermission.isEmpty() || !player.hasPermission(limitsBypassPermission))
+                && !isCommandChannel(player)) {
+
+            // CAPS: judged only when the message has enough letters (short
+            // shouts like "DA" / "OK" must not be blocked).
+            if (maxCapsPercent > 0 && maxCapsPercent < 100
+                    && ChatText.letterCount(messageText) >= ChatText.MIN_LETTERS_FOR_CAPS) {
+                int caps = ChatText.capsPercent(messageText);
+                if (caps > maxCapsPercent) {
+                    event.setCancelled(true);
+                    player.sendMessage(MessageUtil.parse(
+                            MessagesManager.getString("chat_limits.caps",
+                                            "<dark_red>❌</dark_red> <red>Too many capital letters: %caps% of the allowed %limit%. Please write normally.</red>")
+                                    .replace("%caps%", String.valueOf(caps))
+                                    .replace("%limit%", String.valueOf(maxCapsPercent))));
+                    ConsoleLogger.warn("[Chat] blocked " + player.getName()
+                            + " — caps " + caps + "% (limit " + maxCapsPercent + "%): " + messageText);
+                    return;
+                }
+            }
+
+            // RANDOM SOUP: share of characters inside random-looking tokens.
+            if (maxEntropyPercent > 0 && maxEntropyPercent < 100) {
+                int random = ChatText.randomnessPercent(messageText);
+                if (random > maxEntropyPercent) {
+                    event.setCancelled(true);
+                    player.sendMessage(MessageUtil.parse(
+                            MessagesManager.getString("chat_limits.random",
+                                    "<dark_red>❌</dark_red> <red>Your message looks like a random character set and was not sent.</red>")));
+                    ConsoleLogger.warn("[Chat] blocked " + player.getName()
+                            + " — random text " + random + "% (limit " + maxEntropyPercent + "%): " + messageText);
+                    return;
+                }
+            }
         }
 
         if (!enabled) return;
@@ -321,6 +385,9 @@ public class ChatManager implements Listener {
         if (messagePlaceholders) {
             rawMessage = PlaceholderResolver.resolve(rawMessage, player);
         }
+
+        // Total length budget across all rendered lines ("…" included).
+        rawMessage = ChatText.charsToKeep(rawMessage, maxChars);
 
         // Resolve placeholders in format (except %message%)
         String resolved = PlaceholderResolver.resolve(format, player);
@@ -450,6 +517,7 @@ public class ChatManager implements Listener {
             return;
         }
         String msg = messagePlaceholders ? PlaceholderResolver.resolve(raw, sender) : raw;
+        msg = ChatText.charsToKeep(msg, maxChars);
 
         // Same multi-line hardening as the channel broadcast: every line is
         // rendered with its own "[… » …]" prefix, otherwise a <newline> in a
@@ -516,6 +584,17 @@ public class ChatManager implements Listener {
         } else {
             sendNotAllowedWarning(player, content);
         }
+    }
+
+    /**
+     * Returns true when the player is chatting in a command channel
+     * (CONSOLE / TERMINAL): the text is executed, not rendered, and belongs to
+     * trusted staff, so the abuse limits do not apply.
+     */
+    private boolean isCommandChannel(Player player) {
+        if (mode != Mode.CHANNELS) return false;
+        ChatChannel current = PlayerChannelManager.getChannel(player);
+        return current == ChatChannel.CONSOLE || current == ChatChannel.TERMINAL;
     }
 
     /** Escapes MiniMessage tag characters so raw command text renders literally. */

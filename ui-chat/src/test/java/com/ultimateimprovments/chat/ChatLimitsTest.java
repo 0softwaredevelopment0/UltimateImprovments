@@ -1,0 +1,166 @@
+package com.ultimateimprovments.chat;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Guards the configurable chat abuse limits implemented in {@link ChatText}:
+ * total character budget, CAPS share and the "random characters" share.
+ * <p>
+ * The samples below are the calibration set used when choosing the defaults
+ * (50% CAPS, 50% random): normal sentences, long normal words, coordinate
+ * lists and URLs must never be flagged, while machine-made soup must be.
+ * Several assertions are deliberately written as ranges/booleans because the
+ * exact percentage of a heuristic metric is not a stable contract.
+ */
+class ChatLimitsTest {
+
+    // ========================= CHARACTER BUDGET =========================
+
+    @Test
+    @DisplayName("A message that fits the budget is returned unchanged")
+    void lengthLimitKeepsShortMessages() {
+        assertEquals("hello", ChatText.charsToKeep("hello", 10));
+        assertEquals("hello", ChatText.charsToKeep("hello", 5));
+        assertEquals("hello", ChatText.charsToKeep("hello", 0));
+        assertEquals("hello", ChatText.charsToKeep("hello", -1));
+        assertEquals(null, ChatText.charsToKeep(null, 10));
+    }
+
+    @Test
+    @DisplayName("An oversized message is cut to the budget including the ellipsis")
+    void lengthLimitCutsOversizedMessages() {
+        String cut = ChatText.charsToKeep("abcdefghij", 5);
+        assertEquals("abcd" + ChatText.TRUNCATED_SUFFIX, cut);
+        assertEquals(5, cut.length());
+
+        // The budget is counted in code points: one emoji is one character
+        String emoji = "\uD83D\uDE00\uD83D\uDE00\uD83D\uDE00\uD83D\uDE00\uD83D\uDE00\uD83D\uDE00";
+        assertEquals(6, emoji.codePointCount(0, emoji.length()));
+        String cutEmoji = ChatText.charsToKeep(emoji, 3);
+        assertEquals(3, cutEmoji.codePointCount(0, cutEmoji.length()));
+        assertTrue(cutEmoji.endsWith(ChatText.TRUNCATED_SUFFIX));
+    }
+
+    // ========================= CAPS =========================
+
+    @Test
+    @DisplayName("CAPS share counts letters only")
+    void capsPercentCountsLettersOnly() {
+        assertEquals(100, ChatText.capsPercent("ПРИВЕТ ВСЕМ"));
+        assertEquals(0, ChatText.capsPercent("привет всем"));
+        // "Привет всем" has exactly one capital (П) out of 10 letters
+        assertEquals(10, ChatText.capsPercent("Привет всем"));
+        assertEquals(20, ChatText.capsPercent("Привет Всем"));
+        // Digits, spaces and punctuation never dilute the share
+        assertEquals(100, ChatText.capsPercent("ДА! 12345 ???"));
+        assertEquals(0, ChatText.capsPercent("12345 ???"));
+        assertEquals(0, ChatText.capsPercent(""));
+        assertEquals(0, ChatText.capsPercent(null));
+    }
+
+    @Test
+    @DisplayName("Letter count gates the CAPS check on short shouts")
+    void letterCountGatesCapsCheck() {
+        assertEquals(6, ChatText.letterCount("ПРИВЕТ"));
+        assertTrue(ChatText.letterCount("ПРИВЕТ") < ChatText.MIN_LETTERS_FOR_CAPS);
+        assertEquals(26, ChatText.letterCount("ПРИВЕТ ВСЕМ ПРИВЕТ ВСЕМ ПРИВЕТ"));
+        assertTrue(ChatText.letterCount("ПРИВЕТ ВСЕМ ПРИВЕТ ВСЕМ ПРИВЕТ") >= ChatText.MIN_LETTERS_FOR_CAPS);
+    }
+
+    // ========================= RANDOMNESS =========================
+
+    @Test
+    @DisplayName("Normal sentences are never reported as random")
+    void normalSentencesAreNotRandom() {
+        String[] normal = {
+                "Привет, как дела? Давай поиграем вечером.",
+                "Скиньте координаты базы плиз",
+                "я на спавне, подходи",
+                "hello world how are you doing today my friend",
+                "Народ, кто знает где найти много алмазов? Хочу построить ферму.",
+                "Ищу напарника для похода в Незер, есть желающие?",
+                "Го в дискорд, там всё объясню подробнее про механику",
+                "Мой ник Steve123, добавь в друзья пожалуйста",
+                "Discord: Steve#1234, добавляйтесь",
+                "Да, конечно! Я приду в 20:30, жди.",
+                "лагерь на -240 64 -1180, приходи",
+                "хочу купить участок рядом с морем, почём?",
+                "the quick brown fox jumps over the lazy dog",
+        };
+        for (String s : normal) {
+            assertEquals(0, ChatText.randomnessPercent(s), "must not be flagged: " + s);
+        }
+    }
+
+    @Test
+    @DisplayName("Long normal words are not random (entropy alone would flag them)")
+    void longNormalWordsAreNotRandom() {
+        String[] words = {
+                "Суперкалифраджилистикэкспиалидоция",
+                "координаты",
+                "пожалуйста",
+                "добавляйтесь",
+                "контрстрайк",
+                "автоматизировать",
+                "Народ, кто знает где найти много алмазов?",
+        };
+        for (String s : words) {
+            assertEquals(0, ChatText.randomnessPercent(s), "must not be flagged: " + s);
+        }
+    }
+
+    @Test
+    @DisplayName("Links are exempt: they legitimately mix letters, digits and symbols")
+    void linksAreExempt() {
+        assertEquals(0, ChatText.randomnessPercent("https://youtu.be/dQw4w9WgXcQ"));
+        assertEquals(0, ChatText.randomnessPercent("http://example.com/very/long/path?with=params&and=more"));
+        assertEquals(0, ChatText.randomnessPercent("www.example.com/a8fJ2kLm9Qp"));
+    }
+
+    @Test
+    @DisplayName("Machine-made character soup is reported as fully random")
+    void randomSoupIsFlagged() {
+        String[] soup = {
+                "asdkjghqwe123zxcv",
+                "aK3#mP9$vQ2!xL7&",
+                "f83jd9sk2lqp0zmxn4b7",
+                "Xy7#kL2@qW9!zR4$",
+                "a8fJ2kLm9QpXz3RtYu7VbN4cD6sW1eGh5KjM0oL",
+                "Zx9Qw8Er7Ty6Ui5Op4As3Df2Gh1Jk0LmNzXcVbNm",
+                "qwertyuiopasdfghjklzxcvbnm1234567890",
+                "йцукенгшщзхъфывапролджэячсмитьбю",
+                "deadbeefcafebabe0123456789abcdef",
+                "aGVsbG8gd29ybGQgdGhpcyBpcyBhIHRlc3Q=",
+        };
+        for (String s : soup) {
+            assertEquals(100, ChatText.randomnessPercent(s), "must be flagged: " + s);
+        }
+    }
+
+    @Test
+    @DisplayName("Randomness is a share of the message, so mixed spam lands in between")
+    void randomnessIsAShareOfTheMessage() {
+        int mixed = ChatText.randomnessPercent("купи алмазы тут asdkjghqwe123zxcv");
+        assertTrue(mixed >= 50 && mixed < 100, "expected a partial share, got " + mixed);
+
+        // Short tokens are not judged at all
+        assertEquals(0, ChatText.randomnessPercent("zxc qwe asd"));
+        assertEquals(0, ChatText.randomnessPercent(""));
+        assertEquals(0, ChatText.randomnessPercent(null));
+    }
+
+    @Test
+    @DisplayName("A consonant cluster must be really untypable before it counts")
+    void consonantRunThresholdIsSafeForRealWords() {
+        // 8+ characters with a 7+ consonant run -> random-looking
+        assertEquals(100, ChatText.randomnessPercent("sdfghjkl"));
+        assertEquals(100, ChatText.randomnessPercent("бвгджзкл"));
+        // Normal long-word clusters stay below the threshold
+        assertEquals(0, ChatText.randomnessPercent("контрстрайк"));
+        assertEquals(0, ChatText.randomnessPercent("автоматизировать"));
+    }
+}
