@@ -55,6 +55,12 @@ message_placeholders = true
 # Permission node.
 # Default: ""
 bypass_permission = ""
+# Maximum rendered lines for ONE player message. Every line of a player
+# message is rendered through the full chat format (prefix + nick), so a
+# <newline> in the message cannot produce a prefix-less "fake server"
+# line. Longer messages are cut with an ellipsis.
+# Default: 3
+max_lines = 3
 
 # channels section.
 [chat.channels]
