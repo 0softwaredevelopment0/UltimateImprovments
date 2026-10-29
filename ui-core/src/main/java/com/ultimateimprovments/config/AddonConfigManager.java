@@ -286,6 +286,7 @@ public final class AddonConfigManager {
      * @return number of upgraded values
      */
     private static int upgradeExistingValues(String addon, YamlConfiguration view) {
+        if ("UI-Chat".equals(addon)) return upgradeChatFormatColors(view);
         if (!"UI-Core".equals(addon)) return 0;
         int upgraded = 0;
         for (String root : new String[]{"messages", "messages_en"}) {
@@ -317,6 +318,51 @@ public final class AddonConfigManager {
             upgraded++;
             ConsoleLogger.info("[Config/UI-Core] Upgraded " + path
                     + ": inserted the \"Time remaining\" line into the block dialog template");
+        }
+        return upgraded;
+    }
+
+    /** Stock chat prefix colour (plain green) — the value migrated away from. */
+    private static final String CHAT_PREFIX_GREEN = "<green>";
+
+    /** Brand hex colour of the chat prefix — harder to imitate in a forged line. */
+    private static final String CHAT_PREFIX_HEX = "<#32c800>";
+
+    /** First glyph of the stock small-caps prefix word ({@code ᴄ} of ᴄʜᴀᴛ / ᴄᴜᴄᴇ). */
+    private static final char CHAT_PREFIX_GLYPH = '\u1D04';
+
+    /** Chat format keys whose stock prefix colour is migrated to the hex brand colour. */
+    private static final String[] CHAT_FORMAT_KEYS = {
+            "chat.format",
+            "chat.channels.local.format",
+            "chat.channels.global.format",
+            "chat.channels.world.format",
+            "chat.channels.private.format",
+            "chat.channels.admin.format",
+            "chat.channels.check.format"
+    };
+
+    /**
+     * Recolours the stock chat prefix word (small-caps "chat") from plain green to the
+     * brand hex colour {@code #32c800}, which is harder to imitate in a forged chat line:
+     * a player who fakes the word in plain green now produces a visibly different colour.
+     * <p>
+     * Only formats that still START with the stock {@code <green>ᴄ} prefix are touched,
+     * so a manually recoloured or fully customised format is left alone. Idempotent:
+     * a format already using the hex colour no longer starts with {@code <green>ᴄ}.
+     *
+     * @return number of upgraded values
+     */
+    private static int upgradeChatFormatColors(YamlConfiguration view) {
+        int upgraded = 0;
+        String stockPrefix = CHAT_PREFIX_GREEN + CHAT_PREFIX_GLYPH;
+        for (String key : CHAT_FORMAT_KEYS) {
+            String value = view.getString(key, null);
+            if (value == null || !value.startsWith(stockPrefix)) continue;
+            view.set(key, CHAT_PREFIX_HEX + value.substring(CHAT_PREFIX_GREEN.length()));
+            ConsoleLogger.info("[Config/UI-Chat] Upgraded " + key
+                    + ": stock chat prefix " + CHAT_PREFIX_GREEN + " → " + CHAT_PREFIX_HEX);
+            upgraded++;
         }
         return upgraded;
     }
