@@ -93,6 +93,18 @@ class ChatLimitsTest {
         assertFalse(ChatText.containsCyrillic(null));
     }
 
+    @Test
+    @DisplayName("Non-ASCII detection backs the optional ASCII-only mode")
+    void nonAsciiDetection() {
+        assertTrue(ChatText.containsNonAscii("привет"));
+        assertTrue(ChatText.containsNonAscii("hello world \uD83D\uDE00"));
+        assertTrue(ChatText.containsNonAscii("caf\u00E9"));
+        assertTrue(ChatText.containsNonAscii("и"));
+        assertFalse(ChatText.containsNonAscii("hello world 123 !?"));
+        assertFalse(ChatText.containsNonAscii(""));
+        assertFalse(ChatText.containsNonAscii(null));
+    }
+
     // ========================= RANDOMNESS =========================
 
     @Test

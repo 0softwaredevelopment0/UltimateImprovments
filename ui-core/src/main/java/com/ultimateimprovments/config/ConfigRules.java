@@ -479,6 +479,7 @@ final class ConfigRules {
             integer("chat.limits.duplicate_window_ms", 0, 600000),
             integer("chat.limits.duplicate_percent", 0, 100),
             bool("chat.limits.block_cyrillic"),
+            bool("chat.limits.block_unicode"),
             string("chat.limits.bypass_permission", false, 64),
             integer("chat.channels.local.radius", 1, 10000),
             notBlank("chat.channels.local.format", 512),

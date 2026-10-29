@@ -100,14 +100,19 @@ cooldown_ms = 1000
 # Default: 2000
 duplicate_window_ms = 2000
 # Minimum similarity (%) to the last accepted message that counts as a
-# duplicate: 100 = exact match (after trimming, collapsing spaces and
-# case-folding), 80 = one change in ~5 characters is already "the same".
+# duplicate: 95 = one changed character in 20 is already "the same",
+# 100 = exact match (after trimming, collapsing spaces and case-folding).
 # 0 disables the check.
-# Default: 100
-duplicate_percent = 100
+# Default: 95
+duplicate_percent = 95
 # Block messages that contain Cyrillic letters (for non-Cyrillic servers).
 # Default: false
 block_cyrillic = false
+# Block messages that contain ANY non-ASCII character (code point above
+# U+007F: Cyrillic, emoji, exotic symbols, invisible spaces). Stricter than
+# block_cyrillic - for ASCII-only servers.
+# Default: false
+block_unicode = false
 # Permission that skips all the limits above.
 # Default: "ui.chat.limits.bypass"
 bypass_permission = "ui.chat.limits.bypass"
@@ -340,6 +345,7 @@ random = "<dark_red>❌</dark_red> <red>Сообщение выглядит ка
 cooldown = "<dark_red>❌</dark_red> <red>Не так быстро! Подожди ещё %remaining% с.</red>"
 cyrillic = "<dark_red>❌</dark_red> <red>Кириллица в этом чате запрещена.</red>"
 duplicate = "<dark_red>❌</dark_red> <red>Ты уже отправлял это сообщение. Не повторяй его.</red>"
+unicode = "<dark_red>❌</dark_red> <red>Unicode-символы в этом чате запрещены.</red>"
 
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
@@ -371,3 +377,4 @@ random = "<dark_red>❌</dark_red> <red>Your message looks like random character
 cooldown = "<dark_red>❌</dark_red> <red>Slow down! Wait %remaining%s before the next message.</red>"
 cyrillic = "<dark_red>❌</dark_red> <red>Cyrillic characters are not allowed in this chat.</red>"
 duplicate = "<dark_red>❌</dark_red> <red>You already sent this message. Please do not repeat it.</red>"
+unicode = "<dark_red>❌</dark_red> <red>Unicode characters are not allowed in this chat.</red>"
