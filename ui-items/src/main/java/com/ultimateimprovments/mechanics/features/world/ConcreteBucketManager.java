@@ -47,8 +47,9 @@ import java.util.UUID;
  *   <li>The original biome is saved for restoration</li>
  *   <li>Every block the water flows into joins the same pour group and is tinted too</li>
  *   <li>After 60 seconds the <b>whole</b> pour group turns into concrete at once,
- *       each hardened block emitting a crit particle burst and getting its
- *       original biome back</li>
+ *       each block getting its original biome back</li>
+ *   <li>While the cement is still liquid every block that will become concrete
+ *       emits crit particles as a hint; they stop the moment it hardens</li>
  *   <li>If water disappears earlier → the biome is restored right away</li>
  * </ol>
  * Pending pours live in SQLite ({@link ConcreteBucketDatabase}) — see
@@ -60,10 +61,12 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     private static Main plugin;
     private static final long CONCRETE_DELAY_MS = 60_000; // 60 seconds
 
-    // Crit burst spawned on every block that hardens into concrete
-    private static final Particle HARDEN_PARTICLE = Particle.CRIT;
-    private static final int HARDEN_PARTICLE_COUNT = 1;
-    private static final double HARDEN_PARTICLE_OFFSET = 0.25;
+    // Hint burst spawned on every still-liquid block — shows which blocks will harden
+    private static final Particle HINT_PARTICLE = Particle.CRIT;
+    private static final int HINT_PARTICLE_COUNT = 1;
+    private static final double HINT_PARTICLE_OFFSET = 0.25;
+    // Hint particle interval (ticks). Half a second keeps the marks continuous
+    private static final long TICK_INTERVAL = 10L;
 
     // Tracked water blocks: location -> {originalBiome, groupId}
     private static final Map<Location, TrackedWater> trackedWater = new HashMap<>();
@@ -101,8 +104,8 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         instance = new ConcreteBucketManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         loadFromDatabase();
-        // Once per second is enough for tinting and hardening
-        instance.runTaskTimer(plugin, 20L, 20L);
+        // Twice per second: tinting, hardening and the liquid-state hint particles
+        instance.runTaskTimer(plugin, 20L, TICK_INTERVAL);
         ConsoleLogger.info("[ConcreteBucket] Initialized");
     }
 
@@ -244,6 +247,15 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
                 harden(group);
             }
         }
+
+        // ════════════════════════════════════════
+        // Hint particles on the still-liquid blocks
+        // ════════════════════════════════════════
+        // Runs after harden(): hardened blocks already left trackedWater, so the
+        // marks vanish exactly when the block turns into concrete.
+        for (Location loc : trackedWater.keySet()) {
+            spawnHintParticles(loc);
+        }
     }
 
     // =========================
@@ -255,7 +267,6 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
             Block block = loc.getBlock();
             if (block.getType() == Material.WATER) {
                 block.setType(Material.GRAY_CONCRETE);
-                spawnHardenParticles(block.getLocation());
             }
 
             TrackedWater data = trackedWater.remove(loc);
@@ -271,17 +282,17 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         groups.remove(group.id);
     }
 
-    private static void spawnHardenParticles(Location loc) {
+    private static void spawnHintParticles(Location loc) {
         World world = loc.getWorld();
         if (world == null) return;
         Location center = loc.clone().add(0.5, 0.5, 0.5);
         world.spawnParticle(
-                HARDEN_PARTICLE,
+                HINT_PARTICLE,
                 center,
-                HARDEN_PARTICLE_COUNT,
-                HARDEN_PARTICLE_OFFSET,
-                HARDEN_PARTICLE_OFFSET,
-                HARDEN_PARTICLE_OFFSET,
+                HINT_PARTICLE_COUNT,
+                HINT_PARTICLE_OFFSET,
+                HINT_PARTICLE_OFFSET,
+                HINT_PARTICLE_OFFSET,
                 0.0
         );
     }
