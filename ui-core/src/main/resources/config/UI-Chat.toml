@@ -44,8 +44,8 @@ enabled = true
 # Default: "channels"
 mode = "channels"
 # Format string (MiniMessage).
-# Default: "<green>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%mes…"
-format = "<green>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Default: "<#32c800>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%mes…"
+format = "<#32c800>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 # Minimum value.
 # Default: true
 player_minimessage = true
@@ -126,38 +126,38 @@ bypass_permission = "ui.chat.limits.bypass"
 # Default: 100
 radius = 100
 # Format string (MiniMessage).
-# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white…"
-format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Default: "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white…"
+format = "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
 # global section.
 [chat.channels.global]
 # Format string (MiniMessage).
-# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white…"
-format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Default: "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white…"
+format = "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
 # world section.
 [chat.channels.world]
 # Format string (MiniMessage).
-# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white…"
-format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Default: "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white…"
+format = "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
 # private section.
 [chat.channels.private]
 # Format string (MiniMessage).
-# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white…"
-format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Default: "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white…"
+format = "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
 # admin section.
 [chat.channels.admin]
 # Format string (MiniMessage).
-# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white…"
-format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Default: "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white…"
+format = "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
 # check section.
 [chat.channels.check]
 # Format string (MiniMessage).
-# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%…"
-format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Default: "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%…"
+format = "<#32c800>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
 # console section.
 [chat.channels.console]

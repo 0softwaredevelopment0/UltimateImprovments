@@ -145,7 +145,7 @@ public class ChatManager implements Listener {
 
         // STATIC format
         this.staticFormat = cfg.getString("chat.format",
-                "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%");
+                "<#32c800>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%");
 
         // CHANNELS
         this.channelFormats = new HashMap<>();
@@ -189,22 +189,22 @@ public class ChatManager implements Listener {
 
             channelFormats.put(ChatChannel.LOCAL,
                     cfg.getString(basePath + ".local.format",
-                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+                            "<#32c800>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
             channelFormats.put(ChatChannel.GLOBAL,
                     cfg.getString(basePath + ".global.format",
-                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+                            "<#32c800>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
             channelFormats.put(ChatChannel.WORLD,
                     cfg.getString(basePath + ".world.format",
-                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+                            "<#32c800>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
             channelFormats.put(ChatChannel.PRIVATE,
                     cfg.getString(basePath + ".private.format",
-                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+                            "<#32c800>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
             channelFormats.put(ChatChannel.ADMIN,
                     cfg.getString(basePath + ".admin.format",
-                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+                            "<#32c800>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
             channelFormats.put(ChatChannel.CHECK,
                     cfg.getString(basePath + ".check.format",
-                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+                            "<#32c800>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
 
             this.localRadius = cfg.getInt(basePath + ".local.radius", 100);
         }
