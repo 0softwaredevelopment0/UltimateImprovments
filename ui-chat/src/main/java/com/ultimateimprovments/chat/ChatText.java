@@ -104,6 +104,23 @@ public final class ChatText {
     }
 
     /**
+     * Returns true when the text contains at least one non-ASCII character
+     * (code point above U+007F): Cyrillic, emoji, exotic symbols, invisible
+     * space characters, etc. Backs the optional «ASCII only» chat mode
+     * (chat.limits.block_unicode), which is off by default and is stricter than
+     * block_cyrillic: it rejects every Unicode character, not only Cyrillic.
+     */
+    public static boolean containsNonAscii(String text) {
+        if (text == null || text.isEmpty()) return false;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (cp > 0x7F) return true;
+        }
+        return false;
+    }
+
+    /**
      * Similarity of two messages in percent (0..100), backing the duplicate
      * message guard (chat.limits.duplicate_percent).
      * <p>

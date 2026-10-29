@@ -76,11 +76,13 @@ public class ChatManager implements Listener {
     /** Duplicate guard: window in ms (0 disables) ... */
     private int duplicateWindowMs = 2000;
     /** ... and the minimum similarity percent (0 disables) for a block. */
-    private int duplicatePercent = 100;
+    private int duplicatePercent = 95;
     /** Messages of at most this many characters skip the CAPS check. */
     private int capsIgnoreMaxChars = 8;
     /** Blocks messages containing Cyrillic letters (non-Cyrillic servers). */
     private boolean blockCyrillic = false;
+    /** Blocks messages containing ANY non-ASCII character (ASCII-only servers). */
+    private boolean blockUnicode = false;
     private String limitsBypassPermission = "ui.chat.limits.bypass";
 
     /** Cooldown notice throttle: a spammer must not be answered with warning spam. */
@@ -159,9 +161,10 @@ public class ChatManager implements Listener {
         this.maxEntropyPercent = cfg.getInt("chat.limits.max_entropy_percent", 50);
         this.cooldownMs = Math.max(0, cfg.getInt("chat.limits.cooldown_ms", 1000));
         this.duplicateWindowMs = Math.max(0, cfg.getInt("chat.limits.duplicate_window_ms", 2000));
-        this.duplicatePercent = Math.max(0, Math.min(100, cfg.getInt("chat.limits.duplicate_percent", 100)));
+        this.duplicatePercent = Math.max(0, Math.min(100, cfg.getInt("chat.limits.duplicate_percent", 95)));
         this.capsIgnoreMaxChars = Math.max(0, cfg.getInt("chat.limits.caps_ignore_max_chars", 8));
         this.blockCyrillic = cfg.getBoolean("chat.limits.block_cyrillic", false);
+        this.blockUnicode = cfg.getBoolean("chat.limits.block_unicode", false);
         this.limitsBypassPermission = cfg.getString("chat.limits.bypass_permission", "ui.chat.limits.bypass");
 
         // Console channel settings (loaded in both modes so the toggle can validate)
@@ -303,6 +306,20 @@ public class ChatManager implements Listener {
                                 "<dark_red>❌</dark_red> <red>Cyrillic characters are not allowed in this chat.</red>")));
                 ConsoleLogger.warn("[Chat] blocked " + player.getName()
                         + " — Cyrillic text: " + messageText);
+                return;
+            }
+
+            // UNICODE — optional "ASCII only" mode (default off): rejects any
+            // character above U+007F (Cyrillic, emoji, exotic symbols, invisible
+            // spaces). Stricter than block_cyrillic; when enabled the Cyrillic
+            // check above becomes redundant.
+            if (blockUnicode && ChatText.containsNonAscii(messageText)) {
+                event.setCancelled(true);
+                player.sendMessage(MessageUtil.parse(
+                        MessagesManager.getString("chat_limits.unicode",
+                                "<dark_red>❌</dark_red> <red>Unicode characters are not allowed in this chat.</red>")));
+                ConsoleLogger.warn("[Chat] blocked " + player.getName()
+                        + " — Unicode text: " + messageText);
                 return;
             }
 
