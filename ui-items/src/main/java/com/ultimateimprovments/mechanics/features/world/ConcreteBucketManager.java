@@ -24,6 +24,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -218,6 +219,23 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     }
 
     // =========================
+    // 🪣 FILL — liquid cement cannot be scooped up like water
+    // =========================
+    // The cement renders as water, so vanilla happily fills a bucket from it.
+    // It is not water: the click must do nothing at all.
+    @EventHandler(ignoreCancelled = true)
+    public void onBucketFill(PlayerBucketFillEvent e) {
+        Block clicked = e.getBlockClicked();
+        if (clicked == null) return;
+
+        // The clicked block is the water in almost every case; the relative one
+        // covers clicking a block whose neighbour face holds the water.
+        if (isCement(clicked) || isCement(clicked.getRelative(e.getBlockFace()))) {
+            e.setCancelled(true);
+        }
+    }
+
+    // =========================
     // 🔥 WATER DISAPPEARANCE — the block stopped being water
     // =========================
     @EventHandler(ignoreCancelled = true)
@@ -378,6 +396,13 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
     private static boolean isWater(Location loc) {
         return loc.getBlock().getType() == Material.WATER;
+    }
+
+    /** A tracked (still liquid) cement block — water that is not really water. */
+    private static boolean isCement(Block block) {
+        return block != null
+                && block.getType() == Material.WATER
+                && trackedWater.containsKey(block.getLocation());
     }
 
     // =========================

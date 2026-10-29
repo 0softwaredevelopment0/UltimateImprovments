@@ -66,22 +66,35 @@ public class ConcreteBucketCraftListener implements Listener {
         Bukkit.removeRecipe(RECIPE_KEY);
 
         // ════════════════════════════════════════
-        // 🧊 RECIPE: GRAVEL (×8) + WATER_BUCKET = CONCRETE BUCKET
+        // 🧊 RECIPE: CLAY · SMOOTH_BASALT · TUFF
+        //              BLACKSTONE · WATER_BUCKET · RED_SAND
+        //              GRINDSTONE · SOUL_SAND · PACKED_MUD
         // ════════════════════════════════════════
         // Recipe shape:
-        //   G G G
-        //   G B G
-        //   G G G
-        // G = GRAVEL, B = WATER_BUCKET
+        //   C S T
+        //   B W R
+        //   G D M
+        // C = CLAY (block of clay), S = SMOOTH_BASALT, T = TUFF,
+        // B = BLACKSTONE, W = WATER_BUCKET, R = RED_SAND,
+        // G = GRINDSTONE, D = SOUL_SAND, M = PACKED_MUD
+        // Crafter-only: RecipeRegistry.registerRecipe() below gates the result
+        // outside InventoryType.CRAFTER (and blocks the final CraftItemEvent).
         ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, buildBucketItem());
         recipe.setGroup("CB");
         recipe.shape(
-                "GGG",
-                "GBG",
-                "GGG"
+                "CST",
+                "BWR",
+                "GDM"
         );
-        recipe.setIngredient('G', Material.GRAVEL);
-        recipe.setIngredient('B', Material.WATER_BUCKET);
+        recipe.setIngredient('C', Material.CLAY);
+        recipe.setIngredient('S', Material.SMOOTH_BASALT);
+        recipe.setIngredient('T', Material.TUFF);
+        recipe.setIngredient('B', Material.BLACKSTONE);
+        recipe.setIngredient('W', Material.WATER_BUCKET);
+        recipe.setIngredient('R', Material.RED_SAND);
+        recipe.setIngredient('G', Material.GRINDSTONE);
+        recipe.setIngredient('D', Material.SOUL_SAND);
+        recipe.setIngredient('M', Material.PACKED_MUD);
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
