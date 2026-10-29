@@ -64,7 +64,7 @@ public final class AddonCatalog {
         // ── UI-World ──
         route("UI-World", "wireless_redstone", "meteor", "block_friction", "sculk");
         // ── UI-Items ──
-        route("UI-Items", "netherite_upgrade", "particle_accelerator");
+        route("UI-Items", "concrete_bucket", "netherite_upgrade", "particle_accelerator");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "sunburn",

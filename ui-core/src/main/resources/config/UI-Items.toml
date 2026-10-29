@@ -4,6 +4,33 @@
 # ITEMS / PARTICLES
 # ==================================================================
 
+# Concrete bucket: poured water turns into concrete after the delay.
+[concrete_bucket]
+# Master switch (true = a concrete bucket pours cement instead of plain water).
+# Default: true
+enabled = true
+# Seconds the cement stays liquid before it hardens.
+# Default: 60
+harden_delay_seconds = 60
+# Block the liquid cement turns into (Bukkit Material name).
+# Default: GRAY_CONCRETE
+harden_block = "GRAY_CONCRETE"
+# Biome used to tint the liquid gray (Bukkit Biome name).
+# Default: PALE_GARDEN
+tint_biome = "PALE_GARDEN"
+# Hint particle on every still-liquid block (Bukkit Particle name).
+# Default: CRIT
+particle = "CRIT"
+# Particles per block per hint pass.
+# Default: 1
+particle_count = 1
+# Random spread radius of the particles around the block centre.
+# Default: 0.25
+particle_offset = 0.25
+# Hint particle interval in ticks (10 = twice per second).
+# Default: 10
+particle_interval_ticks = 10
+
 # Custom netherite upgrade recipe.
 [netherite_upgrade]
 

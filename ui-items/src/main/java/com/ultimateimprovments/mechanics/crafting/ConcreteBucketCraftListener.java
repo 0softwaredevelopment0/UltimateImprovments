@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.crafting;
 
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mechanics.features.world.ConcreteBucketManager;
 import com.ultimateimprovments.util.MessageUtil;
 
 import org.bukkit.Bukkit;
@@ -29,28 +30,38 @@ public class ConcreteBucketCraftListener implements Listener {
     }
 
     // =========================
+    // ITEM
+    // =========================
+    /**
+     * Builds the concrete bucket item. The hardening delay is read from
+     * {@code concrete_bucket.harden_delay_seconds} (see {@link ConcreteBucketManager}),
+     * so the lore always matches the configured timing.
+     */
+    private static ItemStack buildBucketItem() {
+        ItemStack item = new ItemStack(Material.WATER_BUCKET);
+        item.editMeta(meta -> {
+            meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket *</white>"));
+
+            meta.lore(List.of(
+                    MessageUtil.parse("<i:false><gray>Water that hardens into concrete after "
+                            + ConcreteBucketManager.delaySeconds() + " seconds</gray>"),
+                    MessageUtil.parse("<i:false><gray>Every block it flows into hardens too</gray>")
+            ));
+
+            meta.getPersistentDataContainer().set(
+                    Keys.CONCRETE_BUCKET,
+                    PersistentDataType.BYTE,
+                    (byte) 1
+            );
+        });
+        return item;
+    }
+
+    // =========================
     // REGISTER RECIPE
     // =========================
     private static void registerRecipe() {
         Main plugin = Main.getInstance();
-
-        ItemStack result = new ItemStack(Material.WATER_BUCKET);
-        result.editMeta(meta -> {
-
-        meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket *</white>"));
-
-        meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Water that hardens into concrete after 60 seconds</gray>"),
-                MessageUtil.parse("<i:false><gray>Creates gray-tinted water (Pale Garden biome)</gray>")
-        ));
-
-        meta.getPersistentDataContainer().set(
-                Keys.CONCRETE_BUCKET,
-                PersistentDataType.BYTE,
-                (byte) 1
-        );
-
-        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -62,7 +73,7 @@ public class ConcreteBucketCraftListener implements Listener {
         //   G B G
         //   G G G
         // G = GRAVEL, B = WATER_BUCKET
-        ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
+        ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, buildBucketItem());
         recipe.setGroup("CB");
         recipe.shape(
                 "GGG",
@@ -85,21 +96,7 @@ public class ConcreteBucketCraftListener implements Listener {
         if (!(recipe instanceof ShapedRecipe sr)) return;
         if (!sr.getKey().equals(RECIPE_KEY)) return;
 
-        ItemStack result = new ItemStack(Material.WATER_BUCKET);
-        result.editMeta(meta -> {
-
-        meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket *</white>"));
-        meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Water that hardens into concrete after 60 seconds</gray>"),
-                MessageUtil.parse("<i:false><gray>Creates gray-tinted water (Pale Garden biome)</gray>")
-        ));
-        meta.getPersistentDataContainer().set(
-                Keys.CONCRETE_BUCKET,
-                PersistentDataType.BYTE,
-                (byte) 1
-        );
-        });
-        e.getInventory().setResult(result);
+        e.getInventory().setResult(buildBucketItem());
     }
 
     // =========================

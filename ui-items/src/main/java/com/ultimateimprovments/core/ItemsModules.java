@@ -36,6 +36,10 @@ public final class ItemsModules {
             protected void onInit(JavaPlugin plugin) throws Exception {
                 Main main = (Main) plugin;
 
+                // The manager owns the concrete-bucket settings — start it before the
+                // recipe registrations so their lore shows the configured delay.
+                ConcreteBucketManager.init(main);
+
                 MultimeterCraftListener.init();
                 PlasmaCannonCraftListener.init();
                 ShokerCraftListener.init();
@@ -81,6 +85,11 @@ public final class ItemsModules {
                 ConcreteBucketManager.init(main);
 
                 ConsoleLogger.info("[CraftingModule] Recipes initialized.");
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                ConcreteBucketManager.reloadConfig();
             }
 
             @Override
