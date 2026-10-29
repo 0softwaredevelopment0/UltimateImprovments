@@ -469,6 +469,7 @@ final class ConfigRules {
             bool("chat.message_placeholders"),
             string("chat.bypass_permission", false, 64),
             notBlank("chat.format", 512),
+            integer("chat.max_lines", 1, 10),
             integer("chat.channels.local.radius", 1, 10000),
             notBlank("chat.channels.local.format", 512),
             notBlank("chat.channels.global.format", 512),

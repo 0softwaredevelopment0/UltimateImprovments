@@ -53,6 +53,8 @@ public class ChatManager implements Listener {
     // ===== CHANNELS =====
     private Map<ChatChannel, String> channelFormats;
     private int localRadius;
+    /** Max number of rendered lines for a single player message (see {@link ChatText}). */
+    private int maxLines = ChatText.DEFAULT_MAX_LINES;
     private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
     private AccessControl consoleAccessControl = AccessControl.disabled();
@@ -107,6 +109,9 @@ public class ChatManager implements Listener {
         // CHANNELS
         this.channelFormats = new HashMap<>();
         this.localRadius = cfg.getInt("chat.channels.local.radius", 100);
+        // A player message is rendered line by line (each line through the full
+        // format), so the number of lines must be capped against chat flooding.
+        this.maxLines = Math.max(1, cfg.getInt("chat.max_lines", ChatText.DEFAULT_MAX_LINES));
 
         // Console channel settings (loaded in both modes so the toggle can validate)
         this.consoleEnabled = cfg.getBoolean("chat.channels.console.enabled", true);
@@ -304,7 +309,14 @@ public class ChatManager implements Listener {
 
         if (format == null || format.isEmpty()) return;
 
-        // Build message component
+        // Build message component.
+        //
+        // SECURITY: the message is NEVER rendered as one blob. It is split into
+        // single lines (real line separators AND newline-producing MiniMessage
+        // tags) and every line goes through the FULL channel format, so each
+        // rendered line carries the prefix and the sender name. Before this a
+        // player could send "<newline>[Server] Restart in 5s" and the second
+        // line was rendered without any prefix — an embedded fake-line abuse.
         String rawMessage = messageText;
         if (messagePlaceholders) {
             rawMessage = PlaceholderResolver.resolve(rawMessage, player);
@@ -313,36 +325,19 @@ public class ChatManager implements Listener {
         // Resolve placeholders in format (except %message%)
         String resolved = PlaceholderResolver.resolve(format, player);
 
-        // PING PROCESSING
-        ChatPingManager.PingResult pingResult = ChatPingManager.processPings(rawMessage, player);
-        String pingedMessage = pingResult.formattedMessage();
-        List<Player> pingedPlayers = pingResult.pingedPlayers();
+        List<String> messageLines = ChatText.splitLines(rawMessage, playerMiniMessage, maxLines);
 
-        // Build final broadcast component
-        Component broadcast;
-        String msgForBroadcast = pingedPlayers.isEmpty() ? rawMessage : pingedMessage;
-        boolean hasMessageToken = resolved.contains("%message%");
+        java.util.LinkedHashSet<Player> pingedPlayers = new java.util.LinkedHashSet<>();
+        Component broadcast = Component.empty();
+        for (int i = 0; i < messageLines.size(); i++) {
+            // PING PROCESSING — per line; the ping style itself adds no line breaks
+            ChatPingManager.PingResult pingResult =
+                    ChatPingManager.processPings(messageLines.get(i), player);
+            pingedPlayers.addAll(pingResult.pingedPlayers());
 
-        if (!hasMessageToken) {
-            broadcast = MessageUtil.parse(resolved)
-                    .append(Component.text(" "))
-                    .append(parseMessageComponentForPing(msgForBroadcast, player));
-        } else if (playerMiniMessage) {
-            Component msgComp = parseMessageComponentForPing(msgForBroadcast, player);
-            String serializedMsg = MM.serialize(msgComp);
-            String finalFormat = resolved.replace("%message%", serializedMsg);
-            broadcast = MessageUtil.parse(finalFormat);
-        } else {
-            String escapedRaw = rawMessage.replace("<", "\\<").replace(">", "\\>");
-            ChatPingManager.PingResult pingResultEscaped = ChatPingManager.processPings(escapedRaw, player);
-            String finalMsg = pingResultEscaped.formattedMessage();
-            String finalFormat = resolved.replace("%message%", finalMsg);
-            try {
-                broadcast = MessageUtil.parse(finalFormat);
-            } catch (Exception e) {
-                String formatWithoutMsg = resolved.replace("%message%", "");
-                broadcast = MessageUtil.parse(formatWithoutMsg).append(Component.text(escapedRaw));
-            }
+            if (i > 0) broadcast = broadcast.append(Component.newline());
+            broadcast = broadcast.append(
+                    renderMessageLine(resolved, pingResult.formattedMessage(), player));
         }
 
         // Cancel original event — we broadcast manually
@@ -372,7 +367,7 @@ public class ChatManager implements Listener {
 
         // Ping sounds
         if (!pingedPlayers.isEmpty()) {
-            ChatPingManager.notifyPingedPlayers(pingedPlayers, player);
+            ChatPingManager.notifyPingedPlayers(new java.util.ArrayList<>(pingedPlayers), player);
         }
     }
 
@@ -455,12 +450,26 @@ public class ChatManager implements Listener {
             return;
         }
         String msg = messagePlaceholders ? PlaceholderResolver.resolve(raw, sender) : raw;
-        String escaped = msg.replace("<", "\\<").replace(">", "\\>")
-                .replaceAll("\u00A7[0-9a-fk-orx]", "").replace("\u00A7", "");
-        String senderView = "<white>[<gray>You <yellow>» <gray>" + target.getName() + "<white>] <reset>" + escaped;
-        String targetView = "<white>[<gray>" + sender.getName() + " <yellow>» <gray>You<white>] <reset>" + escaped;
-        sender.sendMessage(MM.deserialize(senderView));
-        target.sendMessage(MM.deserialize(targetView));
+
+        // Same multi-line hardening as the channel broadcast: every line is
+        // rendered with its own "[… » …]" prefix, otherwise a <newline> in a
+        // private message would produce prefix-less (fake system) lines.
+        String senderPrefix = "<white>[<gray>You <yellow>» <gray>" + target.getName() + "<white>] <reset>";
+        String targetPrefix = "<white>[<gray>" + sender.getName() + " <yellow>» <gray>You<white>] <reset>";
+        Component senderView = Component.empty();
+        Component targetView = Component.empty();
+        List<String> lines = ChatText.splitLines(msg, playerMiniMessage, maxLines);
+        for (int i = 0; i < lines.size(); i++) {
+            String escaped = ChatText.escapeMiniMessage(lines.get(i));
+            if (i > 0) {
+                senderView = senderView.append(Component.newline());
+                targetView = targetView.append(Component.newline());
+            }
+            senderView = senderView.append(MM.deserialize(senderPrefix + escaped));
+            targetView = targetView.append(MM.deserialize(targetPrefix + escaped));
+        }
+        sender.sendMessage(senderView);
+        target.sendMessage(targetView);
         ConsoleLogger.info("[Private] " + sender.getName() + " → " + target.getName() + ": " + msg);
     }
 
@@ -511,23 +520,55 @@ public class ChatManager implements Listener {
 
     /** Escapes MiniMessage tag characters so raw command text renders literally. */
     private static String escapeMini(String text) {
-        if (text == null) return "";
-        return text.replace("<", "\\<").replace(">", "\\>")
-                .replace("\u00A7", "");
+        return ChatText.escapeMiniMessage(text);
     }
 
-    private Component parseMessageComponentForPing(String msg, Player player) {
-        if (messagePlaceholders) {
-            msg = PlaceholderResolver.resolve(msg, player);
+    /**
+     * Renders ONE message line through the channel format. Because the line is
+     * guaranteed to be a single line and it is inserted AFTER the format prefix,
+     * a player can never emit a prefix-less (embedded) line.
+     *
+     * @param resolvedFormat format with placeholders resolved (still contains
+     *                       {@code %message%} unless the format omits it)
+     * @param line           one single-line message part (pings already applied)
+     * @param player         the sender
+     */
+    private Component renderMessageLine(String resolvedFormat, String line, Player player) {
+        if (!resolvedFormat.contains("%message%")) {
+            return MessageUtil.parse(resolvedFormat)
+                    .append(Component.text(" "))
+                    .append(parseMessageContent(line));
         }
         if (playerMiniMessage) {
+            String serialized = MM.serialize(parseMessageContent(line));
             try {
-                return MM.deserialize(msg);
+                return MessageUtil.parse(resolvedFormat.replace("%message%", serialized));
             } catch (Exception e) {
-                return Component.text(msg);
+                return MessageUtil.parse(resolvedFormat.replace("%message%", ""))
+                        .append(Component.text(line));
             }
         }
-        return Component.text(msg);
+        String escaped = ChatText.escapeMiniMessage(line);
+        try {
+            return MessageUtil.parse(resolvedFormat.replace("%message%", escaped));
+        } catch (Exception e) {
+            return MessageUtil.parse(resolvedFormat.replace("%message%", ""))
+                    .append(Component.text(line));
+        }
+    }
+
+    /**
+     * Turns one message line into a component: MiniMessage when the player is
+     * allowed to use it, plain text otherwise. Placeholders were already
+     * resolved by the caller, so they are not resolved a second time here.
+     */
+    private Component parseMessageContent(String line) {
+        if (!playerMiniMessage) return Component.text(line);
+        try {
+            return MM.deserialize(line);
+        } catch (Exception e) {
+            return Component.text(line);
+        }
     }
 
     // ========================= PUBLIC API =========================
