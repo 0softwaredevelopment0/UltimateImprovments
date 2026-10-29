@@ -223,4 +223,35 @@ class ChatLimitsTest {
         // One emoji of three missing -> 67%
         assertEquals(67, ChatText.similarityPercent("\uD83D\uDE00\uD83D\uDE00", "\uD83D\uDE00\uD83D\uDE00\uD83D\uDE00"));
     }
+
+    // ========================= MARKUP =========================
+
+    @Test
+    @DisplayName("MiniMessage markup is stripped, the visible text stays")
+    void markupIsStripped() {
+        String decorated = "<sprite:items:item/experience_bottle>"
+                + "<gradient:#e1ff00:#00ff55><bold>toxic</bold></gradient>"
+                + "<sprite:items:item/experience_bottle>   "
+                + "<gradient:#e1ff00:#00ff55>хм";
+        String plain = ChatText.stripMarkup(decorated);
+        assertEquals("toxic   хм", plain);
+        // Regression: exactly this message was blocked as "random text 100%"
+        assertEquals(0, ChatText.randomnessPercent(plain));
+        assertEquals(0, ChatText.capsPercent(plain));
+    }
+
+    @Test
+    @DisplayName("Markup stripping keeps escaped tags, quoted '>' and unmatched '<'")
+    void markupStrippingEdgeCases() {
+        // An escaped tag renders as literal text on screen, so it stays
+        assertEquals("\\<bold\\>", ChatText.stripMarkup("\\<bold\\>"));
+        // A '>' inside a quoted argument does not close the tag
+        assertEquals("text", ChatText.stripMarkup("<hover:show_text:'a > b'>text"));
+        // An unmatched '<' is literal
+        assertEquals("3 < 5", ChatText.stripMarkup("3 < 5"));
+        // Legacy section codes are stripped together with their letter
+        assertEquals("red", ChatText.stripMarkup("\u00A7cred"));
+        assertEquals("", ChatText.stripMarkup(""));
+        assertEquals("", ChatText.stripMarkup(null));
+    }
 }
