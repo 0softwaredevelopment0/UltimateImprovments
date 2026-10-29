@@ -73,6 +73,10 @@ public class ChatManager implements Listener {
     private int maxEntropyPercent = 50;
     /** Minimum interval between two messages of one player (0 disables the cooldown). */
     private int cooldownMs = 1000;
+    /** Duplicate guard: window in ms (0 disables) ... */
+    private int duplicateWindowMs = 2000;
+    /** ... and the minimum similarity percent (0 disables) for a block. */
+    private int duplicatePercent = 100;
     /** Messages of at most this many characters skip the CAPS check. */
     private int capsIgnoreMaxChars = 8;
     /** Blocks messages containing Cyrillic letters (non-Cyrillic servers). */
@@ -83,8 +87,12 @@ public class ChatManager implements Listener {
     private static final long COOLDOWN_NOTICE_INTERVAL_MS = 1000L;
     /** Last accepted message time per player (chat cooldown). */
     private final Map<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
+    /** Last accepted message text per player (duplicate guard). */
+    private final Map<UUID, String> lastMessageText = new ConcurrentHashMap<>();
     /** Last cooldown notice time per player (throttles the warning itself). */
     private final Map<UUID, Long> lastCooldownNoticeAt = new ConcurrentHashMap<>();
+    /** Last duplicate notice time per player (the notice is throttled as well). */
+    private final Map<UUID, Long> lastDuplicateNoticeAt = new ConcurrentHashMap<>();
 
     private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
@@ -150,6 +158,8 @@ public class ChatManager implements Listener {
         this.maxCapsPercent = cfg.getInt("chat.limits.max_caps_percent", 50);
         this.maxEntropyPercent = cfg.getInt("chat.limits.max_entropy_percent", 50);
         this.cooldownMs = Math.max(0, cfg.getInt("chat.limits.cooldown_ms", 1000));
+        this.duplicateWindowMs = Math.max(0, cfg.getInt("chat.limits.duplicate_window_ms", 2000));
+        this.duplicatePercent = Math.max(0, Math.min(100, cfg.getInt("chat.limits.duplicate_percent", 100)));
         this.capsIgnoreMaxChars = Math.max(0, cfg.getInt("chat.limits.caps_ignore_max_chars", 8));
         this.blockCyrillic = cfg.getBoolean("chat.limits.block_cyrillic", false);
         this.limitsBypassPermission = cfg.getString("chat.limits.bypass_permission", "ui.chat.limits.bypass");
@@ -217,7 +227,9 @@ public class ChatManager implements Listener {
         // not grow with players who already left.
         UUID id = event.getPlayer().getUniqueId();
         lastMessageAt.remove(id);
+        lastMessageText.remove(id);
         lastCooldownNoticeAt.remove(id);
+        lastDuplicateNoticeAt.remove(id);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -267,6 +279,22 @@ public class ChatManager implements Listener {
                 }
             }
 
+            // DUPLICATE — the same (or nearly the same) message repeated inside
+            // the window is dropped. The reference is the last ACCEPTED
+            // message: rejected attempts cannot shift it and unlock the spam.
+            if (duplicateWindowMs > 0 && duplicatePercent > 0) {
+                Long lastTime = lastMessageAt.get(player.getUniqueId());
+                String previous = lastMessageText.get(player.getUniqueId());
+                if (lastTime != null && previous != null && now - lastTime < duplicateWindowMs) {
+                    int similarity = ChatText.similarityPercent(previous, messageText);
+                    if (similarity >= duplicatePercent) {
+                        event.setCancelled(true);
+                        notifyDuplicate(player, similarity, now);
+                        return;
+                    }
+                }
+            }
+
             // CYRILLIC — optional "no Cyrillic" mode (default off).
             if (blockCyrillic && ChatText.containsCyrillic(messageText)) {
                 event.setCancelled(true);
@@ -311,8 +339,15 @@ public class ChatManager implements Listener {
                 }
             }
 
-            // The message passed every check — remember it for the cooldown.
-            if (cooldownMs > 0) lastMessageAt.put(player.getUniqueId(), now);
+            // The message passed every check — remember it for the cooldown and
+            // the duplicate guard. Both need the timestamp, so it is written
+            // whenever either check is active (not only when the cooldown is).
+            if (cooldownMs > 0 || (duplicateWindowMs > 0 && duplicatePercent > 0)) {
+                lastMessageAt.put(player.getUniqueId(), now);
+            }
+            if (duplicateWindowMs > 0 && duplicatePercent > 0) {
+                lastMessageText.put(player.getUniqueId(), messageText);
+            }
         }
 
         if (!enabled) return;
@@ -636,6 +671,22 @@ public class ChatManager implements Listener {
         } else {
             sendNotAllowedWarning(player, content);
         }
+    }
+
+    /**
+     * Tells the player their message repeats a recent one. Throttled together
+     * with the console log, so spamming duplicates does not flood the log.
+     */
+    private void notifyDuplicate(Player player, int similarity, long now) {
+        Long lastNotice = lastDuplicateNoticeAt.get(player.getUniqueId());
+        if (lastNotice != null && now - lastNotice < COOLDOWN_NOTICE_INTERVAL_MS) return;
+        lastDuplicateNoticeAt.put(player.getUniqueId(), now);
+        player.sendMessage(MessageUtil.parse(
+                MessagesManager.getString("chat_limits.duplicate",
+                                "<dark_red>❌</dark_red> <red>You already sent this message. Please do not repeat it.</red>")));
+        ConsoleLogger.warn("[Chat] blocked " + player.getName()
+                + " — duplicate " + similarity + "% (window " + duplicateWindowMs
+                + " ms, limit " + duplicatePercent + "%)");
     }
 
     /**

@@ -94,6 +94,17 @@ max_entropy_percent = 50
 # 0 disables the cooldown.
 # Default: 1000
 cooldown_ms = 1000
+# Duplicate guard: window in milliseconds. A message that repeats the last
+# ACCEPTED message inside this window is dropped. The reference is the last
+# accepted message, so rejected attempts cannot shift it. 0 disables.
+# Default: 2000
+duplicate_window_ms = 2000
+# Minimum similarity (%) to the last accepted message that counts as a
+# duplicate: 100 = exact match (after trimming, collapsing spaces and
+# case-folding), 80 = one change in ~5 characters is already "the same".
+# 0 disables the check.
+# Default: 100
+duplicate_percent = 100
 # Block messages that contain Cyrillic letters (for non-Cyrillic servers).
 # Default: false
 block_cyrillic = false
@@ -328,6 +339,7 @@ caps = "<dark_red>❌</dark_red> <red>Слишком много КАПСА: %cap
 random = "<dark_red>❌</dark_red> <red>Сообщение выглядит как случайный набор символов и не отправлено.</red>"
 cooldown = "<dark_red>❌</dark_red> <red>Не так быстро! Подожди ещё %remaining% с.</red>"
 cyrillic = "<dark_red>❌</dark_red> <red>Кириллица в этом чате запрещена.</red>"
+duplicate = "<dark_red>❌</dark_red> <red>Ты уже отправлял это сообщение. Не повторяй его.</red>"
 
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
@@ -358,3 +370,4 @@ caps = "<dark_red>❌</dark_red> <red>Too many capital letters: %caps% of the al
 random = "<dark_red>❌</dark_red> <red>Your message looks like random characters and was not sent.</red>"
 cooldown = "<dark_red>❌</dark_red> <red>Slow down! Wait %remaining%s before the next message.</red>"
 cyrillic = "<dark_red>❌</dark_red> <red>Cyrillic characters are not allowed in this chat.</red>"
+duplicate = "<dark_red>❌</dark_red> <red>You already sent this message. Please do not repeat it.</red>"
