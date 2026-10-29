@@ -25,6 +25,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Custom chat system with two modes:
@@ -69,7 +71,20 @@ public class ChatManager implements Listener {
     private int maxCapsPercent = 50;
     /** Max share of "random looking" characters (0 disables the check, 100 = allow everything). */
     private int maxEntropyPercent = 50;
+    /** Minimum interval between two messages of one player (0 disables the cooldown). */
+    private int cooldownMs = 1000;
+    /** Messages of at most this many characters skip the CAPS check. */
+    private int capsIgnoreMaxChars = 8;
+    /** Blocks messages containing Cyrillic letters (non-Cyrillic servers). */
+    private boolean blockCyrillic = false;
     private String limitsBypassPermission = "ui.chat.limits.bypass";
+
+    /** Cooldown notice throttle: a spammer must not be answered with warning spam. */
+    private static final long COOLDOWN_NOTICE_INTERVAL_MS = 1000L;
+    /** Last accepted message time per player (chat cooldown). */
+    private final Map<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
+    /** Last cooldown notice time per player (throttles the warning itself). */
+    private final Map<UUID, Long> lastCooldownNoticeAt = new ConcurrentHashMap<>();
 
     private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
@@ -134,6 +149,9 @@ public class ChatManager implements Listener {
         this.maxChars = cfg.getInt("chat.limits.max_chars", ChatText.DEFAULT_MAX_CHARS);
         this.maxCapsPercent = cfg.getInt("chat.limits.max_caps_percent", 50);
         this.maxEntropyPercent = cfg.getInt("chat.limits.max_entropy_percent", 50);
+        this.cooldownMs = Math.max(0, cfg.getInt("chat.limits.cooldown_ms", 1000));
+        this.capsIgnoreMaxChars = Math.max(0, cfg.getInt("chat.limits.caps_ignore_max_chars", 8));
+        this.blockCyrillic = cfg.getBoolean("chat.limits.block_cyrillic", false);
         this.limitsBypassPermission = cfg.getString("chat.limits.bypass_permission", "ui.chat.limits.bypass");
 
         // Console channel settings (loaded in both modes so the toggle can validate)
@@ -195,6 +213,11 @@ public class ChatManager implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         PlayerChannelManager.remove(event.getPlayer());
+        // Drop the cooldown state so a reconnect starts clean and the maps do
+        // not grow with players who already left.
+        UUID id = event.getPlayer().getUniqueId();
+        lastMessageAt.remove(id);
+        lastCooldownNoticeAt.remove(id);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -230,10 +253,36 @@ public class ChatManager implements Listener {
                 && (limitsBypassPermission.isEmpty() || !player.hasPermission(limitsBypassPermission))
                 && !isCommandChannel(player)) {
 
-            // CAPS: judged only when the message has enough letters (short
-            // shouts like "DA" / "OK" must not be blocked).
+            long now = System.currentTimeMillis();
+
+            // COOLDOWN — too frequent messages are dropped before they are
+            // rendered. The timestamp is remembered only for a message that
+            // passes every check, so a rejected message does not eat the slot.
+            if (cooldownMs > 0) {
+                Long last = lastMessageAt.get(player.getUniqueId());
+                if (last != null && now - last < cooldownMs) {
+                    event.setCancelled(true);
+                    notifyCooldown(player, cooldownMs - (now - last), now);
+                    return;
+                }
+            }
+
+            // CYRILLIC — optional "no Cyrillic" mode (default off).
+            if (blockCyrillic && ChatText.containsCyrillic(messageText)) {
+                event.setCancelled(true);
+                player.sendMessage(MessageUtil.parse(
+                        MessagesManager.getString("chat_limits.cyrillic",
+                                "<dark_red>❌</dark_red> <red>Cyrillic characters are not allowed in this chat.</red>")));
+                ConsoleLogger.warn("[Chat] blocked " + player.getName()
+                        + " — Cyrillic text: " + messageText);
+                return;
+            }
+
+            // CAPS — always the SHARE of capital letters, whatever the length.
+            // Only messages of at most capsIgnoreMaxChars characters skip the
+            // check ("OK", "LOL", "GO" must stay allowed).
             if (maxCapsPercent > 0 && maxCapsPercent < 100
-                    && ChatText.letterCount(messageText) >= ChatText.MIN_LETTERS_FOR_CAPS) {
+                    && ChatText.charCount(messageText.strip()) > capsIgnoreMaxChars) {
                 int caps = ChatText.capsPercent(messageText);
                 if (caps > maxCapsPercent) {
                     event.setCancelled(true);
@@ -261,6 +310,9 @@ public class ChatManager implements Listener {
                     return;
                 }
             }
+
+            // The message passed every check — remember it for the cooldown.
+            if (cooldownMs > 0) lastMessageAt.put(player.getUniqueId(), now);
         }
 
         if (!enabled) return;
@@ -584,6 +636,27 @@ public class ChatManager implements Listener {
         } else {
             sendNotAllowedWarning(player, content);
         }
+    }
+
+    /**
+     * Tells the player to slow down. The notice itself is throttled to one per
+     * second per player: a spammer would otherwise be answered with a chat
+     * flood of warnings.
+     */
+    private void notifyCooldown(Player player, long remainingMs, long now) {
+        Long lastNotice = lastCooldownNoticeAt.get(player.getUniqueId());
+        if (lastNotice != null && now - lastNotice < COOLDOWN_NOTICE_INTERVAL_MS) return;
+        lastCooldownNoticeAt.put(player.getUniqueId(), now);
+        player.sendMessage(MessageUtil.parse(
+                MessagesManager.getString("chat_limits.cooldown",
+                                "<dark_red>❌</dark_red> <red>Slow down! Wait %remaining%s before the next message.</red>")
+                        .replace("%remaining%", formatSeconds(remainingMs))));
+    }
+
+    /** Milliseconds to a one-decimal seconds label ({@code 850 → "0.9"}). */
+    private static String formatSeconds(long millis) {
+        double seconds = Math.max(0.1, millis / 1000.0);
+        return String.format(java.util.Locale.ROOT, "%.1f", seconds);
     }
 
     /**

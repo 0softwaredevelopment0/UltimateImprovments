@@ -72,10 +72,15 @@ max_lines = 3
 # Default: 512
 max_chars = 512
 # Max share of CAPITAL letters among the letters of the message, %.
-# Short messages (< 10 letters) are never judged.
+# The share is checked whatever the message length; only messages with at
+# most caps_ignore_max_chars characters skip the check.
 # 0 disables the check, 100 allows everything.
 # Default: 50
 max_caps_percent = 50
+# Messages of at most this many characters skip the CAPS check.
+# Keeps short shouts like "OK", "LOL", "GO" allowed.
+# Default: 8
+caps_ignore_max_chars = 8
 # Max share of "random characters" (machine-made soup), %.
 # Measured as the share of message characters inside random-looking tokens:
 # near-maximal per-character entropy PLUS a machine-made structure
@@ -84,6 +89,14 @@ max_caps_percent = 50
 # does not count as interleaving. 0 disables the check, 100 allows everything.
 # Default: 50
 max_entropy_percent = 50
+# Minimum interval between two messages of ONE player, milliseconds.
+# A message sent earlier is rejected with a (throttled) notice.
+# 0 disables the cooldown.
+# Default: 1000
+cooldown_ms = 1000
+# Block messages that contain Cyrillic letters (for non-Cyrillic servers).
+# Default: false
+block_cyrillic = false
 # Permission that skips all the limits above.
 # Default: "ui.chat.limits.bypass"
 bypass_permission = "ui.chat.limits.bypass"
@@ -313,6 +326,8 @@ violation_match = "<gray>└</gray> <white>Match:</white> %source%"
 [messages.chat_limits]
 caps = "<dark_red>❌</dark_red> <red>Слишком много КАПСА: %caps% из %limit% допустимых. Пиши обычным текстом.</red>"
 random = "<dark_red>❌</dark_red> <red>Сообщение выглядит как случайный набор символов и не отправлено.</red>"
+cooldown = "<dark_red>❌</dark_red> <red>Не так быстро! Подожди ещё %remaining% с.</red>"
+cyrillic = "<dark_red>❌</dark_red> <red>Кириллица в этом чате запрещена.</red>"
 
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
@@ -341,3 +356,5 @@ violation_match = "<gray>└</gray> <white>Match:</white> %source%"
 [messages_en.chat_limits]
 caps = "<dark_red>❌</dark_red> <red>Too many capital letters: %caps% of the allowed %limit%. Please write normally.</red>"
 random = "<dark_red>❌</dark_red> <red>Your message looks like random characters and was not sent.</red>"
+cooldown = "<dark_red>❌</dark_red> <red>Slow down! Wait %remaining%s before the next message.</red>"
+cyrillic = "<dark_red>❌</dark_red> <red>Cyrillic characters are not allowed in this chat.</red>"
