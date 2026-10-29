@@ -121,6 +121,77 @@ public final class ChatText {
     }
 
     /**
+     * Removes MiniMessage markup, leaving only the text a player actually sees:
+     * every unescaped tag ({@code <sprite:items:item/x>},
+     * {@code <gradient:#e1ff00:#00ff55>}, {@code <bold>}, {@code </bold>}, …) is
+     * dropped, and legacy {@code §} colour codes are stripped as well.
+     * <p>
+     * Needed because the abuse metrics (CAPS share, "random characters") must judge
+     * the VISIBLE text. Markup is a dense mix of letters, hex digits and symbols
+     * ({@code <gradient:#e1ff00:#00ff55>}), which the random-soup detector reads as
+     * machine-made content: a player who decorated one normal word with sprite +
+     * gradient + bold was blocked as a bot (reported case: {@code 100% random} for a
+     * message whose visible text was just {@code toxic хм}).
+     * <p>
+     * Escaped tags ({@code \<bold\>}) are kept: they render as literal text, so they
+     * are part of what players see. A '&gt;' inside a quoted tag argument does not
+     * close the tag, and an unmatched '&lt;' stays literal.
+     *
+     * @param text the raw message
+     * @return the text with markup removed (never null)
+     */
+    public static String stripMarkup(String text) {
+        if (text == null || text.isEmpty()) return "";
+        StringBuilder out = new StringBuilder(text.length());
+        int i = 0;
+        while (i < text.length()) {
+            int cp = text.codePointAt(i);
+            if (cp == '<' && !isEscapedAt(text, i)) {
+                int end = markupEnd(text, i + 1);
+                if (end >= 0) {
+                    i = end + 1;
+                    continue;
+                }
+            }
+            out.appendCodePoint(cp);
+            i += Character.charCount(cp);
+        }
+        return LEGACY_CODES.matcher(out.toString()).replaceAll("")
+                .replace("\u00A7", "");
+    }
+
+    /** True when the character at {@code index} is preceded by an odd number of backslashes. */
+    private static boolean isEscapedAt(String text, int index) {
+        int backslashes = 0;
+        for (int i = index - 1; i >= 0 && text.charAt(i) == '\\'; i--) backslashes++;
+        return (backslashes & 1) == 1;
+    }
+
+    /**
+     * Index of the '&gt;' closing a tag whose content starts at {@code from}, or -1 when
+     * the '&lt;' is not a tag after all (unmatched, or an unescaped '&lt;' appears first).
+     * A '&gt;' inside a quoted argument does not close the tag; a backslash-escaped '&gt;'
+     * ({@code \>}) does — escaped forms must not survive the strip and skew the metrics.
+     */
+    private static int markupEnd(String text, int from) {
+        char quote = 0;
+        for (int i = from; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (quote != 0) {
+                if (c == quote) quote = 0;
+                continue;
+            }
+            if (c == '\'' || c == '"') {
+                quote = c;
+                continue;
+            }
+            if (c == '<' && !isEscapedAt(text, i)) return -1;
+            if (c == '>') return i;
+        }
+        return -1;
+    }
+
+    /**
      * Similarity of two messages in percent (0..100), backing the duplicate
      * message guard (chat.limits.duplicate_percent).
      * <p>

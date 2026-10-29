@@ -323,12 +323,20 @@ public class ChatManager implements Listener {
                 return;
             }
 
+            // Metrics below judge the VISIBLE text. With player MiniMessage enabled
+            // the raw message is full of tags (<gradient:#e1ff00:#00ff55>, <sprite:…>)
+            // that look exactly like machine soup to the random detector and whose
+            // letters inflate the CAPS share; strip the markup first. When MiniMessage
+            // is disabled the tags render literally, so they must still count.
+            String analysisText = playerMiniMessage
+                    ? ChatText.stripMarkup(messageText) : messageText;
+
             // CAPS — always the SHARE of capital letters, whatever the length.
             // Only messages of at most capsIgnoreMaxChars characters skip the
             // check ("OK", "LOL", "GO" must stay allowed).
             if (maxCapsPercent > 0 && maxCapsPercent < 100
-                    && ChatText.charCount(messageText.strip()) > capsIgnoreMaxChars) {
-                int caps = ChatText.capsPercent(messageText);
+                    && ChatText.charCount(analysisText.strip()) > capsIgnoreMaxChars) {
+                int caps = ChatText.capsPercent(analysisText);
                 if (caps > maxCapsPercent) {
                     event.setCancelled(true);
                     player.sendMessage(MessageUtil.parse(
@@ -344,7 +352,7 @@ public class ChatManager implements Listener {
 
             // RANDOM SOUP: share of characters inside random-looking tokens.
             if (maxEntropyPercent > 0 && maxEntropyPercent < 100) {
-                int random = ChatText.randomnessPercent(messageText);
+                int random = ChatText.randomnessPercent(analysisText);
                 if (random > maxEntropyPercent) {
                     event.setCancelled(true);
                     player.sendMessage(MessageUtil.parse(
