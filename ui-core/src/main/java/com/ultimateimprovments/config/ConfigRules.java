@@ -677,6 +677,8 @@ final class ConfigRules {
             integer("concrete_bucket.particle_count", 1, 100),
             dbl("concrete_bucket.particle_offset", 0, 10),
             integer("concrete_bucket.particle_interval_ticks", 1, 200),
+            string("concrete_bucket.blocked_sound", false, 64),
+            dbl("concrete_bucket.blocked_sound_pitch", 0.5, 2),
 
             notBlank("plugin_version", 32),
             string("prefix", false, 512)

@@ -5,6 +5,7 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.features.world.ConcreteBucketDatabase.BlockPos;
 import com.ultimateimprovments.mechanics.features.world.ConcreteBucketDatabase.StoredWater;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.SoundUtil;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -15,16 +16,20 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.Directional;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.SpongeAbsorbEvent;
@@ -84,6 +89,14 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     private static double hintOffset = 0.25;
     // Hint particle interval (ticks). Half a second keeps the marks continuous
     private static long tickInterval = 10L;
+    // Dull "this is not water" thud for refused bucket / bottle / dispenser attempts
+    private static Sound blockedSound = Sound.BLOCK_MUD_HIT;
+    private static float blockedSoundPitch = 0.6f;
+    private static final float BLOCKED_SOUND_VOLUME = 0.5f;
+    private static final BlockFace[] NEIGHBOURS = {
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST,
+            BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
+    };
 
     // Tracked water blocks: location -> {originalBiome, groupId}
     private static final Map<Location, TrackedWater> trackedWater = new HashMap<>();
@@ -150,6 +163,9 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         hintCount = Math.max(1, cfg.getInt("concrete_bucket.particle_count", 1));
         hintOffset = Math.max(0.0, cfg.getDouble("concrete_bucket.particle_offset", 0.25));
         tickInterval = Math.max(1L, cfg.getLong("concrete_bucket.particle_interval_ticks", 10L));
+        blockedSound = SoundUtil.getSound(cfg.getString("concrete_bucket.blocked_sound"), Sound.BLOCK_MUD_HIT);
+        blockedSoundPitch = (float) Math.min(2.0, Math.max(0.5,
+                cfg.getDouble("concrete_bucket.blocked_sound_pitch", 0.6)));
     }
 
     /** Hardening delay in whole seconds (used by the craft listener's item lore). */
@@ -239,6 +255,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         // covers clicking a block whose neighbour face holds the water.
         if (isCement(clicked) || isCement(clicked.getRelative(e.getBlockFace()))) {
             e.setCancelled(true);
+            playBlockedSound(clicked.getLocation());
         }
     }
 
@@ -257,13 +274,16 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         Block clicked = e.getClickedBlock();
         if (clicked != null && isCement(clicked)) {
             e.setCancelled(true);
+            playBlockedSound(clicked.getLocation());
             return;
         }
 
         // The client raytrace ignores fluids, so the click usually lands on the
         // block behind the puddle — mirror the vanilla fill ray (fluids included).
-        if (isCement(aimedBlock(e.getPlayer()))) {
+        Block aimed = aimedBlock(e.getPlayer());
+        if (isCement(aimed)) {
             e.setCancelled(true);
+            playBlockedSound(aimed.getLocation());
         }
     }
 
@@ -310,6 +330,46 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
                 sponge.breakNaturally();
             }
         });
+    }
+
+    // =========================
+    // 📦 DISPENSER — no automated cement theft / absorb
+    // =========================
+    // A dispenser fills an empty bucket or a glass bottle from the fluid in front
+    // of it, and a sponge placed by a dispenser absorbs the water around it right
+    // away — all of that bypasses the player events above.
+    @EventHandler(ignoreCancelled = true)
+    public void onDispense(BlockDispenseEvent e) {
+        ItemStack item = e.getItem();
+        if (item == null) return;
+
+        Material type = item.getType();
+        if (type != Material.SPONGE && type != Material.BUCKET && type != Material.GLASS_BOTTLE) return;
+
+        Block target = dispenseTarget(e.getBlock());
+        if (target == null) return;
+
+        // A sponge absorbs the cement around the block it lands in
+        boolean blocked = type == Material.SPONGE
+                ? isCement(target) || hasCementNeighbour(target)
+                : isCement(target);
+        if (!blocked) return;
+
+        e.setCancelled(true);
+        playBlockedSound(target.getLocation());
+    }
+
+    /** The block a dispenser would place its item into. */
+    private static Block dispenseTarget(Block dispenser) {
+        if (!(dispenser.getBlockData() instanceof Directional directional)) return null;
+        return dispenser.getRelative(directional.getFacing());
+    }
+
+    private static boolean hasCementNeighbour(Block block) {
+        for (BlockFace face : NEIGHBOURS) {
+            if (isCement(block.getRelative(face))) return true;
+        }
+        return false;
     }
 
     // =========================
@@ -480,6 +540,14 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         return block != null
                 && block.getType() == Material.WATER
                 && trackedWater.containsKey(block.getLocation());
+    }
+
+    /** Dull thud so the refusal is noticeable without any chat spam. */
+    private static void playBlockedSound(Location loc) {
+        World world = loc.getWorld();
+        if (world == null || blockedSound == null) return;
+        world.playSound(loc.clone().add(0.5, 0.5, 0.5), blockedSound,
+                BLOCKED_SOUND_VOLUME, blockedSoundPitch);
     }
 
     // =========================
