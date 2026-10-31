@@ -3,6 +3,25 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.51] - since 1.8.5-alpha.50 (2026-11-01)
+
+### Fixed
+- **Levitation charm no longer gets the player kicked for flying.** The chestplate
+  jetpack used to write raw velocity (`player.setVelocity(...)`) every 2 ticks.
+  The client never simulates that push, so the movement anticheat saw ascent with
+  no legitimate reason and punished the player as a fly-hacker. The charm now
+  grants the real vanilla **Levitation effect** while the jump key is held —
+  amplifier 5, whose terminal rise is `0.05 × (5 + 1) = 0.30` blocks/tick, i.e.
+  exactly the lift the velocity version pushed (≈ 6 blocks/s), so the jetpack
+  feels the same. Vanilla levitation physics run on both the server and the
+  client, so movement stays in sync, and every movement check already treats
+  `LEVITATION` as a legitimate ascent reason
+  (`ExemptionManager#isMovementExempted`). The effect is invisible (ambient, no
+  particles, no HUD icon), refreshed once per second, and removed the moment the
+  key is released — together with the leftover upward momentum, so no unexplained
+  ascent survives the effect. Unchanged: chestplate only, 1 integrity use/s while
+  boosting, no lift in Creative/Spectator/flying/gliding/vehicles.
+
 ## [1.8.5-alpha.50] - since 1.8.5-alpha.49 (2026-11-01)
 
 ### Added

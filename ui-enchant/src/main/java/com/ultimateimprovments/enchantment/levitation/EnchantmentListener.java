@@ -12,9 +12,11 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,7 +24,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * Listener: Levitation enchantment — gentle jetpack.
  * <p>
  * While a player WEARS a chestplate carrying the Levitation charm, holding the
- * jump key smoothly lifts them upward (jetpack-style, ~1 block per press).
+ * jump key gives them the real vanilla {@link PotionEffectType#LEVITATION}
+ * effect, which lifts them upward (jetpack-style, ~6 blocks per second).
+ * <p>
+ * <b>Why the potion effect and not a raw velocity push:</b> the old version
+ * wrote {@code player.setVelocity(...)} every sweep. The client never simulates
+ * that push, so the server's position and the client's prediction disagreed and
+ * the movement anticheat read the ascent as hack-flight — players were kicked
+ * for flying. A levitation effect is simulated by BOTH sides
+ * ({@code LivingEntity#travelInAir} handles it server-side, the vanilla client
+ * runs the same physics), so the client predicts the same motion the server
+ * expects, and every movement check in the anticheat already treats
+ * {@code LEVITATION} as a legitimate ascent reason (see
+ * {@code ExemptionManager#isMovementExempted}).
+ * <p>
+ * <b>Strength:</b> vanilla levitation converges to a constant rise of
+ * {@code 0.05 * (amplifier + 1)} blocks/tick
+ * ({@code v = 0.8 * v + 0.01 * (amplifier + 1)} per tick in
+ * {@code LivingEntity#travelInAir}). Amplifier
+ * {@value #LEVITATION_AMPLIFIER} therefore tops out at exactly
+ * {@value #TARGET_RISE_PER_TICK} blocks/tick — the same lift the old
+ * velocity jetpack pushed, so the charm feels unchanged.
  * <p>
  * <b>Integrity cost:</b> actively boosting drains 1 use of integrity from the
  * charming CHESTPLATE per second (the jetpack is the chestplate's engine —
@@ -35,7 +57,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>players pending auth (frozen by the auth system) are never boosted;</li>
  *   <li>Creative/Spectator players are never touched (they already fly);</li>
  *   <li>flying players (e.g. the Flight charm) are never touched;</li>
- *   <li>existing upward velocity is never reduced — only topped up to the target.</li>
+ *   <li>gliding players (elytra) and vehicle riders are never touched;</li>
+ *   <li>the effect is applied by THIS charm only — on release it is removed and
+ *       the leftover upward momentum is dropped, so the anticheat never sees
+ *       unexplained ascent after the effect is gone.</li>
  * </ul>
  * Jump detection uses {@link ServerPlayer#getLastClientInput()} — the player's
  * real input state, updated by the server every tick. A sweep every
@@ -50,13 +75,32 @@ public final class EnchantmentListener {
     /** Integrity drain interval: 20 ticks = 1 second of active boosting. */
     static final long DRAIN_INTERVAL_TICKS = 20L;
 
-    /** Target upward velocity while the jump key is held (blocks/tick).
-     *  2× the old 0.15 (the old toss felt too weak): ~0.30 blocks/tick every
-     *  2 ticks with 0.08/tick gravity ≈ 4.4–6 blocks/sec — a real jetpack lift. */
-    private static final double JETPACK_Y = 0.30;
+    /** The lift the charm has always produced: 0.30 blocks/tick ≈ 6 blocks/s. */
+    static final double TARGET_RISE_PER_TICK = 0.30;
 
-    /** Players ACTIVELY boosting right now (jump held, boost applied on the last sweep). */
-    private static final java.util.Set<UUID> BOOSTING = ConcurrentHashMap.newKeySet();
+    /**
+     * Levitation amplifier that reproduces {@link #TARGET_RISE_PER_TICK}:
+     * vanilla terminal rise is {@code 0.05 * (amplifier + 1)} blocks/tick,
+     * so amplifier 5 → 0.30 blocks/tick.
+     */
+    static final int LEVITATION_AMPLIFIER =
+            (int) Math.round(TARGET_RISE_PER_TICK / 0.05) - 1;
+
+    /**
+     * Effect duration: 40 ticks (2s). Refreshed only when less than
+     * {@value #EFFECT_REFRESH_BELOW_TICKS} ticks remain, so the client sees about
+     * one effect packet per second instead of one per sweep.
+     */
+    static final int EFFECT_DURATION_TICKS = 40;
+
+    /** Re-apply the effect when its remaining duration falls below this. */
+    static final int EFFECT_REFRESH_BELOW_TICKS = 20;
+
+    /** Players ACTIVELY boosting right now (jump held, effect applied on the last sweep). */
+    private static final Set<UUID> BOOSTING = ConcurrentHashMap.newKeySet();
+
+    /** Players currently carrying OUR levitation effect (so we only ever remove our own). */
+    private static final Set<UUID> LIFTING = ConcurrentHashMap.newKeySet();
 
     private EnchantmentListener() {}
 
@@ -76,56 +120,88 @@ public final class EnchantmentListener {
     }
 
     /**
-     * Applies the gentle upward boost while the player holds the jump key,
-     * and tracks who is actively boosting (for the integrity drain).
+     * Keeps the levitation effect alive while the player holds the jump key,
+     * and takes it away (plus the leftover momentum) as soon as they stop.
      */
     static void updatePlayer(Player player) {
         UUID uuid = player.getUniqueId();
 
-        // Never boost a frozen (pending auth) player.
-        if (CoreHooks.isPendingAuth(uuid)) {
-            BOOSTING.remove(uuid);
+        if (!shouldLift(player)) {
+            endLift(player);
             return;
         }
+
+        grantLift(player);
+        BOOSTING.add(uuid);
+    }
+
+    /** All the "may this player be lifted right now?" rules in one place. */
+    private static boolean shouldLift(Player player) {
+        // Never boost a frozen (pending auth) player.
+        if (CoreHooks.isPendingAuth(player.getUniqueId())) return false;
 
         // Creative/Spectator already fly — never touch them.
         GameMode gm = player.getGameMode();
-        if (gm == GameMode.CREATIVE || gm == GameMode.SPECTATOR) {
-            BOOSTING.remove(uuid);
-            return;
-        }
+        if (gm == GameMode.CREATIVE || gm == GameMode.SPECTATOR) return false;
+
         // Flying (Flight charm / another fly source) — leave alone.
-        if (player.isFlying()) {
-            BOOSTING.remove(uuid);
-            return;
-        }
-        // Gliding with an elytra — boost would fight the glide.
-        if (player.isGliding()) {
-            BOOSTING.remove(uuid);
-            return;
-        }
+        if (player.isFlying()) return false;
+
+        // Gliding with an elytra — the lift would fight the glide.
+        if (player.isGliding()) return false;
+
+        // Riding something — the vehicle owns the movement.
+        if (player.isInsideVehicle()) return false;
 
         ItemStack chest = player.getInventory().getChestplate();
         if (chest == null || chest.getType() == Material.AIR
-                || com.ultimateimprovments.enchantment.levitation.Enchantment.getLevel(chest) <= 0) {
-            BOOSTING.remove(uuid);
-            return;
+                || Enchantment.getLevel(chest) <= 0) {
+            return false;
         }
 
-        // Is the player holding the jump key right now?
-        if (!isJumping(player)) {
-            BOOSTING.remove(uuid);
-            return;
-        }
+        // Holding the jump key right now?
+        return isJumping(player);
+    }
 
-        // Gentle boost up: keep horizontal velocity untouched, never reduce an
-        // existing upward velocity.
+    /**
+     * Applies (or refreshes) the vanilla levitation effect on the player.
+     * The effect carries no particles and no HUD icon — it is the chestplate's
+     * engine, not a status the player has to watch.
+     */
+    private static void grantLift(Player player) {
+        PotionEffect current = player.getPotionEffect(PotionEffectType.LEVITATION);
+        boolean ours = current != null && current.getAmplifier() == LEVITATION_AMPLIFIER;
+
+        if (!ours || current.getDuration() <= EFFECT_REFRESH_BELOW_TICKS) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,
+                    EFFECT_DURATION_TICKS, LEVITATION_AMPLIFIER,
+                    true,   // ambient: no "fresh effect" particles on the client
+                    false,  // particles
+                    false)); // HUD icon
+        }
+        LIFTING.add(player.getUniqueId());
+    }
+
+    /**
+     * Stops the lift: removes OUR levitation effect and drops the leftover
+     * upward velocity. Without the latter the player would keep ascending for
+     * a dozen ticks after the effect is gone — ascent with no legitimate reason
+     * as far as the anticheat can tell.
+     */
+    private static void endLift(Player player) {
+        if (!LIFTING.remove(player.getUniqueId())) return;
+
+        PotionEffect current = player.getPotionEffect(PotionEffectType.LEVITATION);
+        // Not our effect (shulker bullet, another plugin) — leave it alone.
+        if (current == null || current.getAmplifier() != LEVITATION_AMPLIFIER) return;
+
+        player.removePotionEffect(PotionEffectType.LEVITATION);
+
         Vector velocity = player.getVelocity();
-        if (velocity.getY() < JETPACK_Y) {
-            velocity.setY(JETPACK_Y);
+        if (velocity.getY() > 0) {
+            velocity.setY(0);
             player.setVelocity(velocity);
         }
-        BOOSTING.add(uuid);
     }
 
     /**
@@ -157,7 +233,7 @@ public final class EnchantmentListener {
 
                 ItemStack chest = player.getInventory().getChestplate();
                 if (chest == null || chest.getType() == Material.AIR
-                        || com.ultimateimprovments.enchantment.levitation.Enchantment.getLevel(chest) <= 0) {
+                        || Enchantment.getLevel(chest) <= 0) {
                     continue;
                 }
 
@@ -182,6 +258,7 @@ public final class EnchantmentListener {
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::drainIntegrity,
                 DRAIN_INTERVAL_TICKS, DRAIN_INTERVAL_TICKS);
         ConsoleLogger.info("[Levitation] Listener registered (jetpack sweep every "
-                + (SWEEP_INTERVAL_TICKS / 20.0) + "s, 1 chestplate integrity-use/s while boosting).");
+                + (SWEEP_INTERVAL_TICKS / 20.0) + "s, levitation "
+                + (LEVITATION_AMPLIFIER + 1) + " while jump is held, 1 chestplate integrity-use/s).");
     }
 }
