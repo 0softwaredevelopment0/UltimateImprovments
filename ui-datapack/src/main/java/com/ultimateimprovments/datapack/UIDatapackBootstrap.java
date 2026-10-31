@@ -17,6 +17,10 @@ import java.nio.file.Path;
  * server start and discovered with {@code autoEnableOnServerStart(true)}, so it is
  * active from the first world load with no restart.
  * <p>
+ * The addon also registers the 18 custom enchantments through
+ * {@link EnchantmentRegistryBootstrap}: they used to be datapack files, and the item tags
+ * that survived the migration still ship here.
+ * <p>
  * The extracted folder is <b>language-specific</b> ({@code UI-Datapack-en} or
  * {@code UI-Datapack-ru}, see {@link DatapackPackBootstrap}) and its name is used as
  * the pack id, so {@code /datapack list} shows which variant is active.
@@ -32,6 +36,10 @@ public class UIDatapackBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(BootstrapContext context) {
+        // Enchantments moved out of the datapack into the registry; registering them here
+        // keeps them tied to this addon (and to datapack.modules.enchantments) as before.
+        EnchantmentRegistryBootstrap.register(context);
+
         context.getLifecycleManager().registerEventHandler(LifecycleEvents.DATAPACK_DISCOVERY, event -> {
             try {
                 if (preparedPack == null) {
