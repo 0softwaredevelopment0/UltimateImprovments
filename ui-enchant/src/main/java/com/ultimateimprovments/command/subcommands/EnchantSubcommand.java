@@ -185,11 +185,10 @@ public final class EnchantSubcommand {
      * <p>
      * Built from THREE sources so nothing is ever missed:
      * <ol>
-     *   <li>{@link Registry#ENCHANTMENT} — all vanilla enchantments + enchantments
-     *       registered by other plugins (full key, e.g. "minecraft:sharpness");</li>
-     *   <li>The bundled UI-Datapack {@code data/ui/enchantment/*.json} files — the custom
-     *       enchantments (ui:aoe, ui:autosmelt, ...) even if the registry does not
-     *       expose them in iteration (data-driven registries often don't);</li>
+     *   <li>{@link Registry#ENCHANTMENT} — all vanilla enchantments plus anything
+     *       registered through the registry API (full key, e.g. "minecraft:sharpness");</li>
+     *   <li>{@link #CUSTOM_UI_ENCHANTS} — the custom enchantments UI-Datapack registers
+     *       through {@code RegistryEvents} in its bootstrap phase;</li>
      *   <li>{@code enchant.custom_enchantments} from the config (bare names
      *       get the {@code ui:} prefix).</li>
      * </ol>
@@ -202,8 +201,8 @@ public final class EnchantSubcommand {
             names.add(ench.getKey().toString());
         }
 
-        // 2. UI-Datapack enchantments — read from the bundled datapack files
-        for (String uiEnchant : datapackEnchantNames()) {
+        // 2. Custom UI enchantments — registered by UI-Datapack through the registry API
+        for (String uiEnchant : CUSTOM_UI_ENCHANTS) {
             names.add("ui:" + uiEnchant);
         }
 
@@ -218,40 +217,20 @@ public final class EnchantSubcommand {
         return new ArrayList<>(names);
     }
 
-    /** Cached list of UI-Datapack enchantment ids (file names of data/ui/enchantment/*.json). */
-    private static volatile List<String> cachedDatapackEnchants = null;
-
     /**
-     * Reads {@code datapacks/UI-Datapack-<lang>/data/ui/enchantment/*.json} from the
-     * plugin JAR and returns their ids (file names without the .json extension).
-     * Both language variants ({@code -en}, {@code -ru}) are scanned — the ids are
-     * identical, the translation only touches display names.
+     * The custom enchantments UI-Datapack registers through
+     * {@code RegistryEvents.ENCHANTMENT.compose()} in its bootstrap phase.
+     * <p>
+     * They used to be {@code data/ui/enchantment/*.json} datapack files, which this class
+     * discovered by scanning the plugin JAR. They live in the enchantment registry now, but
+     * data-driven registries do not always surface their entries through iteration, so the
+     * ids are listed here as well to keep tab-complete complete. Mirrors
+     * {@code EnchantmentDefinition#all()} in UI-Datapack — keep the two in sync.
      */
-    private static List<String> datapackEnchantNames() {
-        List<String> cached = cachedDatapackEnchants;
-        if (cached != null) return cached;
-
-        Set<String> result = new java.util.LinkedHashSet<>();
-        try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(Main.getInstance().getPluginFile())) {
-            var entries = zip.entries();
-            String marker = "/data/ui/enchantment/";
-            while (entries.hasMoreElements()) {
-                var entry = entries.nextElement();
-                if (entry.isDirectory()) continue;
-                String name = entry.getName();
-                if (!name.startsWith("datapacks/UI-Datapack") || !name.contains(marker)
-                        || !name.endsWith(".json")) continue;
-                result.add(name.substring(name.lastIndexOf(marker) + marker.length(),
-                        name.length() - ".json".length()));
-            }
-        } catch (Exception e) {
-            // datapack not reachable — registry + config still cover the list
-        }
-        List<String> list = new ArrayList<>(result);
-        list.sort(String::compareTo);
-        cachedDatapackEnchants = list;
-        return list;
-    }
+    private static final List<String> CUSTOM_UI_ENCHANTS = List.of(
+            "aoe", "attack_aoe", "autosmelt", "blunting", "container_stealing", "degradation",
+            "disappearance", "flight", "igniting", "item_stealing", "lava_walker", "levitation",
+            "magnet", "repairing", "self_destruct", "treecapitator", "veinminer", "vulnerability");
 
     // =========================
     // SLOTS

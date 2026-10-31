@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -45,11 +44,11 @@ final class DatapackPackBootstrap {
     /** Name prefix of the pack on disk (the language suffix follows). */
     static final String PACK_PREFIX = "UI-Datapack";
 
-    private static final String EN = "en";
-    private static final String RU = "ru";
+    private static final String EN = PackLanguage.EN;
+    private static final String RU = PackLanguage.RU;
 
     /** Language used when nothing is configured and UI-Core has no preference yet. */
-    private static final String DEFAULT_LANG = EN;
+    private static final String DEFAULT_LANG = PackLanguage.DEFAULT_LANG;
 
     private static final String[] PARTS = {
             "enchantments", "advancements", "custom_recipes", "vanilla_recipes",
@@ -101,7 +100,7 @@ final class DatapackPackBootstrap {
             return null;
         }
 
-        String lang = resolveLanguage(configuredLang, shared, log);
+        String lang = PackLanguage.resolve(configuredLang, shared, log);
 
         File source = locateSource(lang, log);
         if (source == null) {
@@ -141,47 +140,6 @@ final class DatapackPackBootstrap {
         log.info("Extracted " + copied + " datapack file(s) from " + packName
                 + " to " + target.getAbsolutePath());
         return target.toPath();
-    }
-
-    // =========================
-    // LANGUAGE
-    // =========================
-
-    /**
-     * Resolves the datapack variant: an explicit {@code datapack.lang} ("en"/"ru")
-     * wins, anything else ("auto", blank, unknown) follows {@code messages.lang}
-     * from {@code UI-Core.toml}, falling back to English.
-     */
-    private static String resolveLanguage(String configured, File shared, ComponentLogger log) {
-        String wanted = normalize(configured);
-        if (wanted != null) return wanted;
-
-        if (configured != null && !configured.isBlank()
-                && !"auto".equalsIgnoreCase(configured.trim())) {
-            log.warn("Unknown datapack.lang '" + configured
-                    + "' (expected 'en', 'ru' or 'auto') — following messages.lang instead.");
-        }
-        String global = readCoreLanguage(shared);
-        return global == null ? DEFAULT_LANG : global;
-    }
-
-    /** Reads {@code messages.lang} straight from {@code configs/UI-Core.toml} (may not exist yet). */
-    private static String readCoreLanguage(File shared) {
-        File core = new File(new File(shared, "configs"), "UI-Core.toml");
-        if (!core.isFile()) return null;
-        try {
-            Toml messages = new Toml().read(core).getTable("messages");
-            return messages == null ? null : normalize(messages.getString("lang"));
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
-    /** @return "en"/"ru" for a valid language value, otherwise {@code null} */
-    private static String normalize(String lang) {
-        if (lang == null) return null;
-        String value = lang.trim().toLowerCase(Locale.ROOT);
-        return EN.equals(value) || RU.equals(value) ? value : null;
     }
 
     // =========================
