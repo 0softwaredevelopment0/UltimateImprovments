@@ -156,6 +156,45 @@ public class WirelessRedstoneManager implements Listener {
         return links.getOrDefault(pos, Collections.emptySet());
     }
 
+    /**
+     * True when the stored position provably lost its device (destroyed, replaced by
+     * another block). A position in a world that is not loaded right now returns
+     * {@code false}: the state is unknown, so the link must be kept.
+     */
+    private static boolean isDeadLink(BlockPos pos) {
+        Location loc = pos.toLocation();
+        return loc != null && !isLinkable(loc.getBlock());
+    }
+
+    /**
+     * Partners of a block without dead links.
+     * <p>
+     * Explosions, pistons, world edits and plain block replacement never fire
+     * {@link BlockBreakEvent}, so a link can outlive its device. Such a ghost link
+     * used to keep reporting "already has N connections" forever and was written
+     * back into the database on every new bind — the device could never be bound
+     * again. Dead links are dropped here (memory, chunk ticket and DB row) as soon
+     * as the player interacts with the device.
+     */
+    private Set<BlockPos> livePartners(BlockPos pos) {
+        Set<BlockPos> partners = getPartners(pos);
+        if (partners.isEmpty()) return Collections.emptySet();
+
+        List<BlockPos> dead = new ArrayList<>();
+        for (BlockPos partner : partners) {
+            if (isDeadLink(partner)) dead.add(partner);
+        }
+        if (dead.isEmpty()) return partners;
+
+        for (BlockPos partner : dead) {
+            removeLink(pos, partner);
+            removeChunkTicket(partner);
+            removeLinkDb(pos, partner);
+            observerPrevPowered.remove(partner);
+        }
+        return getPartners(pos);
+    }
+
     /** Add a bidirectional link A↔B */
     private void addLink(BlockPos a, BlockPos b) {
         links.computeIfAbsent(a, k -> ConcurrentHashMap.newKeySet()).add(b);
@@ -673,6 +712,16 @@ public class WirelessRedstoneManager implements Listener {
         String name = blockName(clicked);
 
         BlockPos first = bindingPlayers.get(uuid);
+        // A pending source whose device disappeared in the meantime must not hijack
+        // this click: drop the session and treat the click as a fresh first click.
+        if (first != null) {
+            Location pendingLoc = first.toLocation();
+            if (pendingLoc == null || !isLinkable(pendingLoc.getBlock())) {
+                bindingPlayers.remove(uuid);
+                first = null;
+            }
+        }
+
         if (first != null) {
             if (first.equals(clickedPos)) {
                 bindingPlayers.remove(uuid);
@@ -689,12 +738,24 @@ public class WirelessRedstoneManager implements Listener {
                 return;
             }
 
-            // Add the link to existing ones (one-to-many)
-            BlockPos second = clickedPos;
-            addLink(first, second);
+            // Already linked: keep the session open so another device can be picked.
+            if (getPartners(first).contains(clickedPos)) {
+                player.sendActionBar(MessageUtil.parse("<yellow>⚠ " + blockName(firstLoc.getBlock()) + " is already linked to " + name
+                        + ". Shift+RMB a different device, or the same block again to cancel.</yellow>"));
+                e.setCancelled(true);
+                return;
+            }
+
+            addLink(first, clickedPos);
             addChunkTicket(first);
-            addChunkTicket(second);
-            saveLinkDb(first, second);
+            addChunkTicket(clickedPos);
+            saveLinkDb(first, clickedPos);
+
+            // One session = two clicks. Keeping the source pending after a successful
+            // link made every later Shift+RMB silently chain onto the OLD source, so a
+            // second, unrelated pair could never be bound — the click either reported
+            // a connection the player did not want or hit a destroyed device.
+            bindingPlayers.remove(uuid);
 
             int count = getPartners(first).size();
             player.sendActionBar(MessageUtil.parse("<green>✓ " + blockName(firstLoc.getBlock()) + " ↔ " + name + " linked! (" + count + " connection" + (count > 1 ? "s" : "") + ")</green>"));
@@ -702,26 +763,17 @@ public class WirelessRedstoneManager implements Listener {
             return;
         }
 
-        // New binding or view existing ones
-        Set<BlockPos> existing = getPartners(clickedPos);
-        if (!existing.isEmpty()) {
-            int count = existing.size();
-            // Show the first partner as an example
-            BlockPos firstPartner = existing.iterator().next();
-            Location ploc = firstPartner.toLocation();
-            String firstInfo = "";
-            if (ploc != null) {
-                firstInfo = " e.g. " + blockName(ploc.getBlock())
-                        + " at [" + ploc.getBlockX() + " " + ploc.getBlockY() + " " + ploc.getBlockZ() + "]";
-            }
-            player.sendActionBar(MessageUtil.parse("<gold>⚡ " + name + " has " + count + " connection" + (count > 1 ? "s" : "") + firstInfo + ". Shift+RMB another device to add.</gold>"));
-            bindingPlayers.put(uuid, clickedPos);
-            e.setCancelled(true);
-            return;
-        }
-
+        // First click of a session: ALWAYS start binding. Existing connections are only
+        // reported — they never block the click with an "already bound" dead end.
+        Set<BlockPos> existing = livePartners(clickedPos);
         bindingPlayers.put(uuid, clickedPos);
-        player.sendActionBar(MessageUtil.parse("<aqua>🔗 Binding: Shift+RMB any redstone device to link, or same block to cancel.</aqua>"));
+        if (existing.isEmpty()) {
+            player.sendActionBar(MessageUtil.parse("<aqua>🔗 Binding: Shift+RMB the second device to link it (same block to cancel).</aqua>"));
+        } else {
+            int count = existing.size();
+            player.sendActionBar(MessageUtil.parse("<gold>⚡ " + name + " already has " + count + " connection" + (count > 1 ? "s" : "")
+                    + ". Shift+RMB another device to add one more (same block to cancel).</gold>"));
+        }
         e.setCancelled(true);
     }
 
@@ -783,7 +835,9 @@ public class WirelessRedstoneManager implements Listener {
         Block block = e.getBlock();
         if (!isLinkable(block)) return;
         BlockPos brokenPos = BlockPos.fromLocation(block.getLocation());
-        Set<BlockPos> partners = getPartners(brokenPos);
+        // A destroyed device can no longer be the pending source of a binding session.
+        bindingPlayers.values().removeIf(brokenPos::equals);
+        Set<BlockPos> partners = livePartners(brokenPos);
         if (partners.isEmpty()) return;
 
         Player player = e.getPlayer();
