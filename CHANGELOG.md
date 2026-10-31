@@ -33,9 +33,11 @@ broken, and a chat-limits false positive that rejected decorated messages.
   the movement anticheat punished the ascent as fly-hacking. It now grants the
   real vanilla Levitation effect (amplifier 5 = `0.05 × (5 + 1) = 0.30` blocks/tick
   ≈ 6 blocks/s, exactly the old lift), invisible (ambient, no particles, no HUD
-  icon), refreshed once per second and removed with the leftover momentum the
-  moment the key is released. Unchanged: chestplate only, 1 integrity use/s while
-  boosting, no lift in Creative/Spectator/flying/gliding/vehicles.
+  icon), refreshed once per second and removed the instant the key is released —
+  the player then falls at once, coasting up for the few ticks vanilla
+gravity/drag needs and dropping smoothly (no artificial velocity cut). Unchanged:
+  chestplate only, 1 integrity use/s while boosting, no lift in
+  Creative/Spectator/flying/gliding/vehicles.
 - **Wireless redstone could be bound only once.** After a successful
   `Shift + RMB` link the first device stayed selected, so every later click
   silently chained the new device onto that OLD source: a second, unrelated pair

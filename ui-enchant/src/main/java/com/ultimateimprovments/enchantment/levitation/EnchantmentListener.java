@@ -14,7 +14,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
 
 import java.util.Set;
 import java.util.UUID;
@@ -58,9 +57,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Creative/Spectator players are never touched (they already fly);</li>
  *   <li>flying players (e.g. the Flight charm) are never touched;</li>
  *   <li>gliding players (elytra) and vehicle riders are never touched;</li>
- *   <li>the effect is applied by THIS charm only — on release it is removed and
- *       the leftover upward momentum is dropped, so the anticheat never sees
- *       unexplained ascent after the effect is gone.</li>
+ *   <li>the effect is applied by THIS charm only — on release it is removed
+ *       immediately (the player falls at once) and the leftover upward momentum
+ *       is left to vanilla gravity/drag, so the stop is a smooth coast, not a
+ *       hard cut.</li>
  * </ul>
  * Jump detection uses {@link ServerPlayer#getLastClientInput()} — the player's
  * real input state, updated by the server every tick. A sweep every
@@ -183,10 +183,15 @@ public final class EnchantmentListener {
     }
 
     /**
-     * Stops the lift: removes OUR levitation effect and drops the leftover
-     * upward velocity. Without the latter the player would keep ascending for
-     * a dozen ticks after the effect is gone — ascent with no legitimate reason
-     * as far as the anticheat can tell.
+     * Stops the lift: removes OUR levitation effect the moment the key is released,
+     * so the player starts falling right away. The leftover upward momentum is NOT
+     * cut — vanilla gravity and air drag bleed it off over the next few ticks
+     * (~0.30 → 0.22 → 0.13 → 0.05 → descent), which is what a real object coasting
+     * up and then dropping looks like. Cutting the velocity instead produced a
+     * visible hard stop in mid-air.
+     * <p>
+     * The short coast is also anticheat-safe: the residual ascent lasts ~3 ticks,
+     * and {@code VerticalMotionCheck} ignores the first 5 suspicious ticks.
      */
     private static void endLift(Player player) {
         if (!LIFTING.remove(player.getUniqueId())) return;
@@ -196,12 +201,6 @@ public final class EnchantmentListener {
         if (current == null || current.getAmplifier() != LEVITATION_AMPLIFIER) return;
 
         player.removePotionEffect(PotionEffectType.LEVITATION);
-
-        Vector velocity = player.getVelocity();
-        if (velocity.getY() > 0) {
-            velocity.setY(0);
-            player.setVelocity(velocity);
-        }
     }
 
     /**
