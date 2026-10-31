@@ -274,7 +274,7 @@ support levels **1–255**; a few have gameplay caps:
 | **Vein Miner** (`ui:veinminer`) | 1–255 | Mine an entire ore vein at once. |
 | **TreeCapitator** (`ui:treecapitator`) | 1–255 | Fells the whole tree. |
 | **Flight** (`ui:flight`) | 1–255 | Jetpack-style flight; drains 1 integrity use per second from every worn piece (chest pays while gliding too). Incompatible with Repairing on the chest slot. |
-| **Levitation** (`ui:levitation`) | 1–255 | Launches hit targets into the air; boosting drains 1 use/s from the chestplate. |
+| **Levitation** (`ui:levitation`) | 1 | Chestplate jetpack: holding jump applies a vanilla Levitation effect (≈6 blocks/s, no particles/icon); 1 integrity use/s while boosting. |
 | **Magnet** (`ui:magnet`) | 1–16 | Attracts nearby items; radius = 2 blocks × level (cap 32). |
 | **Igniting** (`ui:igniting`) | 1–255 | Sets hit targets on fire (water extinguishes fairly). |
 | **Repairing** (`ui:repairing`) | 1–255 | Restores `level` durability points once per second (higher level = strictly better). |
