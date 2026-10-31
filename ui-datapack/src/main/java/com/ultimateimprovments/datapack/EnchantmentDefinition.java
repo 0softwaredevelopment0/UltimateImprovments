@@ -1,8 +1,8 @@
 package com.ultimateimprovments.datapack;
 
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import io.papermc.paper.registry.tag.TagKey;
+import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemType;
 
@@ -18,12 +18,27 @@ import java.util.List;
  * name in both languages, the item set it can be applied to, max level, anvil cost and
  * active equipment slots. Values shared by all 18 enchantments (weight 1, cost 25/25 ->
  * 75/50) live in the constants below instead of being repeated per row.
+ * <p>
+ * Item sets come in two flavours, because {@code RegistrySet} has <b>no union
+ * operation</b> — a set is either an explicit list of item keys or a single tag:
+ * <ul>
+ *   <li>{@link #items} — an explicit list, inlined here. Used wherever the old item tag
+ *       listed plain items.</li>
+ *   <li>{@link #itemTag} — a reference to a tag, resolved through
+ *       {@code RegistryComposeEvent.getOrCreateTag}. Only used by the three entries whose
+ *       old tag mixed several #{@code minecraft:enchantable/*} tags (or tags plus items),
+ *       which cannot be expressed as a flat key list without copying vanilla tag
+ *       content. Those three tags stay in the datapack, see the enum-free list at the
+ *       bottom of this class for which ones.</li>
+ * </ul>
+ * Exactly one of the two fields is set per entry.
  */
 record EnchantmentDefinition(
         String id,
         String nameEn,
         String nameRu,
-        ItemSet items,
+        List<String> items,
+        TagKey<ItemType> itemTag,
         int maxLevel,
         int anvilCost,
         EquipmentSlotGroup activeSlots) {
@@ -38,36 +53,6 @@ record EnchantmentDefinition(
     /** Enchanting-table cost ceiling: {@code max_cost.base} / {@code per_level_above_first}. */
     static final int MAX_COST_BASE = 75;
     static final int MAX_COST_PER_LEVEL = 50;
-
-    /**
-     * How an enchantment's applicable items are expressed.
-     * <p>
-     * {@code RegistrySet} has <b>no union operation</b> — a set is either an explicit key
-     * list or a single tag — so the three shapes below are all the API can express. The
-     * old datapack tags mixed several vanilla tags, which is why {@link Union} exists: it
-     * is materialised by reading the vanilla tags at compose time and is backed by
-     * {@link Union#fallbackTag()} when that read returns nothing.
-     */
-    sealed interface ItemSet {
-
-        /** An explicit list of item ids, fully inlined here (most enchantments). */
-        record Inline(List<String> ids) implements ItemSet {}
-
-        /**
-         * A single tag passed straight to the builder. The tag object is a live reference
-         * that the game fills afterwards, so this is the documented, always-safe shape.
-         */
-        record SingleTag(TagKey<ItemType> tag) implements ItemSet {}
-
-        /**
-         * The union of several vanilla tags plus a few explicit items — what the old
-         * {@code ui:*_enchantable} datapack tags did. {@code fallbackTag} is used when the
-         * tag contents cannot be read at compose time: it is a single tag, so the
-         * enchantment still registers, just with a slightly narrower item set.
-         */
-        record Union(List<TagKey<ItemType>> tags, List<String> extraItems,
-                     TagKey<ItemType> fallbackTag) implements ItemSet {}
-    }
 
     // =========================
     // ITEM LISTS
@@ -126,36 +111,25 @@ record EnchantmentDefinition(
         return List.copyOf(out);
     }
 
-    private static List<String> append(List<String> base, String extra) {
-        List<String> out = new ArrayList<>(base);
-        out.add(extra);
-        return List.copyOf(out);
-    }
-
     // =========================
     // FACTORIES
     // =========================
 
     private static EnchantmentDefinition inline(String id, String nameEn, String nameRu,
-                                                List<String> ids, int maxLevel, int anvilCost,
+                                                List<String> items, int maxLevel, int anvilCost,
                                                 EquipmentSlotGroup activeSlots) {
-        return new EnchantmentDefinition(id, nameEn, nameRu,
-                new ItemSet.Inline(ids), maxLevel, anvilCost, activeSlots);
+        return new EnchantmentDefinition(id, nameEn, nameRu, items, null, maxLevel, anvilCost, activeSlots);
     }
 
-    private static EnchantmentDefinition singleTag(String id, String nameEn, String nameRu,
-                                                   TagKey<ItemType> tag, int maxLevel, int anvilCost,
-                                                   EquipmentSlotGroup activeSlots) {
-        return new EnchantmentDefinition(id, nameEn, nameRu,
-                new ItemSet.SingleTag(tag), maxLevel, anvilCost, activeSlots);
+    private static EnchantmentDefinition tag(String id, String nameEn, String nameRu,
+                                             TagKey<ItemType> itemTag, int maxLevel, int anvilCost,
+                                             EquipmentSlotGroup activeSlots) {
+        return new EnchantmentDefinition(id, nameEn, nameRu, List.of(), itemTag, maxLevel, anvilCost, activeSlots);
     }
 
-    private static EnchantmentDefinition union(String id, String nameEn, String nameRu,
-                                               List<TagKey<ItemType>> tags, List<String> extraItems,
-                                               TagKey<ItemType> fallbackTag, int maxLevel, int anvilCost,
-                                               EquipmentSlotGroup activeSlots) {
-        return new EnchantmentDefinition(id, nameEn, nameRu,
-                new ItemSet.Union(tags, extraItems, fallbackTag), maxLevel, anvilCost, activeSlots);
+    /** Builds a {@code ui:<path>} item-tag key, i.e. a tag that still ships in the datapack. */
+    private static TagKey<ItemType> customTag(String path) {
+        return TagKey.create(RegistryKey.ITEM, Key.key("ui", path));
     }
 
     // =========================
@@ -165,11 +139,12 @@ record EnchantmentDefinition(
     /**
      * All 18 custom enchantments, keyed {@code ui:<id>}.
      * <p>
-     * Fifteen need no datapack file at all: twelve inline their items, and three point at
-     * the built-in {@code #minecraft:enchantable/durability} tag. The remaining three used
-     * to ship a {@code ui:*_enchantable} file whose content was a union of several vanilla
-     * tags; that union is now assembled from the vanilla tags themselves at compose time
-     * (see {@link ItemSet.Union}), so no enchantment tag ships in the datapack anymore.
+     * The last three keep a datapack tag because their item sets are unions the registry
+     * API cannot express: {@code blunting} = three vanilla {@code #enchantable/*} tags,
+     * {@code self_destruct} = two vanilla tags + two book items, {@code vulnerability} =
+     * five vanilla armour tags + the elytra. The other fifteen are fully inlined:
+     * {@code degradation}, {@code disappearance} and {@code repairing} use the built-in
+     * {@code #minecraft:enchantable/durability} tag directly, so they need no file either.
      */
     private static final List<EnchantmentDefinition> ALL = List.of(
             inline("aoe", "AoE", "Область",
@@ -178,19 +153,16 @@ record EnchantmentDefinition(
                     swordsAndAxes(), 10, 1, EquipmentSlotGroup.MAINHAND),
             inline("autosmelt", "AutoSmelt", "Автоплавка",
                     miningTools(), 10, 1, EquipmentSlotGroup.MAINHAND),
-            union("blunting", "Curse of Blunting", "Проклятье затупленности",
-                    List.of(ItemTypeTagKeys.ENCHANTABLE_WEAPON,
-                            ItemTypeTagKeys.ENCHANTABLE_MINING,
-                            ItemTypeTagKeys.ENCHANTABLE_MINING_LOOT),
-                    List.of(),
-                    ItemTypeTagKeys.ENCHANTABLE_WEAPON,
-                    10, 8, EquipmentSlotGroup.MAINHAND),
+            tag("blunting", "Curse of Blunting", "Проклятье затупленности",
+                    customTag("blunting_enchantable"), 10, 8, EquipmentSlotGroup.MAINHAND),
             inline("container_stealing", "Container Stealing", "Кража контейнеров",
                     miningTools(), 10, 1, EquipmentSlotGroup.MAINHAND),
-            singleTag("degradation", "Curse of Degradation", "Проклятье деградации",
-                    ItemTypeTagKeys.ENCHANTABLE_DURABILITY, 10, 8, EquipmentSlotGroup.ANY),
-            singleTag("disappearance", "Curse of Disappearance", "Проклятье исчезновения",
-                    ItemTypeTagKeys.ENCHANTABLE_DURABILITY, 10, 8, EquipmentSlotGroup.ANY),
+            tag("degradation", "Curse of Degradation", "Проклятье деградации",
+                    io.papermc.paper.registry.keys.tags.ItemTypeTagKeys.ENCHANTABLE_DURABILITY,
+                    10, 8, EquipmentSlotGroup.ANY),
+            tag("disappearance", "Curse of Disappearance", "Проклятье исчезновения",
+                    io.papermc.paper.registry.keys.tags.ItemTypeTagKeys.ENCHANTABLE_DURABILITY,
+                    10, 8, EquipmentSlotGroup.ANY),
             inline("flight", "Flight", "Полёт",
                     chestplatesWithElytra(), 1, 1, EquipmentSlotGroup.ARMOR),
             inline("igniting", "Igniting", "Воспламенение",
@@ -203,28 +175,24 @@ record EnchantmentDefinition(
                     chestplatesWithElytra(), 1, 1, EquipmentSlotGroup.ARMOR),
             inline("magnet", "Magnet", "Притяжение",
                     miningTools(), 10, 1, EquipmentSlotGroup.MAINHAND),
-            singleTag("repairing", "Repairing", "Самовосстановление",
-                    ItemTypeTagKeys.ENCHANTABLE_DURABILITY, 10, 1, EquipmentSlotGroup.ANY),
-            union("self_destruct", "Curse of Self-Destruct", "Проклятье самоуничтожения",
-                    List.of(ItemTypeTagKeys.ENCHANTABLE_EQUIPPABLE,
-                            ItemTypeTagKeys.ENCHANTABLE_DURABILITY),
-                    List.of("minecraft:book", "minecraft:written_book"),
-                    ItemTypeTagKeys.ENCHANTABLE_DURABILITY,
-                    1, 8, EquipmentSlotGroup.ANY),
+            tag("repairing", "Repairing", "Самовосстановление",
+                    io.papermc.paper.registry.keys.tags.ItemTypeTagKeys.ENCHANTABLE_DURABILITY,
+                    10, 1, EquipmentSlotGroup.ANY),
+            tag("self_destruct", "Curse of Self-Destruct", "Проклятье самоуничтожения",
+                    customTag("self_destruct_enchantable"), 1, 8, EquipmentSlotGroup.ANY),
             inline("treecapitator", "TreeCapitator", "Лесоруб",
                     toolItems("axe"), 1, 1, EquipmentSlotGroup.MAINHAND),
             inline("veinminer", "VeinMiner", "Рудокоп",
                     toolItems("pickaxe"), 1, 1, EquipmentSlotGroup.MAINHAND),
-            union("vulnerability", "Curse of Vulnerability", "Проклятье уязвимости",
-                    List.of(ItemTypeTagKeys.ENCHANTABLE_ARMOR,
-                            ItemTypeTagKeys.ENCHANTABLE_HEAD_ARMOR,
-                            ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR,
-                            ItemTypeTagKeys.ENCHANTABLE_LEG_ARMOR,
-                            ItemTypeTagKeys.ENCHANTABLE_FOOT_ARMOR),
-                    List.of("minecraft:elytra"),
-                    ItemTypeTagKeys.ENCHANTABLE_ARMOR,
-                    10, 8, EquipmentSlotGroup.ANY)
+            tag("vulnerability", "Curse of Vulnerability", "Проклятье уязвимости",
+                    customTag("vulnerability_enchantable"), 10, 8, EquipmentSlotGroup.ANY)
     );
+
+    private static List<String> append(List<String> base, String extra) {
+        List<String> out = new ArrayList<>(base);
+        out.add(extra);
+        return List.copyOf(out);
+    }
 
     static List<EnchantmentDefinition> all() {
         return ALL;
