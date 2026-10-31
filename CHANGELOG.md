@@ -3,6 +3,25 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.50] - since 1.8.5-alpha.49 (2026-11-01)
+
+### Added
+- **Remote Detonator** — a new UI-Items tool (flint-and-steel base, 128 uses).
+  `Shift + RMB` on a TNT block binds it (one binding per item, re-binding
+  overrides it, `Shift + RMB` on anything else clears it), `RMB` detonates the
+  bound block: it is consumed and a primed TNT with the configured fuse takes its
+  place — the same result as a redstone pulse. The binding is stored in the
+  item's persistent data (`x;y;z;world`), so it survives restarts and travels
+  with the item; every detonation spends one use, and the item breaks on the
+  last one. The detonator is never usable as a lighter: fire/TNT priming and
+  dispenser use are blocked. Crafted in a Crafter from gold ingots, redstone
+  torches, redstone block, iron ingots and a lever. Settings in
+  `configs/UI-Items.toml` under `[remote_detonator]` (`enabled`, `fuse_ticks`,
+  `cooldown_ms`, `max_distance`, `cross_world`, `max_uses`, sounds); name, lore
+  and every message are bilingual in `messages.remote_detonator` (RU) /
+  `messages_en.remote_detonator` (EN). The item is also available in
+  `/ui menu` → Items.
+
 ## [1.8.5-alpha.49] - since 1.8.5-alpha.48 (2026-11-01)
 
 ### Added

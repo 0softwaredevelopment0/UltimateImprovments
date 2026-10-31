@@ -64,7 +64,8 @@ public final class AddonCatalog {
         // ── UI-World ──
         route("UI-World", "wireless_redstone", "meteor", "block_friction", "sculk");
         // ── UI-Items ──
-        route("UI-Items", "concrete_bucket", "netherite_upgrade", "particle_accelerator");
+        route("UI-Items", "concrete_bucket", "netherite_upgrade", "particle_accelerator",
+                "remote_detonator");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "sunburn",
@@ -94,7 +95,7 @@ public final class AddonCatalog {
         routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
         routeMsg("UI-Admin", "economy", "op_self");
         routeMsg("UI-Player", "vanish");
-routeMsg("UI-Items", "crafting");
+routeMsg("UI-Items", "crafting", "remote_detonator");
         routeMsg("UI-Guard", "packet_guard", "bot_protection",
                 "check", "codepanel", "sudo", "maintenance", "console_lockdown",
                 "server_lockdown", "stresstest");

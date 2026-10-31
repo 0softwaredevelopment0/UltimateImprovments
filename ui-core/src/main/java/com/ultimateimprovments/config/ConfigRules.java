@@ -680,6 +680,20 @@ final class ConfigRules {
             string("concrete_bucket.blocked_sound", false, 64),
             dbl("concrete_bucket.blocked_sound_pitch", 0.5, 2),
 
+            // ── UI-Items · remote detonator ──
+            bool("remote_detonator.enabled"),
+            integer("remote_detonator.fuse_ticks", 1, 1200,
+                    "Фитиль подожжённого детонатором TNT, тики (80 = как от редстоуна)"),
+            integer("remote_detonator.cooldown_ms", 0, 60000,
+                    "Кулдаун между подрывами одного игрока, мс"),
+            integer("remote_detonator.max_distance", 0, 30000000,
+                    "Макс. дистанция до привязанного TNT, блоки (0 = без лимита)"),
+            bool("remote_detonator.cross_world"),
+            integer("remote_detonator.max_uses", 1, 10000,
+                    "Прочность детонатора на крафте (одна единица = один подрыв)"),
+            string("remote_detonator.ignite_sound", false, 64),
+            string("remote_detonator.bind_sound", false, 64),
+
             notBlank("plugin_version", 32),
             string("prefix", false, 512)
     );
