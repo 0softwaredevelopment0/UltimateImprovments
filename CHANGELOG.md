@@ -3,6 +3,25 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.55] - since 1.8.5-alpha.54 (2026-11-01)
+
+### Fixed
+- **A wireless lamp no longer flickers the redstone next to it.** Turning one off
+  drove every adjacent dust to 0 unconditionally, even when another source powered
+  it, and relied on the same-tick physics update to restore the real value. That is
+  a visible flicker and, worse, a falling-then-rising edge for every repeater and
+  comparator downstream of that wire. Dust is now cleared only when nothing else
+  feeds it (`Block#isBlockPowered` / `isBlockIndirectlyPowered`); a wire that still
+  has a real source simply keeps its real value.
+- **Binding sessions expire instead of hanging until logout.** A started session
+  (the first `Shift + RMB`) stayed armed until the player disconnected, so a first
+  click forgotten mid-build silently pulled the next device into a link with a
+  block from minutes ago. Sessions now live for `BIND_SESSION_TIMEOUT_MS` (60 s),
+  are dropped lazily on the next click with that player, and the prompt says so
+  (`auto-cancel in 60s`). `bindingPlayers` stores a `BindingSession` record
+  (source position + start time) instead of a bare position; the broken-block
+  cleanup and the quit handler clear sessions through it.
+
 ## [1.8.5-alpha.54] - since 1.8.5-alpha.53 (2026-11-01)
 
 ### Fixed

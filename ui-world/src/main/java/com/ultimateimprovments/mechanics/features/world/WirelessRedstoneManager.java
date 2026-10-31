@@ -72,7 +72,23 @@ public class WirelessRedstoneManager implements Listener {
     /** Watcher task — stored so it can be cancelled properly on shutdown/reload. */
     private org.bukkit.scheduler.BukkitTask observerTask;
 
-    private final Map<UUID, BlockPos> bindingPlayers = new ConcurrentHashMap<>();
+    private final Map<UUID, BindingSession> bindingPlayers = new ConcurrentHashMap<>();
+
+    /** How long a started binding session stays armed before it silently expires. */
+    private static final long BIND_SESSION_TIMEOUT_MS = 60_000L;
+
+    /**
+     * Pending binding session of one player: the already-clicked source block.
+     * <p>
+     * A session is armed for {@link #BIND_SESSION_TIMEOUT_MS} only. Without a timeout a
+     * first click forgotten mid-build stayed armed until the player logged out and then
+     * silently pulled the next device into a link with a block from minutes ago.
+     */
+    private record BindingSession(BlockPos source, long startedAt) {
+        boolean expired() {
+            return System.currentTimeMillis() - startedAt > BIND_SESSION_TIMEOUT_MS;
+        }
+    }
 
     /** One-to-many: BlockPos → Set<BlockPos> (bidirectional links) */
     private final Map<BlockPos, Set<BlockPos>> links = new ConcurrentHashMap<>();
@@ -520,15 +536,23 @@ public class WirelessRedstoneManager implements Listener {
      *   <li>adjacent OBSERVERS that watch the lamp get a real 2-tick pulse
      *       so they register the state change.</li>
      * </ul>
-     * Turning off drives adjacent dust to 0 even when another source powers
-     * it — the physics update makes the wire recompute and restore its real
-     * value, so foreign signals are only interrupted for a moment.
+     * Turning off only clears adjacent dust when nothing else feeds it: if another source
+     * still powers the wire, its real value is already correct and forcing 0 would make
+     * vanilla recompute it within the same tick — a visible flicker, and a falling then
+     * rising edge for every repeater and comparator downstream.
      */
     private void emitWirelessPower(Block block, boolean powered) {
         for (BlockFace face : SIX_FACES) {
             Block adj = block.getRelative(face);
             switch (adj.getType()) {
-                case REDSTONE_WIRE -> setWirePowered(adj, powered);
+                case REDSTONE_WIRE -> {
+                    if (powered) {
+                        setWirePowered(adj, true);
+                    } else if (!isReallyPowered(adj)) {
+                        // Nobody else feeds this wire — drop the current we injected.
+                        setWirePowered(adj, false);
+                    }
+                }
                 case OBSERVER -> {
                     if (powered && !isSkipping(BlockPos.fromLocation(adj.getLocation()))) {
                         pulseObserver(adj, block);
@@ -782,6 +806,20 @@ public class WirelessRedstoneManager implements Listener {
         if (pulsingObservers.remove(oldPos)) pulsingObservers.add(newPos);
     }
 
+    /**
+     * Pending source of this player's binding session, dropping the session once it has
+     * expired (see {@link BindingSession}).
+     */
+    private BlockPos pendingSource(UUID uuid) {
+        BindingSession session = bindingPlayers.get(uuid);
+        if (session == null) return null;
+        if (session.expired()) {
+            bindingPlayers.remove(uuid);
+            return null;
+        }
+        return session.source();
+    }
+
     // ════════════════════════════════════════
     // EVENT: SHIFT+RMB — binding (one-to-many)
     // ════════════════════════════════════════
@@ -801,7 +839,7 @@ public class WirelessRedstoneManager implements Listener {
         BlockPos clickedPos = BlockPos.fromLocation(clicked.getLocation());
         String name = blockName(clicked);
 
-        BlockPos first = bindingPlayers.get(uuid);
+        BlockPos first = pendingSource(uuid);
         // A pending source whose device disappeared in the meantime must not hijack
         // this click: drop the session and treat the click as a fresh first click.
         if (first != null) {
@@ -856,13 +894,14 @@ public class WirelessRedstoneManager implements Listener {
         // First click of a session: ALWAYS start binding. Existing connections are only
         // reported — they never block the click with an "already bound" dead end.
         Set<BlockPos> existing = livePartners(clickedPos);
-        bindingPlayers.put(uuid, clickedPos);
+        bindingPlayers.put(uuid, new BindingSession(clickedPos, System.currentTimeMillis()));
+        long timeoutSeconds = BIND_SESSION_TIMEOUT_MS / 1000L;
         if (existing.isEmpty()) {
-            player.sendActionBar(MessageUtil.parse("<aqua>🔗 Binding: Shift+RMB the second device to link it (same block to cancel).</aqua>"));
+            player.sendActionBar(MessageUtil.parse("<aqua>🔗 Binding: Shift+RMB the second device to link it (same block to cancel, auto-cancel in " + timeoutSeconds + "s).</aqua>"));
         } else {
             int count = existing.size();
             player.sendActionBar(MessageUtil.parse("<gold>⚡ " + name + " already has " + count + " connection" + (count > 1 ? "s" : "")
-                    + ". Shift+RMB another device to add one more (same block to cancel).</gold>"));
+                    + ". Shift+RMB another device to add one more (same block to cancel, auto-cancel in " + timeoutSeconds + "s).</gold>"));
         }
         e.setCancelled(true);
     }
@@ -926,7 +965,7 @@ public class WirelessRedstoneManager implements Listener {
         if (!isLinkable(block)) return;
         BlockPos brokenPos = BlockPos.fromLocation(block.getLocation());
         // A destroyed device can no longer be the pending source of a binding session.
-        bindingPlayers.values().removeIf(brokenPos::equals);
+        bindingPlayers.values().removeIf(session -> session.source().equals(brokenPos));
         Set<BlockPos> partners = livePartners(brokenPos);
         if (partners.isEmpty()) return;
 
