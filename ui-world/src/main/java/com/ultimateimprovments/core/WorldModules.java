@@ -209,7 +209,6 @@ public final class WorldModules {
 
             @Override
             protected void onDisable(JavaPlugin plugin) {
-                WirelessRedstoneManager.restoreAllPowerBlocks();
                 WirelessRedstoneManager.shutdown();
             }
 

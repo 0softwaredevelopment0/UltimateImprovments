@@ -3,6 +3,34 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.53] - since 1.8.5-alpha.52 (2026-11-01)
+
+### Security
+- **Critical duplication glitch in wirelessly activated pistons is gone.** A
+  wireless piston used to be powered by placing a real redstone block on an
+  adjacent air block and taking it back on retract. That block appeared in the
+  world for as long as the piston was extended, so any player could mine it —
+  an infinite redstone-block duplicator — and breaking it left the piston stuck
+  extended, because the manager believed the power block was already restored.
+
+### Changed
+- **Pistons are now triggered through the vanilla piston block event**
+  (`PistonBaseBlock.TRIGGER_EXTEND` / `TRIGGER_CONTRACT` via
+  `ServerLevel#blockEvent`) instead of a fake power source. That is the exact
+  path vanilla takes when the piston's neighbour signal changes: the server runs
+  the real movement (blocks pushed, sticky pull-back, piston head, sounds) and
+  still fires `BlockPistonExtendEvent` / `BlockPistonRetractEvent`, so protection
+  plugins keep seeing the action. Nothing is ever placed in the world, so there
+  is nothing to steal.
+- Extension keeps vanilla's own pre-check (`PistonStructureResolver#resolve`,
+  the same call `checkIfExtend` makes) so an immovable structure is never
+  announced, and a piston that real redstone still powers is never retracted by
+  the wireless line (`Block#isBlockPowered` / `isBlockIndirectlyPowered` guard).
+- Removed with the mechanism: `pistonPowerBlocks`, the `RestoreData` record,
+  `findPowerSpot()` and `restoreAllPowerBlocks()` (plus its `onDisable` call in
+  `WorldModules`). No cleanup pass is needed anymore — the plugin never writes
+  temporary blocks.
+
 ## [1.8.5-alpha.52] - since 1.8.5-alpha.51 (2026-11-01)
 
 ### Fixed
