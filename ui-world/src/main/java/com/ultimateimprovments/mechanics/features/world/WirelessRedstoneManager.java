@@ -30,6 +30,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.Vector;
+import org.bukkit.craftbukkit.CraftWorld;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.piston.PistonStructureResolver;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,8 +52,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Supported blocks: REDSTONE_LAMP, OBSERVER, PISTON/STICKY_PISTON,
  * DISPENSER/DROPPER, REDSTONE_WIRE — every wirelessly activated device
  * performs its real vanilla action: the dispenser/dropper dispenses via the
- * block-state API, the piston extends/retracts through a real power block
- * (vanilla movement, no ghost heads), the observer pulses its output for
+ * block-state API, the piston extends/retracts through the vanilla piston
+ * block event (real movement, no power block in the world — see
+ * {@link #setPistonExtended}), the observer pulses its output for
  * real, and the lamp additionally emits signal (see below).
  * <p>
  * A wirelessly activated lamp is also a usable SIGNAL SOURCE: the lit
@@ -73,9 +79,7 @@ public class WirelessRedstoneManager implements Listener {
 
     private final Map<BlockPos, Integer> skipUntilTick = new ConcurrentHashMap<>();
     private final Map<BlockPos, Boolean> observerPrevPowered = new ConcurrentHashMap<>();
-    private final Map<BlockPos, RestoreData> pistonPowerBlocks = new ConcurrentHashMap<>();
 
-    private record RestoreData(BlockPos powerBlockPos, Material originalType) {}
     private record MoveEntry(BlockPos oldPos, BlockPos newPos) {}
 
     private static final Set<Material> LINKABLE_MATERIALS = Collections.unmodifiableSet(EnumSet.of(
@@ -232,15 +236,6 @@ public class WirelessRedstoneManager implements Listener {
         removeChunkTicket(pos);
         observerPrevPowered.remove(pos);
         skipUntilTick.remove(pos);
-
-        // Piston power blocks cleanup
-        RestoreData rd = pistonPowerBlocks.remove(pos);
-        if (rd != null) {
-            Location ploc = rd.powerBlockPos().toLocation();
-            if (ploc != null && ploc.getBlock().getType() == Material.REDSTONE_BLOCK) {
-                ploc.getBlock().setType(rd.originalType(), false);
-            }
-        }
     }
 
     // ════════════════════════════════════════
@@ -524,45 +519,44 @@ public class WirelessRedstoneManager implements Listener {
         }, 2L);
     }
 
+    /**
+     * Extends/retracts the piston through the vanilla piston block event — the exact
+     * path vanilla itself takes when the piston's neighbour signal changes.
+     * <p>
+     * The old implementation "powered" the piston by placing a real
+     * {@link Material#REDSTONE_BLOCK} next to it. That block was visible in the world
+     * and mineable while the piston stayed extended, so a player could take it — an
+     * infinite redstone-block duplication glitch — and breaking it also left the
+     * piston extended with no way back, because the manager believed it had already
+     * restored the block. The block event needs no power source at all: the server runs
+     * the real vanilla movement (blocks pushed/pulled, piston head, sounds) and still
+     * fires {@link BlockPistonExtendEvent}/{@link BlockPistonRetractEvent}, so
+     * protection plugins keep seeing the piston action.
+     */
     private void setPistonExtended(Block block, boolean extended) {
         if (!(block.getBlockData() instanceof Piston piston)) return;
-        BlockPos pistonPos = BlockPos.fromLocation(block.getLocation());
+        if (piston.isExtended() == extended) return; // already in the requested state
 
+        // Real redstone owns this piston: never retract what vanilla still powers.
+        if (!extended && (block.isBlockPowered() || block.isBlockIndirectlyPowered())) return;
+
+        if (!(block.getWorld() instanceof CraftWorld craftWorld)) return;
+        ServerLevel level = craftWorld.getHandle();
+        net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(block.getX(), block.getY(), block.getZ());
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof PistonBaseBlock basePiston)) return;
+
+        int facing = state.getValue(PistonBaseBlock.FACING).get3DDataValue();
         if (extended) {
-            if (pistonPowerBlocks.containsKey(pistonPos)) return; // already powered by us
-            // Power the piston for real: place a redstone block on an adjacent
-            // air block (never on the face it pushes towards), so the vanilla
-            // extension — pushing the blocks in front — runs on its own.
-            Location powerLoc = findPowerSpot(block, piston);
-            Material prevType = powerLoc.getBlock().getType();
-            powerLoc.getBlock().setType(Material.REDSTONE_BLOCK, true);
-            pistonPowerBlocks.put(pistonPos, new RestoreData(BlockPos.fromLocation(powerLoc), prevType));
+            // Same pre-check vanilla runs in checkIfExtend before firing the event: no
+            // event when the structure cannot move (too deep, immovable block in front).
+            if (!new PistonStructureResolver(level, pos, state.getValue(PistonBaseBlock.FACING), true).resolve()) {
+                return;
+            }
+            level.blockEvent(pos, basePiston, PistonBaseBlock.TRIGGER_EXTEND, facing);
         } else {
-            RestoreData data = pistonPowerBlocks.remove(pistonPos);
-            if (data == null) return; // not powered by us — real redstone holds it
-            Location powerLoc = data.powerBlockPos().toLocation();
-            if (powerLoc != null && powerLoc.getBlock().getType() == Material.REDSTONE_BLOCK) {
-                // Removing the power block with physics lets the vanilla piston
-                // retract (a sticky piston pulls its block back). The extended
-                // property must NOT be set manually — that leaves a ghost
-                // piston head in the world.
-                powerLoc.getBlock().setType(data.originalType(), true);
-            }
+            level.blockEvent(pos, basePiston, PistonBaseBlock.TRIGGER_CONTRACT, facing);
         }
-    }
-
-    /** Adjacent air block to place a redstone block on, excluding the piston's pushing face. */
-    private static Location findPowerSpot(Block piston, Piston data) {
-        BlockFace front = data.getFacing();
-        for (BlockFace face : SIX_FACES) {
-            if (face == front) continue;
-            Block side = piston.getRelative(face);
-            if (side.getType().isAir()) {
-                return side.getLocation();
-            }
-        }
-        // Legacy fallback: overwrite the block behind the piston (restored on retract).
-        return piston.getRelative(front.getOppositeFace()).getLocation();
     }
 
     /**
@@ -864,16 +858,4 @@ public class WirelessRedstoneManager implements Listener {
 
     public static boolean isEnabled() { return enabled; }
     public static WirelessRedstoneManager getInstance() { return instance; }
-
-    public static void restoreAllPowerBlocks() {
-        if (instance == null) return;
-        // Pistons
-        for (Map.Entry<BlockPos, RestoreData> entry : instance.pistonPowerBlocks.entrySet()) {
-            Location loc = entry.getValue().powerBlockPos().toLocation();
-            if (loc != null && loc.getBlock().getType() == Material.REDSTONE_BLOCK) {
-                loc.getBlock().setType(entry.getValue().originalType(), false);
-            }
-        }
-        instance.pistonPowerBlocks.clear();
-    }
 }
