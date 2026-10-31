@@ -15,7 +15,10 @@ in this file.
   with the item; every detonation spends one use, and the item breaks on the
   last one. The detonator is never usable as a lighter: fire/TNT priming and
   dispenser use are blocked. Crafted in a Crafter from gold ingots, redstone
-  torches, redstone block, iron ingots and a lever. Settings in
+  torches, redstone block, iron ingots and a lever — the recipe is registered
+  through `RecipeRegistry`, so it is Crafter-only, and the craft listener sets
+  the result for a Crafter inventory only: no workbench preview, no craft
+  outside the Crafter. Settings in
   `configs/UI-Items.toml` under `[remote_detonator]` (`enabled`, `fuse_ticks`,
   `cooldown_ms`, `max_distance`, `cross_world`, `max_uses`, sounds); name, lore
   and every message are bilingual in `messages.remote_detonator` (RU) /
