@@ -3,6 +3,28 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.56] - since 1.8.5-alpha.55 (2026-11-01)
+
+### Fixed
+- **A runaway wireless link network can no longer stall the tick.** Activating a
+  device cascades through its partners and through the devices they touch, and every
+  step reads a block and writes its state, so a long chain (A↔B↔C↔D…) or a hub bound
+  to hundreds of devices fanned out over the whole graph inside a single tick. The
+  cascade is now bounded by depth (`MAX_CASCADE_DEPTH = 24`) and by the number of
+  devices touched (`MAX_CASCADE_DEVICES = 512`); the counters belong to the cascade
+  and survive re-entrant `BlockRedstoneEvent`s fired by the manager's own block
+  writes. Hitting a bound skips the rest of that direction and prints one console
+  warning per cascade with the coordinates and the advice to split the network —
+  a normal build never comes close to either limit.
+- **Duplicate rows in `wireless_links` are gone.** Links were stored in whichever
+  order the player clicked, and `INSERT OR IGNORE` only deduplicates the exact same
+  column order, so binding A↔B and later B↔A (or a piston re-saving a moved link)
+  added a mirrored second row every time. Rows are now written in a canonical order
+  (`isCanonical` / `comparePositions`) after deleting the mirrored variant, and
+  `loadFromDatabase()` collapses mirrored rows left by older builds once at startup
+  (logged as `Collapsed N mirrored link row(s)`). In memory nothing changed — links
+  were always a `Set` — only the table kept growing.
+
 ## [1.8.5-alpha.55] - since 1.8.5-alpha.54 (2026-11-01)
 
 ### Fixed

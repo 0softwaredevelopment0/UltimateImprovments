@@ -78,6 +78,22 @@ public class WirelessRedstoneManager implements Listener {
     private static final long BIND_SESSION_TIMEOUT_MS = 60_000L;
 
     /**
+     * Hard bounds for ONE activation cascade (see {@link #activateAllPartners}).
+     * <p>
+     * Every cascade step reads a block and writes its state, so a long chain
+     * (A↔B↔C↔D…) or a hub block with many links could fan out over the whole graph inside
+     * a single tick. Both bounds are deliberately generous — a normal build never comes
+     * close — and only exist to keep a pathological network from freezing the server tick.
+     */
+    private static final int MAX_CASCADE_DEPTH = 24;
+    private static final int MAX_CASCADE_DEVICES = 512;
+
+    /** State of the cascade currently running (the manager only runs on the main thread). */
+    private int cascadeDepth;
+    private int cascadeDevices;
+    private boolean cascadeWarned;
+
+    /**
      * Pending binding session of one player: the already-clicked source block.
      * <p>
      * A session is armed for {@link #BIND_SESSION_TIMEOUT_MS} only. Without a timeout a
@@ -362,6 +378,7 @@ public class WirelessRedstoneManager implements Listener {
     // ════════════════════════════════════════
     private void loadFromDatabase() {
         links.clear();
+        List<BlockPos[]> mirroredRows = new ArrayList<>();
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement st = con.prepareStatement(
                      "SELECT world, x1, y1, z1, x2, y2, z2 FROM wireless_links");
@@ -374,20 +391,60 @@ public class WirelessRedstoneManager implements Listener {
                 addLink(a, b);
                 addChunkTicket(a);
                 addChunkTicket(b);
+                if (!isCanonical(a, b)) mirroredRows.add(new BlockPos[]{a, b});
             }
         } catch (Exception e) {
             ConsoleLogger.warn("[WirelessRedstone] Failed to load from DB: " + e.getMessage());
         }
+
+        // Rows an older build stored in the reverse direction are collapsed to one
+        // canonical row each. In memory they never duplicated (links are a Set), only the
+        // table grew — and it grew again on every re-bind and on every piston move.
+        if (!mirroredRows.isEmpty()) {
+            for (BlockPos[] pair : mirroredRows) {
+                saveLinkDb(pair[0], pair[1]);
+            }
+            ConsoleLogger.info("[WirelessRedstone] Collapsed " + mirroredRows.size() + " mirrored link row(s)");
+        }
     }
 
+    /** Stable ordering of a link pair: A↔B and B↔A must produce the same database row. */
+    private static boolean isCanonical(BlockPos a, BlockPos b) {
+        return comparePositions(a, b) <= 0;
+    }
+
+    private static int comparePositions(BlockPos a, BlockPos b) {
+        int cmp = Integer.compare(a.x(), b.x());
+        if (cmp != 0) return cmp;
+        cmp = Integer.compare(a.y(), b.y());
+        if (cmp != 0) return cmp;
+        return Integer.compare(a.z(), b.z());
+    }
+
+    /**
+     * Stores exactly one row per pair in a canonical order, dropping the mirrored row an
+     * older build could have written. Without this the same link was stored twice (once per
+     * binding direction) and once more per piston move, because {@code INSERT OR IGNORE}
+     * only deduplicates the exact same column order.
+     */
     private void saveLinkDb(BlockPos a, BlockPos b) {
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement st = con.prepareStatement(
-                     "INSERT OR IGNORE INTO wireless_links (world, x1, y1, z1, x2, y2, z2) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
-            st.setString(1, a.worldUid());
-            st.setInt(2, a.x()); st.setInt(3, a.y()); st.setInt(4, a.z());
-            st.setInt(5, b.x()); st.setInt(6, b.y()); st.setInt(7, b.z());
-            st.executeUpdate();
+        BlockPos from = isCanonical(a, b) ? a : b;
+        BlockPos to = isCanonical(a, b) ? b : a;
+        try (Connection con = DatabaseManager.getConnection()) {
+            try (PreparedStatement del = con.prepareStatement(
+                    "DELETE FROM wireless_links WHERE world = ? AND x1 = ? AND y1 = ? AND z1 = ? AND x2 = ? AND y2 = ? AND z2 = ?")) {
+                del.setString(1, from.worldUid());
+                del.setInt(2, to.x()); del.setInt(3, to.y()); del.setInt(4, to.z());
+                del.setInt(5, from.x()); del.setInt(6, from.y()); del.setInt(7, from.z());
+                del.executeUpdate();
+            }
+            try (PreparedStatement st = con.prepareStatement(
+                    "INSERT OR IGNORE INTO wireless_links (world, x1, y1, z1, x2, y2, z2) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                st.setString(1, from.worldUid());
+                st.setInt(2, from.x()); st.setInt(3, from.y()); st.setInt(4, from.z());
+                st.setInt(5, to.x()); st.setInt(6, to.y()); st.setInt(7, to.z());
+                st.executeUpdate();
+            }
         } catch (Exception e) {
             ConsoleLogger.warn("[WirelessRedstone] Failed to save link: " + e.getMessage());
         }
@@ -460,22 +517,54 @@ public class WirelessRedstoneManager implements Listener {
         Set<BlockPos> partners = getPartners(sourcePos);
         if (partners.isEmpty()) return;
 
-        for (BlockPos partnerPos : partners) {
-            if (isSkipping(partnerPos)) continue;
-
-            Location loc = partnerPos.toLocation();
-            if (loc == null) continue;
-            Block block = loc.getBlock();
-            if (!isLinkable(block)) {
-                removeLink(sourcePos, partnerPos);
-                removeChunkTicket(partnerPos);
-                removeLinkDb(sourcePos, partnerPos);
-                continue;
-            }
-
-            markSkipping(partnerPos);
-            activateDevice(block, powered);
+        // Outermost call of a cascade: reset the counters and the once-per-cascade warning.
+        if (cascadeDepth == 0) {
+            cascadeDevices = 0;
+            cascadeWarned = false;
         }
+        if (cascadeDepth >= MAX_CASCADE_DEPTH) {
+            warnCascadeLimit("depth " + MAX_CASCADE_DEPTH + " at " + formatPos(sourcePos));
+            return;
+        }
+
+        cascadeDepth++;
+        try {
+            for (BlockPos partnerPos : partners) {
+                if (cascadeDevices >= MAX_CASCADE_DEVICES) {
+                    warnCascadeLimit(MAX_CASCADE_DEVICES + " devices, last " + formatPos(partnerPos));
+                    return;
+                }
+                if (isSkipping(partnerPos)) continue;
+
+                Location loc = partnerPos.toLocation();
+                if (loc == null) continue;
+                Block block = loc.getBlock();
+                if (!isLinkable(block)) {
+                    removeLink(sourcePos, partnerPos);
+                    removeChunkTicket(partnerPos);
+                    removeLinkDb(sourcePos, partnerPos);
+                    continue;
+                }
+
+                markSkipping(partnerPos);
+                cascadeDevices++;
+                activateDevice(block, powered);
+            }
+        } finally {
+            cascadeDepth--;
+        }
+    }
+
+    /** One console line per cascade — a runaway network must not flood the log every tick. */
+    private void warnCascadeLimit(String what) {
+        if (cascadeWarned) return;
+        cascadeWarned = true;
+        ConsoleLogger.warn("[WirelessRedstone] Link cascade stopped at " + what
+                + " — split the network into smaller groups or bind fewer devices per block");
+    }
+
+    private static String formatPos(BlockPos pos) {
+        return "[" + pos.x() + " " + pos.y() + " " + pos.z() + "]";
     }
 
     private void activateDevice(Block block, boolean powered) {
