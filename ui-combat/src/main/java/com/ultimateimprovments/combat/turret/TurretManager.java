@@ -10,13 +10,16 @@ import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.sql.Connection;
@@ -26,6 +29,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,9 +46,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * While enabled, the crystal picks the nearest living entity in a 16x16x16 cube
  * (16 blocks in each axis), requires a clear line of sight (no solid blocks in
- * between), draws its vanilla end-crystal beam at the victim and deals normal
- * (armor-reducible) damage at up to 2 damage per second (vanilla i-frames cap
- * the rate — no immunity bypass).
+ * between, except the see-through blocks listed in {@code turret.ignore_blocks}
+ * — every glass type by default), draws its vanilla end-crystal beam at the
+ * victim and deals normal (armor-reducible) damage at up to 2 damage per second
+ * (vanilla i-frames cap the rate — no immunity bypass).
  */
 public final class TurretManager {
 
@@ -96,6 +101,9 @@ public final class TurretManager {
     /** Player -> currently selected crystal (set when the GUI is opened). */
     private final Map<UUID, UUID> selected = new ConcurrentHashMap<>();
 
+    /** Block types the line of sight passes through (turret.ignore_blocks). */
+    private final Set<Material> ignoreBlocks = EnumSet.noneOf(Material.class);
+
     private TurretManager() {}
 
     public static TurretManager getInstance() {
@@ -105,9 +113,11 @@ public final class TurretManager {
         return instance;
     }
 
-    /** Loads persisted turrets. Called once from the module init. */
+    /** Loads persisted turrets and the ignore-block whitelist. Called from the module init. */
     public static void init() {
-        getInstance().loadAll();
+        TurretManager manager = getInstance();
+        manager.loadIgnoreBlocks();
+        manager.loadAll();
     }
 
     /** Clears beams and resets state. Called from the module shutdown. */
@@ -349,7 +359,11 @@ public final class TurretManager {
         return cfg.mode == Mode.WHITELIST ? inList : !inList;
     }
 
-    /** True when no solid block lies between the crystal and the target. */
+    /**
+     * True when no solid block lies between the crystal and the target, except the
+     * see-through blocks listed in {@code turret.ignore_blocks} (all glass types by
+     * default) — the beam crosses those and keeps going.
+     */
     private boolean hasLineOfSight(EnderCrystal crystal, LivingEntity target) {
         World world = crystal.getWorld();
         Location start = crystal.getLocation().add(0.5, 0.5, 0.5);
@@ -360,11 +374,26 @@ public final class TurretManager {
         if (distance < 0.5) return true;
 
         direction.multiply(1.0 / distance);
-        double maxDistance = distance - 0.5;
-        if (maxDistance <= 0) return true;
+        double remaining = distance - 0.5;
+        if (remaining <= 0) return true;
 
-        return world.rayTraceBlocks(start, direction, maxDistance,
-                FluidCollisionMode.NEVER, true) == null;
+        // Walk the ray in segments: passable blocks are ignored by the trace itself,
+        // a whitelisted block is crossed, and the first other solid block blocks the shot.
+        Vector rayStart = start.toVector();
+        Vector cursor = rayStart.clone();
+        for (int guard = 0; guard < 128 && remaining > 0; guard++) {
+            RayTraceResult hit = world.rayTraceBlocks(cursor.toLocation(world), direction,
+                    remaining, FluidCollisionMode.NEVER, true);
+            if (hit == null || hit.getHitPosition() == null) return true;
+            if (hit.getHitBlock() == null || !ignoreBlocks.contains(hit.getHitBlock().getType())) {
+                return false;
+            }
+            // Resume the trace just past the crossed block (epsilon avoids re-hitting its face).
+            double travelled = hit.getHitPosition().distance(rayStart) + 1.0e-3;
+            remaining -= travelled;
+            cursor = rayStart.clone().add(direction.clone().multiply(travelled));
+        }
+        return remaining <= 0;
     }
 
     private void clearBeam(EnderCrystal crystal) {
@@ -415,6 +444,22 @@ public final class TurretManager {
 
     private static String normalize(String raw) {
         return raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** Resolves {@code turret.ignore_blocks} into materials (unknown names are warned and skipped). */
+    private void loadIgnoreBlocks() {
+        ignoreBlocks.clear();
+        com.ultimateimprovments.core.Main main = com.ultimateimprovments.core.Main.getInstance();
+        if (main == null) return;
+        for (String name : main.getConfig().getStringList("turret.ignore_blocks")) {
+            if (name == null || name.isBlank()) continue;
+            Material material = Material.matchMaterial(name.trim());
+            if (material == null) {
+                ConsoleLogger.warn("[Turret] Unknown material in turret.ignore_blocks: " + name);
+                continue;
+            }
+            ignoreBlocks.add(material);
+        }
     }
 
     private void loadAll() {

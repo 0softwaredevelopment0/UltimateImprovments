@@ -359,7 +359,11 @@ End-crystal turrets are a ranged defense system:
   - **add/remove/list/clear** targets (player names or entity types),
   - `/ui turret toggle|mode|add <target>|remove <target>|list|clear` (same actions via command).
 - Turrets automatically fire beams at targets within **16×16×16** blocks, dealing **1 damage per tick** (mitigated by armor — no bypass).
-- The beam **cannot pass through blocks** — line of sight is required.
+- The beam **cannot pass through blocks** — line of sight is required, except for the
+  blocks listed in `turret.ignore_blocks` (UI-Combat.toml): every glass type
+  (plain, tinted, all 16 stained colours) and every glass pane is ignored by default,
+  so a turret behind glass keeps firing. Unknown material names are skipped with a
+  console warning; `/ui reload` applies changes.
 - The turret works even when its owner is offline.
 
 ---

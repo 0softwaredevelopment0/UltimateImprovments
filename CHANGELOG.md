@@ -3,6 +3,19 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.49] - since 1.8.5-alpha.48 (2026-11-01)
+
+### Added
+- **`turret.ignore_blocks` — turret line-of-sight whitelist** in
+  `configs/UI-Combat.toml`. Blocks listed there are shot through: a turret behind
+  them still targets and fires. The default list covers every glass type —
+  `GLASS`, `GLASS_PANE`, `TINTED_GLASS`, all 16 stained glass blocks and all 16
+  stained glass panes. Material names are case-insensitive and may carry a
+  `minecraft:` prefix; unknown names are skipped with a console warning.
+  `/ui reload` applies changes. The line-of-sight ray trace now uses a block
+  filter (`world.rayTrace(..., predicate)`) so passable blocks stay ignored and
+  the whitelist is skipped on top of them.
+
 ## [1.8.5-alpha.38] - since 1.8.5-alpha.37 (2026-10-27)
 
 ### Added
