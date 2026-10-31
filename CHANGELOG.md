@@ -3,6 +3,120 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.1] - since 1.8.5-alpha.44 (2026-11-01)
+
+First beta of the 1.8.5 line: everything published after `1.8.5-alpha.44`. Two
+bugs made this the release that had to ship — an **infinite redstone-block
+duplication exploit** through wirelessly activated pistons, and a **false
+fly-hack kick** from the levitation charm. Both are fixed below, together with
+the wireless-redstone binding/ghost-link family that made the feature look
+broken, and a chat-limits false positive that rejected decorated messages.
+
+### Security
+- **Infinite redstone-block duplication through wirelessly activated pistons —
+  fixed.** A wireless piston used to be powered by placing a real redstone block
+  on an adjacent air block and taking it back on retract. The block was visible
+  for as long as the piston stayed extended, so any player could mine it and keep
+  it; breaking it also left the piston stuck extended because the manager already
+  believed it had restored the block. Pistons are now triggered through the
+  vanilla piston block event (`PistonBaseBlock.TRIGGER_EXTEND` /
+  `TRIGGER_CONTRACT` via `ServerLevel#blockEvent`), the same path vanilla takes
+  when the neighbour signal changes: real movement, real sounds, and
+  `BlockPistonExtendEvent` / `BlockPistonRetractEvent` still fire for protection
+  plugins. Nothing is ever written into the world, so there is nothing to steal.
+  Vanilla's own pre-check (`PistonStructureResolver#resolve`) is kept, and a
+  piston that real redstone still powers is never retracted by the wireless line.
+
+### Fixed
+- **Levitation charm no longer gets the player kicked for flying.** The chestplate
+  jetpack wrote raw velocity every 2 ticks, which the client never simulates, so
+  the movement anticheat punished the ascent as fly-hacking. It now grants the
+  real vanilla Levitation effect (amplifier 5 = `0.05 × (5 + 1) = 0.30` blocks/tick
+  ≈ 6 blocks/s, exactly the old lift), invisible (ambient, no particles, no HUD
+  icon), refreshed once per second and removed with the leftover momentum the
+  moment the key is released. Unchanged: chestplate only, 1 integrity use/s while
+  boosting, no lift in Creative/Spectator/flying/gliding/vehicles.
+- **Wireless redstone could be bound only once.** After a successful
+  `Shift + RMB` link the first device stayed selected, so every later click
+  silently chained the new device onto that OLD source: a second, unrelated pair
+  could not be bound at all, and once the old source was destroyed the plugin
+  wrote ghost links to air. The “already bound” dead end is gone too — clicking a
+  device that still has connections is an explicit instruction now, and a session
+  ends with the second click, lives for 60 s (`auto-cancel in 60s`) and says so in
+  the prompt.
+- **Chat abuse limits no longer reject decorated messages.** The CAPS and
+  random-soup metrics ran on the raw MiniMessage string, so tags like
+  `<gradient:#e1ff00:#00ff55>` were read as machine-made text and a decorated
+  message was blocked as “random text 100%”; `ChatText.stripMarkup` now removes
+  tags (quoted `>`, escaped tags and section codes handled) before measuring.
+- **Wireless ghost links outlived their devices.** Explosions, pistons, world
+  edits and block replacement never fire `BlockBreakEvent`, so stored links kept
+  pointing at air and were reported (and re-saved) as real connections forever.
+  Dead links are pruned — memory, chunk ticket and DB row — the moment the player
+  interacts with the device, and links in worlds that are not loaded are kept.
+- **`/ui reload` registered a second wireless listener.** Every event ran twice
+  after a reload (double cascade activation, duplicated action-bar messages);
+  `shutdown()` now unregisters the old instance.
+- **Wireless-driven devices were left frozen after `/ui reload` or disable.**
+  A lit lamp, a piston extended by the block event, a stuck observer pulse and
+  dust at power 15 all stayed as they were. `shutdown()` now releases every linked
+  device (lamp unlit, pulse ended, piston retracted, dust driven back to 0) with
+  direct block writes after the link graph is dropped, and devices still fed by
+  real redstone are left untouched.
+- **A wireless lamp no longer flickers the dust next to it.** Turning one off
+  drove every adjacent wire to 0 even when another source powered it, producing a
+  falling-then-rising edge for repeaters and comparators downstream; the wire is
+  now cleared only when nothing else feeds it.
+- **A runaway link network can no longer stall the tick.** Cascades are bounded by
+  depth (24) and devices touched (512), with one console warning per cascade.
+- **Duplicate rows in `wireless_links` are gone.** Links were stored in whichever
+  order the player clicked while `INSERT OR IGNORE` only dedupes the exact column
+  order; rows are written in a canonical order now and mirrored rows left by older
+  builds are collapsed once at startup.
+- **Linked devices moved by a piston keep their runtime state.** The re-entrancy
+  guard and the cached observer flag of the old position were dropped instead of
+  following the block, so a pushed device reacted to its own move.
+- **Concrete bucket: the whole poured puddle hardens.** Only the source block was
+  converted, because `BlockFromToEvent` fires while the destination is still air;
+  flow tracking is now group-based and the whole pour turns at once.
+- **Concrete bucket: the original biome is restored on hardening.** The tint biome
+  under the liquid used to leak into the world save forever.
+- **Concrete bucket: pours survive a restart.** Tracked water lives in the new
+  `concrete_bucket_water` table (with its original start time), so a restart no
+  longer leaves gray water that never hardens.
+- **Concrete bucket: the liquid cannot be taken away.** Bucket filling, glass
+  bottles, sponges and dispensers are blocked (a dispenser bypassed every player
+  event), each blocked attempt plays a dull refusal sound.
+
+### Added
+- **Remote Detonator (UI-Items)** — flint-and-steel base, 128 uses. `Shift + RMB`
+  on TNT binds it (one binding per item, stored in the item's persistent data), an
+  empty `Shift + RMB` clears it, `RMB` detonates: the block is consumed and a primed
+  TNT with the configured fuse takes its place. Never usable as a lighter.
+  Crafter-only recipe, `[remote_detonator]` config, bilingual name/lore/messages,
+  available in `/ui menu`.
+- **`turret.ignore_blocks` (UI-Combat)** — turret line-of-sight whitelist, default
+  covers every glass block and pane (34 materials); a turret behind them targets
+  and fires. `/ui reload` applies changes.
+- **Concrete bucket (UI-Items)** — new Crafter recipe (clay/smooth basalt/tuff,
+  blackstone/water bucket/red sand, dripstone block/soul sand/packed mud), crit
+  particles that mark the liquid cement instead of the hardened block, and a whole
+  `[concrete_bucket]` config section (delay, block, tint biome, particle and its
+  count/offset/interval, refusal sound) instead of hardcoded values.
+
+### Changed
+- **Custom enchantments moved from the datapack into `RegistryEvents`.** The 18
+  enchantments are registered in the bootstrap phase, so a typo invalidates the
+  build instead of silently dropping an entry while plugin code keeps referencing
+  `ui:<id>`. Keys are unchanged, so no item migration is needed. Fifteen of the
+  eighteen item tags are gone (twelve inlined as item lists, three now use the
+  built-in `#minecraft:enchantable/durability`); the three that are unions of
+  vanilla tags keep their tag files — a union cannot be materialised before the
+  registry freezes, which the live server confirmed and the attempt was reverted.
+- **Wireless signals respect real redstone.** Piston retraction and dust clearing
+  skip anything that a real source still powers (`Block#isBlockPowered` /
+  `isBlockIndirectlyPowered`), so the wireless line never fights vanilla.
+
 ## [1.8.5-alpha.56] - since 1.8.5-alpha.55 (2026-11-01)
 
 ### Fixed
