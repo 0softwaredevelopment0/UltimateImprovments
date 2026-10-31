@@ -3,6 +3,29 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.52] - since 1.8.5-alpha.51 (2026-11-01)
+
+### Fixed
+- **Wireless redstone could be bound only once.** After the first successful
+  `Shift + RMB` link the first device stayed selected as the pending source, so
+  every later `Shift + RMB` silently chained the new device onto that OLD source
+  instead of starting a fresh pair — a second, unrelated pair (device ↔ device)
+  could not be bound at all, and once the old source had been destroyed the plugin
+  happily wrote ghost links to air. The binding session now ends with the second
+  click: the next `Shift + RMB` always starts a new pair from the clicked device.
+- **"Already bound" dead end.** Clicking a device that still had connections
+  reported `has N connections` and left the player without a usable prompt, so
+  nothing could be bound on the next click. The message is now an explicit
+  instruction (`Shift + RMB another device to add one more, same block to cancel`)
+  and the click itself always opens a binding session; clicking the link that
+  already exists says so instead of silently re-adding it.
+- **Ghost links outlived their devices.** Explosions, pistons, world edits and
+  block replacement never fire `BlockBreakEvent`, so stored links kept pointing at
+  air and were reported (and re-saved) as real connections forever. Dead links are
+  now pruned — memory, chunk ticket and DB row — the moment the player interacts
+  with the device, and a player's pending source is dropped when that block is
+  broken. Links in worlds that are not loaded are left untouched.
+
 ## [1.8.5-alpha.51] - since 1.8.5-alpha.50 (2026-11-01)
 
 ### Fixed
