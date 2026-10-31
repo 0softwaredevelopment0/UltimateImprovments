@@ -1,8 +1,0 @@
-{
-	"values": [
-		"#minecraft:enchantable/equippable",
-		"#minecraft:enchantable/durability",
-		"minecraft:book",
-		"minecraft:written_book"
-	]
-}
