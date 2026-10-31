@@ -10,20 +10,15 @@ import io.papermc.paper.registry.event.RegistryEvents;
 import io.papermc.paper.registry.keys.EnchantmentKeys;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.set.RegistrySet;
-import io.papermc.paper.registry.tag.Tag;
-import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemType;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * EnchantmentRegistryBootstrap — registers the 18 custom enchantments through Paper's
@@ -50,14 +45,9 @@ import java.util.Set;
  * </ul>
  * Registration is skipped entirely when {@code datapack.modules.enchantments} is false,
  * mirroring the old behaviour where the module toggle kept the enchantment files out of
- * the extracted pack. No entry references a {@code ui:*} tag anymore, so the datapack
- * being disabled does not affect registration.
- * <p>
- * <b>Failure policy.</b> Bootstrap exceptions abort server startup, so nothing here is
- * allowed to propagate: each enchantment is registered inside its own {@code try/catch}
- * and a failure only skips that entry with an error line. The item-set union path reads
- * vanilla tags defensively as well and degrades to a single documented tag reference
- * instead of throwing (see {@link #resolveUnion}).
+ * the extracted pack. The three entries that still reference a {@code ui:*} item tag are
+ * skipped (with a warning) when {@code datapack.enabled} is false, because those tag
+ * files live in the pack.
  */
 final class EnchantmentRegistryBootstrap {
 
@@ -80,7 +70,7 @@ final class EnchantmentRegistryBootstrap {
                 + lang + ", " + EnchantmentDefinition.all().size() + " entries).");
 
         context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.compose(),
-                event -> compose(event, russian, log));
+                event -> compose(event, russian, settings.datapackEnabled(), log));
     }
 
     /**
@@ -90,13 +80,18 @@ final class EnchantmentRegistryBootstrap {
      * down with it.
      */
     private static void compose(RegistryComposeEvent<Enchantment, EnchantmentRegistryEntry.Builder> event,
-                                boolean russian, ComponentLogger log) {
+                                boolean russian, boolean datapackEnabled, ComponentLogger log) {
         int registered = 0;
         List<String> skipped = new ArrayList<>();
 
         for (EnchantmentDefinition definition : EnchantmentDefinition.all()) {
+            if (definition.itemTag() != null && !datapackEnabled) {
+                // Its item tag ships inside the bundled datapack, which is switched off.
+                skipped.add(definition.id());
+                continue;
+            }
             try {
-                register(event, definition, russian, log);
+                register(event, definition, russian);
                 registered++;
             } catch (Throwable t) {
                 log.error("Failed to register the 'ui:" + definition.id()
@@ -114,8 +109,10 @@ final class EnchantmentRegistryBootstrap {
     }
 
     private static void register(RegistryComposeEvent<Enchantment, EnchantmentRegistryEntry.Builder> event,
-                                 EnchantmentDefinition definition, boolean russian, ComponentLogger log) {
-        RegistryKeySet<ItemType> items = resolveItems(event, definition, log);
+                                 EnchantmentDefinition definition, boolean russian) {
+        RegistryKeySet<ItemType> items = definition.itemTag() != null
+                ? event.getOrCreateTag(definition.itemTag())
+                : RegistrySet.keySet(RegistryKey.ITEM, itemKeys(definition.items()));
 
         event.registry().register(EnchantmentKeys.create(Key.key("ui", definition.id())),
                 builder -> builder
@@ -134,104 +131,6 @@ final class EnchantmentRegistryBootstrap {
                         .activeSlots(definition.activeSlots()));
     }
 
-    /** Turns the definition's item-set shape into something the builder accepts. */
-    private static RegistryKeySet<ItemType> resolveItems(
-            RegistryComposeEvent<Enchantment, EnchantmentRegistryEntry.Builder> event,
-            EnchantmentDefinition definition, ComponentLogger log) {
-
-        return switch (definition.items()) {
-            case EnchantmentDefinition.ItemSet.Inline inline ->
-                    RegistrySet.keySet(RegistryKey.ITEM, itemKeys(inline.ids()));
-            case EnchantmentDefinition.ItemSet.SingleTag single ->
-                    event.getOrCreateTag(single.tag());
-            case EnchantmentDefinition.ItemSet.Union union ->
-                    resolveUnion(event, definition.id(), union, log);
-        };
-    }
-
-    /**
-     * Materialises the union of several vanilla tags plus explicit items, i.e. what the old
-     * {@code ui:*_enchantable} datapack tags did.
-     * <p>
-     * Reading tag contents at compose time is <b>not</b> covered by the API contract:
-     * {@code getOrCreateTag} documents that the returned tag "is then required to be
-     * filled either from the built-in or custom datapack", so its values may still be empty
-     * here, and {@code Registry.getTag} throws {@code NoSuchElementException} for an
-     * unknown key. Both are handled:
-     * <ul>
-     *   <li>every tag read is attempted through two paths and inside its own
-     *       {@code try/catch} ({@link #readTagKeys});</li>
-     *   <li>if <b>any</b> tag comes back empty the union is not trusted at all — a partially
-     *       filled set would silently narrow the enchantment — and the documented
-     *       single-tag reference {@code fallbackTag} is used instead, which the game fills
-     *       later. The enchantment still registers; only a few items (elytra, books, the
-     *       {@code mining_loot} extras) may be missing, and a warning says so.</li>
-     * </ul>
-     */
-    private static RegistryKeySet<ItemType> resolveUnion(
-            RegistryComposeEvent<Enchantment, EnchantmentRegistryEntry.Builder> event,
-            String id, EnchantmentDefinition.ItemSet.Union union, ComponentLogger log) {
-
-        Set<TypedKey<ItemType>> keys = new LinkedHashSet<>(itemKeys(union.extraItems()));
-        int resolvedTags = 0;
-        List<String> unreadable = new ArrayList<>();
-
-        for (TagKey<ItemType> tagKey : union.tags()) {
-            List<TypedKey<ItemType>> fromTag = readTagKeys(event, tagKey);
-            if (fromTag.isEmpty()) {
-                unreadable.add("#" + tagKey.key());
-            } else {
-                keys.addAll(fromTag);
-                resolvedTags++;
-            }
-        }
-
-        if (!unreadable.isEmpty()) {
-            log.warn("ui:" + id + ": could not read vanilla item tag(s) " + String.join(", ", unreadable)
-                    + " at compose time — falling back to the single tag #" + union.fallbackTag().key()
-                    + ". The enchantment still works, but its item set is narrower than the old"
-                    + " datapack tag until the vanilla tags become readable here.");
-            return event.getOrCreateTag(union.fallbackTag());
-        }
-
-        if (keys.isEmpty()) {
-            // Defensive: every tag was "readable" but reported no values, and no explicit
-            // items exist. Registering an empty supported-items set would fail validation.
-            throw new IllegalStateException("resolved item set is empty for ui:" + id);
-        }
-
-        log.info("ui:" + id + " item set: " + resolvedTags + "/" + union.tags().size()
-                + " vanilla tag(s) + " + union.extraItems().size() + " explicit item(s) = "
-                + keys.size() + " item(s).");
-        return RegistrySet.keySet(RegistryKey.ITEM, List.copyOf(keys));
-    }
-
-    /**
-     * Reads the keys of a vanilla item tag, trying the compose event's tag view first (the
-     * same registry view Paper hands to the builder) and the static item registry second.
-     * Returns an empty list when neither path yields values — callers decide what that
-     * means, this method never throws.
-     */
-    private static List<TypedKey<ItemType>> readTagKeys(
-            RegistryComposeEvent<Enchantment, EnchantmentRegistryEntry.Builder> event,
-            TagKey<ItemType> tagKey) {
-
-        try {
-            Tag<ItemType> tag = event.getOrCreateTag(tagKey);
-            if (!tag.isEmpty()) return List.copyOf(tag.values());
-        } catch (Throwable ignored) {
-            // fall through to the static registry
-        }
-        try {
-            if (Registry.ITEM.hasTag(tagKey)) {
-                return List.copyOf(Registry.ITEM.getTag(tagKey).values());
-            }
-        } catch (Throwable ignored) {
-            // no tags available at this point of the load — caller falls back
-        }
-        return List.of();
-    }
-
     private static List<TypedKey<ItemType>> itemKeys(List<String> ids) {
         List<TypedKey<ItemType>> keys = new ArrayList<>(ids.size());
         for (String id : ids) keys.add(TypedKey.create(RegistryKey.ITEM, Key.key(id)));
@@ -242,15 +141,17 @@ final class EnchantmentRegistryBootstrap {
      * The subset of {@code UI-Datapack.toml} this class cares about. Read directly with
      * toml4j because the bootstrap runs long before UI-Core (and its config layer) exists.
      */
-    private record Settings(boolean enchantments, String configuredLang) {
+    private record Settings(boolean datapackEnabled, boolean enchantments, String configuredLang) {
 
         static Settings read(File configFile, ComponentLogger log) {
+            boolean datapackEnabled = true;
             boolean enchantments = true;
             String configuredLang = "auto";
 
             if (configFile.isFile()) {
                 try {
                     Toml toml = new Toml().read(configFile);
+                    datapackEnabled = !Boolean.FALSE.equals(toml.getBoolean("datapack.enabled", true));
                     configuredLang = toml.getString("datapack.lang", "auto");
                     Toml modules = toml.getTable("datapack.modules");
                     if (modules != null) {
@@ -261,7 +162,7 @@ final class EnchantmentRegistryBootstrap {
                             + ") — registering every custom enchantment (defaults).");
                 }
             }
-            return new Settings(enchantments, configuredLang);
+            return new Settings(datapackEnabled, enchantments, configuredLang);
         }
     }
 }

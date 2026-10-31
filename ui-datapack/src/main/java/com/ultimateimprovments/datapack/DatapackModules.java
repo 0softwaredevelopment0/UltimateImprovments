@@ -55,7 +55,7 @@ public final class DatapackModules {
      * Everything under a prefix belongs to that part.
      */
     private static final Map<String, List<String>> PATH_PREFIXES = Map.of(
-            ENCHANTMENTS, List.of("minecraft/tags/enchantment/"),
+            ENCHANTMENTS, List.of("ui/tags/item/", "minecraft/tags/enchantment/"),
             ADVANCEMENTS, List.of("ui/advancement/"),
             CUSTOM_RECIPES, List.of("ui/recipe/"),
             VANILLA_RECIPES, List.of("minecraft/recipe/"),
