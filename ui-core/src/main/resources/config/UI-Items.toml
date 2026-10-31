@@ -73,6 +73,33 @@ enabled = true
 # Default: [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
 collision_recipes = [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
 
+# Remote Detonator — binds one TNT block and detonates it from afar.
+[remote_detonator]
+# Master switch (false = the item exists but reacts to nothing).
+# Default: true
+enabled = true
+# Fuse of the TNT ignited by the detonator, ticks (80 = redstone-ignited TNT).
+# Default: 80
+fuse_ticks = 80
+# Cooldown between two detonations of one player, milliseconds.
+# Default: 1000
+cooldown_ms = 1000
+# Max distance to the bound block, blocks (0 = unlimited).
+# Default: 0
+max_distance = 0
+# Allow detonating a charge bound in another world.
+# Default: true
+cross_world = true
+# Item durability: one unit is spent per detonation, at zero the item breaks.
+# Default: 128
+max_uses = 128
+# Sound played at the bound block on detonation (Bukkit Sound name).
+# Default: ITEM_FLINTANDSTEEL_USE
+ignite_sound = "ITEM_FLINTANDSTEEL_USE"
+# Sound played to the player on bind / rebind (Bukkit Sound name).
+# Default: BLOCK_NOTE_BLOCK_PLING
+bind_sound = "BLOCK_NOTE_BLOCK_PLING"
+
 # ==================================================================
 # MESSAGES
 # ==================================================================
@@ -84,3 +111,35 @@ crafter_only = "<gold>✧</gold> <gray>Этот предмет можно скр
 
 [messages_en.crafting]
 crafter_only = "<gold>✧</gold> <gray>This item can only be crafted in a</gray> <aqua>Crafter</aqua><gray>!</gray>"
+
+# ── Remote Detonator (Russian) ──
+[messages.remote_detonator]
+name = "<white>Remote Detonator *</white>"
+lore = ["<gray>ПКМ — подорвать привязанный ТНТ</gray>", "<gray>Shift + ПКМ по ТНТ — привязать</gray>", "<gray>Shift + ПКМ мимо — сбросить привязку</gray>"]
+bound = "<green>✔</green> <white>Привязано к ТНТ:</white> <gold>%world% %x% %y% %z%</gold>"
+rebound = "<green>✔</green> <white>Привязка переопределена:</white> <gold>%world% %x% %y% %z%</gold>"
+reset = "<yellow>✧</yellow> <gray>Привязка сброшена.</gray>"
+no_block = "<yellow>✧</yellow> <gray>Наведись на блок ТНТ и нажми Shift + ПКМ, чтобы привязать.</gray>"
+nothing_bound = "<yellow>✧</yellow> <gray>Детонатор ни к чему не привязан.</gray>"
+detonated = "<green>✧</green> <white>Заряд подорван:</white> <gold>%world% %x% %y% %z%</gold>"
+target_lost = "<red>❌</red> <gray>Привязанный блок пропал или больше не ТНТ — привязка сброшена.</gray>"
+wrong_world = "<red>❌</red> <gray>Заряд привязан в другом мире — привязка сброшена.</gray>"
+too_far = "<red>❌</red> <gray>Слишком далеко до заряда (лимит %max% блоков).</gray>"
+cooldown = "<yellow>✧</yellow> <gray>Детонатор ещё не готов к следующему подрыву.</gray>"
+broken = "<red>✧</red> <gray>Детонатор износился и сломался.</gray>"
+
+# ── Remote Detonator (English) ──
+[messages_en.remote_detonator]
+name = "<white>Remote Detonator *</white>"
+lore = ["<gray>RMB — detonate the bound TNT</gray>", "<gray>Shift + RMB on TNT — bind it</gray>", "<gray>Shift + RMB elsewhere — clear the binding</gray>"]
+bound = "<green>✔</green> <white>Bound to TNT at</white> <gold>%world% %x% %y% %z%</gold>"
+rebound = "<green>✔</green> <white>Binding moved to</white> <gold>%world% %x% %y% %z%</gold>"
+reset = "<yellow>✧</yellow> <gray>Binding cleared.</gray>"
+no_block = "<yellow>✧</yellow> <gray>Look at a TNT block and press Shift + RMB to bind it.</gray>"
+nothing_bound = "<yellow>✧</yellow> <gray>Nothing is bound yet.</gray>"
+detonated = "<green>✧</green> <white>Charge detonated at</white> <gold>%world% %x% %y% %z%</gold>"
+target_lost = "<red>❌</red> <gray>The bound block is gone or no longer TNT — binding cleared.</gray>"
+wrong_world = "<red>❌</red> <gray>The charge is in another world — binding cleared.</gray>"
+too_far = "<red>❌</red> <gray>The charge is out of reach (limit %max% blocks).</gray>"
+cooldown = "<yellow>✧</yellow> <gray>The detonator is not ready for another blast yet.</gray>"
+broken = "<red>✧</red> <gray>The detonator wore out and broke.</gray>"

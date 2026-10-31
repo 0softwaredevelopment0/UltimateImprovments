@@ -58,6 +58,10 @@ public class Keys {
     // Chunk Loader
     public static NamespacedKey CHUNK_LOADER;
 
+    // Remote Detonator (item tag + the bound TNT block, encoded "x;y;z;world")
+    public static NamespacedKey REMOTE_DETONATOR;
+    public static NamespacedKey DETONATOR_TARGET;
+
     // Totem Charge
     public static NamespacedKey TOTEM_CHARGE;
 
@@ -113,6 +117,9 @@ public class Keys {
 
         MULTIMETER = new NamespacedKey(plugin, "is_multimeter");
         CHUNK_LOADER = new NamespacedKey(plugin, "is_chunk_loader");
+
+        REMOTE_DETONATOR = new NamespacedKey(plugin, "is_remote_detonator");
+        DETONATOR_TARGET = new NamespacedKey(plugin, "remote_detonator_target");
 
         TOTEM_CHARGE = new NamespacedKey(plugin, "totem_charge");
 

@@ -471,6 +471,9 @@ public class AdminMenuGUI implements Listener {
         CUSTOM_ITEMS.add(createNamedItem(Material.HEAVY_CORE,
                 "<gray>Heavy Core *</gray>",
                 "<gray>Crafted from netherite scrap.</gray>"));
+
+        // 30. Remote Detonator (bilingual name/lore come from the config)
+        CUSTOM_ITEMS.add(com.ultimateimprovments.mechanics.features.items.RemoteDetonatorItem.createItem());
     }
 
     private static ItemStack createNamedItem(Material material, String name, String lore) {

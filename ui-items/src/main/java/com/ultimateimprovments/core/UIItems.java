@@ -22,7 +22,7 @@ public class UIItems extends JavaPlugin implements SoftReloadable {
     private static final Set<String> OWNED_MODULES = Set.of(
             "Crafting", "EntityLocator", "Waypoint", "Antimatter", "ExpBottleUpgrade",
             "Notes", "UnbreakableBreaker", "ParticleAccelerator", "ItemEnchantListeners",
-            "Omniscanner");
+            "RemoteDetonator", "Omniscanner");
 
     private static UIItems instance;
 

@@ -269,6 +269,24 @@ public final class ItemsModules {
             }
         });
 
+        // Remote Detonator — one TNT block bound per item, detonated from afar
+        mm.register(new SimpleModule("RemoteDetonator", "mechanics/features/remote_detonator", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                RemoteDetonatorListener.init(main);
+
+                RemoteDetonatorCraftListener.init();
+                main.getServer().getPluginManager().registerEvents(new RemoteDetonatorCraftListener(), main);
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                RemoteDetonatorListener.reloadConfig();
+            }
+        });
+
         // Omniscanner + Admin menu (/ui menu)
         mm.register(new OmniscannerModule());
     }
