@@ -55,7 +55,7 @@ public final class DatapackModules {
      * Everything under a prefix belongs to that part.
      */
     private static final Map<String, List<String>> PATH_PREFIXES = Map.of(
-            ENCHANTMENTS, List.of("ui/enchantment/", "ui/tags/item/", "minecraft/tags/enchantment/"),
+            ENCHANTMENTS, List.of("minecraft/tags/enchantment/"),
             ADVANCEMENTS, List.of("ui/advancement/"),
             CUSTOM_RECIPES, List.of("ui/recipe/"),
             VANILLA_RECIPES, List.of("minecraft/recipe/"),
@@ -167,7 +167,7 @@ public final class DatapackModules {
 
     /**
      * Whether a datapack file (path relative to the pack root, e.g.
-     * {@code data/ui/enchantment/aoe.json}) should be copied to the world.
+     * {@code data/minecraft/tags/enchantment/in_enchanting_table.json}) should be copied to the world.
      */
     public static boolean isPathEnabled(String relPath) {
         if (relPath == null || !relPath.startsWith("data/")) return true;

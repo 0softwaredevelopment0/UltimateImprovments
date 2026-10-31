@@ -57,7 +57,7 @@ final class DatapackPackBootstrap {
 
     /** Datapack path prefixes per part (relative to the pack's {@code data/} folder). */
     private static final Map<String, List<String>> PREFIXES = Map.ofEntries(
-            Map.entry("enchantments", List.of("ui/enchantment/", "ui/tags/item/", "minecraft/tags/enchantment/")),
+            Map.entry("enchantments", List.of("minecraft/tags/enchantment/")),
             Map.entry("advancements", List.of("ui/advancement/")),
             Map.entry("custom_recipes", List.of("ui/recipe/")),
             Map.entry("vanilla_recipes", List.of("minecraft/recipe/")),
