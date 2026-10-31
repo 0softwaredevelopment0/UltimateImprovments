@@ -3,6 +3,32 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-alpha.54] - since 1.8.5-alpha.53 (2026-11-01)
+
+### Fixed
+- **Wireless-driven devices are released on `/ui reload` and on disable again.**
+  Nothing brings them back on their own: a lamp lit by wireless power has no real
+  signal behind it, an observer caught in the middle of its 2-tick pulse stayed
+  powered forever once the revert task was cancelled by the reload, a piston
+  extended through the block event never retracted, and wireless dust sat at power
+  15. `shutdown()` now releases every linked device — lamp unlit, observer pulse
+  ended, piston retracted through the vanilla block event, dust driven back to 0 —
+  with direct block writes performed after the link graph is dropped, so nothing
+  cascades through the graph, and every device still fed by real redstone is left
+  untouched (`Block#isBlockPowered` / `isBlockIndirectlyPowered`).
+- **`/ui reload` stopped registering a second listener.** `init()` creates a fresh
+  manager instance and registers it, but the previous instance stayed registered,
+  so after every reload each event ran twice: double activation of the same link
+  cascade and duplicated action-bar messages. `shutdown()` now unregisters the old
+  listener (`HandlerList.unregisterAll`) before the singleton is dropped.
+- **Linked devices moved by a piston keep their runtime state.**
+  `moveLinkedBlocks()` rewrote the links in memory and in the database but dropped
+  the `skipUntilTick` re-entrancy guard and the cached `observerPrevPowered` flag of
+  the old position without setting them at the new one, so a pushed device reacted
+  to its own move and a moved observer produced a spurious power edge for the
+  watcher. The new `moveRuntimeState()` carries the guards (and `pulsingObservers`)
+  together with the block.
+
 ## [1.8.5-alpha.53] - since 1.8.5-alpha.52 (2026-11-01)
 
 ### Security

@@ -133,6 +133,14 @@ public class WirelessRedstoneManager implements Listener {
     /**
      * Stops the watcher and resets the singleton. Called when the module is
      * disabled and before a repeated init (e.g. /ui reload).
+     * <p>
+     * Devices this manager drove are released first, because none of them would come
+     * back on its own: a lamp lit by wireless power has no real signal behind it, an
+     * observer caught in the middle of its 2-tick pulse would stay powered forever once
+     * the revert task is cancelled, a piston extended by the block event would never
+     * retract, and wireless dust would sit at power 15. The writes are direct — the link
+     * graph is dropped first — so nothing cascades, and every device still fed by real
+     * redstone is left untouched.
      */
     public static void shutdown() {
         if (instance == null) return;
@@ -140,8 +148,77 @@ public class WirelessRedstoneManager implements Listener {
             instance.observerTask.cancel();
             instance.observerTask = null;
         }
+        instance.releaseDrivenDevices();
         instance.observerPrevPowered.clear();
+        instance.skipUntilTick.clear();
+        instance.pulsingObservers.clear();
+        // init() registers a FRESH listener instance on /ui reload; without this the old
+        // one stayed registered and every event was handled twice (double activation,
+        // duplicated action-bar messages) for the lifetime of the server.
+        org.bukkit.event.HandlerList.unregisterAll(instance);
         instance = null;
+    }
+
+    /**
+     * Puts every device this manager drove back into its vanilla state. Runs with the
+     * link graph already dropped, so the direct block writes below cannot cascade.
+     */
+    private void releaseDrivenDevices() {
+        Set<BlockPos> positions = new HashSet<>(links.keySet());
+        for (Set<BlockPos> partners : links.values()) {
+            positions.addAll(partners);
+        }
+        links.clear();
+
+        for (BlockPos pos : positions) {
+            Location loc = pos.toLocation();
+            if (loc == null) continue;
+            Block block = loc.getBlock();
+            switch (block.getType()) {
+                case REDSTONE_LAMP -> releaseLamp(block);
+                case OBSERVER -> releaseObserver(block);
+                case PISTON, STICKY_PISTON -> releasePiston(block);
+                case REDSTONE_WIRE -> releaseWire(block);
+                default -> { }
+            }
+        }
+    }
+
+    /** Unlights a lamp that wireless power kept lit — unless real redstone still feeds it. */
+    private static void releaseLamp(Block block) {
+        if (!(block.getBlockData() instanceof Lightable lightable) || !lightable.isLit()) return;
+        if (isReallyPowered(block)) return;
+        lightable.setLit(false);
+        // applyPhysics=false: the lamp has no real input, physics would leave it as is.
+        block.setBlockData(lightable, false);
+        forceComparatorUpdate(block);
+    }
+
+    /** Ends a wireless observer pulse the cancelled revert task would have left running. */
+    private void releaseObserver(Block block) {
+        if (!(block.getBlockData() instanceof Observer observer) || !observer.isPowered()) return;
+        if (!pulsingObservers.contains(BlockPos.fromLocation(block.getLocation()))) return;
+        observer.setPowered(false);
+        block.setBlockData(observer, true);
+    }
+
+    /** Retracts a piston the wireless line extended — unless real redstone still powers it. */
+    private static void releasePiston(Block block) {
+        if (!(block.getBlockData() instanceof Piston piston) || !piston.isExtended()) return;
+        if (isReallyPowered(block)) return;
+        firePistonEvent(block, false);
+    }
+
+    /** Drives wireless dust back to 0; physics lets vanilla recompute the real signal. */
+    private static void releaseWire(Block block) {
+        if (!(block.getBlockData() instanceof RedstoneWire wire) || wire.getPower() == 0) return;
+        wire.setPower(0);
+        block.setBlockData(wire, true);
+    }
+
+    /** True when real redstone — not this manager — powers the block. */
+    private static boolean isReallyPowered(Block block) {
+        return block.isBlockPowered() || block.isBlockIndirectlyPowered();
     }
 
     private static int countLinks() {
@@ -538,25 +615,31 @@ public class WirelessRedstoneManager implements Listener {
         if (piston.isExtended() == extended) return; // already in the requested state
 
         // Real redstone owns this piston: never retract what vanilla still powers.
-        if (!extended && (block.isBlockPowered() || block.isBlockIndirectlyPowered())) return;
+        if (!extended && isReallyPowered(block)) return;
 
-        if (!(block.getWorld() instanceof CraftWorld craftWorld)) return;
+        firePistonEvent(block, extended);
+    }
+
+    /** Fires the vanilla piston block event ({@code TRIGGER_EXTEND}/{@code TRIGGER_CONTRACT}). */
+    private static boolean firePistonEvent(Block block, boolean extend) {
+        if (!(block.getWorld() instanceof CraftWorld craftWorld)) return false;
         ServerLevel level = craftWorld.getHandle();
         net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(block.getX(), block.getY(), block.getZ());
         BlockState state = level.getBlockState(pos);
-        if (!(state.getBlock() instanceof PistonBaseBlock basePiston)) return;
+        if (!(state.getBlock() instanceof PistonBaseBlock basePiston)) return false;
 
         int facing = state.getValue(PistonBaseBlock.FACING).get3DDataValue();
-        if (extended) {
+        if (extend) {
             // Same pre-check vanilla runs in checkIfExtend before firing the event: no
             // event when the structure cannot move (too deep, immovable block in front).
             if (!new PistonStructureResolver(level, pos, state.getValue(PistonBaseBlock.FACING), true).resolve()) {
-                return;
+                return false;
             }
             level.blockEvent(pos, basePiston, PistonBaseBlock.TRIGGER_EXTEND, facing);
         } else {
             level.blockEvent(pos, basePiston, PistonBaseBlock.TRIGGER_CONTRACT, facing);
         }
+        return true;
     }
 
     /**
@@ -663,8 +746,7 @@ public class WirelessRedstoneManager implements Listener {
                 removeLink(oldPos, p);
                 removeLinkDb(oldPos, p);
             }
-            observerPrevPowered.remove(oldPos);
-            skipUntilTick.remove(oldPos);
+            moveRuntimeState(oldPos, newPos);
 
             // Create new ones at the new positions
             for (BlockPos p : allPartners) {
@@ -684,6 +766,20 @@ public class WirelessRedstoneManager implements Listener {
                 addChunkTicket(p);
             }
         }
+    }
+
+    /**
+     * Per-position runtime state must follow the block, otherwise a piston that pushes a
+     * linked device leaves the device without its re-entrancy guard ({@code skipUntilTick})
+     * and without its last known observer state, so the watcher sees a fresh power edge
+     * and the device reacts to its own move.
+     */
+    private void moveRuntimeState(BlockPos oldPos, BlockPos newPos) {
+        Integer skip = skipUntilTick.remove(oldPos);
+        if (skip != null) skipUntilTick.put(newPos, skip);
+        Boolean prevPowered = observerPrevPowered.remove(oldPos);
+        if (prevPowered != null) observerPrevPowered.put(newPos, prevPowered);
+        if (pulsingObservers.remove(oldPos)) pulsingObservers.add(newPos);
     }
 
     // ════════════════════════════════════════
