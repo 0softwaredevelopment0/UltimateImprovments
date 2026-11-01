@@ -46,17 +46,25 @@ enabled = true
 
 # Unit 1 — how far this player receives other players' waypoints.
 [features.attributes.units."1"]
-# Change type: "modifier" (persistent modifier on top of the base value) or
-# "base" (overrides the vanilla base value; needs `value` instead of `amount`).
+# Change type: "modifier" (persistent modifier, default) or "base" (replaces
+# the vanilla base value; then use `value` instead of `target`).
 # Default: modifier
 type = "modifier"
 # Attribute key: namespaced (minecraft:...), bare (waypoint_receive_range) or
 # legacy constant (WAYPOINT_RECEIVE_RANGE).
 # Default: minecraft:waypoint_receive_range
 attribute = "minecraft:waypoint_receive_range"
-# Modifier amount added to the attribute (modifier type only).
+# Desired FINAL value (modifier type only): the plugin computes the modifier
+# amount itself as `target - current base value`, so a server-side default or a
+# value changed by another plugin cannot skew the result. Measured on the server
+# (Purpur 26.3 registry): waypoint_receive/transmit_range default 0 with a
+# 60 000 000 maximum, below_name_distance 10, name_tag_distance 64,
+# sneaking_speed 0.3 (capped at 1.0), attack_speed 4, attack_damage 2 (players
+# get their own base from DefaultAttributes). The attribute's own min/max limit
+# still applies. Use `amount` instead for a raw addition ("amount = 2.0" = +2
+# on top of the base).
 # Default: 8192.0
-amount = 8192.0
+target = 8192.0
 # Modifier operation: add_number | add_scalar | multiply_scalar_1 (modifier only).
 # Default: add_number
 operation = "add_number"
@@ -82,7 +90,7 @@ type = "modifier"
 # Default: minecraft:waypoint_transmit_range
 attribute = "minecraft:waypoint_transmit_range"
 # Default: 8192.0
-amount = 8192.0
+target = 8192.0
 # Default: add_number
 operation = "add_number"
 # Default: any
@@ -101,7 +109,7 @@ type = "modifier"
 # Default: minecraft:below_name_distance
 attribute = "minecraft:below_name_distance"
 # Default: 8.0
-amount = 8.0
+target = 8.0
 # Default: add_number
 operation = "add_number"
 # Default: any
@@ -120,7 +128,7 @@ type = "modifier"
 # Default: minecraft:name_tag_distance
 attribute = "minecraft:name_tag_distance"
 # Default: 8.0
-amount = 8.0
+target = 8.0
 # Default: add_number
 operation = "add_number"
 # Default: any
@@ -132,16 +140,18 @@ interval_ticks = 200
 # Default: ["all"]
 targets = ["all"]
 
-# Unit 5 — player attack damage BASE override (legacy behaviour, base type).
+# Unit 5 — player attack damage (legacy server tuning, now a modifier).
 [features.attributes.units."5"]
-# Default: base
-type = "base"
+# Default: modifier
+type = "modifier"
 # Default: minecraft:attack_damage
 attribute = "minecraft:attack_damage"
-# Base value that replaces the vanilla base value (base type only). Convert it
-# to a modifier by switching type to "modifier" and using `amount` instead.
 # Default: 0.1
-value = 0.1
+target = 0.1
+# Default: add_number
+operation = "add_number"
+# Default: any
+slot = "any"
 # Default: true
 schedule = true
 # Default: 200
@@ -149,14 +159,18 @@ interval_ticks = 200
 # Default: ["all"]
 targets = ["all"]
 
-# Unit 6 — player sneaking speed BASE override (legacy behaviour, base type).
+# Unit 6 — player sneaking speed (legacy server tuning, now a modifier).
 [features.attributes.units."6"]
-# Default: base
-type = "base"
+# Default: modifier
+type = "modifier"
 # Default: minecraft:sneaking_speed
 attribute = "minecraft:sneaking_speed"
 # Default: 1.0
-value = 1.0
+target = 1.0
+# Default: add_number
+operation = "add_number"
+# Default: any
+slot = "any"
 # Default: true
 schedule = true
 # Default: 200
@@ -164,14 +178,18 @@ interval_ticks = 200
 # Default: ["all"]
 targets = ["all"]
 
-# Unit 7 — player attack speed BASE override (legacy behaviour, base type).
+# Unit 7 — player attack speed (legacy server tuning, now a modifier).
 [features.attributes.units."7"]
-# Default: base
-type = "base"
+# Default: modifier
+type = "modifier"
 # Default: minecraft:attack_speed
 attribute = "minecraft:attack_speed"
 # Default: 3.5
-value = 3.5
+target = 3.5
+# Default: add_number
+operation = "add_number"
+# Default: any
+slot = "any"
 # Default: true
 schedule = true
 # Default: 200

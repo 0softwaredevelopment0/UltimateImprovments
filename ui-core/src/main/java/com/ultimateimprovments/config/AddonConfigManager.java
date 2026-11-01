@@ -346,10 +346,10 @@ public final class AddonConfigManager {
 
     /**
      * Legacy flat keys ({@code features.attributes.attack_damage|sneak_speed|attack_speed})
-     * → {@code units.5-7} of type {@code base}. Those keys were base-value
-     * overrides applied on a timer, so the migrated units are base + scheduled —
-     * converting them to modifiers would change the effective values (a modifier
-     * stacks on top of the vanilla base instead of replacing it).
+     * → {@code units.5-7}. Those keys were base-value overrides applied on a timer;
+     * they are migrated as scheduled MODIFIERS with a {@code target}, so the
+     * effective value stays exactly the old one (the manager derives the modifier
+     * amount from the live base value) while nothing overwrites the base value.
      */
     private static int upgradeLegacyAttributeKeys(YamlConfiguration view, String base) {
         // legacy key -> [unit number, attribute key]
@@ -369,17 +369,20 @@ public final class AddonConfigManager {
             int interval = Math.max(1, view.getInt(base + ".interval_ticks", 200));
 
             String unit = base + ".units." + row[1];
-            view.set(unit + ".type", "base");
+            view.set(unit + ".type", "modifier");
             view.set(unit + ".attribute", row[2]);
-            view.set(unit + ".value", view.getDouble(base + "." + row[0]));
+            view.set(unit + ".target", view.getDouble(base + "." + row[0]));
+            view.set(unit + ".operation", "add_number");
+            view.set(unit + ".slot", "any");
             view.set(unit + ".schedule", true);
             view.set(unit + ".interval_ticks", interval);
             if (!view.isSet(unit + ".targets")) view.set(unit + ".targets", List.of("all"));
 
-            view.set(base + "." + row[0], null); // legacy key is gone
+            view.set(unit + ".value", null);     // base-only key, no longer used
+            view.set(base + "." + row[0], null);  // legacy key is gone
             upgraded++;
             ConsoleLogger.info("[Config/UI-Other] Upgraded " + base + "." + row[0]
-                    + " → " + unit + " (base attribute unit)");
+                    + " → " + unit + " (target-valued modifier unit)");
         }
 
         if (hasLegacyKeys) {
@@ -389,10 +392,11 @@ public final class AddonConfigManager {
     }
 
     /**
-     * Removes the parameter that does not belong to a unit's EXPLICIT type —
-     * configs written before the {@code type} field carry a stale {@code value}
-     * on now-modifier units (and vice versa), which would otherwise stay in the
-     * file forever and confuse readers.
+     * Removes the parameters that do not belong to a unit's EXPLICIT type:
+     * {@code base} units own {@code value} only, {@code modifier} units own
+     * {@code target}/{@code amount} (a target-valued unit drops a stale
+     * {@code amount}). Configs written before the {@code type} field otherwise
+     * keep such keys in the file forever and confuse readers.
      */
     private static int pruneForeignUnitParams(YamlConfiguration view, String base) {
         org.bukkit.configuration.ConfigurationSection units =
@@ -405,15 +409,26 @@ public final class AddonConfigManager {
             String type = view.getString(unit + ".type");
             if (type == null) continue;
 
-            String foreign = "modifier".equalsIgnoreCase(type) ? "value" : "amount";
-            if (!view.isSet(unit + "." + foreign)) continue;
-
-            view.set(unit + "." + foreign, null);
-            pruned++;
-            ConsoleLogger.info("[Config/UI-Other] Removed stale " + unit + "." + foreign
-                    + " (unit type is '" + type + "')");
+            if ("base".equalsIgnoreCase(type)) {
+                pruned += dropKey(view, unit + ".amount");
+                pruned += dropKey(view, unit + ".target");
+            } else {
+                pruned += dropKey(view, unit + ".value");
+                if (view.isSet(unit + ".target")) {
+                    pruned += dropKey(view, unit + ".amount");
+                }
+            }
         }
         return pruned;
+    }
+
+    /** Removes one stale key. @return 1 when it existed, 0 otherwise. */
+    private static int dropKey(YamlConfiguration view, String path) {
+        if (!view.isSet(path)) return 0;
+        view.set(path, null);
+        ConsoleLogger.info("[Config/UI-Other] Removed stale " + path
+                + " (does not belong to the unit type)");
+        return 1;
     }
 
     /** Stock chat prefix colour (plain green) — the value migrated away from. */

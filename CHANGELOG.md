@@ -3,6 +3,46 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.4] - 2026-11-01
+
+Attribute units now express the RESULT instead of an addition: a modifier unit
+takes `target` (the desired final value) and the plugin derives the modifier
+amount from the attribute's live base value. This is a correctness fix — the
+server ships `waypoint_receive_range` / `waypoint_transmit_range` with a
+60 000 000 MAXIMUM and `name_tag_distance` at 64, so a plain `+8192` modifier
+could never produce 8192.
+
+### Fixed
+- **A modifier unit no longer adds its amount blindly.** `amount = 8192` on an
+  attribute whose base/maximum is enormous produced a value far from 8192 (and
+  the same class of bug hit every attribute with a non-zero base). Modifier units
+  now take `target` and compute the amount at application time:
+  `target - base` for `add_number`, the scalar inverse (`target / base - 1`) for
+  `add_scalar` / `multiply_scalar_1`. The effective value is therefore exactly the
+  configured target, whatever the server default, another plugin's base change or
+  a datapack does. A raw `amount` remains available for a deliberate addition.
+- Values measured on the target server (Purpur 26.3 registry):
+  `waypoint_receive_range` / `waypoint_transmit_range` default 0 with a 6.0E7
+  maximum, `below_name_distance` 10, `name_tag_distance` 64, `sneaking_speed` 0.3
+  (capped at 1.0), `attack_speed` 4, `attack_damage` 2 (players receive their base
+  from `DefaultAttributes`). The config comments state these numbers so it is
+  obvious why a raw amount cannot work.
+
+### Changed
+- All seven default units are modifiers: units 1-4 use `target`
+  (8192 / 8192 / 8 / 8, `schedule = false`), units 5-7 keep the legacy
+  attack-damage/speed tuning as scheduled modifiers with `target`
+  (0.1 / 1.0 / 3.5) — the value stays exactly the old one, because the amount is
+  recomputed from the live base.
+- The legacy flat-key migration now writes `type = "modifier"` + `target`
+  (instead of `base` + `value`), and the stale-parameter cleanup drops `value`
+  from modifiers, `amount`/`target` from base units and a leftover `amount` from
+  target-valued units.
+- `AttributeUnitsTemplateTest` guards the new defaults: every unit is a modifier,
+  targets are 8192/8192/8/8 and 0.1/1.0/3.5, no raw `amount`/`value` is shipped.
+
+Version: 1.8.5-beta.4.
+
 ## [1.8.5-beta.3] - 2026-11-01
 
 Attribute units now change attributes the way the config says: `type = "modifier"`

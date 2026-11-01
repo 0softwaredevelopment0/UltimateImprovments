@@ -25,9 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Guards the {@code features.attributes.units.*} block of the bundled UI-Other
  * template — the config surface of the scheduled attribute-grant manager:
  * <ul>
- *   <li>the shipped defaults exist: units 1-4 are persistent MODIFIERS for the
- *       waypoint/name-tag ranges (schedule off), units 5-7 are the legacy BASE
- *       overrides (schedule on),</li>
+ *   <li>every shipped default is a MODIFIER with a {@code target} (the desired
+ *       FINAL value), never a raw additive {@code amount} — a raw 8192 added to
+ *       a 60 000 000 maximum or a 64 name-tag distance would be meaningless;</li>
+ *   <li>units 1-4 are the range attributes with {@code schedule = false} (a
+ *       persistent modifier only has to be created once), units 5-7 keep the
+ *       legacy attack-damage/speed tuning on a schedule;</li>
  *   <li>each unit carries only the parameters of its own type,</li>
  *   <li>the legacy flat keys are gone (migrated into units by
  *       {@link AddonConfigManager}),</li>
@@ -81,21 +84,21 @@ class AttributeUnitsTemplateTest {
     }
 
     @Test
-    @DisplayName("Modifier units 1-4 ship the range attributes, one-shot (schedule = false)")
-    void modifierUnitsHaveDefaults() throws Exception {
+    @DisplayName("Range units 1-4 are one-shot modifiers targeting 8192/8192/8/8")
+    void rangeUnitsTargetFinalValues() throws Exception {
         YamlConfiguration cfg = loadOtherTemplate();
 
         assertTrue(cfg.getBoolean("features.attributes.enabled"),
                 "features.attributes.enabled must default to true");
 
         assertEquals("minecraft:waypoint_receive_range", cfg.getString(unit("1", "attribute")));
-        assertEquals(8192.0, cfg.getDouble(unit("1", "amount")), 0.0001);
+        assertEquals(8192.0, cfg.getDouble(unit("1", "target")), 0.0001);
         assertEquals("minecraft:waypoint_transmit_range", cfg.getString(unit("2", "attribute")));
-        assertEquals(8192.0, cfg.getDouble(unit("2", "amount")), 0.0001);
+        assertEquals(8192.0, cfg.getDouble(unit("2", "target")), 0.0001);
         assertEquals("minecraft:below_name_distance", cfg.getString(unit("3", "attribute")));
-        assertEquals(8.0, cfg.getDouble(unit("3", "amount")), 0.0001);
+        assertEquals(8.0, cfg.getDouble(unit("3", "target")), 0.0001);
         assertEquals("minecraft:name_tag_distance", cfg.getString(unit("4", "attribute")));
-        assertEquals(8.0, cfg.getDouble(unit("4", "amount")), 0.0001);
+        assertEquals(8.0, cfg.getDouble(unit("4", "target")), 0.0001);
 
         for (String id : List.of("1", "2", "3", "4")) {
             assertEquals("modifier", cfg.getString(unit(id, "type")),
@@ -110,32 +113,36 @@ class AttributeUnitsTemplateTest {
                     "unit " + id + " must carry its (unused while schedule is off) interval");
             assertEquals(List.of("all"), cfg.getStringList(unit(id, "targets")),
                     "unit " + id + " must target every online player by default");
+            assertFalse(cfg.isSet(unit(id, "amount")),
+                    "unit " + id + " must rely on the computed amount, not a raw one");
             assertFalse(cfg.isSet(unit(id, "value")),
-                    "modifier unit " + id + " must not carry the base-only 'value'");
+                    "unit " + id + " must not carry the base-only 'value'");
         }
     }
 
     @Test
-    @DisplayName("Legacy base units 5-7 keep the attack-damage/speed overrides on a schedule")
-    void baseUnitsHaveDefaults() throws Exception {
+    @DisplayName("Legacy tuning units 5-7 are scheduled modifiers targeting 0.1/1.0/3.5")
+    void legacyUnitsAreTargetModifiers() throws Exception {
         YamlConfiguration cfg = loadOtherTemplate();
 
         assertEquals("minecraft:attack_damage", cfg.getString(unit("5", "attribute")));
-        assertEquals(0.1, cfg.getDouble(unit("5", "value")), 0.0001);
+        assertEquals(0.1, cfg.getDouble(unit("5", "target")), 0.0001);
         assertEquals("minecraft:sneaking_speed", cfg.getString(unit("6", "attribute")));
-        assertEquals(1.0, cfg.getDouble(unit("6", "value")), 0.0001);
+        assertEquals(1.0, cfg.getDouble(unit("6", "target")), 0.0001);
         assertEquals("minecraft:attack_speed", cfg.getString(unit("7", "attribute")));
-        assertEquals(3.5, cfg.getDouble(unit("7", "value")), 0.0001);
+        assertEquals(3.5, cfg.getDouble(unit("7", "target")), 0.0001);
 
         for (String id : List.of("5", "6", "7")) {
-            assertEquals("base", cfg.getString(unit(id, "type")),
-                    "unit " + id + " must keep the base change type");
+            assertEquals("modifier", cfg.getString(unit(id, "type")),
+                    "unit " + id + " must be a modifier, not a base override");
             assertTrue(cfg.getBoolean(unit(id, "schedule")),
-                    "base unit " + id + " must keep re-applying (vanilla/plugins overwrite base values)");
+                    "unit " + id + " must keep re-applying (the target is recomputed from the live base)");
             assertEquals(200, cfg.getInt(unit(id, "interval_ticks")));
             assertEquals(List.of("all"), cfg.getStringList(unit(id, "targets")));
             assertFalse(cfg.isSet(unit(id, "amount")),
-                    "base unit " + id + " must not carry the modifier-only 'amount'");
+                    "unit " + id + " must rely on the computed amount, not a raw one");
+            assertFalse(cfg.isSet(unit(id, "value")),
+                    "unit " + id + " must not carry the base-only 'value'");
         }
     }
 
@@ -180,10 +187,8 @@ class AttributeUnitsTemplateTest {
                 assertEquals(cfg.getString(unit(id, key)), reparsed.getString(unit(id, key)),
                         "unit " + id + " " + key + " must survive the round-trip");
             }
-            assertEquals(cfg.getDouble(unit(id, "amount")), reparsed.getDouble(unit(id, "amount")), 0.0001,
-                    "unit " + id + " amount must survive the round-trip");
-            assertEquals(cfg.getDouble(unit(id, "value")), reparsed.getDouble(unit(id, "value")), 0.0001,
-                    "unit " + id + " value must survive the round-trip");
+            assertEquals(cfg.getDouble(unit(id, "target")), reparsed.getDouble(unit(id, "target")), 0.0001,
+                    "unit " + id + " target must survive the round-trip");
             assertEquals(cfg.getBoolean(unit(id, "schedule")), reparsed.getBoolean(unit(id, "schedule")),
                     "unit " + id + " schedule must survive the round-trip");
             assertEquals(cfg.getStringList(unit(id, "targets")), reparsed.getStringList(unit(id, "targets")),

@@ -42,7 +42,8 @@ import java.util.Set;
  * [features.attributes.units."1"]
  * type = "modifier"                            # modifier (default) | base
  * attribute = "minecraft:waypoint_receive_range"
- * amount = 8192.0                              # modifier only: added on top of the base value
+ * target = 8192.0                              # modifier only: desired FINAL value (amount = target - base)
+ * # or a raw addition: amount = 2.0
  * operation = "add_number"                     # modifier only: add_number | add_scalar | multiply_scalar_1
  * slot = "any"                                 # modifier only: any|hand|mainhand|offhand|armor|head|chest|legs|feet|body
  * schedule = false                             # false = apply once; true = re-apply every interval_ticks
@@ -124,10 +125,18 @@ public final class AttributesManager implements Listener {
         final String id;
         final ChangeType type;
         final Attribute attribute;
-        /** BASE only. */
+        /** BASE only: the value that REPLACES the vanilla base value. */
         final double value;
-        /** MODIFIER only. */
+        /** MODIFIER only: raw additive amount (used when {@link #target} is NaN). */
         final double amount;
+        /**
+         * MODIFIER only: desired FINAL value of the attribute, or {@link Double#NaN}
+         * when the unit works with a raw {@link #amount}. The modifier amount is
+         * derived at application time as {@code target - instance.getBaseValue()},
+         * so a vanilla default (e.g. 60 000 000 for
+         * {@code minecraft:waypoint_receive_range}) never skews the result.
+         */
+        final double target;
         final AttributeModifier.Operation operation;
         final EquipmentSlotGroup slot;
         /** MODIFIER only: the stable key of the modifier this unit owns. */
@@ -138,7 +147,8 @@ public final class AttributesManager implements Listener {
         final Set<String> targetNames; // lowercase nicknames, empty when allTargets
 
         Unit(String id, ChangeType type, Attribute attribute,
-             double value, double amount, AttributeModifier.Operation operation,
+             double value, double amount, double target,
+             AttributeModifier.Operation operation,
              EquipmentSlotGroup slot, NamespacedKey key,
              boolean schedule, int intervalTicks,
              boolean allTargets, Set<String> targetNames) {
@@ -147,6 +157,7 @@ public final class AttributesManager implements Listener {
             this.attribute = attribute;
             this.value = value;
             this.amount = amount;
+            this.target = target;
             this.operation = operation;
             this.slot = slot;
             this.key = key;
@@ -336,6 +347,7 @@ public final class AttributesManager implements Listener {
         // --- type-specific parameters ---
         double value = 0.0;
         double amount = 0.0;
+        double target = Double.NaN; // modifier: desired FINAL value (NaN = raw amount)
         AttributeModifier.Operation operation = AttributeModifier.Operation.ADD_NUMBER;
         EquipmentSlotGroup slot = EquipmentSlotGroup.ANY;
         NamespacedKey key = null;
@@ -352,15 +364,31 @@ public final class AttributesManager implements Listener {
                 return null;
             }
         } else {
-            if (!u.isSet("amount")) {
+            boolean hasTarget = u.isSet("target");
+            boolean hasAmount = u.isSet("amount");
+            if (!hasTarget && !hasAmount) {
                 ConsoleLogger.warn("[Attributes] Unit " + id
-                        + ": modifier unit without 'amount' — skipped.");
+                        + ": modifier unit without 'target' or 'amount' — skipped.");
                 return null;
             }
-            amount = u.getDouble("amount");
-            if (!isFinite(amount)) {
-                ConsoleLogger.warn("[Attributes] Unit " + id + ": 'amount' is not a finite number — skipped.");
-                return null;
+            if (hasTarget) {
+                target = u.getDouble("target");
+                if (!isFinite(target)) {
+                    ConsoleLogger.warn("[Attributes] Unit " + id
+                            + ": 'target' is not a finite number — skipped.");
+                    return null;
+                }
+                if (hasAmount) {
+                    ConsoleLogger.warn("[Attributes] Unit " + id
+                            + ": both 'target' and 'amount' are set — 'target' wins, the amount is computed.");
+                }
+            } else {
+                amount = u.getDouble("amount");
+                if (!isFinite(amount)) {
+                    ConsoleLogger.warn("[Attributes] Unit " + id
+                            + ": 'amount' is not a finite number — skipped.");
+                    return null;
+                }
             }
             operation = parseOperation(id, u.getString("operation"));
             if (operation == null) return null;
@@ -381,7 +409,7 @@ public final class AttributesManager implements Listener {
         TargetSet targets = parseTargets(id, u.get("targets"));
         if (targets == null) return null;
 
-        return new Unit(id, type, attribute, value, amount, operation, slot, key,
+        return new Unit(id, type, attribute, value, amount, target, operation, slot, key,
                 schedule, intervalTicks, targets.all(), targets.names());
     }
 
@@ -399,6 +427,7 @@ public final class AttributesManager implements Listener {
                 default -> null;
             };
         }
+        if (u.isSet("target")) return ChangeType.MODIFIER;
         if (u.isSet("amount")) return ChangeType.MODIFIER;
         if (u.isSet("value")) return ChangeType.BASE;
         return null;
@@ -528,7 +557,30 @@ public final class AttributesManager implements Listener {
         if (instance.getModifier(unit.key) != null) {
             instance.removeModifier(unit.key);
         }
-        instance.addModifier(new AttributeModifier(unit.key, unit.amount, unit.operation, unit.slot));
+        // A target-style unit derives its amount from the LIVE base value, so the
+        // RESULT is the configured target. Server defaults differ from vanilla and
+        // may be overridden (SpigotConfig/DefaultAttributes/datapacks), so no
+        // hard-coded default can be trusted here: e.g. waypoint_receive_range
+        // defaults to 0 with a 6.0E7 maximum, and a plain +8192 modifier would
+        // still leave the player at 8192 only because 0 + 8192 happens to match.
+        double amount = Double.isNaN(unit.target)
+                ? unit.amount
+                : deriveAmount(unit, instance.getBaseValue());
+        instance.addModifier(new AttributeModifier(unit.key, amount, unit.operation, unit.slot));
+    }
+
+    /**
+     * Derives the modifier amount for a target-style unit from the attribute's
+     * current base value: {@code ADD_NUMBER} adds the difference, the scalar
+     * operations are inverted ({@code target / base - 1}). The inversion assumes
+     * no other modifier of the same attribute is active — when several sources
+     * change one attribute, configure a raw {@code amount} instead.
+     */
+    private static double deriveAmount(Unit unit, double base) {
+        return switch (unit.operation) {
+            case ADD_NUMBER -> unit.target - base;
+            case ADD_SCALAR, MULTIPLY_SCALAR_1 -> base == 0.0 ? 0.0 : unit.target / base - 1.0;
+        };
     }
 
     /** Removes one unit's modifier from one player. @return true when one was removed. */
