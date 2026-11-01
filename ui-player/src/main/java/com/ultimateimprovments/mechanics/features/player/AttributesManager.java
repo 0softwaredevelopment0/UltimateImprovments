@@ -1,15 +1,21 @@
 package com.ultimateimprovments.mechanics.features.player;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.database.StateStore;
 import com.ultimateimprovments.util.AttributeUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -23,73 +29,134 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * ⚔️ AttributesManager — config-driven SCHEDULED attribute grants.
+ * ⚔️ AttributesManager — config-driven attribute units, applied as MODIFIERS
+ * (default) or as BASE values.
  * <p>
  * The {@code features.attributes} config section holds any number of <b>units</b>.
- * A unit is one attribute + one value + its own schedule and target list; unit
- * names are ordinal numbers so the config reads like a list:
+ * Unit names are ordinal numbers so the config reads like a list; each unit picks
+ * a change type and supplies that type's parameters:
  * <pre>
  * [features.attributes]
  * enabled = true
  *
  * [features.attributes.units."1"]
- * attribute = "minecraft:waypoint_receive_range"  # namespaced, bare or CONSTANT form
- * value = 8192.0                                 # base value re-applied every interval
- * interval_ticks = 200                           # how often the value is re-applied
- * targets = ["all"]                              # or ["Steve", "Alex"]
+ * type = "modifier"                            # modifier (default) | base
+ * attribute = "minecraft:waypoint_receive_range"
+ * amount = 8192.0                              # modifier only: added on top of the base value
+ * operation = "add_number"                     # modifier only: add_number | add_scalar | multiply_scalar_1
+ * slot = "any"                                 # modifier only: any|hand|mainhand|offhand|armor|head|chest|legs|feet|body
+ * schedule = false                             # false = apply once; true = re-apply every interval_ticks
+ * interval_ticks = 200                         # period of the re-application when schedule = true
+ * targets = ["all"]                            # every online player, or a nickname list
+ *
+ * [features.attributes.units."2"]
+ * type = "base"
+ * attribute = "minecraft:attack_damage"
+ * value = 0.1                                  # base only: overrides the vanilla base value
+ * schedule = true
+ * interval_ticks = 200
+ * targets = ["all"]
  * </pre>
  * <p>
- * <b>Behaviour:</b> every unit owns one repeating task (created with its own
- * {@code interval_ticks}), and each run re-applies the unit's base value to every
- * online player matching its {@code targets} ({@code all} = everyone online; a
- * nickname list matches case-insensitively). Because the value is re-applied on
- * a schedule, it survives attribute resets (respawn, dimension change,
- * {@code /ui clear attributes}, plugins that write base values) without any
- * event-specific hooks. A joining player is granted every matching unit
- * immediately, so there is no "wait for the first interval" gap.
+ * <b>Modifiers are persistent.</b> {@code addModifier} writes into the player
+ * data, so a modifier survives a restart (and even a plugin removal). That is
+ * why every modifier gets a STABLE KEY derived from its unit name
+ * ({@code <plugin>:unit_<name>}) — the key is what a later re-application
+ * replaces and what the cleanup pass removes. Consequences:
+ * <ul>
+ *   <li>renaming/renumbering a unit leaves the old modifier behind — the
+ *       documented way to drop modifiers is to disable the feature (keeping the
+ *       units) and run {@code /ui reload} or restart;</li>
+ *   <li>deleting a unit while its modifier is applied leaves that modifier
+ *       behind as well (the plugin no longer knows its key);</li>
+ *   <li>re-applying is idempotent: the old modifier with our key is removed
+ *       before the new one is added, so changed {@code amount}/{@code operation}/
+ *       {@code slot} take effect on the next application.</li>
+ * </ul>
  * <p>
- * <b>Targets:</b> {@code ["all"]} (or a comma-separated string like
- * {@code "all"}) grants to everyone online; otherwise the list holds nicknames
- * ({@code ["Steve,Alex"]} and {@code ["Steve", "Alex"]} are equivalent).
- * An empty / missing list means everyone, so a freshly added unit works out of
- * the box.
+ * <b>Database state.</b> When the feature is enabled the manager records
+ * {@code attributes.modifiers_enabled = 1} in the {@code ui_state} table
+ * ({@link StateStore}). If the config turns the feature off while that record
+ * says "enabled", startup (and {@code /ui reload}) strips every modifier
+ * described by the still-configured units from all online players and flips the
+ * record to {@code 0}. While the feature stays disabled, a joining player is
+ * stripped too — so a player who was offline during the cleanup is cleaned on
+ * his next join as well.
  * <p>
- * <b>Value vs modifiers:</b> the unit writes the attribute's BASE value through
- * {@link AttributeUtil#applyBase}, so enchantment, item and potion modifiers keep
- * stacking on top of it (that is exactly what the previous attack-damage/speed
- * behaviour did). Two units granting the same attribute are allowed — the later
- * application wins on every overlap, and the conflict is logged on startup.
+ * <b>Schedule.</b> {@code schedule = false} (the default for modifiers) applies
+ * the unit once: at startup for online players and on every join. That is enough
+ * for a persistent modifier, so no task runs. {@code schedule = true} keeps the
+ * old periodic behaviour (base values get written by other plugins/vanilla on
+ * respawn and dimension change, and a modifier may be stripped by a plugin that
+ * restores attributes), re-applying the unit every {@code interval_ticks}.
  * <p>
- * Malformed units (unknown attribute, missing/non-finite value) are logged and
- * skipped — one broken unit never kills the whole feature. With
- * {@code features.attributes.enabled = false} the manager stays idle and applies
- * nothing.
+ * <b>Targets.</b> {@code ["all"]} (or {@code "*"}) serves every online player,
+ * otherwise the list holds nicknames matched case-insensitively;
+ * {@code ["Steve,Alex"]} and {@code ["Steve", "Alex"]} are equivalent. A missing
+ * or empty list means everyone.
+ * <p>
+ * Malformed units (unknown type/attribute/operation/slot, missing or non-finite
+ * value/amount, duplicate modifier key) are logged and skipped — one broken unit
+ * never kills the feature.
  */
 public final class AttributesManager implements Listener {
 
-    /** How often a unit re-applies its value when {@code interval_ticks} is absent. */
+    /** How a unit changes its attribute. */
+    public enum ChangeType {
+        /** Overrides the vanilla base value ({@code value}). */
+        BASE,
+        /** Adds a persistent attribute modifier ({@code amount}/{@code operation}/{@code slot}). */
+        MODIFIER
+    }
+
+    /** How often a scheduled unit re-applies when {@code interval_ticks} is absent. */
     private static final int DEFAULT_INTERVAL_TICKS = 200;
 
-    /** One configured unit: one attribute, one value, its own schedule and targets. */
+    /** {@link StateStore} namespace/key of the "feature is enabled" record. */
+    private static final String DB_NAMESPACE = "attributes";
+    private static final String DB_ENABLED_KEY = "modifiers_enabled";
+
+    /** Prefix of the modifier keys derived from unit names. */
+    private static final String MODIFIER_KEY_PREFIX = "unit_";
+
+    /** One configured unit: one attribute, its change type, schedule and targets. */
     public static final class Unit {
         final String id;
+        final ChangeType type;
         final Attribute attribute;
+        /** BASE only. */
         final double value;
+        /** MODIFIER only. */
+        final double amount;
+        final AttributeModifier.Operation operation;
+        final EquipmentSlotGroup slot;
+        /** MODIFIER only: the stable key of the modifier this unit owns. */
+        final NamespacedKey key;
+        final boolean schedule;
         final int intervalTicks;
         final boolean allTargets;
         final Set<String> targetNames; // lowercase nicknames, empty when allTargets
 
-        Unit(String id, Attribute attribute, double value, int intervalTicks,
+        Unit(String id, ChangeType type, Attribute attribute,
+             double value, double amount, AttributeModifier.Operation operation,
+             EquipmentSlotGroup slot, NamespacedKey key,
+             boolean schedule, int intervalTicks,
              boolean allTargets, Set<String> targetNames) {
             this.id = id;
+            this.type = type;
             this.attribute = attribute;
             this.value = value;
+            this.amount = amount;
+            this.operation = operation;
+            this.slot = slot;
+            this.key = key;
+            this.schedule = schedule;
             this.intervalTicks = intervalTicks;
             this.allTargets = allTargets;
             this.targetNames = targetNames;
         }
 
-        /** Whether this unit's value should be granted to the given player. */
+        /** Whether this unit's change should be applied to the given player. */
         boolean matches(Player player) {
             return allTargets || targetNames.contains(player.getName().toLowerCase(Locale.ROOT));
         }
@@ -114,9 +181,10 @@ public final class AttributesManager implements Listener {
         shutdown(); // soft-reload safety: never leave tasks from a previous instance
         instance = new AttributesManager();
         instance.loadConfig();
-        instance.schedule(plugin);
+        instance.applyState(plugin);
         ConsoleLogger.info("[Attributes] Initialized — " + instance.units.size()
-                + " scheduled unit(s), enabled=" + instance.enabled);
+                + " unit(s) (" + instance.countOf(ChangeType.MODIFIER) + " modifier, "
+                + instance.countOf(ChangeType.BASE) + " base), enabled=" + instance.enabled);
     }
 
     public static void reloadConfig() {
@@ -126,9 +194,9 @@ public final class AttributesManager implements Listener {
         }
         instance.stopTasks();
         instance.loadConfig();
-        instance.schedule(Main.getInstance());
+        instance.applyState(Main.getInstance());
         ConsoleLogger.info("[Attributes] Config reloaded — " + instance.units.size()
-                + " scheduled unit(s), enabled=" + instance.enabled);
+                + " unit(s), enabled=" + instance.enabled);
     }
 
     public static void shutdown() {
@@ -147,6 +215,41 @@ public final class AttributesManager implements Listener {
         return enabled;
     }
 
+    private long countOf(ChangeType type) {
+        return units.stream().filter(u -> u.type == type).count();
+    }
+
+    // =========================
+    // APPLY / REVOKE (state machine)
+    // =========================
+
+    /**
+     * Applies the loaded config state: grants everything when enabled, or strips
+     * the configured modifiers when disabled (the DB record tells whether the
+     * feature was enabled before, which is what turns a plain "disabled" into a
+     * cleanup run).
+     */
+    private void applyState(Main plugin) {
+        if (enabled) {
+            recordEnabled(true);
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                for (Unit unit : units) {
+                    if (unit.matches(player)) grant(unit, player);
+                }
+            }
+            scheduleAll(plugin);
+            return;
+        }
+
+        boolean wasRecordedEnabled = isRecordedEnabled();
+        int removed = revokeAllOnline();
+        recordEnabled(false);
+        if (wasRecordedEnabled || removed > 0) {
+            ConsoleLogger.info("[Attributes] Feature disabled — removed " + removed
+                    + " attribute modifier(s) described by the configured units.");
+        }
+    }
+
     // =========================
     // CONFIG
     // =========================
@@ -161,16 +264,20 @@ public final class AttributesManager implements Listener {
             return;
         }
         enabled = cfg.getBoolean("enabled", true);
-        if (!enabled) return;
 
+        // Units are parsed even when the feature is disabled: the very same
+        // descriptions are what the cleanup pass removes from players.
         ConfigurationSection unitsSection = cfg.getConfigurationSection("units");
         if (unitsSection == null || unitsSection.getKeys(false).isEmpty()) {
-            ConsoleLogger.warn("[Attributes] features.attributes.units is empty — nothing to grant.");
+            if (enabled) {
+                ConsoleLogger.warn("[Attributes] features.attributes.units is empty — nothing to grant.");
+            }
             return;
         }
 
         int skipped = 0;
         Map<Attribute, String> grantedBy = new HashMap<>();
+        Map<NamespacedKey, String> keyOwners = new HashMap<>();
 
         for (String id : sortedIds(unitsSection.getKeys(false))) {
             ConfigurationSection u = unitsSection.getConfigurationSection(id);
@@ -178,48 +285,28 @@ public final class AttributesManager implements Listener {
                 skipped++;
                 continue;
             }
-
-            // --- attribute ---
-            String rawAttribute = u.getString("attribute");
-            Attribute attribute = AttributeUtil.resolve(rawAttribute);
-            if (attribute == null) {
-                ConsoleLogger.warn("[Attributes] Unit " + id + ": unknown attribute '"
-                        + rawAttribute + "' — skipped.");
+            Unit unit = parseUnit(id, u);
+            if (unit == null) {
                 skipped++;
                 continue;
             }
 
-            // --- value ---
-            if (!u.isSet("value")) {
-                ConsoleLogger.warn("[Attributes] Unit " + id + ": 'value' is missing — skipped.");
-                skipped++;
-                continue;
-            }
-            double value = u.getDouble("value");
-            if (Double.isNaN(value) || Double.isInfinite(value)) {
-                ConsoleLogger.warn("[Attributes] Unit " + id
-                        + ": 'value' is not a finite number — skipped.");
-                skipped++;
-                continue;
-            }
-
-            // --- schedule (this unit's own re-application interval) ---
-            int intervalTicks = Math.max(1, u.getInt("interval_ticks", DEFAULT_INTERVAL_TICKS));
-
-            // --- targets (all online players / nickname list) ---
-            TargetSet targets = parseTargets(id, u.get("targets"));
-            if (targets == null) {
-                skipped++;
-                continue;
-            }
-
-            String previous = grantedBy.put(attribute, id);
+            String previous = grantedBy.put(unit.attribute, id);
             if (previous != null) {
-                ConsoleLogger.warn("[Attributes] Units " + previous + " and " + id + " both grant "
-                        + attribute.getKey() + " — the later unit wins wherever they overlap.");
+                ConsoleLogger.warn("[Attributes] Units " + previous + " and " + id + " both change "
+                        + unit.attribute.getKey() + " — both apply, the last one wins where they overlap.");
             }
-
-            units.add(new Unit(id, attribute, value, intervalTicks, targets.all(), targets.names()));
+            if (unit.type == ChangeType.MODIFIER) {
+                String keyOwner = keyOwners.put(unit.key, id);
+                if (keyOwner != null) {
+                    ConsoleLogger.warn("[Attributes] Units " + keyOwner + " and " + id
+                            + " map to the same modifier key (" + unit.key
+                            + ") — rename one of them; unit " + id + " skipped.");
+                    skipped++;
+                    continue;
+                }
+            }
+            units.add(unit);
         }
 
         if (skipped > 0) {
@@ -227,12 +314,134 @@ public final class AttributesManager implements Listener {
         }
     }
 
+    /** Parses one unit; returns {@code null} (after logging) when it is malformed. */
+    private static Unit parseUnit(String id, ConfigurationSection u) {
+        // --- change type (explicit, or inferred from the parameters) ---
+        ChangeType type = parseType(id, u);
+        if (type == null) {
+            ConsoleLogger.warn("[Attributes] Unit " + id
+                    + ": 'type' must be 'base' or 'modifier' — skipped.");
+            return null;
+        }
+
+        // --- attribute ---
+        String rawAttribute = u.getString("attribute");
+        Attribute attribute = AttributeUtil.resolve(rawAttribute);
+        if (attribute == null) {
+            ConsoleLogger.warn("[Attributes] Unit " + id + ": unknown attribute '"
+                    + rawAttribute + "' — skipped.");
+            return null;
+        }
+
+        // --- type-specific parameters ---
+        double value = 0.0;
+        double amount = 0.0;
+        AttributeModifier.Operation operation = AttributeModifier.Operation.ADD_NUMBER;
+        EquipmentSlotGroup slot = EquipmentSlotGroup.ANY;
+        NamespacedKey key = null;
+
+        if (type == ChangeType.BASE) {
+            if (!u.isSet("value")) {
+                ConsoleLogger.warn("[Attributes] Unit " + id
+                        + ": base unit without 'value' — skipped.");
+                return null;
+            }
+            value = u.getDouble("value");
+            if (!isFinite(value)) {
+                ConsoleLogger.warn("[Attributes] Unit " + id + ": 'value' is not a finite number — skipped.");
+                return null;
+            }
+        } else {
+            if (!u.isSet("amount")) {
+                ConsoleLogger.warn("[Attributes] Unit " + id
+                        + ": modifier unit without 'amount' — skipped.");
+                return null;
+            }
+            amount = u.getDouble("amount");
+            if (!isFinite(amount)) {
+                ConsoleLogger.warn("[Attributes] Unit " + id + ": 'amount' is not a finite number — skipped.");
+                return null;
+            }
+            operation = parseOperation(id, u.getString("operation"));
+            if (operation == null) return null;
+            slot = parseSlot(id, u.getString("slot"));
+            if (slot == null) return null;
+            key = modifierKey(id);
+            if (key == null) {
+                ConsoleLogger.warn("[Attributes] Unit " + id + ": cannot derive a modifier key — skipped.");
+                return null;
+            }
+        }
+
+        // --- schedule (modifiers default to a single application) ---
+        boolean schedule = u.getBoolean("schedule", type == ChangeType.BASE);
+        int intervalTicks = Math.max(1, u.getInt("interval_ticks", DEFAULT_INTERVAL_TICKS));
+
+        // --- targets ---
+        TargetSet targets = parseTargets(id, u.get("targets"));
+        if (targets == null) return null;
+
+        return new Unit(id, type, attribute, value, amount, operation, slot, key,
+                schedule, intervalTicks, targets.all(), targets.names());
+    }
+
+    /**
+     * Reads {@code type}. When it is absent the parameters decide
+     * ({@code amount} → modifier, {@code value} → base), so configs written
+     * before the type field keep working unchanged.
+     */
+    private static ChangeType parseType(String id, ConfigurationSection u) {
+        String raw = u.getString("type");
+        if (raw != null && !raw.isBlank()) {
+            return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+                case "base" -> ChangeType.BASE;
+                case "modifier", "mod" -> ChangeType.MODIFIER;
+                default -> null;
+            };
+        }
+        if (u.isSet("amount")) return ChangeType.MODIFIER;
+        if (u.isSet("value")) return ChangeType.BASE;
+        return null;
+    }
+
+    private static AttributeModifier.Operation parseOperation(String id, String raw) {
+        if (raw == null || raw.isBlank()) return AttributeModifier.Operation.ADD_NUMBER;
+        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+            case "add_number", "add", "addition" -> AttributeModifier.Operation.ADD_NUMBER;
+            case "add_scalar" -> AttributeModifier.Operation.ADD_SCALAR;
+            case "multiply_scalar_1", "multiply" -> AttributeModifier.Operation.MULTIPLY_SCALAR_1;
+            default -> {
+                ConsoleLogger.warn("[Attributes] Unit " + id + ": unknown operation '" + raw
+                        + "' (add_number | add_scalar | multiply_scalar_1) — skipped.");
+                yield null;
+            }
+        };
+    }
+
+    private static EquipmentSlotGroup parseSlot(String id, String raw) {
+        if (raw == null || raw.isBlank()) return EquipmentSlotGroup.ANY;
+        EquipmentSlotGroup group = EquipmentSlotGroup.getByName(raw.trim());
+        if (group == null) {
+            ConsoleLogger.warn("[Attributes] Unit " + id + ": unknown slot '" + raw
+                    + "' (any | hand | mainhand | offhand | armor | head | chest | legs | feet | body) — skipped.");
+        }
+        return group;
+    }
+
+    /** Stable modifier key derived from the unit name: {@code <plugin>:unit_<name>}. */
+    private static NamespacedKey modifierKey(String id) {
+        String sanitized = id.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9._-]", "_");
+        try {
+            return new NamespacedKey(Main.getInstance(), MODIFIER_KEY_PREFIX + sanitized);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     /**
      * Parses a unit's {@code targets} value: a list of nicknames, one
      * comma-separated string, or {@code "all"} / {@code "*"} for every online
      * player. Missing or empty → everyone.
-     *
-     * @return the parsed targets, or {@code null} when the value is malformed
      */
     private static TargetSet parseTargets(String id, Object raw) {
         List<String> entries = new ArrayList<>();
@@ -282,44 +491,64 @@ public final class AttributesManager implements Listener {
         }
     }
 
+    private static boolean isFinite(double value) {
+        return !Double.isNaN(value) && !Double.isInfinite(value);
+    }
+
     // =========================
     // SCHEDULED GRANTS
     // =========================
 
-    /** Starts one repeating task per unit, each on its own {@code interval_ticks}. */
-    private void schedule(Main plugin) {
-        if (!enabled) return;
+    /** Starts one repeating task per scheduled unit, each on its own interval. */
+    private void scheduleAll(Main plugin) {
         for (Unit unit : units) {
+            if (!unit.schedule) continue;
             tasks.add(new BukkitRunnable() {
                 @Override
                 public void run() {
-                    applyToOnline(unit);
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        if (unit.matches(player)) grant(unit, player);
+                    }
                 }
             }.runTaskTimer(plugin, 0L, unit.intervalTicks));
         }
     }
 
-    /** Re-applies one unit to every online player matching its targets. */
-    private void applyToOnline(Unit unit) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!unit.matches(player)) continue;
+    /** Applies one unit to one player (idempotent for modifiers). */
+    private void grant(Unit unit, Player player) {
+        if (unit.type == ChangeType.BASE) {
             AttributeUtil.applyBase(player, unit.attribute, unit.value);
+            return;
         }
+
+        AttributeInstance instance = player.getAttribute(unit.attribute);
+        if (instance == null) return;
+        // addModifier rejects a duplicate key, and a changed amount/operation/slot
+        // must replace the old entry — so ours is always removed first.
+        if (instance.getModifier(unit.key) != null) {
+            instance.removeModifier(unit.key);
+        }
+        instance.addModifier(new AttributeModifier(unit.key, unit.amount, unit.operation, unit.slot));
     }
 
-    /**
-     * Immediate grant on join: a player who just connected must not wait up to
-     * {@code interval_ticks} for range/name-tag attributes to take effect.
-     */
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        if (!enabled || units.isEmpty()) return;
-        Player player = event.getPlayer();
-        for (Unit unit : units) {
-            if (unit.matches(player)) {
-                AttributeUtil.applyBase(player, unit.attribute, unit.value);
+    /** Removes one unit's modifier from one player. @return true when one was removed. */
+    private boolean revoke(Unit unit, Player player) {
+        if (unit.type != ChangeType.MODIFIER) return false;
+        AttributeInstance instance = player.getAttribute(unit.attribute);
+        if (instance == null || instance.getModifier(unit.key) == null) return false;
+        instance.removeModifier(unit.key);
+        return true;
+    }
+
+    /** Strips every configured modifier from every online player. @return removals. */
+    private int revokeAllOnline() {
+        int removed = 0;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            for (Unit unit : units) {
+                if (unit.matches(player) && revoke(unit, player)) removed++;
             }
         }
+        return removed;
     }
 
     private void stopTasks() {
@@ -331,5 +560,45 @@ public final class AttributesManager implements Listener {
             }
         }
         tasks.clear();
+    }
+
+    // =========================
+    // PLAYER EVENTS
+    // =========================
+
+    /**
+     * Enabled: grant every matching unit right away (no waiting for the first
+     * interval). Disabled: strip the configured modifiers, so players who were
+     * offline during the cleanup are cleaned on their next join.
+     */
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        if (units.isEmpty()) return;
+        Player player = event.getPlayer();
+        if (enabled) {
+            for (Unit unit : units) {
+                if (unit.matches(player)) grant(unit, player);
+            }
+        } else {
+            for (Unit unit : units) {
+                revoke(unit, player);
+            }
+        }
+    }
+
+    // =========================
+    // DATABASE STATE
+    // =========================
+
+    /** Records the current enable state; the cleanup pass keys off this record. */
+    private static void recordEnabled(boolean enabled) {
+        if (!DatabaseManager.isConnected()) return; // DB not ready — nothing to persist
+        StateStore.put(DB_NAMESPACE, DB_ENABLED_KEY, enabled ? "1" : "0");
+    }
+
+    /** @return true when the database says the feature was enabled before. */
+    private static boolean isRecordedEnabled() {
+        if (!DatabaseManager.isConnected()) return false;
+        return "1".equals(StateStore.get(DB_NAMESPACE, DB_ENABLED_KEY));
     }
 }

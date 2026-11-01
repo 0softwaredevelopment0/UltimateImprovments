@@ -340,6 +340,18 @@ public final class AddonConfigManager {
     private static int upgradeAttributeUnits(YamlConfiguration view) {
         final String base = "features.attributes";
 
+        int upgraded = upgradeLegacyAttributeKeys(view, base) + pruneForeignUnitParams(view, base);
+        return upgraded;
+    }
+
+    /**
+     * Legacy flat keys ({@code features.attributes.attack_damage|sneak_speed|attack_speed})
+     * → {@code units.5-7} of type {@code base}. Those keys were base-value
+     * overrides applied on a timer, so the migrated units are base + scheduled —
+     * converting them to modifiers would change the effective values (a modifier
+     * stacks on top of the vanilla base instead of replacing it).
+     */
+    private static int upgradeLegacyAttributeKeys(YamlConfiguration view, String base) {
         // legacy key -> [unit number, attribute key]
         final String[][] legacy = {
                 {"attack_damage", "5", "minecraft:attack_damage"},
@@ -357,21 +369,51 @@ public final class AddonConfigManager {
             int interval = Math.max(1, view.getInt(base + ".interval_ticks", 200));
 
             String unit = base + ".units." + row[1];
+            view.set(unit + ".type", "base");
             view.set(unit + ".attribute", row[2]);
             view.set(unit + ".value", view.getDouble(base + "." + row[0]));
+            view.set(unit + ".schedule", true);
             view.set(unit + ".interval_ticks", interval);
             if (!view.isSet(unit + ".targets")) view.set(unit + ".targets", List.of("all"));
 
             view.set(base + "." + row[0], null); // legacy key is gone
             upgraded++;
             ConsoleLogger.info("[Config/UI-Other] Upgraded " + base + "." + row[0]
-                    + " → " + unit + " (scheduled attribute unit)");
+                    + " → " + unit + " (base attribute unit)");
         }
 
         if (hasLegacyKeys) {
             view.set(base + ".interval_ticks", null); // interval now lives per unit
         }
         return upgraded;
+    }
+
+    /**
+     * Removes the parameter that does not belong to a unit's EXPLICIT type —
+     * configs written before the {@code type} field carry a stale {@code value}
+     * on now-modifier units (and vice versa), which would otherwise stay in the
+     * file forever and confuse readers.
+     */
+    private static int pruneForeignUnitParams(YamlConfiguration view, String base) {
+        org.bukkit.configuration.ConfigurationSection units =
+                view.getConfigurationSection(base + ".units");
+        if (units == null) return 0;
+
+        int pruned = 0;
+        for (String id : units.getKeys(false)) {
+            String unit = base + ".units." + id;
+            String type = view.getString(unit + ".type");
+            if (type == null) continue;
+
+            String foreign = "modifier".equalsIgnoreCase(type) ? "value" : "amount";
+            if (!view.isSet(unit + "." + foreign)) continue;
+
+            view.set(unit + "." + foreign, null);
+            pruned++;
+            ConsoleLogger.info("[Config/UI-Other] Removed stale " + unit + "." + foreign
+                    + " (unit type is '" + type + "')");
+        }
+        return pruned;
     }
 
     /** Stock chat prefix colour (plain green) — the value migrated away from. */

@@ -31,21 +31,44 @@ set_fire = true
 # Default: true
 enabled = true
 
-# Scheduled attribute grants. Each unit re-applies ONE attribute value to its
-# targets every `interval_ticks` ticks. Unit names are ordinal numbers
-# (1, 2, 3, ...) — add, remove or renumber units freely.
+# Attribute units. Each unit changes ONE attribute of its targets, either with a
+# persistent MODIFIER (default) or by overriding the BASE value.
+# Unit names are ordinal numbers (1, 2, 3, ...).
+#
+# ⚠ TO REMOVE THE MODIFIERS left on players: set enabled = false ABOVE WITHOUT
+# deleting the units below, then run `/ui reload` or restart the server. The
+# plugin strips every modifier described here from all online players (and from
+# each player on his next join) and records the new state in the database
+# (ui_state, namespace "attributes"). A modifier's identity is its unit name
+# (key unit_<name>), so DELETING or RENAMING a unit while it is applied leaves
+# its old modifier on the players forever.
 [features.attributes.units]
 
 # Unit 1 — how far this player receives other players' waypoints.
 [features.attributes.units."1"]
+# Change type: "modifier" (persistent modifier on top of the base value) or
+# "base" (overrides the vanilla base value; needs `value` instead of `amount`).
+# Default: modifier
+type = "modifier"
 # Attribute key: namespaced (minecraft:...), bare (waypoint_receive_range) or
 # legacy constant (WAYPOINT_RECEIVE_RANGE).
 # Default: minecraft:waypoint_receive_range
 attribute = "minecraft:waypoint_receive_range"
-# Base value re-applied to the attribute.
+# Modifier amount added to the attribute (modifier type only).
 # Default: 8192.0
-value = 8192.0
-# How often the value is re-applied, in ticks (20 ticks = 1 second).
+amount = 8192.0
+# Modifier operation: add_number | add_scalar | multiply_scalar_1 (modifier only).
+# Default: add_number
+operation = "add_number"
+# Equipment slot group the modifier applies to (modifier only).
+# Default: any
+slot = "any"
+# Re-apply on a schedule: false = apply once at startup/join, true = every
+# `interval_ticks`. Modifiers persist in player data, so false is enough for
+# them; base values are overwritten by vanilla/other plugins more often.
+# Default: false
+schedule = false
+# Period of the re-application, in ticks (20 ticks = 1 second).
 # Default: 200
 interval_ticks = 200
 # Targets: ["all"] for every online player, or a list of nicknames.
@@ -54,10 +77,18 @@ targets = ["all"]
 
 # Unit 2 — how far this player's waypoints are sent to other players.
 [features.attributes.units."2"]
+# Default: modifier
+type = "modifier"
 # Default: minecraft:waypoint_transmit_range
 attribute = "minecraft:waypoint_transmit_range"
 # Default: 8192.0
-value = 8192.0
+amount = 8192.0
+# Default: add_number
+operation = "add_number"
+# Default: any
+slot = "any"
+# Default: false
+schedule = false
 # Default: 200
 interval_ticks = 200
 # Default: ["all"]
@@ -65,10 +96,18 @@ targets = ["all"]
 
 # Unit 3 — distance at which this player's name is rendered below the entity.
 [features.attributes.units."3"]
+# Default: modifier
+type = "modifier"
 # Default: minecraft:below_name_distance
 attribute = "minecraft:below_name_distance"
 # Default: 8.0
-value = 8.0
+amount = 8.0
+# Default: add_number
+operation = "add_number"
+# Default: any
+slot = "any"
+# Default: false
+schedule = false
 # Default: 200
 interval_ticks = 200
 # Default: ["all"]
@@ -76,43 +115,65 @@ targets = ["all"]
 
 # Unit 4 — distance at which this player's name tag is visible.
 [features.attributes.units."4"]
+# Default: modifier
+type = "modifier"
 # Default: minecraft:name_tag_distance
 attribute = "minecraft:name_tag_distance"
 # Default: 8.0
-value = 8.0
+amount = 8.0
+# Default: add_number
+operation = "add_number"
+# Default: any
+slot = "any"
+# Default: false
+schedule = false
 # Default: 200
 interval_ticks = 200
 # Default: ["all"]
 targets = ["all"]
 
-# Unit 5 — player attack damage base value.
+# Unit 5 — player attack damage BASE override (legacy behaviour, base type).
 [features.attributes.units."5"]
+# Default: base
+type = "base"
 # Default: minecraft:attack_damage
 attribute = "minecraft:attack_damage"
+# Base value that replaces the vanilla base value (base type only). Convert it
+# to a modifier by switching type to "modifier" and using `amount` instead.
 # Default: 0.1
 value = 0.1
+# Default: true
+schedule = true
 # Default: 200
 interval_ticks = 200
 # Default: ["all"]
 targets = ["all"]
 
-# Unit 6 — player sneaking speed multiplier.
+# Unit 6 — player sneaking speed BASE override (legacy behaviour, base type).
 [features.attributes.units."6"]
+# Default: base
+type = "base"
 # Default: minecraft:sneaking_speed
 attribute = "minecraft:sneaking_speed"
 # Default: 1.0
 value = 1.0
+# Default: true
+schedule = true
 # Default: 200
 interval_ticks = 200
 # Default: ["all"]
 targets = ["all"]
 
-# Unit 7 — player attack speed.
+# Unit 7 — player attack speed BASE override (legacy behaviour, base type).
 [features.attributes.units."7"]
+# Default: base
+type = "base"
 # Default: minecraft:attack_speed
 attribute = "minecraft:attack_speed"
 # Default: 3.5
 value = 3.5
+# Default: true
+schedule = true
 # Default: 200
 interval_ticks = 200
 # Default: ["all"]

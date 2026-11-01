@@ -3,6 +3,57 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.3] - 2026-11-01
+
+Attribute units now change attributes the way the config says: `type = "modifier"`
+(persistent attribute modifier, the default) or `type = "base"` (vanilla base-value
+override), each with its own parameter set. A modifier is what a player keeps
+across restarts, so the feature gained an explicit removal path, a database state
+record and a `schedule` switch instead of an always-on re-application loop.
+
+### Added
+- **`type` per unit** — `modifier` (default) or `base`; each type has its own
+  parameters: base uses `value`, a modifier uses `amount`, `operation`
+  (`add_number` | `add_scalar` | `multiply_scalar_1`) and `slot` (`any` | `hand` |
+  `mainhand` | `offhand` | `armor` | `head` | `chest` | `legs` | `feet` | `body`).
+  A missing `type` is inferred from the parameters, so configs written before the
+  field keep working.
+- **Stable modifier identity** — every modifier key is derived from its unit name
+  (`<plugin>:unit_<name>`). Re-application removes the old modifier first, so a
+  changed `amount`/`operation`/`slot` replaces the previous one instead of throwing
+  `Modifier is already applied`.
+- **`schedule` switch** per unit: `false` applies the unit once (startup for online
+  players + on join), `true` re-applies it every `interval_ticks`. Modifier units
+  default to `false` — a modifier is persistent, so a repeated application is only
+  needed when another plugin strips it; base units default to `true` because base
+  values are overwritten on respawn/dimension change.
+- **Database state** — `ui_state` (`StateStore`), namespace `attributes`, key
+  `modifiers_enabled`. Set to `1` whenever the feature is enabled. If the config
+  turns the feature off while the record says `1`, startup and `/ui reload` strip
+  every modifier described by the still-configured units from all online players
+  and flip the record to `0`; a player who joins while the feature stays disabled
+  is stripped as well, so offline players are cleaned on their next join.
+- **Config hint** above `features.attributes.units` explaining that modifiers are
+  removed by setting `enabled = false` WITHOUT deleting the units and then running
+  `/ui reload` or restarting — a modifier's key comes from the unit name, so a
+  deleted or renamed unit leaves its modifier on the players.
+
+### Changed
+- Default units 1-4 are now modifiers (`minecraft:waypoint_receive_range` 8192,
+  `minecraft:waypoint_transmit_range` 8192, `minecraft:below_name_distance` 8,
+  `minecraft:name_tag_distance` 8, `schedule = false`). Units 5-7 stay `base`
+  overrides (attack_damage 0.1, sneaking_speed 1.0, attack_speed 3.5): a modifier
+  would ADD to the vanilla base instead of replacing it and would silently change
+  damage/speed.
+- The legacy flat-key migration now writes `type = "base"` + `schedule = true` for
+  the migrated units, and both the migration and every load prune the parameter
+  that does not belong to a unit's explicit type (`value` on modifiers, `amount` on
+  base units).
+- `AttributeUnitsTemplateTest` now guards the modifier/base defaults, the removal
+  hint in the template and the write/read round-trip of the new fields.
+
+Version: 1.8.5-beta.3.
+
 ## [1.8.5-beta.2] - 2026-11-01
 
 Every attribute value the plugin re-applies on a timer is now a single
