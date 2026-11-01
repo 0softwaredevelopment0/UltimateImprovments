@@ -287,6 +287,7 @@ public final class AddonConfigManager {
      */
     private static int upgradeExistingValues(String addon, YamlConfiguration view) {
         if ("UI-Chat".equals(addon)) return upgradeChatFormatColors(view);
+        if ("UI-Other".equals(addon)) return upgradeAttributeUnits(view);
         if (!"UI-Core".equals(addon)) return 0;
         int upgraded = 0;
         for (String root : new String[]{"messages", "messages_en"}) {
@@ -318,6 +319,57 @@ public final class AddonConfigManager {
             upgraded++;
             ConsoleLogger.info("[Config/UI-Core] Upgraded " + path
                     + ": inserted the \"Time remaining\" line into the block dialog template");
+        }
+        return upgraded;
+    }
+
+    /**
+     * Migrates the legacy flat {@code features.attributes.*} keys (one global
+     * interval, three fixed attributes) into the numbered
+     * {@code features.attributes.units.<n>} units used by the scheduled-grant
+     * manager: the old {@code attack_damage} / {@code sneak_speed} /
+     * {@code attack_speed} values become units 5-7 (their stock numbering in the
+     * bundled template) and inherit the old global {@code interval_ticks}.
+     * <p>
+     * Only fires once per installation — the legacy keys are removed after the
+     * conversion, so a later {@code /ui reload} is a no-op. Idempotent: a config
+     * without legacy keys is untouched.
+     *
+     * @return number of upgraded units / removed keys
+     */
+    private static int upgradeAttributeUnits(YamlConfiguration view) {
+        final String base = "features.attributes";
+
+        // legacy key -> [unit number, attribute key]
+        final String[][] legacy = {
+                {"attack_damage", "5", "minecraft:attack_damage"},
+                {"sneak_speed", "6", "minecraft:sneaking_speed"},
+                {"attack_speed", "7", "minecraft:attack_speed"}
+        };
+
+        int upgraded = 0;
+        boolean hasLegacyKeys = false;
+        for (String[] row : legacy) {
+            if (!view.isSet(base + "." + row[0])) continue;
+            hasLegacyKeys = true;
+
+            // A customized old interval applied to all three attributes — carry it over.
+            int interval = Math.max(1, view.getInt(base + ".interval_ticks", 200));
+
+            String unit = base + ".units." + row[1];
+            view.set(unit + ".attribute", row[2]);
+            view.set(unit + ".value", view.getDouble(base + "." + row[0]));
+            view.set(unit + ".interval_ticks", interval);
+            if (!view.isSet(unit + ".targets")) view.set(unit + ".targets", List.of("all"));
+
+            view.set(base + "." + row[0], null); // legacy key is gone
+            upgraded++;
+            ConsoleLogger.info("[Config/UI-Other] Upgraded " + base + "." + row[0]
+                    + " → " + unit + " (scheduled attribute unit)");
+        }
+
+        if (hasLegacyKeys) {
+            view.set(base + ".interval_ticks", null); // interval now lives per unit
         }
         return upgraded;
     }
@@ -515,7 +567,10 @@ public final class AddonConfigManager {
     /** Recursively flattens a TOML map into the Bukkit view (dotted paths). */
     private static void flattenInto(Map<String, Object> map, String prefix, YamlConfiguration target) {
         for (Map.Entry<String, Object> e : map.entrySet()) {
-            String path = prefix.isEmpty() ? e.getKey() : prefix + "." + e.getKey();
+            // toml4j keeps the quotes of a quoted table-header segment (units."1"),
+            // so normalize them away and use the plain path everywhere.
+            String segment = CommentedTomlTemplate.stripQuotes(e.getKey());
+            String path = prefix.isEmpty() ? segment : prefix + "." + segment;
             Object value = e.getValue();
             if (value instanceof Map<?, ?> nested) {
                 @SuppressWarnings("unchecked")

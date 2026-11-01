@@ -3,6 +3,53 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.2] - 2026-11-01
+
+Every attribute value the plugin re-applies on a timer is now a single
+config-driven feature: `features.attributes.units.<n>` holds one attribute per
+unit together with its value, its own re-application interval and its target
+list. The four range attributes this build was asked for (waypoint
+receive/transmit at 8192, below-name and name-tag distance at 8) ship as
+default units, so the feature works the moment the config is generated.
+
+### Added
+- **Config-driven scheduled attribute grants.** `features.attributes.units.<n>`
+  (`attribute`, `value`, `interval_ticks`, `targets`) — ordinal unit names
+  (1, 2, 3, ...), one attribute per unit. `targets = ["all"]` serves every
+  online player, otherwise a nickname list is matched case-insensitively;
+  `interval_ticks` is the unit's OWN re-application period (the old global
+  `interval_ticks` was shared by every attribute). Each unit owns one repeating
+  task, a joining player is granted every matching unit immediately (no waiting
+  for the first interval), and a broken unit is logged and skipped instead of
+  killing the feature.
+- **Default units:** `minecraft:waypoint_receive_range` = 8192,
+  `minecraft:waypoint_transmit_range` = 8192, `minecraft:below_name_distance` = 8,
+  `minecraft:name_tag_distance` = 8, plus the three legacy values
+  (`attack_damage` 0.1, `sneaking_speed` 1.0, `attack_speed` 3.5) preserved as
+  units 5-7. The module stays enabled by default.
+- **`AttributeUtil`** (ui-core, shared by every addon): one implementation of
+  "resolve an attribute key → set its base value → restore the vanilla default".
+  Attribute keys are resolved through `Registry.ATTRIBUTE`, so
+  `minecraft:waypoint_receive_range`, `waypoint_receive_range` and
+  `WAYPOINT_RECEIVE_RANGE` all work, and MAX_HEALTH changes clamp current health.
+
+### Changed
+- The legacy flat keys `features.attributes.attack_damage`, `sneak_speed`,
+  `attack_speed` and `interval_ticks` are migrated into units 5-7 on startup
+  (customised values and the old global interval are carried over), then
+  removed from the file.
+- `AttributesManager` no longer hard-codes three attributes with one shared
+  interval: it loads the units, schedules each one on its own period and also
+  runs on player join.
+
+### Fixed
+- **Quoted TOML table headers resolved to quoted keys.** toml4j keeps the
+  quotes of a quoted header segment (`[units."1"]` → key `"1"`), so such
+  sections never matched the plain `units.1` paths the code reads. Parsing now
+  strips those quotes, which fixes the ordinal `units."1"` blocks of the chat
+  access-control config as well.
+
+
 ## [1.8.5-beta.1] - since 1.8.5-alpha.44 (2026-11-01)
 
 First beta of the 1.8.5 line: everything published after `1.8.5-alpha.44`. Two

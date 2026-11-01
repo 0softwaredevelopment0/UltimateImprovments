@@ -369,7 +369,8 @@ public final class CommentedTomlTemplate {
     /** Flattens nested maps into dotted-path values (order preserved). */
     private static void flatten(Map<String, Object> map, String prefix, Map<String, Object> target) {
         for (Map.Entry<String, Object> e : map.entrySet()) {
-            String path = prefix.isEmpty() ? e.getKey() : prefix + "." + e.getKey();
+            String segment = stripQuotes(e.getKey());
+            String path = prefix.isEmpty() ? segment : prefix + "." + segment;
             Object v = e.getValue();
             if (v instanceof Map<?, ?> nested && !nested.isEmpty()) {
                 @SuppressWarnings("unchecked")
@@ -379,5 +380,22 @@ public final class CommentedTomlTemplate {
                 target.put(path, v == null ? new ArrayList<>() : v);
             }
         }
+    }
+
+    /**
+     * Strips the quotes toml4j keeps on a quoted table-header segment.
+     * <p>
+     * toml4j does NOT unquote table headers: {@code [a.units."1"]} arrives with the
+     * key {@code "1"} (quotes included), while {@code [a.units.1]} arrives as
+     * {@code 1}. Both spellings are valid TOML and the bundled templates use the
+     * quoted form for ordinal sections ({@code units."1"}), so the quotes are
+     * removed here — that way the Bukkit view (and the template-vs-disk repair
+     * comparison) sees the same plain {@code units.1} path for both spellings.
+     */
+    static String stripQuotes(String key) {
+        if (key != null && key.length() >= 2 && key.startsWith("\"") && key.endsWith("\"")) {
+            return key.substring(1, key.length() - 1);
+        }
+        return key;
     }
 }

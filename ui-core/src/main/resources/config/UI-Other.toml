@@ -30,18 +30,93 @@ set_fire = true
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Damage.
-# Default: 0.1
-attack_damage = 0.1
-# Speed.
-# Default: 1.0
-sneak_speed = 1.0
-# Speed.
-# Default: 3.5
-attack_speed = 3.5
-# Interval in ticks (20 ticks = 1 second).
+
+# Scheduled attribute grants. Each unit re-applies ONE attribute value to its
+# targets every `interval_ticks` ticks. Unit names are ordinal numbers
+# (1, 2, 3, ...) — add, remove or renumber units freely.
+[features.attributes.units]
+
+# Unit 1 — how far this player receives other players' waypoints.
+[features.attributes.units."1"]
+# Attribute key: namespaced (minecraft:...), bare (waypoint_receive_range) or
+# legacy constant (WAYPOINT_RECEIVE_RANGE).
+# Default: minecraft:waypoint_receive_range
+attribute = "minecraft:waypoint_receive_range"
+# Base value re-applied to the attribute.
+# Default: 8192.0
+value = 8192.0
+# How often the value is re-applied, in ticks (20 ticks = 1 second).
 # Default: 200
 interval_ticks = 200
+# Targets: ["all"] for every online player, or a list of nicknames.
+# Default: ["all"]
+targets = ["all"]
+
+# Unit 2 — how far this player's waypoints are sent to other players.
+[features.attributes.units."2"]
+# Default: minecraft:waypoint_transmit_range
+attribute = "minecraft:waypoint_transmit_range"
+# Default: 8192.0
+value = 8192.0
+# Default: 200
+interval_ticks = 200
+# Default: ["all"]
+targets = ["all"]
+
+# Unit 3 — distance at which this player's name is rendered below the entity.
+[features.attributes.units."3"]
+# Default: minecraft:below_name_distance
+attribute = "minecraft:below_name_distance"
+# Default: 8.0
+value = 8.0
+# Default: 200
+interval_ticks = 200
+# Default: ["all"]
+targets = ["all"]
+
+# Unit 4 — distance at which this player's name tag is visible.
+[features.attributes.units."4"]
+# Default: minecraft:name_tag_distance
+attribute = "minecraft:name_tag_distance"
+# Default: 8.0
+value = 8.0
+# Default: 200
+interval_ticks = 200
+# Default: ["all"]
+targets = ["all"]
+
+# Unit 5 — player attack damage base value.
+[features.attributes.units."5"]
+# Default: minecraft:attack_damage
+attribute = "minecraft:attack_damage"
+# Default: 0.1
+value = 0.1
+# Default: 200
+interval_ticks = 200
+# Default: ["all"]
+targets = ["all"]
+
+# Unit 6 — player sneaking speed multiplier.
+[features.attributes.units."6"]
+# Default: minecraft:sneaking_speed
+attribute = "minecraft:sneaking_speed"
+# Default: 1.0
+value = 1.0
+# Default: 200
+interval_ticks = 200
+# Default: ["all"]
+targets = ["all"]
+
+# Unit 7 — player attack speed.
+[features.attributes.units."7"]
+# Default: minecraft:attack_speed
+attribute = "minecraft:attack_speed"
+# Default: 3.5
+value = 3.5
+# Default: 200
+interval_ticks = 200
+# Default: ["all"]
+targets = ["all"]
 
 # beacon section.
 [features.beacon]

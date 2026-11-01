@@ -84,11 +84,23 @@ public final class PlayerModules {
             }
         });
 
-        // Attributes
+        // Attributes (config-driven scheduled grants: features.attributes.units.*)
         mm.register(new SimpleModule("Attributes", "mechanics/features/attributes", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 AttributesManager.init((Main) plugin);
+                // Immediate grant on join — no waiting for the first unit interval
+                plugin.getServer().getPluginManager().registerEvents(
+                        AttributesManager.getInstance(), plugin);
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                AttributesManager manager = AttributesManager.getInstance();
+                if (manager != null) {
+                    org.bukkit.event.HandlerList.unregisterAll(manager);
+                }
+                AttributesManager.shutdown();
             }
 
             @Override
