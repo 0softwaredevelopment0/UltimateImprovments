@@ -327,8 +327,26 @@ public final class Permissions {
      */
     public static void registerAll() {
         PluginManager pm = Bukkit.getPluginManager();
+        List<Permission> permissions = buildPermissions();
 
-        List<Permission> permissions = List.of(
+        int registered = 0;
+        for (Permission permission : permissions) {
+            if (pm.getPermission(permission.getName()) == null) {
+                pm.addPermission(permission);
+                registered++;
+            }
+        }
+        ConsoleLogger.info("[Permissions] Registered " + registered + "/" + permissions.size()
+                + " permissions (idempotent).");
+    }
+
+    /**
+     * Every permission node with its default value. Pure data — no Bukkit server access —
+     * so {@code PermissionDefaultsTest} can assert that privileged nodes stay closed and
+     * that only allow-listed nodes are open to every player.
+     */
+    static List<Permission> buildPermissions() {
+        return List.of(
                 // ── Root ──
                 new Permission(UI, "Base access to UltimateImprovments commands", PermissionDefault.FALSE),
                 new Permission(UI_ALL, "All UltimateImprovments permissions", PermissionDefault.FALSE),
@@ -505,7 +523,7 @@ public final class Permissions {
                 new Permission(CMD_CLAN, "Use the clan system (create/disband/manage/home/requests)", PermissionDefault.TRUE),
                 new Permission(CMD_CLAN_REMOVE, "Remove any clan by name (admin)", PermissionDefault.FALSE),
                 new Permission(CMD_CLAN_HOME_BYPASS, "Bypass the clan home teleport cooldown", PermissionDefault.FALSE),
-                new Permission(CMD_SPACE, "Use the space dimension (teleport enter/exit)", PermissionDefault.TRUE),
+                new Permission(CMD_SPACE, "Use the space dimension (teleport enter/exit) — OP-only by default: leaving it open to every player was a privilege-abuse vector", PermissionDefault.OP),
 
                 // ── Features and modifiers ──
                 new Permission(UI_ALERTS, "Receive server alerts", PermissionDefault.FALSE),
@@ -526,15 +544,5 @@ public final class Permissions {
                 new Permission(UI_PROXY_SERVER, "Access proxy server features", PermissionDefault.FALSE),
                 new Permission(UI_SERVERLOCKDOWN_BYPASS, "Join while the server lockdown (/ui server lockdown) is active", PermissionDefault.FALSE)
         );
-
-        int registered = 0;
-        for (Permission permission : permissions) {
-            if (pm.getPermission(permission.getName()) == null) {
-                pm.addPermission(permission);
-                registered++;
-            }
-        }
-        ConsoleLogger.info("[Permissions] Registered " + registered + "/" + permissions.size()
-                + " permissions (idempotent).");
     }
 }
