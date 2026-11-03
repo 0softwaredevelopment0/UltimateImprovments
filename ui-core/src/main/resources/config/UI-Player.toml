@@ -647,3 +647,33 @@ ambient = false
 icon = false
 
 # Sunburn mechanic: players burn in daylight under conditions.
+
+# Elytra wear: during ACTUAL gliding the elytra can tear and drop to a few
+# durability points. Rolled once per interval, only while gliding with a
+# glider item equipped in the chest slot.
+[elytra_wear]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Chance in percent per roll. 0.1 = 0.1% (≈ once per ~1000 seconds of flight).
+# Default: 0.1
+chance_percent = 0.1
+# Durability the elytra is left with when the roll triggers.
+# Default: 2
+min_durability = 2
+# Roll interval in ticks. 20 = once per second (the chance is per second).
+# Default: 20
+interval_ticks = 20
+# Skip CREATIVE/SPECTATOR players.
+# Default: true
+ignore_creative = true
+
+# elytra_wear section.
+# Placeholders: %durability%
+[messages.elytra_wear]
+# Default: <red>✦</red> <white>Ваши элитры треснули! Осталось прочности: </white><red>%durability%</red>
+torn = "<red>✦</red> <white>Ваши элитры треснули! Осталось прочности: </white><red>%durability%</red>"
+
+[messages_en.elytra_wear]
+# Default: <red>✦</red> <white>Your elytra tore! Durability left: </white><red>%durability%</red>
+torn = "<red>✦</red> <white>Your elytra tore! Durability left: </white><red>%durability%</red>"

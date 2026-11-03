@@ -394,6 +394,13 @@ final class ConfigRules {
             stringList("protection.interact.blocked_materials"),
             bool("protection.pistons.enabled"),
 
+            // ── UI-Player: elytra wear ──
+            bool("elytra_wear.enabled"),
+            dbl("elytra_wear.chance_percent", 0, 100),
+            integer("elytra_wear.min_durability", 0, 4096),
+            integer("elytra_wear.interval_ticks", 1, 1200),
+            bool("elytra_wear.ignore_creative"),
+
             bool("death_logger.enabled"),
             bool("death_logger.log_to_console"),
 

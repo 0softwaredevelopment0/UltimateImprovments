@@ -1,7 +1,7 @@
 package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.mechanics.features.player.AttributesManager;
-import com.ultimateimprovments.mechanics.features.player.ElytraBoostManager;
+import com.ultimateimprovments.mechanics.features.player.ElytraWearManager;
 import com.ultimateimprovments.mechanics.features.player.LeashManager;
 import com.ultimateimprovments.mechanics.features.player.ModeProtectManager;
 import com.ultimateimprovments.mechanics.features.player.ShieldSlownessManager;
@@ -14,7 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * PlayerModules — registration of the player addon's modules (armor/trim effects,
- * attributes, vanish, elytra boost, leash, mode-protect, shield slowness,
+ * attributes, vanish, elytra wear, leash, mode-protect, shield slowness,
  * join-invulnerable). Moved out of ui-other's SimpleModules.
  */
 public final class PlayerModules {
@@ -179,11 +179,16 @@ public final class PlayerModules {
             }
         });
 
-        // ElytraBoost
-        mm.register(new SimpleModule("ElytraBoost", "mechanics/features/elytra_boost", false) {
+        // ElytraWear — the elytra may tear down to a few durability points while gliding
+        mm.register(new SimpleModule("ElytraWear", "mechanics/features/elytra_wear", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
-                ElytraBoostManager.init((Main) plugin);
+                ElytraWearManager.init((Main) plugin);
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                ElytraWearManager.shutdown();
             }
         });
     }

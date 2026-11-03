@@ -35,8 +35,6 @@ public final class CoreHooks {
     private static volatile Predicate<UUID> pendingAuth = id -> false;
     private static volatile Predicate<UUID> vanished = id -> false;
     private static volatile Consumer<OfflinePlayer> vanishToggle = p -> {};
-    private static volatile Predicate<UUID> elytraBoostEnabled = id -> false;
-    private static volatile Consumer<UUID> elytraBoostToggle = id -> {};
     private static volatile BlockBreakCounter blockBreakCounter;
 
     /** Ore → replacement block left behind when an ore is mined. */
@@ -96,22 +94,6 @@ public final class CoreHooks {
     /** Toggles vanish for the given player (no-op when the feature is absent). */
     public static void toggleVanish(OfflinePlayer player) {
         if (player != null) vanishToggle.accept(player);
-    }
-
-    /** Installed by the elytra-boost feature. */
-    public static void setElytraBoost(Consumer<UUID> toggle, Predicate<UUID> enabled) {
-        elytraBoostToggle = toggle != null ? toggle : id -> {};
-        elytraBoostEnabled = enabled != null ? enabled : id -> false;
-    }
-
-    /** @return true while elytra boost is enabled for the player. */
-    public static boolean isElytraBoostEnabled(UUID playerId) {
-        return playerId != null && elytraBoostEnabled.test(playerId);
-    }
-
-    /** Toggles elytra boost for the player (no-op when the feature is absent). */
-    public static void toggleElytraBoost(UUID playerId) {
-        if (playerId != null) elytraBoostToggle.accept(playerId);
     }
 
     // ── Block-break counters (timed challenges) ──────────────────────────

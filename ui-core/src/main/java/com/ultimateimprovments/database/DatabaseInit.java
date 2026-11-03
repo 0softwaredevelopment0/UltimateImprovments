@@ -268,15 +268,6 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🦅 ELYTRA BOOST DISABLED (persist /ui togglefly state)
-        // =========================
-        st.execute("""
-            CREATE TABLE IF NOT EXISTS elytra_boost_disabled (
-                uuid TEXT PRIMARY KEY
-            );
-        """);
-
-        // =========================
         // 🌍 DIMENSION RETURNS
             // =========================
             st.execute("""

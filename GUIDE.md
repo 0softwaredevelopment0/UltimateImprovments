@@ -92,7 +92,7 @@ Lightning, Integrity, Antimatter, Attributes, Beacon, BlockDmg, BoostedCobweb,
 ContainerTrigger, DeathBell, DragonEgg, EnderChest, EntityLocator, GlassBreak,
 HealthMeter, Leash, ModeProtect, ShieldSlowness, TerracotaSpeed,
 UnbreakableBreaker, Waypoint, CreativeItemValidator, WirelessRedstone,
-ElytraBoost, Electric Furnace, Battery Drain, Battery Multi, Light Multi, Chat,
+ElytraWear, Electric Furnace, Battery Drain, Battery Multi, Light Multi, Chat,
 Tab, Scoreboard, BossBar, MOTD, Economy, Punish, BotProtection, Omniscanner,
 AntiCheat, StructureIntegrity, ParticleAccelerator, Meteor, AutoBroadcast,
 **all custom enchantments** (as separate modules), **Turret**, **BeyondSpace/
@@ -180,7 +180,7 @@ tab-completion for all subcommands.
 /ui pdc ...             — PDC (persistent data) manager
 /ui item int list|set|add — item integrity
 /ui unlock              — unlock book or sign
-/ui togglespeed / togglefly / togglesb / togglebb / toggleping
+/ui togglespeed / togglesb / togglebb / toggleping
 /ui radview <on|off>    — admin radiation overlay (dosimeter format in the actionbar)
 ```
 

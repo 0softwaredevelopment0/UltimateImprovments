@@ -319,12 +319,6 @@ speed_enabled = "<green>⚡</green> <white>Speed display: </white><green>ON</gre
 # Speed.
 # Default: <red>⚡</red> <white>Speed display: </white><red>OFF</red>
 speed_disabled = "<red>⚡</red> <white>Speed display: </white><red>OFF</red>"
-# Master switch (true = feature on).
-# Default: <green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>
-fly_enabled = "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>"
-# Default: <red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>
-fly_disabled = "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>"
-
 # rtp section.
 # Placeholders: %player%, %seconds%, %coords%
 [messages.rtp]
@@ -576,12 +570,6 @@ speed_enabled = "<green>⚡</green> <white>Speed display: </white><green>ON</gre
 # Speed.
 # Default: <red>⚡</red> <white>Speed display: </white><red>OFF</red>
 speed_disabled = "<red>⚡</red> <white>Speed display: </white><red>OFF</red>"
-# Master switch (true = feature on).
-# Default: <green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>
-fly_enabled = "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>"
-# Default: <red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>
-fly_disabled = "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>"
-
 # report section.
 # Placeholders: %player%, %verdict%, %name%
 [messages_en.report]

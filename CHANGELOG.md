@@ -3,6 +3,45 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.6] - 2026-11-03
+
+The elytra boost on jump is gone; the elytra can now tear during flight instead.
+
+### Removed
+- **`/ui elytraboost` and the whole `ElytraBoost` module.** Deleted
+  `ElytraBoostManager` (SPACE-while-gliding boost, `/ui togglefly` state and its
+  `elytra_boost_disabled` table), the `CoreHooks` elytra hooks
+  (`setElytraBoost`/`isElytraBoostEnabled`/`toggleElytraBoost`), the
+  `ui.command.elytraboost` permission, the subcommand registration in
+  `PluginReloadCommand`, the `MiscSubcommand.elytraBoost` handler, the help line,
+  the `misc.fly_enabled`/`misc.fly_disabled` messages and the
+  `anticheat.movement.elytra.boost_check_window_ms` key.
+- The anti-cheat `ElytraCheck` no longer tries to whitelist a plugin boost (its
+  reflection into `ElytraBoostManager` was the only reason that class was loaded
+  softly); climbing on elytra still requires a firework.
+
+### Added
+- **Elytra wear (`ElytraWear`, UI-Player).** While ACTUALLY gliding
+  (`Player#isGliding()`) with a glider item equipped in the chest slot, every
+  `interval_ticks` (default 20 = 1 second) there is a
+  `chance_percent` roll (default 0.1% per second); on a hit the elytra's
+  durability drops to `min_durability` (default 2) — the item survives, one hit
+  from breaking. Config section `[elytra_wear]` in `configs/UI-Player.toml`:
+  `enabled`, `chance_percent`, `min_durability`, `interval_ticks`,
+  `ignore_creative`. Message `messages.elytra_wear.torn` (RU/EN, `%durability%`);
+  a blank message makes the wear silent.
+- The roll never touches unbreakable items, non-glider chestplates, players in
+  CREATIVE/SPECTATOR (`ignore_creative`) and elytras already at the floor value,
+  so a torn elytra keeps flying instead of re-rolling every second. Settings are
+  read once per cycle, not once per player per value.
+- Validation rules for all `elytra_wear.*` keys; root `elytra_wear` and message
+  group `elytra_wear` are routed to UI-Player in `AddonCatalog`.
+
+### Notes
+- The old `elytra_boost_disabled` table is no longer created or read. Existing
+  databases keep the orphan table (harmless); drop it manually if desired:
+  `DROP TABLE IF EXISTS elytra_boost_disabled;`.
+
 ## [1.8.5-beta.5] - 2026-11-03
 
 Protection blocks became actually protective: the zone can no longer be broken

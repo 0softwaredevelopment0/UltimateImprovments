@@ -38,7 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Riding (boat, horse)</li>
  *   <li>Lightning strike</li>
  *   <li>Piston push</li>
- *   <li>Plugin ElytraBoost (ElytraBoostManager)</li>
  * </ul>
  */
 public class VerticalMotionCheck extends AbstractCheck {

@@ -55,7 +55,7 @@ public final class AddonCatalog {
         // ── UI-Admin ──
         route("UI-Admin", "economy", "op_self");
         // ── UI-Player ──
-        route("UI-Player", "vanish", "armor_effects", "armor_trim_effects");
+        route("UI-Player", "vanish", "armor_effects", "armor_trim_effects", "elytra_wear");
         // ── UI-Guard ──
         route("UI-Guard", "packet_guard", "proxy_server", "redstone_guard",
                 "emergency_entity_kill", "server_overload_warning", "bot_protection",
@@ -94,7 +94,7 @@ public final class AddonCatalog {
         routeMsg("UI-Protection", "protection");
         routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
         routeMsg("UI-Admin", "economy", "op_self");
-        routeMsg("UI-Player", "vanish");
+        routeMsg("UI-Player", "vanish", "elytra_wear");
 routeMsg("UI-Items", "crafting", "remote_detonator");
         routeMsg("UI-Guard", "packet_guard", "bot_protection",
                 "check", "codepanel", "sudo", "maintenance", "console_lockdown",

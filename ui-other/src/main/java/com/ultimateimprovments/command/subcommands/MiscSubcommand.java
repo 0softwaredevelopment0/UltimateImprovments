@@ -83,28 +83,8 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // ELYTRABOOST — elytra boost on jump, /ui elytraboost <on|off> (default OFF)
+    // RADVIEW — /ui radview <on|off> (admin radiation overlay)
     // =========================
-    private static final String PERM_ELYTRABOOST = "ui.command.elytraboost";
-
-    public static boolean elytraBoost(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { CommandErrors.playerOnly(sender); return true; }
-        if (!player.hasPermission(PERM_ELYTRABOOST)) { CommandErrors.noPermission(player, PERM_ELYTRABOOST); return true; }
-        Boolean want = parseOnOff(args);
-        if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui elytraboost"))); return true; }
-        UUID uuid = player.getUniqueId();
-        boolean nowEnabled = CoreHooks.isElytraBoostEnabled(uuid);
-        if (nowEnabled != want) {
-            CoreHooks.toggleElytraBoost(uuid);
-        }
-        if (want) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.elytra_enabled", "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>")));
-        } else {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.elytra_disabled", "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>")));
-        }
-        return true;
-    }
-
     // =========================
     // RADVIEW — /ui radview <on|off> (admin radiation overlay)
     // =========================

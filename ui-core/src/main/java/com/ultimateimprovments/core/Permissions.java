@@ -65,7 +65,6 @@ public final class Permissions {
     public static final String CMD_HEAL = "ui.command.heal";
     public static final String CMD_FEED = "ui.command.feed";
     public static final String CMD_SHOWSPEED = "ui.command.showspeed";
-    public static final String CMD_ELYTRABOOST = "ui.command.elytraboost";
     public static final String CMD_BOSSBAR = "ui.command.bossbar";
     public static final String CMD_SCOREBOARD = "ui.command.scoreboard";
     /** /ui scoreboardnick — set/inspect your custom scoreboard nickname (cosmetic, TRUE by default). */
@@ -363,7 +362,6 @@ public final class Permissions {
                 new Permission(CMD_HEAL, "Heal yourself", PermissionDefault.FALSE),
                 new Permission(CMD_FEED, "Feed yourself", PermissionDefault.FALSE),
                 new Permission(CMD_SHOWSPEED, "Toggle the minecart speed display (/ui showspeed <on|off>)", PermissionDefault.FALSE),
-                new Permission(CMD_ELYTRABOOST, "Toggle the elytra boost on jump (/ui elytraboost <on|off>)", PermissionDefault.FALSE),
                 new Permission(CMD_BOSSBAR, "Show or hide your BossBar (/ui bossbar <on|off>)", PermissionDefault.TRUE),
                 new Permission(CMD_SCOREBOARD, "Show or hide your scoreboard (/ui scoreboard <on|off>)", PermissionDefault.TRUE),
                 new Permission(CMD_SCOREBOARDNICK, "Set your custom scoreboard nickname (/ui scoreboardnick <text>)", PermissionDefault.TRUE),

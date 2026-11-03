@@ -9,14 +9,14 @@ import java.util.Set;
 
 /**
  * UIPlayer — the player-features addon (armor/trim effects, attributes, vanish,
- * elytra boost, leash, mode-protect, shield slowness, join-invulnerable).
+ * elytra wear, leash, mode-protect, shield slowness, join-invulnerable).
  * Modules are declared in {@link PlayerModules}.
  */
 public class UIPlayer extends JavaPlugin implements SoftReloadable {
 
     private static final Set<String> OWNED_MODULES = Set.of(
             "ArmorEffects", "ArmorTrimEffects", "Attributes", "JoinInvulnerableReset",
-            "ModeProtect", "ShieldSlowness", "Vanish", "Leash", "ElytraBoost");
+            "ModeProtect", "ShieldSlowness", "Vanish", "Leash", "ElytraWear");
 
     private static UIPlayer instance;
 

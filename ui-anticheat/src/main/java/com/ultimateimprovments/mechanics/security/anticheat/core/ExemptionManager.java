@@ -140,9 +140,6 @@ public class ExemptionManager {
         // Elytra
         if (player.isGliding()) return true;
 
-        // Plugin: ElytraBoostModule — elytra flight is already exempted above
-        // (player.isGliding() check handles this)
-
         // Plugin: AttributesModule sneak_speed — only exempt Speed check for sneaking players
         // (not all movement checks, since sneaking doesn't prevent fly/clip/etc.)
         if ("Speed".equals(checkName)) {
