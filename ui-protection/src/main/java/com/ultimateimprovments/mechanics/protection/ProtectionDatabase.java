@@ -45,7 +45,7 @@ public class ProtectionDatabase {
                     owner_uuid      TEXT NOT NULL,
                     radius          INTEGER NOT NULL,
                     integrity       REAL NOT NULL,
-                    points          INTEGER NOT NULL,
+                    points          REAL NOT NULL,
                     enabled         INTEGER NOT NULL,
                     radius_upgrade_count INTEGER NOT NULL DEFAULT 0,
                     repair_count    INTEGER NOT NULL DEFAULT 0,
@@ -108,7 +108,7 @@ public class ProtectionDatabase {
             ps.setString(6, block.getOwner() != null ? block.getOwner().toString() : "");
             ps.setInt(7, block.getRadius());
             ps.setDouble(8, block.getIntegrity());
-            ps.setInt(9, block.getPoints());
+            ps.setDouble(9, block.getPoints());
             ps.setInt(10, block.isEnabled() ? 1 : 0);
             ps.setInt(11, block.getRadiusUpgradeCount());
             ps.setInt(12, block.getRepairCount());
@@ -199,7 +199,7 @@ public class ProtectionDatabase {
                             ? UUID.fromString(rs.getString("owner_uuid")) : null;
                     int radius = rs.getInt("radius");
                     double integrity = rs.getDouble("integrity");
-                    int points = rs.getInt("points");
+                    double points = rs.getDouble("points");
                     boolean enabled = rs.getInt("enabled") == 1;
                     int radiusUp = rs.getInt("radius_upgrade_count");
                     int repair = rs.getInt("repair_count");
@@ -232,7 +232,7 @@ public class ProtectionDatabase {
     /** Helper POJO for a loaded block before recreating a ProtectionBlock with a Location. */
     public record LoadedBlock(
             UUID id, String worldName, int x, int y, int z, UUID owner,
-            int radius, double integrity, int points, boolean enabled,
+            int radius, double integrity, double points, boolean enabled,
             int radiusUpgradeCount, int repairCount, List<UUID> whitelist
     ) {}
 }

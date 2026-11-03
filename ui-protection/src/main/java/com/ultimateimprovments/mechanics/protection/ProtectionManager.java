@@ -407,7 +407,7 @@ public class ProtectionManager {
         ProtectionBlock block = new ProtectionBlock(id, placed, owner,
                 ProtectionConfig.getDefaultRadius(),
                 ProtectionConfig.getStartingIntegrity(),
-                0, false); // start with 0 points and disabled
+                0.0, false); // start with 0 points and disabled
         block.addToWhitelist(owner); // auto-whitelist owner
         registerBlock(block, true);
         return block;
@@ -416,13 +416,18 @@ public class ProtectionManager {
     /**
      * Computes points from a fuel item. Uses a built-in «burn-ticks» reference
      * for vanilla fuels (the Paper API getBurnTime is unstable across versions).
+     * <p>
+     * Returns a fractional amount (rounded to two decimals) because points are doubles
+     * since {@code 1.8.5-beta.16}.
      */
-    public int computePointsFromFuel(Material material, int amount) {
-        if (material == null || amount <= 0) return 0;
+    public double computePointsFromFuel(Material material, int amount) {
+        if (material == null || amount <= 0) return 0.0;
         int burnTicks = FUEL_BURN_TICKS.getOrDefault(material, 0);
-        if (burnTicks <= 0) return 0;
+        if (burnTicks <= 0) return 0.0;
         double mult = ProtectionConfig.getFuelPointsMultiplier();
-        return Math.max(0, (int) Math.floor(burnTicks * mult * amount));
+        double points = burnTicks * mult * amount;
+        if (!Double.isFinite(points) || points <= 0.0) return 0.0;
+        return Math.round(points * 100.0) / 100.0;
     }
 
     /**
@@ -549,7 +554,7 @@ public class ProtectionManager {
                 .replace("%value%", String.format("%.1f", block.getIntegrity()));
         String pointsLine = ProtectionConfig.getMessage("hologram.points",
                         "<gray>Очки: <gold>%value%</gold></gray>")
-                .replace("%value%", String.valueOf(block.getPoints()));
+                .replace("%value%", ProtectionFormat.points(block.getPoints()));
         // Only re-deserialize when something actually changed (was: every second
         // for every block, which is pure CPU waste on big servers).
         String combined = title + "\n" + radiusLine + "\n" + integrityLine + "\n" + pointsLine;

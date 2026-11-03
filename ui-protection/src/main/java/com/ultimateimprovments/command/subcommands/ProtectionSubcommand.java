@@ -5,6 +5,7 @@ import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.protection.ProtectionBlock;
 import com.ultimateimprovments.mechanics.protection.ProtectionConfig;
+import com.ultimateimprovments.mechanics.protection.ProtectionFormat;
 import com.ultimateimprovments.mechanics.protection.ProtectionItem;
 import com.ultimateimprovments.mechanics.protection.ProtectionManager;
 import com.ultimateimprovments.util.MessageUtil;
@@ -130,7 +131,7 @@ public final class ProtectionSubcommand {
                     "%status%", status,
                     "%radius%", String.valueOf(b.getRadius()),
                     "%integrity%", String.format("%.1f%%", b.getIntegrity()),
-                    "%points%", String.valueOf(b.getPoints()))));
+                    "%points%", ProtectionFormat.points(b.getPoints()))));
         }
         return true;
     }
@@ -206,7 +207,7 @@ public final class ProtectionSubcommand {
                 " <gray>Целостность: <white>%integrity%",
                 "%integrity%", String.format("%.1f%%", b.getIntegrity()))));
         player.sendMessage(MessageUtil.parse(msg("info_points",
-                " <gray>Очки: <white>%points%", "%points%", String.valueOf(b.getPoints()))));
+                " <gray>Очки: <white>%points%", "%points%", ProtectionFormat.points(b.getPoints()))));
         player.sendMessage(MessageUtil.parse(msg("info_whitelist",
                 " <gray>Whitelist (size): <white>%size%",
                 "%size%", String.valueOf(b.getWhitelist().size()))));

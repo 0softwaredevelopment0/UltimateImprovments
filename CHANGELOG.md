@@ -3,6 +3,36 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.16] - 2026-11-03
+
+Protection points are fractional now, and the built JARs leave git altogether.
+
+### Changed
+- **Protection points are doubles, not ints.** The 1.1 price curve is smooth
+  (1, 1.1, 1.21, 1.331 ...), so whole points would round it away — every price and
+  every fuel reward is now fractional. `ProtectionBlock.points` is a `double`, the
+  `protection_blocks.points` column is declared `REAL`
+  (SQLite keeps reals in the legacy INTEGER-affinity column, so existing databases
+  need no migration) and is written/read via `setDouble`/`getDouble`.
+- **Prices are no longer rounded.** `ProtectionBlock.scaledCost` returns
+  `baseCost × growth^n` as-is (was `ceil(...)`), clamped to `MAX_COST`; the repair and
+  radius buttons in the GUI now show `1.21` instead of a stair-stepped integer.
+- Fuel rewards are fractional too (`computePointsFromFuel` → `double`, rounded to two
+  decimals so `0.1 × 300` shows `30`, not `30.000000000000004`).
+- New `ProtectionFormat.points(double)` — the single formatter used by the GUI, the
+  chat messages, `/ui protection list|info` and the hologram: at most two decimals,
+  trailing zeros stripped, `∞` for non-finite input.
+
+### Added
+- `ProtectionFormatTest` (whole values, two decimals, float-noise rounding, NaN/∞),
+  and `ProtectionBlockCostTest` rewritten for the fractional curve.
+
+### Removed
+- **Built JARs are no longer tracked in git** (`build/libs/**` purged from the whole
+  history, `!/build/libs/*.jar` exceptions removed from `.gitignore`). Distributables
+  come from GitHub releases; a local `gradlew build` still produces them in
+  `build/libs/`.
+
 ## [1.8.5-beta.15] - 2026-11-03
 
 Protection block prices no longer double: a repair or radius upgrade now grows by a

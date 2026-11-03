@@ -125,7 +125,7 @@ public class ProtectionListener implements Listener {
                             "<gray>Возьмите в руку топливо, чтобы получить очки.</gray>")));
             return;
         }
-        int points = manager.computePointsFromFuel(hand.getType(), hand.getAmount());
+        double points = manager.computePointsFromFuel(hand.getType(), hand.getAmount());
         if (points <= 0) {
             player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
                     "fuel_not_burnable",
@@ -143,7 +143,7 @@ public class ProtectionListener implements Listener {
         player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
                 "fuel_acquired",
                 "<green>✔</green> <white>Получено <gold>%points%</gold> очков.</white>")
-                .replace("%points%", String.valueOf(points))));
+                .replace("%points%", ProtectionFormat.points(points))));
     }
 
     // =========================

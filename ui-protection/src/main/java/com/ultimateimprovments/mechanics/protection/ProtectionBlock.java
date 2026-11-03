@@ -17,7 +17,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *   <li>{@code owner} — UUID of the player who placed the block</li>
  *   <li>{@code radius} — current protection radius (blocks)</li>
  *   <li>{@code integrity} — current integrity 0..100</li>
- *   <li>{@code points} — points for upgrades</li>
+ *   <li>{@code points} — points for upgrades (fractional, see {@link #getRepairCost()})</li>
  *   <li>{@code enabled} — whether the block is enabled (protects the area)</li>
  *   <li>{@code radiusUpgradeCount} — how many times the radius was already upgraded (cost = ceil(base × growth^n))</li>
  *   <li>{@code repairCount} — how many times integrity was already repaired (cost = ceil(base × growth^n))</li>
@@ -35,7 +35,10 @@ public class ProtectionBlock {
     private UUID owner;
     private int radius;
     private double integrity;
-    private int points;
+    /** Fractional since 1.8.5-beta.16: prices grow smoothly (1.1^n), so whole points
+     *  would round the curve away. Persisted as REAL (SQLite keeps reals in the
+     *  legacy INTEGER-affinity column, so old databases need no migration). */
+    private double points;
     private boolean enabled;
 
     private int radiusUpgradeCount;
@@ -48,7 +51,7 @@ public class ProtectionBlock {
      *  would throw ConcurrentModificationException with this pattern. */
     private final Set<UUID> whitelist = new CopyOnWriteArraySet<>();
 
-    public ProtectionBlock(UUID id, Location loc, UUID owner, int radius, double integrity, int points, boolean enabled) {
+    public ProtectionBlock(UUID id, Location loc, UUID owner, int radius, double integrity, double points, boolean enabled) {
         if (id == null) throw new IllegalArgumentException("id cannot be null");
         if (loc == null || loc.getWorld() == null) throw new IllegalArgumentException("location must have a world");
         this.id = id;
@@ -86,8 +89,8 @@ public class ProtectionBlock {
     public double getIntegrity() { return integrity; }
     public void setIntegrity(double integrity) { this.integrity = Math.max(0.0, Math.min(100.0, integrity)); }
 
-    public int getPoints() { return points; }
-    public void setPoints(int points) { this.points = points; }
+    public double getPoints() { return points; }
+    public void setPoints(double points) { this.points = points; }
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -114,46 +117,50 @@ public class ProtectionBlock {
 
     /**
      * Current point cost for the next radius upgrade.
-     * Cost = ceil(baseCost × growth^(radiusUpgradeCount)), clamped to int.
+     * Cost = baseCost × growth^(radiusUpgradeCount) — a fractional value (points are doubles).
      * <p>
      * {@code growth} is {@link ProtectionConfig#getPointsGrowthMultiplier()} (1.1 by default):
-     * a gentle curve instead of the old «×2 per click», which priced the second upgrade
-     * out of reach after only a couple of purchases.
+     * each purchase gets gradually more expensive instead of the old «×2 per click».
      */
-    public int getRadiusUpgradeCost() {
+    public double getRadiusUpgradeCost() {
         return scaledCost(ProtectionConfig.getRadiusUpgradeBaseCost(), radiusUpgradeCount);
     }
 
     /**
      * Current point cost for the next integrity repair.
-     * Cost = ceil(baseCost × growth^(repairCount)), clamped to int.
+     * Cost = baseCost × growth^(repairCount) — a fractional value (points are doubles).
      * <p>
-     * Repairs are the frequent action (one click = +1 % integrity), so the same
-     * gentle growth as for the radius keeps a long-lived block maintainable
-     * while still charging more for every extra percent.
+     * Repairs are the frequent action (one click = +1 % integrity), so the price must grow
+     * gently: 1, 1.1, 1.21, 1.331 ... instead of 1, 2, 4, 8 ...
      */
-    public int getRepairCost() {
+    public double getRepairCost() {
         return scaledCost(ProtectionConfig.getRepairBaseCost(), repairCount);
     }
 
-    private static int scaledCost(int baseCost, int n) {
+    private static double scaledCost(int baseCost, int n) {
         return scaledCost(baseCost, n, ProtectionConfig.getPointsGrowthMultiplier());
     }
 
     /**
-     * Ceil-scaled price: {@code ceil(baseCost × growth^n)}, clamped to {@link Integer#MAX_VALUE}.
+     * Price curve: {@code baseCost × growth^n}, clamped to {@link #MAX_COST}.
+     * <p>
+     * Deliberately NOT rounded: the whole point of the 1.1 factor is a smooth curve
+     * (rounding up turned 1.1, 1.21, 1.33 into 2, 2, 2 and killed the growth).
+     * {@code growth <= 1} (or NaN from a broken TOML) means a flat price, so a typo
+     * in the config can never produce a negative, NaN or infinite cost.
      * <p>
      * Static and multiplier-explicit so it can be unit-tested without a running server.
-     * {@code growth <= 1} (or NaN from a broken TOML) means a flat price, so a typo
-     * in the config can never produce a negative or infinite cost.
      */
-    static int scaledCost(int baseCost, int n, double growth) {
-        if (baseCost <= 0) return Integer.MAX_VALUE;
+    static double scaledCost(int baseCost, int n, double growth) {
+        if (baseCost <= 0) return MAX_COST;
         if (!(growth > 1.0) || n <= 0) return baseCost;
         double raw = baseCost * Math.pow(growth, n);
-        if (!Double.isFinite(raw) || raw >= Integer.MAX_VALUE) return Integer.MAX_VALUE;
-        return (int) Math.ceil(raw);
+        if (!Double.isFinite(raw) || raw >= MAX_COST) return MAX_COST;
+        return raw;
     }
+
+    /** Upper bound of any price — keeps the GUI readable and the spend check finite. */
+    static final double MAX_COST = Integer.MAX_VALUE;
 
     /**
      * True if the block has integrity > 0 AND is enabled.

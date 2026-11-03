@@ -145,8 +145,8 @@ public final class ProtectionGUI {
                         "<white>Стоимость:</white> <gold>%cost%</gold>",
                         "<white>Доступно очков:</white> <gold>%points%</gold>",
                         "<white>Макс. радиус:</white> <aqua>%max%</aqua>"),
-                        "%cost%", String.valueOf(block.getRadiusUpgradeCost()),
-                        "%points%", String.valueOf(block.getPoints()),
+                        "%cost%", ProtectionFormat.points(block.getRadiusUpgradeCost()),
+                        "%points%", ProtectionFormat.points(block.getPoints()),
                         "%max%", String.valueOf(ProtectionConfig.getMaxRadius()),
                         "%growth%", String.valueOf(ProtectionConfig.getPointsGrowthMultiplier()),
                         "%radius%", String.valueOf(block.getRadius()))
@@ -162,9 +162,9 @@ public final class ProtectionGUI {
                         "",
                         "<white>Стоимость:</white> <gold>%cost%</gold>",
                         "<white>Доступно очков:</white> <gold>%points%</gold>"),
-                        "%cost%", String.valueOf(block.getRepairCost()),
+                        "%cost%", ProtectionFormat.points(block.getRepairCost()),
                         "%growth%", String.valueOf(ProtectionConfig.getPointsGrowthMultiplier()),
-                        "%points%", String.valueOf(block.getPoints()),
+                        "%points%", ProtectionFormat.points(block.getPoints()),
                         "%integrity%", String.format("%.1f%%", block.getIntegrity()))
         ));
 
@@ -437,12 +437,12 @@ public final class ProtectionGUI {
         // RADIUS UPGRADE
         // =========================
         private void handleRadiusUpgrade(Player player, ProtectionBlock pb) {
-            int cost = pb.getRadiusUpgradeCost();
+            double cost = pb.getRadiusUpgradeCost();
             if (pb.getPoints() < cost) {
                 player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
                         "not_enough_points",
                         "<red>Недостаточно очков! Нужно: </red><gold>%cost%</gold>")
-                        .replace("%cost%", String.valueOf(cost))));
+                        .replace("%cost%", ProtectionFormat.points(cost))));
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
                 return;
             }
@@ -468,12 +468,12 @@ public final class ProtectionGUI {
         // REPAIR
         // =========================
         private void handleRepair(Player player, ProtectionBlock pb) {
-            int cost = pb.getRepairCost();
+            double cost = pb.getRepairCost();
             if (pb.getPoints() < cost) {
                 player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
                         "not_enough_points",
                         "<red>Недостаточно очков! Нужно: </red><gold>%cost%</gold>")
-                        .replace("%cost%", String.valueOf(cost))));
+                        .replace("%cost%", ProtectionFormat.points(cost))));
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
                 return;
             }
