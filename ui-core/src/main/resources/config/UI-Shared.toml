@@ -77,6 +77,14 @@ teleport_cooldown_ticks = 100
 # Delay.
 # Default: 60
 rocket_launch_delay_ticks = 60
+# Levitation amplifier of the rocket launch; vanilla levitation lifts about
+# (amplifier + 1) blocks per second (19 = ~20 blocks/s).
+# Default: 19
+rocket_levitation_amplifier = 19
+# The rocket switches levitation off and teleports into space this many blocks
+# below the world build limit.
+# Default: 8
+rocket_arrival_margin = 8
 # Default: 0.01
 gravity = 0.01
 # Damage.

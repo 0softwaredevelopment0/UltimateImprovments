@@ -670,6 +670,8 @@ final class ConfigRules {
             bool("space.debug"),
             integer("space.teleport_cooldown_ticks", 0, 6000),
             integer("space.rocket_launch_delay_ticks", 1, 200),
+            integer("space.rocket_levitation_amplifier", 0, 100, "Амплификатор левитации ракеты (≈ amp+1 блок/с)"),
+            integer("space.rocket_arrival_margin", 0, 256, "Сколько блоков ниже максимума мира ракета телепортирует в космос"),
             dbl("space.gravity", 0, 10),
             dbl("space.oxygen_damage_per_second", 0, 1000),
             integer("radiation.space_radiation", 0, 10000),

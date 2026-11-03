@@ -1,7 +1,9 @@
 package com.ultimateimprovments.space;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.MessageUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -12,7 +14,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -29,22 +30,39 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Rocket item manager.
  * <p>
- * When a player right-clicks with a rocket:
+ * Right-click with a rocket starts a <b>levitation</b> launch:
  * <ol>
- *   <li>Player is frozen (Slowness 255 + Jump Boost 128)</li>
- *   <li>Rocket lifts the player smoothly upward at ~20 blocks/sec</li>
- *   <li>When reaching build limit, teleported to space</li>
+ *   <li>requires {@code ui.command.space} — the same node as {@code /ui space}
+ *       (OP by default), so the rocket is not a free second entrance to space;</li>
+ *   <li>sets {@code allowFlight} for the duration of the ride — otherwise the client
+ *       reports "flying" while the server has flight disabled and the player gets
+ *       kicked with "Flying is not enabled on this server";</li>
+ *   <li>lifts the player with a real LEVITATION effect instead of teleporting every
+ *       tick. The old implementation called {@link Player#teleport} each tick, and
+ *       repeated teleports mid-air are exactly what made the server kick;</li>
+ *   <li>tops the effect up when it nears its end (remaining-time check), and on
+ *       reaching the arrival height removes every effect, restores the previous
+ *       flight flags and performs a single teleport into the space world.</li>
  * </ol>
- * During the lift, the player cannot move, look around, or be pushed.
+ * Vanilla levitation lifts roughly {@code amplifier + 1} blocks per second, so the
+ * horizontal freeze (SLOWNESS + JUMP_BOOST) only has to stop drifting.
  */
 public class SpaceRocketManager implements Listener {
 
     private static final NamespacedKey KEY_ROCKET = new NamespacedKey(Main.getInstance(), "space_rocket");
-    private static final double LIFT_SPEED = 5.0; // blocks per tick (~100 blocks/sec, ~20s to space)
-    private static final int LIFT_CHECK_INTERVAL = 1; // every tick
 
-    /** Players currently in launch sequence (uuid → task) */
+    /** Re-apply the launch effects when the remaining levitation time drops to this. */
+    private static final int EFFECT_TOP_UP_THRESHOLD = 60;
+    /** How often the launch is checked for arrival / effect timeout. */
+    private static final int CHECK_INTERVAL_TICKS = 5;
+
+    /** Players currently in the launch sequence (uuid → task). */
     private static final Map<UUID, BukkitTask> launching = new ConcurrentHashMap<>();
+    /** Snapshot of the state that has to be restored after the ride. */
+    private static final Map<UUID, LaunchState> launchStates = new ConcurrentHashMap<>();
+
+    private record LaunchState(boolean previousAllowFlight, boolean previousFlying,
+                               double targetY, double blocksPerSecond, int amplifier) {}
 
     // ════════════════════════════════════════
     // ITEM CREATION
@@ -83,6 +101,13 @@ public class SpaceRocketManager implements Listener {
         ItemStack item = event.getItem();
         if (!isRocket(item)) return;
 
+        // The rocket is a second entrance to space — same gate as /ui space.
+        if (!player.hasPermission(Permissions.CMD_SPACE)) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ You don't have permission to launch into space.</red>"));
+            return;
+        }
+
         if (SpaceManager.isInSpace(player)) {
             player.sendMessage(MessageUtil.parse("<red>❌ You are already in space!</red>"));
             return;
@@ -98,20 +123,41 @@ public class SpaceRocketManager implements Listener {
         // Consume one rocket
         item.setAmount(item.getAmount() - 1);
 
-        // Start smooth lift
         startLift(player);
     }
 
     // ════════════════════════════════════════
-    // SMOOTH LIFT
+    // LEVITATION LIFT
     // ════════════════════════════════════════
 
     private void startLift(Player player) {
         UUID uuid = player.getUniqueId();
-        int buildLimit = player.getWorld().getMaxHeight();
 
-        // Freeze the player
-        freezePlayer(player);
+        int amplifier = Math.max(0, Main.getInstance().getConfig()
+                .getInt("space.rocket_levitation_amplifier", 19));
+        int margin = Math.max(0, Main.getInstance().getConfig()
+                .getInt("space.rocket_arrival_margin", 8));
+
+        // Vanilla levitation raises the player by ~0.05 * (amplifier + 1) blocks/tick.
+        double blocksPerSecond = Math.max(1.0, amplifier + 1.0);
+        double startY = player.getLocation().getY();
+        double targetY = Math.max(startY + 8.0, player.getWorld().getMaxHeight() - margin);
+
+        int travelTicks = (int) Math.ceil(Math.max(0.0, targetY - startY) / blocksPerSecond * 20.0);
+        int effectDuration = Math.max(100, travelTicks + 200);
+
+        launchStates.put(uuid, new LaunchState(
+                player.getAllowFlight(), player.isFlying(), targetY, blocksPerSecond, amplifier));
+
+        // Flight must be allowed for the ride: with flight disabled the client's
+        // "flying" state gets the player kicked ("Flying is not enabled").
+        player.setAllowFlight(true);
+        player.setFlying(false);
+        applyLaunchEffects(player, amplifier, effectDuration);
+
+        player.sendMessage(MessageUtil.parse(
+                "<yellow>🚀</yellow> <white>Launching into space — about </white><yellow>"
+                        + Math.max(1, travelTicks / 20) + "s</yellow><white> to go.</white>"));
 
         BukkitTask task = new BukkitRunnable() {
             @Override
@@ -122,50 +168,74 @@ public class SpaceRocketManager implements Listener {
                     return;
                 }
 
-                double currentY = player.getLocation().getY();
-
-                // Check if reached build limit
-                if (currentY >= buildLimit) {
-                    cleanup(player);
-                    SpaceManager.teleportToSpace(player);
-                    player.sendMessage(MessageUtil.parse(
-                        "<green>✔</green> <white>You have arrived in space!</white>"));
+                LaunchState state = launchStates.get(uuid);
+                if (state == null) {
                     cancel();
                     return;
                 }
 
-                // Lift the player upward
-                player.teleport(new org.bukkit.Location(
-                    player.getWorld(),
-                    player.getLocation().getX(),
-                    currentY + LIFT_SPEED,
-                    player.getLocation().getZ(),
-                    player.getLocation().getYaw(),
-                    player.getLocation().getPitch()
-                ));
+                double currentY = player.getLocation().getY();
 
-                // Show progress in action bar
-                int remaining = (int) Math.ceil((buildLimit - currentY) / LIFT_SPEED / 20.0);
+                // Arrived at the arrival height: teleport once, then drop the effects
+                // and restore the flight flags (teleport first so the player is not
+                // left in mid-air with flight disabled if the teleport fails).
+                if (currentY >= state.targetY()) {
+                    boolean arrived = SpaceManager.teleportToSpace(player);
+                    cleanup(player);
+                    player.sendMessage(MessageUtil.parse(arrived
+                            ? "<green>✔</green> <white>You have arrived in space!</white>"
+                            : "<red>❌ Space teleport failed — try again shortly.</red>"));
+                    cancel();
+                    return;
+                }
+
+                // Remaining-time check: top the effects up instead of letting the
+                // levitation run out and dropping the player mid-flight.
+                PotionEffect levitation = player.getPotionEffect(PotionEffectType.LEVITATION);
+                if (levitation == null || levitation.getDuration() <= EFFECT_TOP_UP_THRESHOLD) {
+                    applyLaunchEffects(player, state.amplifier(), 600);
+                }
+
+                int secondsLeft = (int) Math.ceil(
+                        Math.max(0.0, state.targetY() - currentY) / state.blocksPerSecond());
                 player.sendActionBar(MessageUtil.parse(
-                    "<yellow>🚀 Ascending... <white>" + remaining + "s</white> to space</yellow>"));
+                        "<yellow>🚀 Ascending... <white>" + secondsLeft + "s</white> to space</yellow>"));
             }
-        }.runTaskTimer(Main.getInstance(), 0L, LIFT_CHECK_INTERVAL);
+        }.runTaskTimer(Main.getInstance(), CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
 
         launching.put(uuid, task);
     }
 
-    private void freezePlayer(Player player) {
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 600, 255, false, false, false));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 600, 128, false, false, false));
+    private void applyLaunchEffects(Player player, int amplifier, int durationTicks) {
+        int duration = Math.max(20, durationTicks);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, duration, amplifier, false, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 255, false, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 128, false, false, false));
     }
 
     private void cleanup(Player player) {
-        BukkitTask task = launching.remove(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+
+        BukkitTask task = launching.remove(uuid);
         if (task != null) {
             task.cancel();
         }
+        LaunchState state = launchStates.remove(uuid);
+
+        if (!player.isOnline()) return;
+
+        player.removePotionEffect(PotionEffectType.LEVITATION);
         player.removePotionEffect(PotionEffectType.SLOWNESS);
         player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+        player.setFallDistance(0.0f);
+
+        if (state != null) {
+            player.setFlying(false);
+            player.setAllowFlight(state.previousAllowFlight());
+            if (state.previousAllowFlight() && state.previousFlying()) {
+                player.setFlying(true);
+            }
+        }
     }
 
     // ===== RECIPE =====
@@ -193,5 +263,16 @@ public class SpaceRocketManager implements Listener {
             try { task.cancel(); } catch (Exception ignored) {}
         }
         launching.clear();
+
+        // Drop the launch effects of online players so a reload cannot leave them
+        // stuck floating with flight enabled.
+        for (UUID uuid : launchStates.keySet()) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null || !player.isOnline()) continue;
+            player.removePotionEffect(PotionEffectType.LEVITATION);
+            player.removePotionEffect(PotionEffectType.SLOWNESS);
+            player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+        }
+        launchStates.clear();
     }
 }
