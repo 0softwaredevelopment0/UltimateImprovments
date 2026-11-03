@@ -7,8 +7,9 @@
 # Default: true
 enabled = true
 # Minimum value.
-# Default: 9
-min_password_length = 9
+# DEPRECATED — use [auth.password].min_length below; kept for old configs.
+# Default: 8
+min_password_length = 8
 # Maximum value.
 # Default: 32
 max_password_length = 32
@@ -22,11 +23,41 @@ login_timeout_seconds = 60
 # Default: 5
 max_wrong_attempts = 5
 # Cooldown after a wrong password, for the account AND its IP.
-# Default: 30
-request_cooldown_seconds = 30
+# Default: 15
+request_cooldown_seconds = 15
 # Maximum value.
 # Default: 3
 max_accounts_per_ip = 3
+
+# Password requirements. Applies to registration, self password change and admin resets.
+[auth.password]
+# Minimum password length in characters.
+# Default: 8
+min_length = 8
+# Maximum password length in characters (also the field limit in the auth dialog).
+# Default: 32
+max_length = 32
+# Require at least one digit (0-9).
+# Default: true
+require_digit = true
+# Require at least one lowercase AND one uppercase English letter (a-z, A-Z).
+# Default: true
+require_case = true
+# Require at least one special character (!, @, #, $, %, &, *, ...).
+# Default: true
+require_special = true
+# Reject passwords that match the list below (case-insensitive).
+# Default: true
+block_common = true
+# Forbidden passwords, compared case-insensitively.
+# Default: the 25 most common leaked passwords
+common_passwords = [
+    "123456", "12345678", "123456789", "1234567890", "111111",
+    "123123", "password", "passw0rd", "qwerty", "qwerty123",
+    "qwertyuiop", "abc123", "letmein", "welcome", "admin",
+    "root", "iloveyou", "monkey", "dragon", "football",
+    "master", "sunshine", "princess", "minecraft", "minecraft123"
+]
 
 # check ip section.
 
@@ -66,6 +97,16 @@ long_password = "<red>❌ Password must not exceed 32 characters!</red>"
 password_too_short = "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>"
 # Default: <red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>
 password_too_long = "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>"
+# Default: <red>❌ Пароль не может быть пустым.</red>
+password_empty = "<red>❌ Пароль не может быть пустым.</red>"
+# Default: <red>❌ Пароль должен содержать хотя бы одну цифру (0-9).</red>
+password_need_digit = "<red>❌ Пароль должен содержать хотя бы одну цифру (0-9).</red>"
+# Default: <red>❌ Пароль должен содержать строчную и заглавную английскую букву (a-z, A-Z).</red>
+password_need_case = "<red>❌ Пароль должен содержать строчную и заглавную английскую букву (a-z, A-Z).</red>"
+# Default: <red>❌ Пароль должен содержать спецсимвол (!, @, #, $, %, &, *, ...).</red>
+password_need_special = "<red>❌ Пароль должен содержать спецсимвол (!, @, #, $, %, &, *, ...).</red>"
+# Default: <red>❌ Этот пароль слишком простой — выберите другой.</red>
+password_common = "<red>❌ Этот пароль слишком простой — выберите другой.</red>"
 # Default: <red>❌ Please authenticate first! Enter your password in the opened window.</red>
 need_auth = "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
 # Default: <red>❌</red> <white>Your IP address has changed. Please log in again.</white>
@@ -176,6 +217,16 @@ long_password = "<red>❌ Password must not exceed 32 characters!</red>"
 password_too_short = "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>"
 # Default: <red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>
 password_too_long = "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>"
+# Default: <red>❌ The password must not be empty.</red>
+password_empty = "<red>❌ The password must not be empty.</red>"
+# Default: <red>❌ The password must contain at least one digit (0-9).</red>
+password_need_digit = "<red>❌ The password must contain at least one digit (0-9).</red>"
+# Default: <red>❌ The password must contain a lowercase and an uppercase English letter (a-z, A-Z).</red>
+password_need_case = "<red>❌ The password must contain a lowercase and an uppercase English letter (a-z, A-Z).</red>"
+# Default: <red>❌ The password must contain a special character (!, @, #, $, %, &, *, ...).</red>
+password_need_special = "<red>❌ The password must contain a special character (!, @, #, $, %, &, *, ...).</red>"
+# Default: <red>❌ This password is too common — choose another one.</red>
+password_common = "<red>❌ This password is too common — choose another one.</red>"
 # Default: <red>❌ Please authenticate first! Enter your password in the opened window.</red>
 need_auth = "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
 # Default: <red>❌</red> <white>Your IP address has changed. Please log in again.</white>

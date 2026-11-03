@@ -78,7 +78,7 @@ public class AuthDialogScreen {
             MM.deserialize(Main.getInstance().getConfig().getString("messages.auth.dialog.password_label",
                 "<gray>Password</gray>"))
         );
-        int maxPwLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
+        int maxPwLen = AuthConfig.getMaxPasswordLength();
         TextInput passwordInput = new TextInput(200, pwLabel, true, "", maxPwLen, Optional.empty());
 
         // ─── Buttons ───

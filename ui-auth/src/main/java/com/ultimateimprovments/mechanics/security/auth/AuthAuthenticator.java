@@ -156,23 +156,14 @@ public class AuthAuthenticator {
                         }
                     });
                 } else {
-                    // Password length checks (on the async thread — safe, pure strings)
-                    int minLen = AuthConfig.getMinPasswordLength();
-                    int maxLen = AuthConfig.getMaxPasswordLength();
-                    if (password.length() < minLen || password.length() > maxLen) {
+                    // Password policy (length, character classes, common-password list).
+                    // Pure string work — safe on the async thread; only sending stays on main.
+                    final String policyError = PasswordPolicy.validate(password);
+                    if (policyError != null) {
                         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                             if (!player.isOnline()) return;
-                            if (password.length() < minLen) {
-                                player.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                                        "auth.messages.password_too_short",
-                                        "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>")
-                                        .replace("%min%", String.valueOf(minLen))));
-                            } else {
-                                player.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                                        "auth.messages.password_too_long",
-                                        "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>")
-                                        .replace("%max%", String.valueOf(maxLen))));
-                            }
+                            player.sendMessage(MessageUtil.parse(policyError));
+                            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
                             sendChatPromptAfterError(player, registered);
                         });
                         return;
@@ -464,21 +455,9 @@ public class AuthAuthenticator {
     public void handleSelfChangePassword(Player player, String newPassword) {
         UUID uuid = player.getUniqueId();
 
-        int minLen = AuthConfig.getMinPasswordLength();
-        int maxLen = AuthConfig.getMaxPasswordLength();
-
-        if (newPassword.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "auth.messages.password_too_short",
-                    "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>")
-                    .replace("%min%", String.valueOf(minLen))));
-            return;
-        }
-        if (newPassword.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "auth.messages.password_too_long",
-                    "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>")
-                    .replace("%max%", String.valueOf(maxLen))));
+        String policyError = PasswordPolicy.validate(newPassword);
+        if (policyError != null) {
+            player.sendMessage(MessageUtil.parse(policyError));
             return;
         }
 
@@ -526,21 +505,9 @@ public class AuthAuthenticator {
     public void handleSelfChangePassword(Player player, String oldPassword, String newPassword) {
         UUID uuid = player.getUniqueId();
 
-        int minLen = AuthConfig.getMinPasswordLength();
-        int maxLen = AuthConfig.getMaxPasswordLength();
-
-        if (newPassword.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "auth.messages.password_too_short",
-                    "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>")
-                    .replace("%min%", String.valueOf(minLen))));
-            return;
-        }
-        if (newPassword.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "auth.messages.password_too_long",
-                    "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>")
-                    .replace("%max%", String.valueOf(maxLen))));
+        String policyError = PasswordPolicy.validate(newPassword);
+        if (policyError != null) {
+            player.sendMessage(MessageUtil.parse(policyError));
             return;
         }
         if (oldPassword == null || oldPassword.isEmpty()) {

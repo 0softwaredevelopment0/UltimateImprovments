@@ -144,6 +144,11 @@ public class AuthDialogHandler implements Listener {
             actor.sendMessage(MessageUtil.parse("<red>❌ Ник игрока и новый пароль обязательны.</red>"));
             return;
         }
+        String policyError = PasswordPolicy.validate(newPassword);
+        if (policyError != null) {
+            actor.sendMessage(MessageUtil.parse(policyError));
+            return;
+        }
         UUID targetUuid = org.bukkit.Bukkit.getOfflinePlayer(targetName.trim()).getUniqueId();
         if (!AuthDatabase.isRegistered(targetUuid)) {
             actor.sendMessage(MessageUtil.parse("<red>❌ Игрок </red><yellow>" + targetName.trim()

@@ -189,9 +189,7 @@ public class AuthManager {
     // =========================
     public boolean changePassword(UUID uuid, String newPassword) {
         if (!AuthDatabase.isRegistered(uuid)) return false;
-        int minLen = AuthConfig.getMinPasswordLength();
-        int maxLen = AuthConfig.getMaxPasswordLength();
-        if (newPassword.length() < minLen || newPassword.length() > maxLen) return false;
+        if (!PasswordPolicy.isAcceptable(newPassword)) return false;
 
         boolean updated = AuthDatabase.changePassword(uuid, newPassword);
         if (updated) {

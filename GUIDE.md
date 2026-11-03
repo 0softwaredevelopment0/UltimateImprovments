@@ -372,10 +372,11 @@ End-crystal turrets are a ranged defense system:
 
 ### Auth
 - Registration/login via a custom dialog (Minecraft Custom Screen) with a password field — passwords are **never** accepted through chat or commands; `/ui auth login` and `/ui auth register` no longer exist.
-- **Argon2id** password hashing, minimum password length 9 characters by default.
+- **Argon2id** password hashing.
+- **Password policy** (`[auth.password]`): length 8–32 by default, at least one digit, at least one lowercase and one uppercase English letter, at least one special character, and a configurable list of forbidden common passwords (25 entries by default). Applies to registration, self change and admin resets.
 - **GitHub 2FA** (OAuth) — clickable link in chat.
 - IP check, account limit per IP, sessions, login timeout, max wrong attempts, force login, registration reset.
-- Wrong password locks the account **and** its IP for 30 seconds (`auth.request_cooldown_seconds`), so guessing cannot be continued by reconnecting.
+- Wrong password locks the account **and** its IP for 15 seconds (`auth.request_cooldown_seconds`), persisted in the `auth_lockouts` table — the lock survives a reconnect and a server restart.
 - Player dialogs: `/ui auth logout` (confirmation, then the session is reset and the player is kicked), `/ui auth changepassword` (old + new password), `/ui auth 2fa setup|disable`.
 - Admin recovery: `/ui auth forcelogin <nick>` (console-audited), `/ui auth resetauth <nick>`, `/ui auth delsession <nick>`, `/ui auth chgpass` — players get the dialog (nickname + new password), the console uses `/ui auth chgpass <nick> <new_password>`.
 

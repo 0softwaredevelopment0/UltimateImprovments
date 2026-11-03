@@ -3,10 +3,10 @@ package com.ultimateimprovments.command.subcommands;
 import com.ultimateimprovments.command.CommandErrors;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.security.auth.AuthConfig;
 import com.ultimateimprovments.mechanics.security.auth.AuthDatabase;
 import com.ultimateimprovments.mechanics.security.auth.AuthDialogs;
 import com.ultimateimprovments.mechanics.security.auth.AuthManager;
+import com.ultimateimprovments.mechanics.security.auth.PasswordPolicy;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -250,10 +250,11 @@ public final class AuthSubcommand {
         }
         if (args.length < 4) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth chgpass </white><gray><nick> <new_password></gray>")); return true; }
         String name = args[2], newPass = args[3];
-        int minLen = AuthConfig.getMinPasswordLength();
-        int maxLen = AuthConfig.getMaxPasswordLength();
-        if (newPass.length() < minLen) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Password must be at least " + minLen + " characters!</red>")); return true; }
-        if (newPass.length() > maxLen) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Password must not exceed " + maxLen + " characters!</red>")); return true; }
+        String policyError = PasswordPolicy.validate(newPass);
+        if (policyError != null) {
+            sender.sendMessage(MessageUtil.parse(policyError));
+            return true;
+        }
         UUID uuid = getOfflineUuid(name);
         if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
         AuthManager mgr = AuthManager.getInstance();
