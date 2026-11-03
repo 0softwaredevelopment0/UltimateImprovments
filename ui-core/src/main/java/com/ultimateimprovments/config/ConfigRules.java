@@ -395,6 +395,7 @@ final class ConfigRules {
             dbl("protection.points.fuel_multiplier", 0, 10000),
             integer("protection.points.radius_upgrade_base_cost", 1, Integer.MAX_VALUE),
             integer("protection.points.repair_base_cost", 1, Integer.MAX_VALUE),
+            dbl("protection.points.growth_multiplier", 1, 1000),
             bool("protection.crafting.workbench_allowed"),
             bool("protection.crafting.crafter_allowed"),
             bool("protection.admin.give_allowed"),

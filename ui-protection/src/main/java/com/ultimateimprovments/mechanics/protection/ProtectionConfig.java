@@ -112,14 +112,28 @@ public class ProtectionConfig {
         return getInt("protection.radius.min", 1);
     }
 
-    /** Point cost of the first radius upgrade. Afterwards the cost doubles per click. */
+    /** Point cost of the first radius upgrade. Afterwards the cost grows by {@link #getPointsGrowthMultiplier()}. */
     public static int getRadiusUpgradeBaseCost() {
         return getInt("protection.points.radius_upgrade_base_cost", 1);
     }
 
-    /** Point cost of the first integrity repair. Afterwards the cost doubles per click. */
+    /** Point cost of the first integrity repair. Afterwards the cost grows by {@link #getPointsGrowthMultiplier()}. */
     public static int getRepairBaseCost() {
         return getInt("protection.points.repair_base_cost", 1);
+    }
+
+    /**
+     * Growth factor of the upgrade/repair price: {@code cost = ceil(base × growth^n)}, where
+     * {@code n} is the per-block counter of previous purchases of that kind.
+     * <p>
+     * Default 1.1 — every purchase gets slightly more expensive instead of doubling
+     * (one click of repair only gives +1 % integrity, so the price must stay paydirt-free).
+     * Values {@code <= 1} (or a broken/NaN entry) are clamped to 1.0, i.e. a flat price.
+     */
+    public static double getPointsGrowthMultiplier() {
+        double value = getDouble("protection.points.growth_multiplier", 1.1);
+        if (!Double.isFinite(value) || value < 1.0) return 1.0;
+        return value;
     }
 
     /** Initial integrity of the block on first placement (percent, 0..100). */

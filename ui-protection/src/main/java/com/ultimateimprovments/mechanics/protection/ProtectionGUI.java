@@ -140,7 +140,7 @@ public final class ProtectionGUI {
                         "%radius%", String.valueOf(block.getRadius())),
                 msgList("gui.radius_lore", List.of(
                         "<gray>+1 блок за клик.</gray>",
-                        "<gray>Стоимость в очках × 2 каждый раз.</gray>",
+                        "<gray>Стоимость в очках × %growth% каждый раз.</gray>",
                         "",
                         "<white>Стоимость:</white> <gold>%cost%</gold>",
                         "<white>Доступно очков:</white> <gold>%points%</gold>",
@@ -148,6 +148,7 @@ public final class ProtectionGUI {
                         "%cost%", String.valueOf(block.getRadiusUpgradeCost()),
                         "%points%", String.valueOf(block.getPoints()),
                         "%max%", String.valueOf(ProtectionConfig.getMaxRadius()),
+                        "%growth%", String.valueOf(ProtectionConfig.getPointsGrowthMultiplier()),
                         "%radius%", String.valueOf(block.getRadius()))
         ));
 
@@ -157,11 +158,12 @@ public final class ProtectionGUI {
                         "%integrity%", String.format("%.1f%%", block.getIntegrity())),
                 msgList("gui.repair_lore", List.of(
                         "<gray>+1% за клик.</gray>",
-                        "<gray>Стоимость в очках × 2 каждый раз.</gray>",
+                        "<gray>Стоимость в очках × %growth% каждый раз.</gray>",
                         "",
                         "<white>Стоимость:</white> <gold>%cost%</gold>",
                         "<white>Доступно очков:</white> <gold>%points%</gold>"),
                         "%cost%", String.valueOf(block.getRepairCost()),
+                        "%growth%", String.valueOf(ProtectionConfig.getPointsGrowthMultiplier()),
                         "%points%", String.valueOf(block.getPoints()),
                         "%integrity%", String.format("%.1f%%", block.getIntegrity()))
         ));

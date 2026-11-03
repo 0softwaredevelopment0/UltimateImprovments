@@ -19,8 +19,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *   <li>{@code integrity} — current integrity 0..100</li>
  *   <li>{@code points} — points for upgrades</li>
  *   <li>{@code enabled} — whether the block is enabled (protects the area)</li>
- *   <li>{@code radiusUpgradeCount} — how many times the radius was already upgraded (cost *= 2^(n))</li>
- *   <li>{@code repairCount} — how many times integrity was already repaired (cost *= 2^(n))</li>
+ *   <li>{@code radiusUpgradeCount} — how many times the radius was already upgraded (cost = ceil(base × growth^n))</li>
+ *   <li>{@code repairCount} — how many times integrity was already repaired (cost = ceil(base × growth^n))</li>
  *   <li>{@code whitelist} — UUIDs of players with access to the area and GUI</li>
  * </ul>
  */
@@ -114,34 +114,45 @@ public class ProtectionBlock {
 
     /**
      * Current point cost for the next radius upgrade.
-     * Cost = baseCost × 2^(radiusUpgradeCount), clamped.
+     * Cost = ceil(baseCost × growth^(radiusUpgradeCount)), clamped to int.
      * <p>
-     * O(1) via a bit shift into long, with a shift of at most 30 bits,
-     * to avoid overflow even for large baseCost.
+     * {@code growth} is {@link ProtectionConfig#getPointsGrowthMultiplier()} (1.1 by default):
+     * a gentle curve instead of the old «×2 per click», which priced the second upgrade
+     * out of reach after only a couple of purchases.
      */
     public int getRadiusUpgradeCost() {
-        int baseCost = ProtectionConfig.getRadiusUpgradeBaseCost();
-        if (baseCost <= 0) return Integer.MAX_VALUE;
-        int n = Math.min(radiusUpgradeCount, 30);
-        long cost = ((long) baseCost) << n;
-        if (cost < 0 || cost > Integer.MAX_VALUE) return Integer.MAX_VALUE;
-        return (int) cost;
+        return scaledCost(ProtectionConfig.getRadiusUpgradeBaseCost(), radiusUpgradeCount);
     }
 
     /**
      * Current point cost for the next integrity repair.
-     * Cost = baseCost × 2^(repairCount), clamped.
+     * Cost = ceil(baseCost × growth^(repairCount)), clamped to int.
      * <p>
-     * O(1) via a bit shift into long, with a shift of at most 30 bits,
-     * to avoid overflow even for large baseCost.
+     * Repairs are the frequent action (one click = +1 % integrity), so the same
+     * gentle growth as for the radius keeps a long-lived block maintainable
+     * while still charging more for every extra percent.
      */
     public int getRepairCost() {
-        int baseCost = ProtectionConfig.getRepairBaseCost();
+        return scaledCost(ProtectionConfig.getRepairBaseCost(), repairCount);
+    }
+
+    private static int scaledCost(int baseCost, int n) {
+        return scaledCost(baseCost, n, ProtectionConfig.getPointsGrowthMultiplier());
+    }
+
+    /**
+     * Ceil-scaled price: {@code ceil(baseCost × growth^n)}, clamped to {@link Integer#MAX_VALUE}.
+     * <p>
+     * Static and multiplier-explicit so it can be unit-tested without a running server.
+     * {@code growth <= 1} (or NaN from a broken TOML) means a flat price, so a typo
+     * in the config can never produce a negative or infinite cost.
+     */
+    static int scaledCost(int baseCost, int n, double growth) {
         if (baseCost <= 0) return Integer.MAX_VALUE;
-        int n = Math.min(repairCount, 30);
-        long cost = ((long) baseCost) << n;
-        if (cost < 0 || cost > Integer.MAX_VALUE) return Integer.MAX_VALUE;
-        return (int) cost;
+        if (!(growth > 1.0) || n <= 0) return baseCost;
+        double raw = baseCost * Math.pow(growth, n);
+        if (!Double.isFinite(raw) || raw >= Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        return (int) Math.ceil(raw);
     }
 
     /**

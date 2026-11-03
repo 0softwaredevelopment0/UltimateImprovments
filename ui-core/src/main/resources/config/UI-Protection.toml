@@ -46,10 +46,14 @@ loss_per_explosion_block = 0.1
 [protection.points]
 # Points per furnace burn tick of the fuel item.
 fuel_multiplier = 0.1
-# Cost of the first radius upgrade; doubles after every purchase.
+# Cost of the first radius upgrade, in points.
 radius_upgrade_base_cost = 1
-# Cost of the first integrity repair; doubles after every purchase.
+# Cost of the first integrity repair, in points.
 repair_base_cost = 1
+# Price growth per purchase: cost = ceil(base_cost * growth_multiplier^n),
+# where n is how many times that upgrade was already bought for this block.
+# 1.1 = gentle curve (default); 2.0 = the old "doubles every click" behaviour.
+growth_multiplier = 1.1
 
 [protection.crafting]
 # Whether the recipe can be crafted in a regular workbench.

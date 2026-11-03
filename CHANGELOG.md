@@ -3,6 +3,35 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.15] - 2026-11-03
+
+Protection block prices no longer double: a repair or radius upgrade now grows by a
+configurable factor (1.1 by default).
+
+### Changed
+- **Protection block price curve: `cost = ceil(base_cost × growth_multiplier^n)`**
+  instead of `base_cost × 2^n`. `n` is the per-block counter of previous purchases
+  of that kind (`repair_count` / `radius_upgrade_count`, still stored in the DB and
+  still cumulative forever). The doubled price made the second purchase of a 1-point
+  upgrade cost 2, the fifth 16, the tenth 512 — for a repair that only restores
+  **1 % integrity** that was a dead end. With the default 1.1 the first ten repairs
+  cost 1, 2, 2, 2, 2, 2, 2, 2, 3, 3 points.
+- New TOML key `protection.points.growth_multiplier` in
+  `configs/UI-Protection.toml` (default `1.1`, guarded by `ConfigRules` to the
+  range `1..1000`). `2.0` reproduces the old behaviour, values `<= 1` mean a flat
+  price. A missing key in an existing config falls back to 1.1, so no migration
+  is needed.
+- `ProtectionConfig.getPointsGrowthMultiplier()` clamps NaN/negative/`< 1` input to
+  `1.0`, and the cost helper (`ProtectionBlock.scaledCost`) clamps the result to
+  `Integer.MAX_VALUE` instead of overflowing.
+- GUI lore of the radius and repair buttons shows the actual factor
+  (`Стоимость в очках × 1.1 каждый раз`) instead of the hard-coded `× 2`.
+
+### Added
+- `ProtectionBlockCostTest` — pure-math tests for the curve: base price, ceil
+  rounding, the legacy `2.0` factor, flat/degenerate factors, overflow clamping and
+  monotonicity.
+
 ## [1.8.5-beta.7] - 2026-11-03
 
 Elytra wear tuning from the first review of beta.6.
