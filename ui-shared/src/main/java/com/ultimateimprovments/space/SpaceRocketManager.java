@@ -34,15 +34,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * <ol>
  *   <li>requires {@code ui.command.space} — the same node as {@code /ui space}
  *       (OP by default), so the rocket is not a free second entrance to space;</li>
- *   <li>sets {@code allowFlight} for the duration of the ride — otherwise the client
- *       reports "flying" while the server has flight disabled and the player gets
- *       kicked with "Flying is not enabled on this server";</li>
  *   <li>lifts the player with a real LEVITATION effect instead of teleporting every
  *       tick. The old implementation called {@link Player#teleport} each tick, and
  *       repeated teleports mid-air are exactly what made the server kick;</li>
+ *   <li>never touches {@code allowFlight}: levitation is server-side movement, so the
+ *       client never claims to be flying — handing out flight for the ride would only
+ *       add an abuse vector;</li>
  *   <li>tops the effect up when it nears its end (remaining-time check), and on
- *       reaching the arrival height removes every effect, restores the previous
- *       flight flags and performs a single teleport into the space world.</li>
+ *       reaching the arrival height removes every effect and performs a single
+ *       teleport into the space world.</li>
  * </ol>
  * Vanilla levitation lifts roughly {@code amplifier + 1} blocks per second, so the
  * horizontal freeze (SLOWNESS + JUMP_BOOST) only has to stop drifting.
@@ -58,11 +58,10 @@ public class SpaceRocketManager implements Listener {
 
     /** Players currently in the launch sequence (uuid → task). */
     private static final Map<UUID, BukkitTask> launching = new ConcurrentHashMap<>();
-    /** Snapshot of the state that has to be restored after the ride. */
+    /** Per-player launch parameters (kept so the task does not re-read the config). */
     private static final Map<UUID, LaunchState> launchStates = new ConcurrentHashMap<>();
 
-    private record LaunchState(boolean previousAllowFlight, boolean previousFlying,
-                               double targetY, double blocksPerSecond, int amplifier) {}
+    private record LaunchState(double targetY, double blocksPerSecond, int amplifier) {}
 
     // ════════════════════════════════════════
     // ITEM CREATION
@@ -146,13 +145,11 @@ public class SpaceRocketManager implements Listener {
         int travelTicks = (int) Math.ceil(Math.max(0.0, targetY - startY) / blocksPerSecond * 20.0);
         int effectDuration = Math.max(100, travelTicks + 200);
 
-        launchStates.put(uuid, new LaunchState(
-                player.getAllowFlight(), player.isFlying(), targetY, blocksPerSecond, amplifier));
+        launchStates.put(uuid, new LaunchState(targetY, blocksPerSecond, amplifier));
 
-        // Flight must be allowed for the ride: with flight disabled the client's
-        // "flying" state gets the player kicked ("Flying is not enabled").
-        player.setAllowFlight(true);
-        player.setFlying(false);
+        // No allowFlight on purpose: levitation is server-side movement, so the client
+        // never reports "flying" and the vanilla kick cannot trigger. Granting flight
+        // for the ride would only add an abuse vector.
         applyLaunchEffects(player, amplifier, effectDuration);
 
         player.sendMessage(MessageUtil.parse(
@@ -176,9 +173,7 @@ public class SpaceRocketManager implements Listener {
 
                 double currentY = player.getLocation().getY();
 
-                // Arrived at the arrival height: teleport once, then drop the effects
-                // and restore the flight flags (teleport first so the player is not
-                // left in mid-air with flight disabled if the teleport fails).
+                // Arrived at the arrival height: teleport once, then drop the effects.
                 if (currentY >= state.targetY()) {
                     boolean arrived = SpaceManager.teleportToSpace(player);
                     cleanup(player);
@@ -220,7 +215,7 @@ public class SpaceRocketManager implements Listener {
         if (task != null) {
             task.cancel();
         }
-        LaunchState state = launchStates.remove(uuid);
+        launchStates.remove(uuid);
 
         if (!player.isOnline()) return;
 
@@ -228,14 +223,6 @@ public class SpaceRocketManager implements Listener {
         player.removePotionEffect(PotionEffectType.SLOWNESS);
         player.removePotionEffect(PotionEffectType.JUMP_BOOST);
         player.setFallDistance(0.0f);
-
-        if (state != null) {
-            player.setFlying(false);
-            player.setAllowFlight(state.previousAllowFlight());
-            if (state.previousAllowFlight() && state.previousFlying()) {
-                player.setFlying(true);
-            }
-        }
     }
 
     // ===== RECIPE =====
