@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
@@ -271,9 +272,13 @@ public final class CoreHooks {
 
     // ── Exp-bottle split (installed by ui-other) ─────────────────────────
 
-    /** Returns true when the item was an exp bottle and its charge was applied. */
+    /** Contract of the exp-split bottle, implemented by UI-Other. */
     public interface ExpBottleUser {
-        boolean useBottle(Player player, ItemStack item);
+        /** Returns true when the item is an exp-split bottle (tagged with the stored amount). */
+        boolean isBottle(ItemStack item);
+
+        /** Returns true when the bottle was consumed and its charge applied. */
+        boolean useBottle(Player player, ItemStack item, EquipmentSlot hand);
     }
 
     private static volatile ExpBottleUser expBottleUser;
@@ -284,8 +289,14 @@ public final class CoreHooks {
     }
 
     /** No-op returning false when the feature is absent. */
-    public static boolean useExpBottle(Player player, ItemStack item) {
+    public static boolean isExpBottle(ItemStack item) {
         ExpBottleUser u = expBottleUser;
-        return u != null && u.useBottle(player, item);
+        return u != null && item != null && u.isBottle(item);
+    }
+
+    /** No-op returning false when the feature is absent. */
+    public static boolean useExpBottle(Player player, ItemStack item, EquipmentSlot hand) {
+        ExpBottleUser u = expBottleUser;
+        return u != null && item != null && u.useBottle(player, item, hand);
     }
 }

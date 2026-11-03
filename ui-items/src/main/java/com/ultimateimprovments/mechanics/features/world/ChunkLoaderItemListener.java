@@ -1,6 +1,5 @@
 package com.ultimateimprovments.mechanics.features.world;
 
-import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.structure.StructureChunkTracker;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -15,10 +14,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -28,34 +25,15 @@ import java.util.UUID;
 /**
  * Listener for:
  * <ul>
- *   <li>Using the XP bottle (/ui expsplit) — RMB collects the experience</li>
  *   <li>Placing a chunk loader (emerald block with PDC) — creates a StructureMarker</li>
  *   <li>Breaking a chunk loader — removes the StructureMarker</li>
  * </ul>
+ * The exp-split bottle (/ui expsplit) is handled by
+ * {@link com.ultimateimprovments.mechanics.features.items.ExpSplitBottleListener}.
  */
 public class ChunkLoaderItemListener implements Listener {
 
     private static final NamespacedKey CHUNK_LOADER_KEY = new NamespacedKey("ui", "is_chunk_loader");
-
-    // =========================
-    // XP BOTTLE USE
-    // =========================
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onPlayerInteract(PlayerInteractEvent e) {
-        Player player = e.getPlayer();
-        ItemStack item = e.getItem();
-
-        // Only right-click air/block
-        if (e.getAction() != Action.RIGHT_CLICK_AIR
-                && e.getAction() != Action.RIGHT_CLICK_BLOCK) {
-            return;
-        }
-
-        if (CoreHooks.useExpBottle(player, item)) {
-            e.setCancelled(true);
-        }
-    }
 
     // =========================
     // CHUNK LOADER PLACE

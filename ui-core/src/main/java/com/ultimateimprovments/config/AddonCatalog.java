@@ -103,7 +103,7 @@ routeMsg("UI-Items", "crafting", "remote_detonator");
         routeMsg("UI-Other", "changedimmension", "motd",
                 "suicide", "notes", "power", "death_logger",
                 "structures", "space", "wireless_redstone",
-                "structure_integrity", "kits");
+                "structure_integrity", "kits", "expsplit");
     }
 
     private AddonCatalog() {}

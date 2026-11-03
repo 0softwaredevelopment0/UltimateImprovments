@@ -175,7 +175,7 @@ tab-completion for all subcommands.
 /ui vanish <nick>       — vanish a player
 /ui notes               — open personal notes
 /ui vote                — voting system
-/ui expsplit            — split experience
+/ui expsplit            — pack your XP into a Bottle o' Enchanting (right-click unpacks it)
 /ui enchant ...         — enchantment manager
 /ui pdc ...             — PDC (persistent data) manager
 /ui item int list|set|add — item integrity

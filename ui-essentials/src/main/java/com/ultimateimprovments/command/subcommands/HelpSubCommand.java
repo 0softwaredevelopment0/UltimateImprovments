@@ -163,7 +163,7 @@ public class HelpSubCommand implements SubCommand {
         cmd("god", "Toggle god mode").u("[player]", "");
         cmd("suicide", "Commit suicide").u("", "kills your character");
         cmd("forcesuicide", "Force-suicide a player").u("<player>", "");
-        cmd("expsplit", "Split experience").u("<player>", "splits your XP with a player");
+        cmd("expsplit", "Split experience").u("", "packs your XP into an experience bottle");
         cmd("showspeed", "Minecart speed display").u("<on|off>", "");
         cmd("elytraboost", "Elytra boost on jump").u("<on|off>", "default: off");
         cmd("vanish", "Vanish a player").u("[player]", "");

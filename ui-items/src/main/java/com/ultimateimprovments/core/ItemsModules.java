@@ -82,6 +82,7 @@ public final class ItemsModules {
                 pm.registerEvents(new ConcreteBucketCraftListener(), main);
                 pm.registerEvents(new ChunkLoaderCraftListener(), main);
                 pm.registerEvents(new ChunkLoaderItemListener(), main);
+                pm.registerEvents(new ExpSplitBottleListener(), main);
                 ConcreteBucketManager.init(main);
 
                 ConsoleLogger.info("[CraftingModule] Recipes initialized.");

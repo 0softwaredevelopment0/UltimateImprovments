@@ -85,9 +85,9 @@ public class UIOther extends JavaPlugin implements com.ultimateimprovments.core.
         registerAllModules(mm);
         mm.initAll();
         com.ultimateimprovments.module.SimpleModules.initPostCoreSubsystems();
-        // UI-Items (chunk loader) splits exp bottles — the helper stays here in ui-other.
+        // UI-Items (exp-split bottle) unpacks the bottle; the helper stays here in ui-other.
         com.ultimateimprovments.core.hooks.CoreHooks.setExpBottleUser(
-                com.ultimateimprovments.command.subcommands.ExpSplitSubcommand::useBottle);
+                com.ultimateimprovments.command.subcommands.ExpSplitSubcommand.hook());
         initPostModuleSystems();
 
         // Report module statistics to the addon registry (fed to /ui addon status).

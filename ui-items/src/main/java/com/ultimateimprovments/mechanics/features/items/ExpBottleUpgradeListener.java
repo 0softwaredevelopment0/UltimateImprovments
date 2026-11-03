@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.features.items;
 
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
@@ -102,6 +103,9 @@ public class ExpBottleUpgradeListener implements Listener {
 
         if (slot0 == null || slot0.getType() != Material.EXPERIENCE_BOTTLE) return;
         if (slot1 == null || slot1.getType() != Material.EXPERIENCE_BOTTLE) return;
+        // Exp-split bottles (/ui expsplit) store a whole experience bar: never feed
+        // them into the multiplier recipe, the result would silently eat that XP.
+        if (CoreHooks.isExpBottle(slot0) || CoreHooks.isExpBottle(slot1)) return;
 
         int level0 = getMultiplier(slot0);
         int level1 = getMultiplier(slot1);

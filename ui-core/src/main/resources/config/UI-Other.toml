@@ -2715,3 +2715,53 @@ resetglobalcd_done = "<green>✔</green> <white>Global cooldown of kit</white> <
 not_confirmed_reset_global = "<red>Reset was not confirmed — tick the checkbox (console: append </red><white>-c</white><red>).</red>"
 # Default:  <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>
 list_row_global_cooldown = " <gold>[</gold><yellow>global %seconds%s</yellow><gold>]</gold>"
+
+# Exp-split messages (ru).
+# /ui expsplit packs the whole experience bar into a Bottle o' Enchanting;
+# right-click unpacks it again (the bottle is never thrown).
+# Placeholders: %xp%
+[messages.expsplit]
+# No experience on the bar — nothing to pack.
+# Default: <red>❌ You have no experience to split!</red>
+no_xp = "<red>❌ У вас нет опыта для разделения!</red>"
+# Inventory has no free slot for the bottle.
+# Default: <red>❌ Your inventory is full — free a slot!</red>
+inventory_full = "<red>❌ Инвентарь полон! Освободите место.</red>"
+# Display name of the exp-split bottle.
+# Default: <i:false><gold>✦ Experience flask ✦</gold></i:false>
+bottle_name = "<i:false><gold>✦ Колба опыта ✦</gold></i:false>"
+# Lore line with the stored amount.
+# Default: <i:false><gray>Contains: <yellow>%xp%</yellow> XP</gray></i:false>
+bottle_lore_contains = "<i:false><gray>Содержит: <yellow>%xp%</yellow> XP</gray></i:false>"
+# Lore usage hint.
+# Default: <i:false><gray>Right-click — take the experience</gray></i:false>
+bottle_lore_hint = "<i:false><gray>ПКМ — забрать опыт</gray></i:false>"
+# Confirmation after /ui expsplit.
+# Default: <green>✔</green> <white>All experience (<yellow>%xp%</yellow> XP) is packed into the flask!</white>
+split_success = "<green>✔</green> <white>Весь опыт (<yellow>%xp%</yellow> XP) помещён в колбу!</white>"
+# Confirmation after unpacking the flask.
+# Default: <green>✔</green> <white>Received <yellow>%xp%</yellow> XP from the flask!</white>
+collect_success = "<green>✔</green> <white>Получено <yellow>%xp%</yellow> XP из колбы!</white>"
+# The flask carries no stored experience (corrupted tag).
+# Default: <red>❌ This flask holds no experience!</red>
+bottle_empty = "<red>❌ В этой колбе нет опыта!</red>"
+
+# Exp-split messages (en).
+# Placeholders: %xp%
+[messages_en.expsplit]
+# Default: <red>❌ You have no experience to split!</red>
+no_xp = "<red>❌ You have no experience to split!</red>"
+# Default: <red>❌ Your inventory is full — free a slot!</red>
+inventory_full = "<red>❌ Your inventory is full — free a slot!</red>"
+# Default: <i:false><gold>✦ Experience flask ✦</gold></i:false>
+bottle_name = "<i:false><gold>✦ Experience flask ✦</gold></i:false>"
+# Default: <i:false><gray>Contains: <yellow>%xp%</yellow> XP</gray></i:false>
+bottle_lore_contains = "<i:false><gray>Contains: <yellow>%xp%</yellow> XP</gray></i:false>"
+# Default: <i:false><gray>Right-click — take the experience</gray></i:false>
+bottle_lore_hint = "<i:false><gray>Right-click — take the experience</gray></i:false>"
+# Default: <green>✔</green> <white>All experience (<yellow>%xp%</yellow> XP) is packed into the flask!</white>
+split_success = "<green>✔</green> <white>All experience (<yellow>%xp%</yellow> XP) is packed into the flask!</white>"
+# Default: <green>✔</green> <white>Received <yellow>%xp%</yellow> XP from the flask!</white>
+collect_success = "<green>✔</green> <white>Received <yellow>%xp%</yellow> XP from the flask!</white>"
+# Default: <red>❌ This flask holds no experience!</red>
+bottle_empty = "<red>❌ This flask holds no experience!</red>"
