@@ -18,8 +18,7 @@ import java.util.UUID;
  *   <li>{@link AuthRateLimiter} — request rate limiting</li>
  *   <li>{@link AuthTimeoutManager} — authentication timeout</li>
  *   <li>{@link AuthConfig} — config reading</li>
- *   <li>{@link AuthGUI} — GUI opening</li>
- *   <li>{@link AuthGUITracker} — GUI state tracking</li>
+ *   <li>{@link AuthDialogScreen} — the auth dialog (Custom Screen) with the password field</li>
  * </ul>
  */
 public class AuthManager {
@@ -218,9 +217,9 @@ public class AuthManager {
     }
 
     // =========================
-    // SELF-LOGOUT
+    // SELF-LOGOUT (no password — chat passwords are forbidden)
     // =========================
-    public boolean handleLogout(Player player, String password) {
-        return authenticator.handleLogout(player, password);
+    public boolean logout(Player player) {
+        return authenticator.logout(player);
     }
 }

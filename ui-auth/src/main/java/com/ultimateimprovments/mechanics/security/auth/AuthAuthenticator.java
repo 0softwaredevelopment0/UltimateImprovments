@@ -19,12 +19,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Authentication logic: login, registration, password change, logout.
  * <p>
- * All player interaction happens via chat commands:
+ * Player interaction:
  * <ul>
- *   <li>{@code /ui auth register <password>}</li>
- *   <li>{@code /ui auth login <password>}</li>
- *   <li>{@code /ui auth logout <password>}</li>
- *   <li>{@code /ui auth chgpass <old_password> <new_password>}</li>
+ *   <li>login / registration — the auth dialog (Custom Screen) with a password field,
+ *       submitted through {@code AuthDialogHandler}</li>
+ *   <li>{@code /ui auth logout} — self-logout, no password</li>
+ *   <li>{@code /ui auth chgpass <nick> <new_password>} — admin password recovery</li>
  * </ul>
  * <p>
  * Orchestrates the interaction between AuthDatabase, AuthPlayerState,
@@ -122,7 +122,7 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // HANDLE PASSWORD SUBMIT (login/register via /ui auth login <pass> | register <pass>)
+    // HANDLE PASSWORD SUBMIT (login/register — password comes from the auth dialog)
     //
     // ⚠ Argon2id (32MB memory, 2 iterations) runs on an async thread
     // to avoid freezing the server for 1-2 seconds on every login.
@@ -356,7 +356,7 @@ public class AuthAuthenticator {
                     // Timeout: remove the challenge and re-arm the global login timeout
                     // so the player doesn't stay frozen forever (they get kicked).
                     Auth2FA.getInstance().clearPending(uuid);
-                    player.sendMessage(MessageUtil.parse("<red>❌ 2FA timeout! Use /ui auth login again."));
+                    player.sendMessage(MessageUtil.parse("<red>❌ 2FA timeout! Reconnect to get a new login window."));
                     timeoutManager.startLoginTimeout(player);
                     cancel();
                     return;
@@ -376,7 +376,7 @@ public class AuthAuthenticator {
                             cancel();
                         } else if ("timeout".equals(status) || "not_found".equals(status)) {
                             Auth2FA.getInstance().clearPending(uuid);
-                            player.sendMessage(MessageUtil.parse("<red>❌ 2FA error! Use /ui auth login again."));
+                            player.sendMessage(MessageUtil.parse("<red>❌ 2FA error! Reconnect to get a new login window."));
                             cancel();
                         }
                     });
@@ -570,48 +570,22 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // SELF-LOGOUT via /ui auth logout <password>
-    // Argon2 verify on an async thread
+    // SELF-LOGOUT via /ui auth logout (no password — chat passwords are forbidden)
+    // Resets the stored session so the next join asks for the password again.
     // =========================
-    public boolean handleLogout(Player player, String password) {
+    public boolean logout(Player player) {
         UUID uuid = player.getUniqueId();
-
         if (!playerState.isAuthenticated(uuid)) return false;
-        if (!AuthDatabase.isRegistered(uuid)) return false;
-        if (!rateLimiter.checkCooldown(player)) return false;
 
-        // Argon2 verify on an async thread
-        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
-            try {
-                boolean valid = AuthDatabase.checkPassword(uuid, password);
+        playerState.removeAuthenticated(uuid);
+        playerState.removePendingAuth(uuid);
+        AuthDatabase.resetAuth(uuid);
 
-                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                    if (!player.isOnline()) return;
+        String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
+                "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
+        player.kick(MessageUtil.parse(kickLogout));
 
-                    if (!valid) {
-                        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                                "auth.messages.wrong_password",
-                                "<red>❌ Incorrect password! Try again.</red>")));
-                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-                        return;
-                    }
-
-                    playerState.removeAuthenticated(uuid);
-                    playerState.removePendingAuth(uuid);
-                    AuthDatabase.resetAuth(uuid);
-
-                    String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
-                            "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
-                    player.kick(MessageUtil.parse(kickLogout));
-
-                    ConsoleLogger.info("[Auth] Player " + player.getName() + " logged out manually.");
-                });
-            } catch (Exception e) {
-                Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async logout error", e);
-            }
-        });
-
-        // Return true immediately — the real check is asynchronous
+        ConsoleLogger.info("[Auth] Player " + player.getName() + " logged out manually.");
         return true;
     }
 

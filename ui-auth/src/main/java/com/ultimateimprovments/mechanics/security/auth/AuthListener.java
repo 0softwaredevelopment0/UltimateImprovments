@@ -14,11 +14,11 @@ import org.bukkit.event.player.*;
 import java.util.UUID;
 
 /**
- * Event listener for the authentication system (chat-based).
+ * Event listener for the authentication system.
  * <p>
- * Blocks actions of unauthenticated players. GUI handlers removed —
- * all interaction now happens through chat commands:
- * {@code /ui auth login/register/logout/chgpass/2fa}.
+ * Blocks actions of unauthenticated players. Login and registration happen
+ * exclusively through the auth dialog (Custom Screen) with a password field;
+ * before login only {@code /ui auth 2fa} and {@code /ui auth logout} are allowed.
  */
 public class AuthListener implements Listener {
 
@@ -163,7 +163,8 @@ public class AuthListener implements Listener {
 
     // =========================
     // BLOCK CHAT / COMMANDS if not authed
-    // Allow only /ui auth (login/register/logout/chgpass/2fa) before login.
+    // Before login only /ui auth 2fa and /ui auth logout are allowed: the password
+    // itself is entered in the auth dialog (Custom Screen), never in chat.
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
@@ -172,18 +173,15 @@ public class AuthListener implements Listener {
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
 
-        // Allow /ui auth login, register, chgpass, logout and 2fa
-        if (msg.startsWith("/ui auth login") || msg.startsWith("/ui auth register")
-                || msg.startsWith("/ui auth logout")
-                || msg.startsWith("/ui auth chgpass")
-                || msg.startsWith("/ui auth 2fa")) {
+        // Only /ui auth 2fa and /ui auth logout are useful before login
+        if (msg.startsWith("/ui auth 2fa") || msg.startsWith("/ui auth logout")) {
             return;
         }
 
         event.setCancelled(true);
         player.sendMessage("");
         player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ <white>Пожалуйста, авторизуйтесь!"));
-        player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<yellow>/ui auth login <password> <gray>| <yellow>/ui auth register <password>"));
+        player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>Введите пароль в окне авторизации, которое открывается при входе.</gray>"));
         player.sendMessage("");
     }
 

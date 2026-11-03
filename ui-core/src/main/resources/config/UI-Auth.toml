@@ -81,7 +81,7 @@ enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name
 # Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
 enter_new_password_hint = "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
 # Default: <yellow>✦</yellow> <gray>Enter your password to log out.</gray>
-enter_logout_password_hint = "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>"
+enter_logout_password_hint = "<yellow>✦</yellow> <gray>/ui auth logout — no password required.</gray>"
 # Default: <red>❌ Enter your password in the item name field!</red>
 enter_password_field = "<red>❌ Enter your password in the item name field!</red>"
 # Default: <red>❌ Enter your current password in the item name field!</red>
@@ -118,8 +118,8 @@ force_login_message = "<green>✔</green> <white>You have been force authorized 
 # Limit.
 # Default: <red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>
 rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
-# Default: <gray>Try again: </gray><gold>/ui auth login <password></gold>
-try_again_hint = "<gray>Try again: </gray><gold>/ui auth login <password></gold>"
+# Default: <gray>Enter your password in the login window that opens on join.</gray>
+try_again_hint = "<gray>Enter your password in the login window that opens on join.</gray>"
 # Default: <gold>✦</gold> <white>You are already logged in!</white>
 already_authenticated = "<gold>✦</gold> <white>You are already logged in!</white>"
 # Title text (MiniMessage).
@@ -128,8 +128,8 @@ login_title = "<gold>✦</gold> <white>Please log in to continue.</white>"
 # Title text (MiniMessage).
 # Default: <gold>✦</gold> <white>Choose a password to register.</white>
 register_title = "<gold>✦</gold> <white>Choose a password to register.</white>"
-# Default: <gray>Use: </gray><gold>/ui auth logout <password></gold>
-logout_usage = "<gray>Use: </gray><gold>/ui auth logout <password></gold>"
+# Default: <gray>Use: </gray><gold>/ui auth logout</gold>
+logout_usage = "<gray>Use: </gray><gold>/ui auth logout</gold>"
 
 # protection section.
 # Placeholders: %radius%, %value%, %points%, %r%, %cost%, %name%, %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
@@ -191,7 +191,7 @@ enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name
 # Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
 enter_new_password_hint = "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
 # Default: <yellow>✦</yellow> <gray>Enter your password to log out.</gray>
-enter_logout_password_hint = "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>"
+enter_logout_password_hint = "<yellow>✦</yellow> <gray>/ui auth logout — no password required.</gray>"
 # Default: <red>❌ Enter your password in the item name field!</red>
 enter_password_field = "<red>❌ Enter your password in the item name field!</red>"
 # Default: <red>❌ Enter your current password in the item name field!</red>
@@ -235,8 +235,8 @@ rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds
 [messages_en.auth.admin]
 # Default: <red>❌ Authorization system is disabled in config!</red>
 system_disabled = "<red>❌ Authorization system is disabled in config!</red>"
-# Default: <red>❌ Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>
-usage = "<red>❌ Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"
+# Default: <red>❌ Usage: </red><white>/ui auth 2fa|logout|forcelogin|resetauth|chgpass|delsession</white>
+usage = "<red>❌ Usage: </red><white>/ui auth 2fa|logout|forcelogin|resetauth|chgpass|delsession</white>"
 # Command.
 # Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
 unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
