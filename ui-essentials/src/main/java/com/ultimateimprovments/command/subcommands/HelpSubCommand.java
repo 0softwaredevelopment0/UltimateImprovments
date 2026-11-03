@@ -92,11 +92,12 @@ public class HelpSubCommand implements SubCommand {
                 .u("disable <module>", "disable a module");
         cmd("auth", "Auth management")
                 .u("2fa [setup|disable]", "GitHub 2FA status and setup")
-                .u("logout", "log out and kick yourself (no password needed)")
+                .u("logout", "confirm in a dialog, then the session is reset and you are kicked")
+                .u("changepassword", "change your password in a dialog (old + new)")
                 .u("forcelogin <player>", "log the player in server-side")
                 .u("resetauth <player>", "delete the player's registration")
                 .u("delsession <player>", "reset the player's stored session")
-                .u("chgpass <player> <new>", "set a player's password (admin recovery)");
+                .u("chgpass [player] [new]", "password reset: dialog for players, arguments for the console");
         cmd("chgdim", "Teleport between dimensions (menu)")
                 .u("", "opens the dimension picker menu");
         cmd("dont_run_this_command", "Get the impossible achievement (don't run it!)")

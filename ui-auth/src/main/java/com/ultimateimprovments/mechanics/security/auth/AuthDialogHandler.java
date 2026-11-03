@@ -1,5 +1,7 @@
 package com.ultimateimprovments.mechanics.security.auth;
 
+import com.ultimateimprovments.command.CommandErrors;
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -12,6 +14,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+
+import java.util.UUID;
 
 /**
  * AuthDialogHandler — listens for {@link PlayerCustomClickEvent} and handles
@@ -35,6 +39,59 @@ public class AuthDialogHandler implements Listener {
         // Get the player through PlayerGameConnection
         Player player = getPlayerFromConnection(event);
         if (player == null) return;
+        if (identifier == null) return;
+
+        // ─── Logout confirmation ───
+        if (identifier.equals(AuthDialogs.LOGOUT_CONFIRM)) {
+            AuthManager manager = AuthManager.getInstance();
+            if (manager != null) manager.logout(player);
+            return;
+        }
+        if (identifier.equals(AuthDialogs.LOGOUT_CANCEL)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
+                    "<gray>Отменено.</gray>")));
+            return;
+        }
+
+        // ─── Self password change (old + new password) ───
+        if (identifier.equals(AuthDialogs.CHANGEPASS_SUBMIT)) {
+            DialogResponseView response = event.getDialogResponseView();
+            if (response == null) return;
+            String oldPassword = response.getText(AuthDialogs.KEY_OLD);
+            String newPassword = response.getText(AuthDialogs.KEY_NEW);
+            if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
+                player.sendMessage(MessageUtil.parse("<red>❌ Текущий и новый пароль обязательны.</red>"));
+                return;
+            }
+            AuthAuthenticator authenticator = AuthAuthenticator.getInstance();
+            if (authenticator != null) {
+                authenticator.handleSelfChangePassword(player, oldPassword, newPassword);
+            }
+            return;
+        }
+        if (identifier.equals(AuthDialogs.CHANGEPASS_CANCEL)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
+                    "<gray>Отменено.</gray>")));
+            return;
+        }
+
+        // ─── Admin password reset (nickname + new password) ───
+        if (identifier.equals(AuthDialogs.CHGPASS_SUBMIT)) {
+            if (!player.hasPermission("ui.command.auth.chgpass")) {
+                CommandErrors.noPermission(player, "ui.command.auth.chgpass");
+                return;
+            }
+            DialogResponseView response = event.getDialogResponseView();
+            if (response == null) return;
+            changePasswordFor(player, response.getText(AuthDialogs.KEY_TARGET),
+                    response.getText(AuthDialogs.KEY_NEW));
+            return;
+        }
+        if (identifier.equals(AuthDialogs.CHGPASS_CANCEL)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
+                    "<gray>Отменено.</gray>")));
+            return;
+        }
 
         // ─── Cancel (Exit Server) ───
         if (identifier.equals(AUTH_CANCEL_KEY)) {
@@ -76,6 +133,35 @@ public class AuthDialogHandler implements Listener {
         if (manager != null) {
             manager.handlePasswordSubmit(player, password);
         }
+    }
+
+    /**
+     * Applies the admin password reset submitted through the {@code auth_chgpass_submit} dialog.
+     */
+    @SuppressWarnings("deprecation")
+    private static void changePasswordFor(Player actor, String targetName, String newPassword) {
+        if (targetName == null || targetName.isBlank() || newPassword == null || newPassword.isEmpty()) {
+            actor.sendMessage(MessageUtil.parse("<red>❌ Ник игрока и новый пароль обязательны.</red>"));
+            return;
+        }
+        UUID targetUuid = org.bukkit.Bukkit.getOfflinePlayer(targetName.trim()).getUniqueId();
+        if (!AuthDatabase.isRegistered(targetUuid)) {
+            actor.sendMessage(MessageUtil.parse("<red>❌ Игрок </red><yellow>" + targetName.trim()
+                    + "</yellow><red> не зарегистрирован!</red>"));
+            return;
+        }
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            actor.sendMessage(MessageUtil.parse("<red>❌ Система авторизации не инициализирована!</red>"));
+            return;
+        }
+        boolean changed = manager.changePassword(targetUuid, newPassword);
+        actor.sendMessage(changed
+                ? MessageUtil.parse("<green>✔</green> <white>Пароль игрока </white><yellow>" + targetName.trim()
+                        + "</yellow><white> изменён.</white>")
+                : MessageUtil.parse("<dark_red>❌</dark_red> <red>Не удалось сменить пароль (проверьте длину).</red>"));
+        ConsoleLogger.info("[Auth] Password reset by " + actor.getName() + " for " + targetName.trim()
+                + " (" + targetUuid + "), success=" + changed);
     }
 
     /**

@@ -405,6 +405,8 @@ public class AuthAuthenticator {
     // WRONG PASSWORD
     // =========================
     private void handleWrongPassword(Player player, UUID uuid) {
+        // Wrong password → lock the account AND the source IP for auth.request_cooldown_seconds
+        rateLimiter.applyPenalty(player);
         int attempts = playerState.incrementWrongAttempts(uuid);
         int maxWrong = AuthConfig.getMaxWrongAttempts();
         int remaining = maxWrong - attempts;
@@ -542,7 +544,7 @@ public class AuthAuthenticator {
             return;
         }
         if (oldPassword == null || oldPassword.isEmpty()) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui auth chgpass <old> <new></white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ Введите текущий пароль в окне смены пароля.</red>"));
             return;
         }
 
@@ -554,6 +556,7 @@ public class AuthAuthenticator {
                 Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                     if (!player.isOnline()) return;
                     if (!validOld) {
+                        rateLimiter.applyPenalty(player);
                         player.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "auth.messages.wrong_password",
                                 "<red>❌ Current password is incorrect!</red>")));

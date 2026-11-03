@@ -135,21 +135,28 @@ public class AuthManager {
     // =========================
     public void removePlayer(UUID uuid) {
         playerState.removePlayer(uuid);
-        rateLimiter.removePlayer(uuid);
+        // Deliberately NOT rateLimiter.removePlayer(uuid): the 30-second password lock
+        // must survive a reconnect, otherwise a brute-forcer resets it by rejoining.
         timeoutManager.removePlayer(uuid);
     }
 
     // =========================
     // FORCE LOGIN (admin command)
     // =========================
-    public boolean forceLogin(UUID uuid) {
+    public boolean forceLogin(UUID uuid, String targetName, String actorName) {
         if (!AuthDatabase.isRegistered(uuid)) return false;
+
+        org.bukkit.entity.Player player = org.bukkit.Bukkit.getPlayer(uuid);
+        boolean online = player != null && player.isOnline();
+
+        // Privileged authentication bypass — always leave a trace in the console.
+        ConsoleLogger.warn("[Auth] forceLogin: " + actorName + " force-logged-in " + targetName
+                + " (" + uuid + ", online=" + online + ")");
 
         playerState.setAuthenticated(uuid);
         AuthDatabase.updateLastLogin(uuid);
 
-        org.bukkit.entity.Player player = org.bukkit.Bukkit.getPlayer(uuid);
-        if (player != null && player.isOnline()) {
+        if (online) {
             player.closeInventory();
             authenticator.restorePlayerState(player);
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.force_login_message", "<green>✔</green> <white>You have been force authorized by an administrator!</white>")));

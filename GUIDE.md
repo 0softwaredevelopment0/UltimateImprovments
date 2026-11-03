@@ -371,12 +371,13 @@ End-crystal turrets are a ranged defense system:
 ## 🛡 Security & Administration
 
 ### Auth
-- Registration/login via a custom dialog (Minecraft Custom Screen) with a password field — passwords are **never** accepted through chat or commands.
-- **Argon2id** password hashing.
+- Registration/login via a custom dialog (Minecraft Custom Screen) with a password field — passwords are **never** accepted through chat or commands; `/ui auth login` and `/ui auth register` no longer exist.
+- **Argon2id** password hashing, minimum password length 9 characters by default.
 - **GitHub 2FA** (OAuth) — clickable link in chat.
-- IP check, account limit per IP, sessions, login timeout, max attempts, force login, registration reset.
-- Player commands: `/ui auth logout` (no password) and `/ui auth 2fa setup|disable`.
-- Admin recovery: `/ui auth forcelogin <nick>`, `/ui auth resetauth <nick>`, `/ui auth delsession <nick>`, `/ui auth chgpass <nick> <new_password>`.
+- IP check, account limit per IP, sessions, login timeout, max wrong attempts, force login, registration reset.
+- Wrong password locks the account **and** its IP for 30 seconds (`auth.request_cooldown_seconds`), so guessing cannot be continued by reconnecting.
+- Player dialogs: `/ui auth logout` (confirmation, then the session is reset and the player is kicked), `/ui auth changepassword` (old + new password), `/ui auth 2fa setup|disable`.
+- Admin recovery: `/ui auth forcelogin <nick>` (console-audited), `/ui auth resetauth <nick>`, `/ui auth delsession <nick>`, `/ui auth chgpass` — players get the dialog (nickname + new password), the console uses `/ui auth chgpass <nick> <new_password>`.
 
 ### Punishments
 `/ui punish <nick> <ban|mute|kick|warn> <reason> [-time:30s|5m|2h|7d] [-permanent] [-ip] [-hw]`

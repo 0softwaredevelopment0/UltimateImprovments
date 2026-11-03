@@ -7,8 +7,8 @@
 # Default: true
 enabled = true
 # Minimum value.
-# Default: 1
-min_password_length = 1
+# Default: 9
+min_password_length = 9
 # Maximum value.
 # Default: 32
 max_password_length = 32
@@ -21,9 +21,9 @@ login_timeout_seconds = 60
 # Maximum value.
 # Default: 5
 max_wrong_attempts = 5
-# Cooldown.
-# Default: 5
-request_cooldown_seconds = 5
+# Cooldown after a wrong password, for the account AND its IP.
+# Default: 30
+request_cooldown_seconds = 30
 # Maximum value.
 # Default: 3
 max_accounts_per_ip = 3

@@ -32,6 +32,9 @@ public final class Permissions {
     // ═══════════ Root ═══════════
     public static final String UI = "ui";
     public static final String UI_ALL = "ui.*";
+    // NOTE: this is a Bukkit wildcard node ("ui.command.*"), not a literal
+    // "ui.command.all". Bukkit expands it over every registered "ui.command." node,
+    // so granting it really does hand out all /ui commands — no children map needed.
     public static final String UI_COMMAND_ALL = "ui.command.*";
 
     // ═══════════ Commands: utilities ═══════════

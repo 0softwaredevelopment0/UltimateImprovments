@@ -45,7 +45,7 @@ public class AuthConfig {
     }
 
     public static int getMinPasswordLength() {
-        return getInt("auth.min_password_length", 1);
+        return getInt("auth.min_password_length", 9);
     }
 
     public static int getMaxPasswordLength() {
@@ -61,7 +61,7 @@ public class AuthConfig {
     }
 
     public static int getRequestCooldownSeconds() {
-        return getInt("auth.request_cooldown_seconds", 5);
+        return getInt("auth.request_cooldown_seconds", 30);
     }
 
     public static long getRequestCooldownMs() {

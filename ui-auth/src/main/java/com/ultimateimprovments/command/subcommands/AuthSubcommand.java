@@ -3,7 +3,9 @@ package com.ultimateimprovments.command.subcommands;
 import com.ultimateimprovments.command.CommandErrors;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mechanics.security.auth.AuthConfig;
 import com.ultimateimprovments.mechanics.security.auth.AuthDatabase;
+import com.ultimateimprovments.mechanics.security.auth.AuthDialogs;
 import com.ultimateimprovments.mechanics.security.auth.AuthManager;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -27,8 +29,6 @@ public final class AuthSubcommand {
         }
 
         return switch (args[1].toLowerCase()) {
-            // Chat login/register was removed: passwords are dialog-only now.
-            case "login", "register" -> handlePasswordInChatDisabled(sender);
             case "2fa" -> handle2FA(sender, args);
             case "forcelogin" -> handleForceLogin(sender, args);
             case "resetauth" -> handleResetAuth(sender, args);
@@ -133,17 +133,6 @@ public final class AuthSubcommand {
         return true;
     }
 
-    /**
-     * Chat-based login/register is gone: a password typed into chat ends up in the
-     * server console, chat-plugin logs and the client's command history. The only
-     * way to authenticate is the auth dialog (Custom Screen) that opens on join.
-     */
-    private static boolean handlePasswordInChatDisabled(CommandSender sender) {
-        sender.sendMessage(MessageUtil.parse("<red>❌ Chat login is disabled.</red>"));
-        sender.sendMessage(MessageUtil.parse("<gray>Enter your password in the login window that opens when you join.</gray>"));
-        return true;
-    }
-
     private static boolean handleForceLogin(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.auth.forcelogin")) {
             CommandErrors.noPermission(sender, "ui.command.auth.forcelogin");
@@ -155,7 +144,7 @@ public final class AuthSubcommand {
         if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
-        sender.sendMessage(mgr.forceLogin(uuid)
+        sender.sendMessage(mgr.forceLogin(uuid, name, sender.getName())
                 ? MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + name + "</yellow><white> force logged in.</white>")
                 : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to force login player </red><yellow>" + name + "</yellow>"));
         return true;
@@ -196,10 +185,9 @@ public final class AuthSubcommand {
     }
 
     /**
-     * Chat-based logout: /ui auth logout — no password required.
-     * The player is already authenticated for this session, and passwords never travel
-     * through chat. Resets the stored session and kicks the player, so the next join
-     * requires the password again.
+     * Chat-based logout: /ui auth logout — opens the confirmation dialog.
+     * Confirming resets the stored session and kicks the player; no password is
+     * involved, so nothing secret can leak through chat.
      */
     private static boolean handleLogout(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -215,49 +203,63 @@ public final class AuthSubcommand {
             player.sendMessage(MessageUtil.parse("<red>❌ You are not logged in!</red>"));
             return true;
         }
-        if (args.length > 2) {
-            player.sendMessage(MessageUtil.parse(
-                    "<yellow>⚠ Never type your password in chat — /ui auth logout takes no arguments.</yellow>"));
-        }
-        mgr.logout(player);
+        AuthDialogs.openLogoutConfirm(player);
         return true;
     }
 
     /**
-     * Self-service password change is dialog-only from now on: typing the old and the
-     * new password into chat leaks both. The subcommand stays registered so players get
-     * a clear hint instead of "unknown subcommand"; admin recovery still works via
-     * /ui auth chgpass <nick> <new_password>.
+     * Self-service password change: opens the dialog with the old and the new
+     * password fields. Nothing is accepted through chat — command arguments would
+     * end up in the console, chat-plugin logs and the client's command history.
      */
     private static boolean handleSelfChangePassword(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             CommandErrors.playerOnly(sender);
             return true;
         }
-        player.sendMessage(MessageUtil.parse("<red>❌ Password change through chat is disabled.</red>"));
-        player.sendMessage(MessageUtil.parse(
-                "<gray>Passwords must not be typed into chat — the change-password prompt will live in the auth dialog.</gray>"));
-        player.sendMessage(MessageUtil.parse(
-                "<gray>For now, ask an administrator: <yellow>/ui auth chgpass <nick> <new_password></yellow>."));
+        AuthManager mgr = AuthManager.getInstance();
+        if (mgr == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authentication system is not initialized!</red>"));
+            return true;
+        }
+        if (args.length > 2) {
+            player.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠ Не пишите пароли в чат — откройте окно смены пароля.</yellow>"));
+        }
+        AuthDialogs.openChangePassword(player);
         return true;
     }
 
+    /**
+     * Admin password reset. A player with {@code ui.command.auth.chgpass} gets the
+     * dialog (nickname + new password); the console keeps plain arguments, since
+     * console input is not broadcast to chat logs.
+     */
     private static boolean handleChgPass(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.auth.chgpass")) {
             CommandErrors.noPermission(sender, "ui.command.auth.chgpass");
             return true;
         }
+        if (sender instanceof Player player) {
+            if (args.length > 2) {
+                player.sendMessage(MessageUtil.parse(
+                        "<yellow>⚠ Не пишите пароли в чат — откройте окно смены пароля.</yellow>"));
+            }
+            AuthDialogs.openAdminChangePassword(player);
+            return true;
+        }
         if (args.length < 4) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth chgpass </white><gray><nick> <new_password></gray>")); return true; }
         String name = args[2], newPass = args[3];
-        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
-        int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
+        int minLen = AuthConfig.getMinPasswordLength();
+        int maxLen = AuthConfig.getMaxPasswordLength();
         if (newPass.length() < minLen) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Password must be at least " + minLen + " characters!</red>")); return true; }
         if (newPass.length() > maxLen) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Password must not exceed " + maxLen + " characters!</red>")); return true; }
         UUID uuid = getOfflineUuid(name);
         if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
-        sender.sendMessage(mgr.changePassword(uuid, newPass)
+        boolean changed = mgr.changePassword(uuid, newPass);
+        sender.sendMessage(changed
                 ? MessageUtil.parse("<green>✔</green> <white>Password for player </white><yellow>" + name + "</yellow><white> changed.</white>")
                 : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to change password!</red>"));
         return true;
