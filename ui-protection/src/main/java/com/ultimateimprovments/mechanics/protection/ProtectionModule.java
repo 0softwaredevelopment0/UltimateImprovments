@@ -1,12 +1,15 @@
 package com.ultimateimprovments.mechanics.protection;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.UIProtection;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.mechanics.protection.ProtectionGUI.GUIListener;
 import com.ultimateimprovments.module.PluginModule;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -22,8 +25,32 @@ import java.util.UUID;
  * <p>
  * Module path: {@code mechanics/protection}.
  * Essential: false (can be disabled).
+ * <p>
+ * Honours the {@code protection.enabled} master switch: when it is false the module
+ * initializes (no startup error) but registers nothing at all.
  */
 public class ProtectionModule extends PluginModule {
+
+    /** The CoreHooks bridge installed for AoE / VeinMiner / TreeCapitator / piston guards. */
+    private static final class ProtectionHook implements CoreHooks.BlockProtectionApi {
+        private final ProtectionManager manager;
+        ProtectionHook(ProtectionManager manager) { this.manager = manager; }
+
+        @Override
+        public boolean isProtected(Location loc, Player actor) {
+            return manager.isProtectedFor(loc, actor);
+        }
+
+        @Override
+        public boolean isProtectionBlock(Location loc) {
+            return manager.isProtectionBlockAt(loc);
+        }
+
+        @Override
+        public void chargeAttempt(Location loc, int blocks) {
+            manager.chargeZoneAttempt(loc, blocks);
+        }
+    }
 
     public ProtectionModule() {
         super("ProtectionBlock", "mechanics/protection", false);
@@ -34,23 +61,44 @@ public class ProtectionModule extends PluginModule {
         Main main = (Main) plugin;
         ConsoleLogger.info("[ProtectionBlock] Module initializing...");
 
+        // Master switch (protection.enabled). Before, this getter had no callers:
+        // the config option was silently ignored and the system always ran.
+        if (!ProtectionConfig.isEnabled()) {
+            ConsoleLogger.info("[ProtectionBlock] protection.enabled = false — module skipped.");
+            return;
+        }
+
+        JavaPlugin holder = holder(plugin);
+
         ProtectionManager manager = ProtectionManager.getInstance();
         manager.init();
 
-        ProtectionItem.init(main);
-        new ProtectionListener(manager);
-        new GUIListener(manager);
+        ProtectionItem.init(main, holder);
+        new ProtectionListener(manager, holder);
+        new GUIListener(manager, holder);
 
         // Handler for player-name chat input for the whitelist menu
-        Bukkit.getPluginManager().registerEvents(new ChatInputListener(), main);
+        Bukkit.getPluginManager().registerEvents(new ChatInputListener(), holder);
+
+        // Cross-addon contract: area-breakers and piston guards query the zones
+        // through CoreHooks instead of importing this addon.
+        CoreHooks.setBlockProtection(new ProtectionHook(manager));
 
         ConsoleLogger.info("[ProtectionBlock] ✔ Initialized.");
     }
 
     @Override
     protected void onDisable(JavaPlugin plugin) {
+        CoreHooks.setBlockProtection(null);
+        ProtectionGUI.clearAwaiting();
         ProtectionManager.getInstance().shutdown();
         ConsoleLogger.info("[ProtectionBlock] Disabled.");
+    }
+
+    /** The addon plugin instance (so /ui reload can unregister our listeners). */
+    private static JavaPlugin holder(JavaPlugin fallback) {
+        UIProtection addon = UIProtection.getInstance();
+        return addon != null ? addon : fallback;
     }
 
     // =========================
@@ -64,7 +112,7 @@ public class ProtectionModule extends PluginModule {
         public void onChat(AsyncChatEvent e) {
             Player player = e.getPlayer();
             UUID pid = player.getUniqueId();
-            // consume now returns the block (previously split into consume+getAwaitingBlock,
+            // consume returns the block (previously split into consume+getAwaitingBlock,
             // which made getAwaitingBlock always return null and broke the feature).
             ProtectionBlock block = ProtectionGUI.consumeAwaitingPlayerName(player);
             if (block == null) return;
@@ -74,8 +122,9 @@ public class ProtectionModule extends PluginModule {
             String msg = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
                     .plainText().serialize(e.message()).trim();
             if (msg.equalsIgnoreCase("cancel")) {
-                player.sendMessage(MessageUtil.parse(
-                        "<yellow>Добавление игрока отменено.</yellow>"));
+                player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
+                        "whitelist_cancelled",
+                        "<yellow>Добавление игрока отменено.</yellow>")));
                 ProtectionGUI.openWhitelistMenu(player, block);
                 return;
             }
@@ -85,16 +134,19 @@ public class ProtectionModule extends PluginModule {
             org.bukkit.OfflinePlayer target = Bukkit.getPlayerExact(msg);
             if (target == null) target = Bukkit.getOfflinePlayerIfCached(msg);
             if (target == null || (target.getName() == null && !target.hasPlayedBefore())) {
-                player.sendMessage(MessageUtil.parse(
-                        "<red>Игрок не найден: </red><white>" + msg + "</white>"
-                                + "<gray> (должен быть онлайн или заходить на сервер раньше)</gray>"));
+                player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
+                        "whitelist_player_not_found",
+                        "<red>Игрок не найден: </red><white>%name%</white>"
+                                + "<gray> (должен быть онлайн или заходить на сервер раньше)</gray>")
+                        .replace("%name%", msg)));
                 ProtectionGUI.openWhitelistMenu(player, block);
                 return;
             }
             UUID targetId = target.getUniqueId();
             if (block.isWhitelisted(targetId)) {
-                player.sendMessage(MessageUtil.parse(
-                        "<yellow>Игрок уже в whitelist.</yellow>"));
+                player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
+                        "whitelist_already",
+                        "<yellow>Игрок уже в whitelist.</yellow>")));
                 ProtectionGUI.openWhitelistMenu(player, block);
                 return;
             }

@@ -3,6 +3,83 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.5] - 2026-11-03
+
+Protection blocks became actually protective: the zone can no longer be broken
+by explosions, pistons, liquids, fire or area enchants, right-click is only
+blocked for containers, and every message of the feature now lives in the
+config (RU + EN) instead of hardcoded Russian strings.
+
+### Fixed
+- **TNT could destroy the protection block while the region survived.**
+  `findProtectingBlock()` skips the block's own position (dx=dy=dz=0), so the
+  protection block was never removed from `BlockExplodeEvent` /
+  `EntityExplodeEvent#blockList` and the physical lodestone was destroyed while
+  the DB row, the hologram and the whole region stayed alive until the next
+  chunk load. The block is now blast-proof: the blast is removed from the list
+  and absorbed as integrity damage, so block, region and hologram always agree.
+- **Pistons ignored the zones.** No `BlockPistonExtendEvent` /
+  `BlockPistonRetractEvent` handler existed, so blocks could be pushed into a
+  protected area, pulled out of it, or the protection block itself could be
+  pushed away (the region stayed at the old coordinates). Moves that cross a
+  zone border, and moves of the protection block, are now cancelled and charge
+  integrity; moves that stay inside the same zone are still allowed.
+- **AoE / VeinMiner / TreeCapitator mined through protected bases.** Those
+  listeners run at `LOW` with `ignoreCancelled = true` and break neighbours via
+  `breakNaturally()`, which fires no `BlockBreakEvent` — the protection listener
+  at `HIGHEST` cancelled only the origin block, after the sweep was done. The
+  break check moved to `LOWEST` and the three enchant listeners now ask the new
+  `CoreHooks.BlockProtectionApi` before every block: each refused block costs one
+  integrity hit, and nothing is broken while the block holds.
+- **The whitelist was silently wiped from the database.** `saveBlock()` used
+  `INSERT OR REPLACE`, and with `PRAGMA foreign_keys = ON` the REPLACE deleted
+  the old row and cascaded away every `protection_whitelist` row. Any integrity
+  or point change (i.e. any damage) therefore emptied the whitelist in the DB;
+  it only survived in memory until the next restart. Now an UPSERT
+  (`ON CONFLICT(id) DO UPDATE`) keeps the row id stable.
+- **Holograms force-loaded chunks.** When a chunk unloaded, the periodic task
+  saw a dead display and respawned it through `World#spawn()`, which loads the
+  chunk synchronously — so every protection block kept its chunk loaded and the
+  hologram flickered every second. Spawning now requires a loaded chunk (the
+  `ChunkLoadEvent` respawns it on return), and the rendered text is cached so it
+  is no longer re-deserialized every second for every block.
+- **Right-click was cancelled on every block inside a zone**, which made
+  protected areas unplayable (doors, buttons, levers, crafting tables, beds).
+  Only container blocks are blocked now; the list is configurable via
+  `protection.interact.blocked_materials` (empty = built-in container set).
+- **`/ui reload` duplicated every listener.** Listeners were registered against
+  the shared UI-Core plugin instance, while `UIProtection.softReload()`
+  unregisters only handlers of the addon plugin — each reload added another copy
+  on top of the old ones. Registration now uses the addon instance.
+- **A failed GUI shift-click could delete items.** Shift-clicking from the
+  player's inventory into the protection menu was not cancelled, so items could
+  be inserted into the GUI and vanish when it closed; all top-inventory clicks
+  and shift/number-key swaps are cancelled now.
+- **The protection item was destroyed by removing your own block** (vanilla
+  dropped a plain lodestone). The block now gives the placeable item back.
+- **Chat-input state leaked.** A player who disconnected while typing a
+  whitelist nickname kept a `ProtectionBlock` reference forever; it is cleared on
+  quit and on module shutdown. The owner can no longer be removed from the
+  whitelist (which would have locked the block permanently).
+- Empty chunk-index lists are dropped from `byChunkKey`, and loading all blocks
+  no longer runs one whitelist query per block (single grouped query).
+
+### Changed
+- **The whole message set of the feature moved into the config**: placement
+  broadcast (`placed_message`, now multi-line), GUI item names and lore, the
+  whitelist/add-player flow, `void_protection.message`, and the new
+  `messages.protection.command.*` group for `/ui protection`. `UI-Protection.toml`
+  gained a full `messages_en.protection.*` mirror (26 keys), so an English server
+  no longer shows Russian strings baked into the code.
+- The bogus `[messages.protection.admin]` section (a copy of the auth messages:
+  `forcelogin_*`, `chgpass_*`, `kick_*`) was removed from `UI-Protection.toml`.
+- `protection.enabled` is now honoured: the master switch had no caller, so the
+  system always ran. Config validation rules were added for every `protection.*`
+  key (radius bounds, integrity 0..100, positive point costs, material name,
+  container list, piston switch).
+- `/ui protection reload` shuts the manager down before re-initializing it, so it
+  no longer starts a duplicate hologram task or re-registers chunk keys.
+
 ## [1.8.5-beta.4] - 2026-11-01
 
 Attribute units now express the RESULT instead of an addition: a modifier unit

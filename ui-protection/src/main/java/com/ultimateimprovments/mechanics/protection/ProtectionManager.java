@@ -16,6 +16,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -63,6 +64,10 @@ public class ProtectionManager {
     /** UUID of the TextDisplay hologram for each block. BlockId → entity UUID. */
     private final Map<UUID, UUID> blockHolograms = new ConcurrentHashMap<>();
 
+    /** Last rendered hologram text per block — avoids re-deserializing MiniMessage
+     *  for every block every second (the text only changes on integrity/points/radius edits). */
+    private final Map<UUID, String> hologramTextCache = new ConcurrentHashMap<>();
+
     /** Blocks whose saveWhitelist failed — will be retried by a background task.
      *  Protects against losing the whitelist during brief DB unavailability. */
     private final Set<UUID> dirtyWhitelist = ConcurrentHashMap.newKeySet();
@@ -89,6 +94,7 @@ public class ProtectionManager {
     // INIT / SHUTDOWN
     // =========================
     public void init() {
+        ProtectionConfig.invalidateCache();
         ProtectionDatabase.initTables();
         cacheMaterial();
         loadFromDb();
@@ -155,6 +161,7 @@ public class ProtectionManager {
      * Also restarts dirtyRetryTask (if it stopped for some reason).
      */
     public void reloadConfig() {
+        ProtectionConfig.invalidateCache();
         cacheMaterial();
         if (dirtyRetryTask == null) {
             startDirtyRetryTask();
@@ -228,8 +235,12 @@ public class ProtectionManager {
         ProtectionBlock block = blocks.remove(id);
         if (block == null) return;
         long chunkKey = LocationUtil.toKey(block.getX() >> 4, 0, block.getZ() >> 4);
-        List<UUID> list = byChunkKey.get(chunkKey);
-        if (list != null) list.remove(id);
+        byChunkKey.computeIfPresent(chunkKey, (k, list) -> {
+            list.remove(id);
+            // Don't keep empty lists around — they accumulate forever for wide maps.
+            return list.isEmpty() ? null : list;
+        });
+        hologramTextCache.remove(id);
         // Despawn hologram
         UUID hid = blockHolograms.remove(id);
         if (hid != null) {
@@ -313,6 +324,53 @@ public class ProtectionManager {
             }
         }
         return null;
+    }
+
+    // =========================
+    // FOREIGN-ADDON QUERIES (CoreHooks.BlockProtectionApi)
+    // =========================
+
+    /**
+     * True when the block at {@code loc} must not be touched by {@code actor}:
+     * it is either a protection block itself or lies inside an active zone whose
+     * whitelist does not contain the actor. A {@code null} actor (piston, explosion,
+     * dispenser) is always refused by an active zone.
+     */
+    public boolean isProtectedFor(Location loc, Player actor) {
+        if (loc == null || loc.getWorld() == null) return false;
+        ProtectionBlock own = getBlockAt(loc);
+        if (own != null) {
+            if (actor == null) return true;
+            return !(own.isWhitelisted(actor.getUniqueId())
+                    || actor.getUniqueId().equals(own.getOwner()));
+        }
+        ProtectionBlock protecting = findProtectingBlock(loc);
+        if (protecting == null) return false;
+        if (actor == null) return true;
+        return !(protecting.isWhitelisted(actor.getUniqueId())
+                || actor.getUniqueId().equals(protecting.getOwner()));
+    }
+
+    /** True when a protection block (active or disabled) stands at {@code loc}. */
+    public boolean isProtectionBlockAt(Location loc) {
+        return getBlockAt(loc) != null;
+    }
+
+    /**
+     * Charges the integrity of the protection block guarding {@code loc} for
+     * {@code blocks} refused actions (e.g. an AoE sweep that wanted to break 7 blocks).
+     * <p>
+     * Destruction goes through the normal {@link #applyIntegrityDamage} path, so the
+     * physical block, the DB row, the whitelist and the hologram all stay in sync.
+     */
+    public void chargeZoneAttempt(Location loc, int blocks) {
+        if (loc == null || loc.getWorld() == null || blocks <= 0) return;
+        ProtectionBlock target = getBlockAt(loc);
+        if (target == null) target = findProtectingBlock(loc);
+        if (target == null || !target.isEnabled()) return;
+        double damage = ProtectionConfig.getIntegrityLossPerBreakAttempt() * blocks;
+        if (damage <= 0.0) return;
+        applyIntegrityDamage(target, damage);
     }
 
     /** How many blocks from the list fall within the protection radius of block. */
@@ -433,6 +491,13 @@ public class ProtectionManager {
             Entity e = Bukkit.getEntity(existing);
             if (e != null && e.isValid() && !e.isDead()) return; // already spawned
         }
+        // 🛡 NEVER spawn into an unloaded chunk: World#spawn() would synchronously
+        // load the chunk. The periodic hologram task respawns dead holograms, so
+        // without this guard every protection block kept its chunk force-loaded
+        // and the hologram flickered every second (spawn → chunk unload → spawn).
+        if (!block.getWorld().isChunkLoaded(block.getX() >> 4, block.getZ() >> 4)) {
+            return;
+        }
         Location holoLoc = block.getLocation().add(0, 1.85, 0);
         World world = holoLoc.getWorld();
         if (world == null) return;
@@ -462,6 +527,7 @@ public class ProtectionManager {
     }
 
     public void despawnHologram(UUID blockId) {
+        hologramTextCache.remove(blockId);
         UUID hid = blockHolograms.remove(blockId);
         if (hid != null) {
             Entity e = Bukkit.getEntity(hid);
@@ -484,8 +550,12 @@ public class ProtectionManager {
         String pointsLine = ProtectionConfig.getMessage("hologram.points",
                         "<gray>Очки: <gold>%value%</gold></gray>")
                 .replace("%value%", String.valueOf(block.getPoints()));
+        // Only re-deserialize when something actually changed (was: every second
+        // for every block, which is pure CPU waste on big servers).
         String combined = title + "\n" + radiusLine + "\n" + integrityLine + "\n" + pointsLine;
+        if (combined.equals(hologramTextCache.get(block.getId()))) return;
         display.text(MM.deserialize(combined));
+        hologramTextCache.put(block.getId(), combined);
     }
 
     private void updateAllHolograms() {
@@ -496,9 +566,11 @@ public class ProtectionManager {
             if (e instanceof TextDisplay td) {
                 updateHologramText(td, block);
             } else if (e == null || e.isDead()) {
-                // chunk unloaded → hologram despawned; respawn when chunk reloads
+                // Chunk unloaded → hologram despawned; the ChunkLoadEvent spawns it
+                // again when the player comes back. No eager respawn (it would
+                // force-load the chunk every tick).
                 blockHolograms.remove(block.getId());
-                ChunkLoadSpawner.scheduleSpawn(block);
+                hologramTextCache.remove(block.getId());
             }
         }
     }

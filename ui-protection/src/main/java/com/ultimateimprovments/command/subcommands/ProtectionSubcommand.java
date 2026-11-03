@@ -18,11 +18,25 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * /ui protection &lt;give|list|info|delete&gt; — admin operations on protection blocks.
+ * /ui protection &lt;give|list|info|delete|reload&gt; — admin operations on protection blocks.
+ * <p>
+ * Every user-facing line comes from {@code messages.protection.command.*}
+ * (RU/EN), instead of the previously hardcoded Russian literals.
  */
 public final class ProtectionSubcommand {
 
     private ProtectionSubcommand() {}
+
+    /** Reads {@code messages.protection.command.<key>} with the built-in fallback. */
+    private static String msg(String key, String def, String... placeholders) {
+        String text = ProtectionConfig.getMessage("command." + key, def);
+        if (placeholders != null) {
+            for (int i = 0; i + 1 < placeholders.length; i += 2) {
+                text = text.replace(placeholders[i], placeholders[i + 1]);
+            }
+        }
+        return text;
+    }
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.protection")) {
@@ -30,7 +44,8 @@ public final class ProtectionSubcommand {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui protection <give|list|info|delete> [args]</white>"));
+            sender.sendMessage(MessageUtil.parse(msg("usage",
+                    "<red>❌ Usage: </red><white>/ui protection <give|list|info|delete|reload> [args]</white>")));
             return true;
         }
         return switch (args[1].toLowerCase()) {
@@ -40,8 +55,9 @@ public final class ProtectionSubcommand {
             case "delete" -> handleDelete(sender, args);
             case "reload" -> handleReload(sender);
             default -> {
-                sender.sendMessage(MessageUtil.parse(
-                        "<red>❌ Unknown subcommand: </red><white>" + args[1] + "</white>"));
+                sender.sendMessage(MessageUtil.parse(msg("unknown",
+                        "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>",
+                        "%subcommand%", args[1])));
                 yield true;
             }
         };
@@ -53,42 +69,68 @@ public final class ProtectionSubcommand {
             return true;
         }
         if (args.length < 3) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui protection give <player> [amount]</white>"));
+            sender.sendMessage(MessageUtil.parse(msg("give_usage",
+                    "<red>❌ Usage: </red><white>/ui protection give <player> [amount]</white>")));
             return true;
         }
         @SuppressWarnings("deprecation")
         Player target = Bukkit.getPlayerExact(args[2]);
         if (target == null) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Player </red><yellow>" + args[2] + "</yellow><red> not online.</red>"));
+            sender.sendMessage(MessageUtil.parse(msg("player_not_found",
+                    "<red>❌ Player </red><yellow>%player%</yellow><red> not online.</red>",
+                    "%player%", args[2])));
             return true;
         }
         int amount = 1;
         if (args.length >= 4) {
-            try { amount = Integer.parseInt(args[3]); }
-            catch (NumberFormatException e) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ Invalid amount: </red><white>" + args[3] + "</white>"));
+            try {
+                amount = Integer.parseInt(args[3]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(MessageUtil.parse(msg("invalid_amount",
+                        "<red>❌ Invalid amount: </red><white>%amount%</white>",
+                        "%amount%", args[3])));
                 return true;
             }
+            if (amount <= 0) amount = 1;
         }
         if (ProtectionManager.getInstance().giveItemTo(target, amount)) {
-            sender.sendMessage(MessageUtil.parse("<green>✔</green> <white>Gave <gold>" + amount + "</gold>× Protection Block to <yellow>"
-                    + target.getName() + "</yellow>.</white>"));
-            target.sendMessage(MessageUtil.parse("<green>✔</green> <white>You received <gold>" + amount + "</gold>× <white>Блок защиты</white>.</white>"));
+            sender.sendMessage(MessageUtil.parse(msg("give_success",
+                    "<green>✔</green> <white>Gave <gold>%amount%</gold>× Protection Block to "
+                            + "<yellow>%player%</yellow>.</white>",
+                    "%amount%", String.valueOf(amount),
+                    "%player%", target.getName() != null ? target.getName() : args[2])));
+            target.sendMessage(MessageUtil.parse(msg("give_received",
+                    "<green>✔</green> <white>You received <gold>%amount%</gold>× "
+                            + "<white>Блок защиты</white>.</white>",
+                    "%amount%", String.valueOf(amount))));
         }
         return true;
     }
 
     private static boolean handleList(CommandSender sender) {
         Collection<ProtectionBlock> all = ProtectionManager.getInstance().allBlocks();
-        sender.sendMessage(MessageUtil.parse("<gold>✦ <white>Защитные блоки: <gray>" + all.size()));
+        sender.sendMessage(MessageUtil.parse(msg("list_header",
+                "<gold>✦ <white>Защитные блоки: <gray>%count%",
+                "%count%", String.valueOf(all.size()))));
         int idx = 0;
         for (ProtectionBlock b : all) {
             idx++;
-            sender.sendMessage(MessageUtil.parse("<dark_gray>[" + idx + "] <white>" + b.getId() + " <dark_gray>@ <gray>" + b.getWorld().getName()
-                    + " " + b.getX() + " " + b.getY() + " " + b.getZ()
-                    + (b.isEnabled() ? " <green>[ON]" : " <red>[OFF]")
-                    + " <gray>(r=" + b.getRadius() + ", i=" + String.format("%.1f%%", b.getIntegrity())
-                    + ", p=" + b.getPoints() + ")"));
+            String status = b.isEnabled()
+                    ? msg("status_on", "<green>[ON]")
+                    : msg("status_off", "<red>[OFF]");
+            sender.sendMessage(MessageUtil.parse(msg("list_entry",
+                    "<dark_gray>[%index%] <white>%id% <dark_gray>@ <gray>%world% %x% %y% %z% %status% "
+                            + "<gray>(r=%radius%, i=%integrity%, p=%points%)",
+                    "%index%", String.valueOf(idx),
+                    "%id%", b.getId().toString(),
+                    "%world%", b.getWorld().getName(),
+                    "%x%", String.valueOf(b.getX()),
+                    "%y%", String.valueOf(b.getY()),
+                    "%z%", String.valueOf(b.getZ()),
+                    "%status%", status,
+                    "%radius%", String.valueOf(b.getRadius()),
+                    "%integrity%", String.format("%.1f%%", b.getIntegrity()),
+                    "%points%", String.valueOf(b.getPoints()))));
         }
         return true;
     }
@@ -102,7 +144,8 @@ public final class ProtectionSubcommand {
             // Self — look at block at crosshair target
             ProtectionBlock target = targetBlockLookingAt(player);
             if (target == null) {
-                player.sendMessage(MessageUtil.parse("<red>❌ Aim at a protection block or specify coords.</red>"));
+                player.sendMessage(MessageUtil.parse(msg("no_target",
+                        "<red>❌ Aim at a protection block or specify coords.</red>")));
                 return true;
             }
             sendBlockInfo(player, target);
@@ -116,13 +159,15 @@ public final class ProtectionSubcommand {
             ProtectionBlock target = ProtectionManager.getInstance()
                     .getBlockAt(new Location(player.getWorld(), x, y, z));
             if (target == null) {
-                player.sendMessage(MessageUtil.parse("<red>❌ No protection block at those coords.</red>"));
+                player.sendMessage(MessageUtil.parse(msg("no_block_at_coords",
+                        "<red>❌ No protection block at those coords.</red>")));
                 return true;
             }
             sendBlockInfo(player, target);
             return true;
-        } catch (NumberFormatException e) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Invalid coords.</red>"));
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            player.sendMessage(MessageUtil.parse(msg("invalid_coords",
+                    "<red>❌ Invalid coords.</red>")));
             return true;
         }
     }
@@ -139,17 +184,38 @@ public final class ProtectionSubcommand {
     }
 
     private static void sendBlockInfo(Player player, ProtectionBlock b) {
-        player.sendMessage(MessageUtil.parse("<gold>✦ <white>Блок защиты"));
-        player.sendMessage(MessageUtil.parse(" <gray>ID: <white>" + b.getId()));
-        player.sendMessage(MessageUtil.parse(" <gray>Координаты: <white>" + b.getWorld().getName() + " "
-                + b.getX() + " " + b.getY() + " " + b.getZ()));
-        player.sendMessage(MessageUtil.parse(" <gray>Статус: " + (b.isEnabled() ? "<green>ON" : "<red>OFF")));
-        player.sendMessage(MessageUtil.parse(" <gray>Радиус: <white>" + b.getRadius() + "/" + ProtectionConfig.getMaxRadius()));
-        player.sendMessage(MessageUtil.parse(" <gray>Целостность: <white>" + String.format("%.1f%%", b.getIntegrity())));
-        player.sendMessage(MessageUtil.parse(" <gray>Очки: <white>" + b.getPoints()));
-        player.sendMessage(MessageUtil.parse(" <gray>Whitelist (size): <white>" + b.getWhitelist().size()));
-        player.sendMessage(MessageUtil.parse(" <gray>След. upgrade radius: <white>" + b.getRadiusUpgradeCost() + " очков"));
-        player.sendMessage(MessageUtil.parse(" <gray>След. repair: <white>" + b.getRepairCost() + " очков"));
+        player.sendMessage(MessageUtil.parse(msg("info_header", "<gold>✦ <white>Блок защиты")));
+        player.sendMessage(MessageUtil.parse(msg("info_id",
+                " <gray>ID: <white>%id%", "%id%", b.getId().toString())));
+        player.sendMessage(MessageUtil.parse(msg("info_coords",
+                " <gray>Координаты: <white>%world% %x% %y% %z%",
+                "%world%", b.getWorld().getName(),
+                "%x%", String.valueOf(b.getX()),
+                "%y%", String.valueOf(b.getY()),
+                "%z%", String.valueOf(b.getZ()))));
+        player.sendMessage(MessageUtil.parse(msg("info_status",
+                " <gray>Статус: %status%",
+                "%status%", b.isEnabled()
+                        ? msg("status_on", "<green>[ON]")
+                        : msg("status_off", "<red>[OFF]"))));
+        player.sendMessage(MessageUtil.parse(msg("info_radius",
+                " <gray>Радиус: <white>%radius%/%max%",
+                "%radius%", String.valueOf(b.getRadius()),
+                "%max%", String.valueOf(ProtectionConfig.getMaxRadius()))));
+        player.sendMessage(MessageUtil.parse(msg("info_integrity",
+                " <gray>Целостность: <white>%integrity%",
+                "%integrity%", String.format("%.1f%%", b.getIntegrity()))));
+        player.sendMessage(MessageUtil.parse(msg("info_points",
+                " <gray>Очки: <white>%points%", "%points%", String.valueOf(b.getPoints()))));
+        player.sendMessage(MessageUtil.parse(msg("info_whitelist",
+                " <gray>Whitelist (size): <white>%size%",
+                "%size%", String.valueOf(b.getWhitelist().size()))));
+        player.sendMessage(MessageUtil.parse(msg("info_next_radius",
+                " <gray>След. upgrade radius: <white>%cost% очков",
+                "%cost%", String.valueOf(b.getRadiusUpgradeCost()))));
+        player.sendMessage(MessageUtil.parse(msg("info_next_repair",
+                " <gray>След. repair: <white>%cost% очков",
+                "%cost%", String.valueOf(b.getRepairCost()))));
     }
 
     private static boolean handleDelete(CommandSender sender, String[] args) {
@@ -160,10 +226,13 @@ public final class ProtectionSubcommand {
         if (args.length < 3) {
             ProtectionBlock target = targetBlockLookingAt(player);
             if (target == null) {
-                player.sendMessage(MessageUtil.parse("<red>❌ Aim at a protection block or specify coords.</red>"));
+                player.sendMessage(MessageUtil.parse(msg("no_target",
+                        "<red>❌ Aim at a protection block or specify coords.</red>")));
                 return true;
             }
             ProtectionManager.getInstance().destroyBlock(target, true);
+            player.sendMessage(MessageUtil.parse(msg("deleted",
+                    "<yellow>Блок защиты удалён.</yellow>")));
             return true;
         }
         // Coord delete
@@ -174,21 +243,29 @@ public final class ProtectionSubcommand {
             ProtectionBlock target = ProtectionManager.getInstance()
                     .getBlockAt(new Location(player.getWorld(), x, y, z));
             if (target == null) {
-                player.sendMessage(MessageUtil.parse("<red>❌ No protection block at those coords.</red>"));
+                player.sendMessage(MessageUtil.parse(msg("no_block_at_coords",
+                        "<red>❌ No protection block at those coords.</red>")));
                 return true;
             }
             ProtectionManager.getInstance().destroyBlock(target, true);
+            player.sendMessage(MessageUtil.parse(msg("deleted",
+                    "<yellow>Блок защиты удалён.</yellow>")));
             return true;
-        } catch (NumberFormatException e) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Invalid coords.</red>"));
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            player.sendMessage(MessageUtil.parse(msg("invalid_coords",
+                    "<red>❌ Invalid coords.</red>")));
             return true;
         }
     }
 
     private static boolean handleReload(CommandSender sender) {
+        // shutdown() cancels the hologram/dirty tasks and clears the cache; init()
+        // rebuilds them. Without the shutdown the second init started a DUPLICATE
+        // hologram task and re-registered every chunk key.
         ProtectionManager.getInstance().shutdown();
         ProtectionManager.getInstance().init();
-        sender.sendMessage(MessageUtil.parse("<green>✔</green> <white>Protection block system reloaded.</white>"));
+        sender.sendMessage(MessageUtil.parse(msg("reload_done",
+                "<green>✔</green> <white>Protection block system reloaded.</white>")));
         return true;
     }
 }

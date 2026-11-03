@@ -79,6 +79,27 @@ public class MessagesManager {
     }
 
     /**
+     * Returns a STRING LIST for the CURRENT language, with the same routing as
+     * {@link #getString(String, String)}: {@code messages.<path>} (ru) or
+     * {@code messages_en.<path>} (en), falling back to the other language and then to {@code def}.
+     * <p>
+     * Used by features whose messages are multi-line (multi-block GUI lore,
+     * placement broadcast, ...).
+     */
+    public static java.util.List<String> getStringList(String path, java.util.List<String> def) {
+        if (plugin == null) return def;
+        FileConfiguration config = plugin.getConfig();
+        boolean ru = isRuLang(config);
+        String primary = ru ? MESSAGES_KEY : MESSAGES_EN_KEY;
+        String fallback = ru ? MESSAGES_EN_KEY : MESSAGES_KEY;
+        java.util.List<String> value = config.getStringList(primary + "." + path);
+        if (value != null && !value.isEmpty()) return value;
+        value = config.getStringList(fallback + "." + path);
+        if (value != null && !value.isEmpty()) return value;
+        return def;
+    }
+
+    /**
      * Returns a string from the English section directly (bypassing the fallback to Russian).
      * Used rarely — mostly for tests or logging.
      */

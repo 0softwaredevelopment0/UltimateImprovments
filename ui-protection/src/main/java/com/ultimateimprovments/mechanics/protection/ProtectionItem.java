@@ -28,6 +28,7 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.UUID;
@@ -47,10 +48,14 @@ public class ProtectionItem implements Listener {
     // =========================
     // INIT
     // =========================
-    public static void init(Main main) {
+    public static void init(Main main, JavaPlugin holder) {
         RECIPE_KEY = new NamespacedKey(main, "protection_block_recipe");
         registerRecipe(main);
-        Bukkit.getPluginManager().registerEvents(new ProtectionItem(), main);
+        // Registered on the ADDON plugin (UI-Protection) so /ui reload can
+        // unregister it — registering on the shared UI-Core instance leaked a copy
+        // of this listener on every reload.
+        Bukkit.getPluginManager().registerEvents(new ProtectionItem(),
+                holder != null ? holder : main);
         ConsoleLogger.info("[ProtectionBlock] Item + recipe registered.");
     }
 
@@ -168,11 +173,20 @@ public class ProtectionItem implements Listener {
         if (placed == null) return;
         ProtectionBlock created = ProtectionManager.getInstance()
                 .createBlock(placed.getLocation(), e.getPlayer().getUniqueId());
-        // Message to the player
+        // Every line comes from messages.protection.placed_message (RU/EN).
+        // Before, four hardcoded Russian lines were printed and the config key
+        // placed_message was dead.
+        List<String> lines = ProtectionConfig.getMessageList("placed_message", List.of(
+                "<green>✔</green> <white>Блок защиты установлен! Shift+RMB — открыть GUI.</white>"));
         e.getPlayer().sendMessage("");
-        e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Блок защиты установлен!"));
-        e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>▸ <gold>Он сейчас ВЫКЛЮЧЕН. Откройте GUI (Shift+RMB) и включите.</gold>"));
-        e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>▸ <gray>Используйте <white>RMB с топливом в руке</white> для очков.</gray>"));
+        for (String line : lines) {
+            e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse(line
+                    .replace("%radius%", String.valueOf(created.getRadius()))
+                    .replace("%world%", created.getWorld().getName())
+                    .replace("%x%", String.valueOf(created.getX()))
+                    .replace("%y%", String.valueOf(created.getY()))
+                    .replace("%z%", String.valueOf(created.getZ()))));
+        }
         e.getPlayer().sendMessage("");
     }
 

@@ -81,6 +81,15 @@ public class EnchantmentListener implements Listener {
                 if (!loc.getBlock().isPreferredTool(tool)) continue;
             }
 
+            // 🛡 Protection zones: never break a block of a foreign protection area,
+            // and charge the zone one integrity hit per block the enchant refused.
+            // (Before, breakNaturally() bypassed BlockBreakEvent entirely, so AoE
+            // happily mined through protected bases.)
+            if (CoreHooks.isBlockProtected(loc, player)) {
+                CoreHooks.chargeProtectionAttempt(loc, 1);
+                continue;
+            }
+
             // Break naturally with tool (respects Silk Touch, Fortune)
             // Remember the type BEFORE breaking — after breakNaturally() the block is already AIR
             Material brokenType = block.getType();

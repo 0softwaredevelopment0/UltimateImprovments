@@ -71,15 +71,34 @@ public class ProtectionDatabase {
     }
 
     // =========================
-    // SAVE BLOCK (insert or replace)
+    // SAVE BLOCK (insert or update)
+    // <p>
+    // Uses an UPSERT, NOT {@code INSERT OR REPLACE}: REPLACE deletes the old row
+    // first, and with {@code PRAGMA foreign_keys = ON} the
+    // {@code protection_whitelist} rows are cascaded away — every integrity/point
+    // change silently wiped the whitelist from the DB (it survived only in memory
+    // until the next restart). DO UPDATE keeps the row id stable, so the FK rows
+    // stay untouched.
     // =========================
     public static synchronized void saveBlock(ProtectionBlock block) {
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement("""
-                INSERT OR REPLACE INTO protection_blocks
+                INSERT INTO protection_blocks
                 (id, world, x, y, z, owner_uuid, radius, integrity, points,
                  enabled, radius_upgrade_count, repair_count, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    world = excluded.world,
+                    x = excluded.x,
+                    y = excluded.y,
+                    z = excluded.z,
+                    owner_uuid = excluded.owner_uuid,
+                    radius = excluded.radius,
+                    integrity = excluded.integrity,
+                    points = excluded.points,
+                    enabled = excluded.enabled,
+                    radius_upgrade_count = excluded.radius_upgrade_count,
+                    repair_count = excluded.repair_count
              """)) {
             ps.setString(1, block.getId().toString());
             ps.setString(2, block.getWorld().getName());
@@ -143,11 +162,30 @@ public class ProtectionDatabase {
 
     // =========================
     // LOAD ALL BLOCKS ON STARTUP
+    // <p>
+    // Two queries total (blocks + whitelist), the whitelist rows are grouped in
+    // memory. Before: one whitelist query PER block — with 500 blocks that was
+    // 501 round-trips on the main thread while the server was starting.
     // =========================
     public static synchronized List<LoadedBlock> loadAllBlocks() {
         List<LoadedBlock> list = new ArrayList<>();
         if (!ready) return list;
         try (Connection con = DatabaseManager.getConnection()) {
+            // 1. Whitelist: block_id → player UUIDs
+            java.util.Map<String, List<UUID>> whitelists = new java.util.HashMap<>();
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT block_id, player_uuid FROM protection_whitelist");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String blockId = rs.getString(1);
+                    try {
+                        whitelists.computeIfAbsent(blockId, k -> new ArrayList<>())
+                                .add(UUID.fromString(rs.getString(2)));
+                    } catch (Exception ignored) { /* malformed UUID — skip the row */ }
+                }
+            }
+
+            // 2. Blocks
             try (PreparedStatement ps = con.prepareStatement(
                     "SELECT * FROM protection_blocks");
                  ResultSet rs = ps.executeQuery()) {
@@ -166,17 +204,7 @@ public class ProtectionDatabase {
                     int radiusUp = rs.getInt("radius_upgrade_count");
                     int repair = rs.getInt("repair_count");
 
-                    List<UUID> wl = new ArrayList<>();
-                    try (PreparedStatement ps2 = con.prepareStatement(
-                            "SELECT player_uuid FROM protection_whitelist WHERE block_id = ?")) {
-                        ps2.setString(1, id.toString());
-                        try (ResultSet rs2 = ps2.executeQuery()) {
-                            while (rs2.next()) {
-                                try { wl.add(UUID.fromString(rs2.getString(1))); }
-                                catch (Exception ignored) {}
-                            }
-                        }
-                    }
+                    List<UUID> wl = whitelists.getOrDefault(id.toString(), new ArrayList<>());
                     list.add(new LoadedBlock(id, worldName, x, y, z, owner,
                             radius, integrity, points, enabled, radiusUp, repair, wl));
                 }

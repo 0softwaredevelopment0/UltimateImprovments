@@ -1,274 +1,320 @@
 # UI-Protection — block protection + void protection.
 #
-# Settings under [protection.*]/[void_protection.*]; messages under
-# [messages.protection.*]. Active language follows messages.lang.
+# Settings under [protection.*] / [void_protection.*]; messages under
+# [messages.protection.*] (RU) and [messages_en.protection.*] (EN).
+# Active language follows messages.lang.
+
 [void_protection]
 # Master switch (true = feature on).
-# Default: true
 enabled = true
-# World name.
-# Default: ["pocketworld"]
+# Worlds where void damage is intercepted.
 worlds = ["pocketworld"]
 
-# target section.
-
 [void_protection.target]
-# World name.
-# Default: "pocketworld"
+# Teleport destination.
 world = "pocketworld"
-# Default: 0
 x = 0
-# Default: 1
 y = 1
-# Default: 0
 z = 0
-# Default: 0.0
 yaw = 0.0
-# Default: 0.0
 pitch = 0.0
 
-# Logs recent deaths so admins can inspect them.
-
 [protection]
-# Master switch (true = feature on).
-# Default: true
+# Master switch. false = the whole block protection system is not registered.
 enabled = true
 
-# block section.
-
 [protection.block]
-# Material name (minecraft:...).
-# Default: "LODESTONE"
+# Material used as the physical protection block (minecraft:...).
 material = "LODESTONE"
 
-# radius section.
-
 [protection.radius]
-# Default: 5
+# Starting radius of a freshly placed block, in blocks.
 default = 5
-# Minimum value.
-# Default: 1
+# Minimum radius.
 min = 1
-# Maximum value.
-# Default: 64
+# Maximum radius purchasable with points.
 max = 64
 
-# integrity section.
-
 [protection.integrity]
-# Default: 100.0
+# Starting integrity in percent (0..100).
 starting_value = 100.0
-# Default: 0.1
+# Integrity lost per refused action (break / place / interact / piston / area enchant block).
 loss_per_break_attempt = 0.1
-# Default: 0.1
+# Integrity lost per block an explosion tried to destroy.
 loss_per_explosion_block = 0.1
 
-# points section.
-
 [protection.points]
-# Default: 0.1
+# Points per furnace burn tick of the fuel item.
 fuel_multiplier = 0.1
-# Radius in blocks.
-# Default: 1
+# Cost of the first radius upgrade; doubles after every purchase.
 radius_upgrade_base_cost = 1
-# Cost.
-# Default: 1
+# Cost of the first integrity repair; doubles after every purchase.
 repair_base_cost = 1
 
-# crafting section.
-
 [protection.crafting]
-# Default: false
+# Whether the recipe can be crafted in a regular workbench.
 workbench_allowed = false
-# Default: true
+# Whether the recipe can be crafted in a Crafter (1.21+).
 crafter_allowed = true
 
-# admin section.
-
 [protection.admin]
-# Default: true
+# Whether /ui protection give is allowed.
 give_allowed = true
+
+[protection.interact]
+# Container blocks whose RMB is cancelled inside a protected zone.
+# Empty list = built-in default (chests, barrels, shulkers, furnaces, hoppers,
+# droppers, dispensers, brewing stands, crafters, decorated pots, chiseled
+# bookshelves, lecterns, jukeboxes, vaults). Doors, buttons, levers and
+# crafting tables are NEVER blocked unless listed here.
+blocked_materials = []
+
+[protection.pistons]
+# Forbid pistons from moving blocks INTO or OUT of a protected zone
+# (and from moving the protection block itself).
+enabled = true
 
 # ==================================================================
 # MESSAGES — RUSSIAN (active when lang = "ru")
+# Placeholders: %radius%, %value%, %points%, %cost%, %r%, %integrity%,
+#               %name%, %count%, %max%, %player%, %amount%, %subcommand%
 # ==================================================================
 
-
-# auth section.
-# Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%
-
 [messages.protection]
-# Message text (MiniMessage).
-# Default: <green>✔</green> <white>Блок защиты установлен. Shift+RMB — открыть GUI.</white>
-placed_message = "<green>✔</green> <white>Блок защиты установлен. Shift+RMB — открыть GUI.</white>"
-# Master switch (true = feature on).
-# Default: <green>✔</green> <white>Блок защиты ВКЛЮЧЁН!</white>
+# Multi-line message shown right after placing a block.
+placed_message = [
+    "<green>✔</green> <white>Блок защиты установлен! Радиус: <aqua>%radius%</aqua></white>",
+    "<gray>▸ <gold>Он сейчас ВЫКЛЮЧЕН.</gold> Откройте GUI (Shift+RMB) и включите.</gray>",
+    "<gray>▸ Используйте <white>RMB с топливом в руке</white> для очков.</gray>"
+]
 block_enabled = "<green>✔</green> <white>Блок защиты ВКЛЮЧЁН!</white>"
-# Default: <red>❌</red> <white>Блок защиты ВЫКЛЮЧЕН.</white>
 block_disabled = "<red>❌</red> <white>Блок защиты ВЫКЛЮЧЕН.</white>"
-# Whitelist.
-# Default: <red>Этот Блок защиты вам не принадлежит!</red>
 not_whitelisted = "<red>Этот Блок защиты вам не принадлежит!</red>"
-# Default: <red>Территория под защитой!</red> <gray>Этот блок принадлежит другому игроку.</gray>
 cant_break = "<red>Территория под защитой!</red> <gray>Этот блок принадлежит другому игроку.</gray>"
-# Default: <red>Территория под защитой! Установка блоков запрещена.</red>
 cant_place = "<red>Территория под защитой! Установка блоков запрещена.</red>"
-# Default: <red>Территория под защитой! Взаимодействие запрещено.</red>
 cant_interact = "<red>Территория под защитой! Взаимодействие запрещено.</red>"
-# Default: <gray>Возьмите в руку топливо, чтобы получить очки.</gray>
+cant_remove_owner = "<red>Нельзя удалить владельца из whitelist.</red>"
 fuel_hint = "<gray>Возьмите в руку топливо, чтобы получить очки.</gray>"
-# Default: <red>Этот предмет не переплавляется и не даёт очков!</red>
 fuel_not_burnable = "<red>Этот предмет не переплавляется и не даёт очков!</red>"
-# Default: <green>✔</green> <white>Получено <gold>%points%</gold> очков.</white>
 fuel_acquired = "<green>✔</green> <white>Получено <gold>%points%</gold> очков.</white>"
-# Radius in blocks.
-# Default: <green>✔</green> <white>Радиус увеличен до </white><aqua>%r%</aqua>
 radius_upgraded = "<green>✔</green> <white>Радиус увеличен до </white><aqua>%r%</aqua>"
-# Default: <red>Недостаточно очков! Нужно: </red><gold>%cost%</gold>
 not_enough_points = "<red>Недостаточно очков! Нужно: </red><gold>%cost%</gold>"
-# Radius in blocks.
-# Default: <yellow>Радиус уже максимальный.</yellow>
-radius_max = "<yellow>Радиус уже максимальный.</yellow>"
-# Default: <yellow>Целостность уже максимальная.</yellow>
+radius_max = "<yellow>Радиус уже максимальный: </yellow><aqua>%max%</aqua>"
 integrity_full = "<yellow>Целостность уже максимальная.</yellow>"
-# Default: <green>✔</green> <white>Целостность восстановлена.</white>
-repaired = "<green>✔</green> <white>Целостность восстановлена.</white>"
-# Default: <yellow>Блок защиты снят и удалён из БД.</yellow>
+repaired = "<green>✔</green> <white>Целостность:</white> <green>%integrity%</green>"
 broken = "<yellow>Блок защиты снят и удалён из БД.</yellow>"
-# Whitelist.
-# Default: <green>✔</green> <white>Игрок <yellow>%name%</yellow> добавлен в whitelist.</white>
 whitelist_added = "<green>✔</green> <white>Игрок <yellow>%name%</yellow> добавлен в whitelist.</white>"
-# Whitelist.
-# Default: <yellow>Игрок удалён из whitelist.</yellow>
 whitelist_removed = "<yellow>Игрок удалён из whitelist.</yellow>"
-
-# gui section.
+whitelist_cancelled = "<yellow>Добавление игрока отменено.</yellow>"
+whitelist_player_not_found = "<red>Игрок не найден: </red><white>%name%</white><gray> (должен быть онлайн или заходить на сервер раньше)</gray>"
+whitelist_already = "<yellow>Игрок уже в whitelist.</yellow>"
 
 [messages.protection.gui]
-# Title text (MiniMessage).
-# Default: <white>Блок защиты — GUI</white>
 main_title = "<white>Блок защиты — GUI</white>"
-# Title text (MiniMessage).
-# Default: <white>Блок защиты — Whitelist</white>
 whitelist_title = "<white>Блок защиты — Whitelist</white>"
-# Title text (MiniMessage).
-# Default: <white>Блок защиты — Добавить игрока</white>
 addplayer_title = "<white>Блок защиты — Добавить игрока</white>"
-
-# hologram section.
-# Placeholders: %radius%, %value%
+back = "<gray>← Назад</gray>"
+back_to_main = "<gray>← Назад к меню</gray>"
+whitelist_name = "<gold>Whitelist игроков</gold>"
+whitelist_lore = [
+    "<gray>Кто может открыть этот блок</gray>",
+    "<gray>и взаимодействовать с зоной.</gray>",
+    "",
+    "<white>Игроков:</white> <gold>%count%</gold>"
+]
+radius_name = "<aqua>Радиус: </aqua><white>%radius%</white>"
+radius_lore = [
+    "<gray>+1 блок за клик.</gray>",
+    "<gray>Стоимость в очках × 2 каждый раз.</gray>",
+    "",
+    "<white>Стоимость:</white> <gold>%cost%</gold>",
+    "<white>Доступно очков:</white> <gold>%points%</gold>",
+    "<white>Макс. радиус:</white> <aqua>%max%</aqua>"
+]
+repair_name = "<green>Целостность: </green><white>%integrity%</white>"
+repair_lore = [
+    "<gray>+1% за клик.</gray>",
+    "<gray>Стоимость в очках × 2 каждый раз.</gray>",
+    "",
+    "<white>Стоимость:</white> <gold>%cost%</gold>",
+    "<white>Доступно очков:</white> <gold>%points%</gold>"
+]
+toggle_on = "<green>Блок активен — выключить</green>"
+toggle_off = "<red>Блок выключен — включить</red>"
+toggle_lore_on = ["<gray>Защита территории вкл.</gray>"]
+toggle_lore_off = [
+    "<gray>Защита территории выкл.</gray>",
+    "<dark_gray>Включите, чтобы блок начал работать.</dark_gray>"
+]
+add_player_name = "<green>Добавить игрока</green>"
+add_player_lore = ["<gray>Откроет форму ввода ника.</gray>"]
+remove_hint = ["<gray>Кликните, чтобы удалить.</gray>"]
+addplayer_header = "<dark_gray>╔ <gold>✦ <bold>Добавить игрока<reset> <dark_gray>╗"
+addplayer_hint = "<gray>Введите ник игрока в чат."
+addplayer_cancel_hint = "<gray>Или напишите <red>cancel<gray> для отмены."
 
 [messages.protection.hologram]
-# Master switch (true = feature on).
-# Default: <white>Блок защиты <green>✔</green></white>
 title_enabled = "<white>Блок защиты <green>✔</green></white>"
-# Title text (MiniMessage).
-# Default: <white>Блок защиты <red>❌</red></white>
 title_disabled = "<white>Блок защиты <red>❌</red></white>"
-# Radius in blocks.
-# Default: <gray>Радиус: <white>%radius%</white></gray>
 radius = "<gray>Радиус: <white>%radius%</white></gray>"
-# Default: <gray>Целостность: <white>%value%%</white></gray>
 integrity = "<gray>Целостность: <white>%value%%</white></gray>"
-# Default: <gray>Очки: <gold>%value%</gold></gray>
 points = "<gray>Очки: <gold>%value%</gold></gray>"
 
-# item section.
-
 [messages.protection.item]
-# Display name (MiniMessage).
-# Default: <white>Блок защиты</white>
 name = "<white>Блок защиты</white>"
-# Default: <gray>Защищает территорию вокруг установки.</gray>
 lore_line_1 = "<gray>Защищает территорию вокруг установки.</gray>"
-# Default: <gray>Shift+RMB — открыть GUI.</gray>
 lore_line_2 = "<gray>Shift+RMB — открыть GUI.</gray>"
-# Default: <gray>RMB с топливом — получить очки.</gray>
 lore_line_3 = "<gray>RMB с топливом — получить очки.</gray>"
-# Default: <dark_gray>Recipe: see crafting menu (crafter only)</dark_gray>
-lore_line_4 = "<dark_gray>Recipe: see crafting menu (crafter only)</dark_gray>"
+lore_line_4 = "<dark_gray>Крафт: только в крафтере (см. меню крафта)</dark_gray>"
 
-# admin section.
-# Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
+[messages.protection.command]
+usage = "<red>❌ Usage: </red><white>/ui protection <give|list|info|delete|reload> [args]</white>"
+unknown = "<red>❌ Неизвестная подкоманда: </red><white>%subcommand%</white>"
+give_usage = "<red>❌ Usage: </red><white>/ui protection give <player> [amount]</white>"
+player_not_found = "<red>❌ Игрок </red><yellow>%player%</yellow><red> не в сети.</red>"
+invalid_amount = "<red>❌ Неверное количество: </red><white>%amount%</white>"
+give_success = "<green>✔</green> <white>Выдано <gold>%amount%</gold>× Блок защиты игроку <yellow>%player%</yellow>.</white>"
+give_received = "<green>✔</green> <white>Вы получили <gold>%amount%</gold>× <white>Блок защиты</white>.</white>"
+list_header = "<gold>✦ <white>Защитные блоки: <gray>%count%"
+list_entry = "<dark_gray>[%index%] <white>%id% <dark_gray>@ <gray>%world% %x% %y% %z% %status% <gray>(r=%radius%, i=%integrity%, p=%points%)"
+status_on = "<green>[ON]"
+status_off = "<red>[OFF]"
+no_target = "<red>❌ Наведитесь на блок защиты или укажите координаты.</red>"
+no_block_at_coords = "<red>❌ По этим координатам нет блока защиты.</red>"
+invalid_coords = "<red>❌ Неверные координаты.</red>"
+info_header = "<gold>✦ <white>Блок защиты"
+info_id = " <gray>ID: <white>%id%"
+info_coords = " <gray>Координаты: <white>%world% %x% %y% %z%"
+info_status = " <gray>Статус: %status%"
+info_radius = " <gray>Радиус: <white>%radius%/%max%"
+info_integrity = " <gray>Целостность: <white>%integrity%"
+info_points = " <gray>Очки: <white>%points%"
+info_whitelist = " <gray>Whitelist (игроков): <white>%size%"
+info_next_radius = " <gray>След. апгрейд радиуса: <white>%cost% очков"
+info_next_repair = " <gray>След. ремонт: <white>%cost% очков"
+deleted = "<yellow>Блок защиты удалён.</yellow>"
+reload_done = "<green>✔</green> <white>Система блоков защиты перезагружена.</white>"
 
-[messages.protection.admin]
-# Default: <red>❌ Authorization system is disabled in config!</red>
-system_disabled = "<red>❌ Authorization system is disabled in config!</red>"
-# Default: <red>❌ Usage: </red><white>/ui auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>
-usage = "<red>❌ Usage: </red><white>/ui auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>"
-# Command.
-# Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
-unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
-# Default: <red>❌ Only players can use this command!</red>
-player_only = "<red>❌ Only players can use this command!</red>"
-# Default: <red>❌ You are not logged in!</red>
-not_authenticated = "<red>❌ You are not logged in!</red>"
-# Permission node.
-# Default: <red>❌ You don't have permission to force log in!</red>
-forcelogin_no_permission = "<red>❌ You don't have permission to force log in!</red>"
-# Default: <red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>
-forcelogin_usage = "<red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>"
-# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
-forcelogin_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
-# Default: <red>❌ Authorization system is not initialized!</red>
-forcelogin_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
-# Default: <green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>
-forcelogin_success = "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>"
-# Default: <red>❌ Failed to authorize player</red> <yellow>%player%</yellow>
-forcelogin_fail = "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>"
-# Permission node.
-# Default: <red>❌ You don't have permission to reset authorization!</red>
-resetauth_no_permission = "<red>❌ You don't have permission to reset authorization!</red>"
-# Default: <red>❌ Usage: </red><white>/ui auth resetauth <nick></white>
-resetauth_usage = "<red>❌ Usage: </red><white>/ui auth resetauth <nick></white>"
-# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
-resetauth_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
-# Default: <red>❌ Authorization system is not initialized!</red>
-resetauth_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
-# Default: <green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</…
-resetauth_success = "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>"
-# Default: <red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>
-resetauth_fail = "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>"
-# Permission node.
-# Default: <red>❌ You don't have permission to reset sessions!</red>
-delsession_no_permission = "<red>❌ You don't have permission to reset sessions!</red>"
-# Default: <red>❌ Usage: </red><white>/ui auth delsession <nick></white>
-delsession_usage = "<red>❌ Usage: </red><white>/ui auth delsession <nick></white>"
-# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
-delsession_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
-# Default: <red>❌ Authorization system is not initialized!</red>
-delsession_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
-# Default: <green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>
-delsession_success = "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>"
-# Default: <gray>They will need to enter their password again on next login.</gray>
-delsession_info = "<gray>They will need to enter their password again on next login.</gray>"
-# Default: <red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>
-delsession_fail = "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>"
-# Permission node.
-# Default: <red>❌ You don't have permission to change passwords!</red>
-chgpass_no_permission = "<red>❌ You don't have permission to change passwords!</red>"
-# Default: <red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>
-chgpass_usage = "<red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>"
-# Default: <green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green…
-chgpass_success = "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
-# Default: <gray>Session reset — player must log in again.</gray>
-chgpass_session_reset = "<gray>Session reset — player must log in again.</gray>"
-# Default: <red>❌ Failed to change password of player</red> <yellow>%player%</yellow>
-chgpass_fail = "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
-# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red…
-kick_resetauth = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
-# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gra…
-kick_delsession = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
-# Timeout.
-# Default: <red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>
-kick_timeout = "<red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>"
-# Default: <red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>
-kick_too_many_attempts = "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>"
-# Default: <green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password …
-kick_logout = "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>"
-# Display name (MiniMessage).
-# Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
-kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n"
+[messages.void_protection]
+message = "<green>✔</green> <white>Вы были спасены из пустоты!</white>"
 
-# codepanel section.
-# Placeholders: %seconds%, %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%, %entity%
+# ==================================================================
+# MESSAGES — ENGLISH (active when lang = "en")
+# ==================================================================
+
+[messages_en.protection]
+placed_message = [
+    "<green>✔</green> <white>Protection block placed! Radius: <aqua>%radius%</aqua></white>",
+    "<gray>▸ <gold>It is DISABLED right now.</gold> Open the GUI (Shift+RMB) and enable it.</gray>",
+    "<gray>▸ Use <white>RMB with fuel in hand</white> to gain points.</gray>"
+]
+block_enabled = "<green>✔</green> <white>Protection block ENABLED!</white>"
+block_disabled = "<red>❌</red> <white>Protection block DISABLED.</white>"
+not_whitelisted = "<red>This protection block does not belong to you!</red>"
+cant_break = "<red>This area is protected!</red> <gray>The block belongs to another player.</gray>"
+cant_place = "<red>This area is protected! Placing blocks is forbidden.</red>"
+cant_interact = "<red>This area is protected! Interaction is forbidden.</red>"
+cant_remove_owner = "<red>The owner cannot be removed from the whitelist.</red>"
+fuel_hint = "<gray>Hold fuel in your hand to gain points.</gray>"
+fuel_not_burnable = "<red>This item is not a fuel and gives no points!</red>"
+fuel_acquired = "<green>✔</green> <white>Received <gold>%points%</gold> points.</white>"
+radius_upgraded = "<green>✔</green> <white>Radius increased to </white><aqua>%r%</aqua>"
+not_enough_points = "<red>Not enough points! Required: </red><gold>%cost%</gold>"
+radius_max = "<yellow>Radius is already at maximum: </yellow><aqua>%max%</aqua>"
+integrity_full = "<yellow>Integrity is already at maximum.</yellow>"
+repaired = "<green>✔</green> <white>Integrity:</white> <green>%integrity%</green>"
+broken = "<yellow>Protection block removed and deleted from the DB.</yellow>"
+whitelist_added = "<green>✔</green> <white>Player <yellow>%name%</yellow> added to the whitelist.</white>"
+whitelist_removed = "<yellow>Player removed from the whitelist.</yellow>"
+whitelist_cancelled = "<yellow>Adding a player cancelled.</yellow>"
+whitelist_player_not_found = "<red>Player not found: </red><white>%name%</white><gray> (must be online or have joined before)</gray>"
+whitelist_already = "<yellow>Player is already whitelisted.</yellow>"
+
+[messages_en.protection.gui]
+main_title = "<white>Protection block — GUI</white>"
+whitelist_title = "<white>Protection block — Whitelist</white>"
+addplayer_title = "<white>Protection block — Add player</white>"
+back = "<gray>← Back</gray>"
+back_to_main = "<gray>← Back to menu</gray>"
+whitelist_name = "<gold>Player whitelist</gold>"
+whitelist_lore = [
+    "<gray>Who may open this block</gray>",
+    "<gray>and interact with the area.</gray>",
+    "",
+    "<white>Players:</white> <gold>%count%</gold>"
+]
+radius_name = "<aqua>Radius: </aqua><white>%radius%</white>"
+radius_lore = [
+    "<gray>+1 block per click.</gray>",
+    "<gray>Point cost doubles every time.</gray>",
+    "",
+    "<white>Cost:</white> <gold>%cost%</gold>",
+    "<white>Points available:</white> <gold>%points%</gold>",
+    "<white>Max radius:</white> <aqua>%max%</aqua>"
+]
+repair_name = "<green>Integrity: </green><white>%integrity%</white>"
+repair_lore = [
+    "<gray>+1% per click.</gray>",
+    "<gray>Point cost doubles every time.</gray>",
+    "",
+    "<white>Cost:</white> <gold>%cost%</gold>",
+    "<white>Points available:</white> <gold>%points%</gold>"
+]
+toggle_on = "<green>Block is active — disable</green>"
+toggle_off = "<red>Block is disabled — enable</red>"
+toggle_lore_on = ["<gray>Area protection is ON.</gray>"]
+toggle_lore_off = [
+    "<gray>Area protection is OFF.</gray>",
+    "<dark_gray>Enable it to make the block work.</dark_gray>"
+]
+add_player_name = "<green>Add player</green>"
+add_player_lore = ["<gray>Opens the nickname input form.</gray>"]
+remove_hint = ["<gray>Click to remove.</gray>"]
+addplayer_header = "<dark_gray>╔ <gold>✦ <bold>Add player<reset> <dark_gray>╗"
+addplayer_hint = "<gray>Type the player nickname in chat."
+addplayer_cancel_hint = "<gray>Or type <red>cancel<gray> to abort."
+
+[messages_en.protection.hologram]
+title_enabled = "<white>Protection block <green>✔</green></white>"
+title_disabled = "<white>Protection block <red>❌</red></white>"
+radius = "<gray>Radius: <white>%radius%</white></gray>"
+integrity = "<gray>Integrity: <white>%value%%</white></gray>"
+points = "<gray>Points: <gold>%value%</gold></gray>"
+
+[messages_en.protection.item]
+name = "<white>Protection block</white>"
+lore_line_1 = "<gray>Protects the territory around the placed block.</gray>"
+lore_line_2 = "<gray>Shift+RMB — open the GUI.</gray>"
+lore_line_3 = "<gray>RMB with fuel — gain points.</gray>"
+lore_line_4 = "<dark_gray>Recipe: crafter only (see the crafting menu)</dark_gray>"
+
+[messages_en.protection.command]
+usage = "<red>❌ Usage: </red><white>/ui protection <give|list|info|delete|reload> [args]</white>"
+unknown = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
+give_usage = "<red>❌ Usage: </red><white>/ui protection give <player> [amount]</white>"
+player_not_found = "<red>❌ Player </red><yellow>%player%</yellow><red> is not online.</red>"
+invalid_amount = "<red>❌ Invalid amount: </red><white>%amount%</white>"
+give_success = "<green>✔</green> <white>Gave <gold>%amount%</gold>× Protection Block to <yellow>%player%</yellow>.</white>"
+give_received = "<green>✔</green> <white>You received <gold>%amount%</gold>× <white>Protection block</white>.</white>"
+list_header = "<gold>✦ <white>Protection blocks: <gray>%count%"
+list_entry = "<dark_gray>[%index%] <white>%id% <dark_gray>@ <gray>%world% %x% %y% %z% %status% <gray>(r=%radius%, i=%integrity%, p=%points%)"
+status_on = "<green>[ON]"
+status_off = "<red>[OFF]"
+no_target = "<red>❌ Aim at a protection block or specify coords.</red>"
+no_block_at_coords = "<red>❌ No protection block at those coords.</red>"
+invalid_coords = "<red>❌ Invalid coords.</red>"
+info_header = "<gold>✦ <white>Protection block"
+info_id = " <gray>ID: <white>%id%"
+info_coords = " <gray>Coords: <white>%world% %x% %y% %z%"
+info_status = " <gray>Status: %status%"
+info_radius = " <gray>Radius: <white>%radius%/%max%"
+info_integrity = " <gray>Integrity: <white>%integrity%"
+info_points = " <gray>Points: <white>%points%"
+info_whitelist = " <gray>Whitelist (players): <white>%size%"
+info_next_radius = " <gray>Next radius upgrade: <white>%cost% points"
+info_next_repair = " <gray>Next repair: <white>%cost% points"
+deleted = "<yellow>Protection block deleted.</yellow>"
+reload_done = "<green>✔</green> <white>Protection block system reloaded.</white>"
+
+[messages_en.void_protection]
+message = "<green>✔</green> <white>You were saved from the void!</white>"

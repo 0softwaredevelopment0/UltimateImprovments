@@ -72,6 +72,12 @@ public class EnchantmentListener implements Listener {
             if (!world.getWorldBorder().isInside(loc)) continue;
             if (!world.isChunkLoaded(block.getX() >> 4, block.getZ() >> 4)) continue;
 
+            // 🛡 Protection zones: skip protected logs, charge one integrity hit each.
+            if (CoreHooks.isBlockProtected(loc, player)) {
+                CoreHooks.chargeProtectionAttempt(loc, 1);
+                continue;
+            }
+
             // Break naturally with the tool (respects Silk Touch, Fortune)
             Material brokenType = block.getType();
             block.breakNaturally(tool, true);

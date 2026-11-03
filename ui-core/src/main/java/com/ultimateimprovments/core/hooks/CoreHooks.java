@@ -299,4 +299,60 @@ public final class CoreHooks {
         ExpBottleUser u = expBottleUser;
         return u != null && item != null && u.useBottle(player, item, hand);
     }
+
+    // ── Territory protection (installed by UI-Protection) ────────────────
+
+    /**
+     * Contract of the «Protection Block» territory system, implemented by UI-Protection.
+     * <p>
+     * Area-breakers (AoE / VeinMiner / TreeCapitator), piston guards and other
+     * addons query it instead of depending on the protection addon's classes.
+     * Every method must be cheap: called from block-break loops, i.e. possibly
+     * dozens of times per tick.
+     */
+    public interface BlockProtectionApi {
+        /**
+         * @return true when the block at {@code loc} lies inside an ACTIVE protection
+         *         zone whose whitelist does not contain {@code actor} (or {@code actor} is null).
+         */
+        boolean isProtected(Location loc, Player actor);
+
+        /**
+         * @return true when the block at {@code loc} IS a protection block itself.
+         */
+        boolean isProtectionBlock(Location loc);
+
+        /**
+         * Charges the integrity of every protection block guarding {@code loc} for
+         * {@code blocks} blocked actions (e.g. 5 blocks refused by an AoE sweep).
+         * Never destroys a block silently — destruction goes through the normal path
+         * (physical block removal + DB delete + hologram despawn).
+         */
+        void chargeAttempt(Location loc, int blocks);
+    }
+
+    private static volatile BlockProtectionApi blockProtection;
+
+    /** Installed by UI-Protection at startup, cleared on its shutdown. */
+    public static void setBlockProtection(BlockProtectionApi api) {
+        blockProtection = api;
+    }
+
+    /** @return true when the block must not be touched by {@code actor}. */
+    public static boolean isBlockProtected(Location loc, Player actor) {
+        BlockProtectionApi api = blockProtection;
+        return api != null && loc != null && loc.getWorld() != null && api.isProtected(loc, actor);
+    }
+
+    /** @return true when the block at {@code loc} is a «Protection Block» itself. */
+    public static boolean isProtectionBlock(Location loc) {
+        BlockProtectionApi api = blockProtection;
+        return api != null && loc != null && api.isProtectionBlock(loc);
+    }
+
+    /** Charges integrity for {@code blocks} refused actions at {@code loc}. */
+    public static void chargeProtectionAttempt(Location loc, int blocks) {
+        BlockProtectionApi api = blockProtection;
+        if (api != null && loc != null && blocks > 0) api.chargeAttempt(loc, blocks);
+    }
 }

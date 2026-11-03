@@ -376,6 +376,24 @@ final class ConfigRules {
             stringList("void_protection.worlds"),
             notBlank("void_protection.target.world", 256),
 
+            // ── UI-Protection: block protection ──
+            bool("protection.enabled"),
+            notBlank("protection.block.material", 64),
+            integer("protection.radius.default", 1, 512),
+            integer("protection.radius.min", 1, 512),
+            integer("protection.radius.max", 1, 512),
+            dbl("protection.integrity.starting_value", 0, 100),
+            dbl("protection.integrity.loss_per_break_attempt", 0, 100),
+            dbl("protection.integrity.loss_per_explosion_block", 0, 100),
+            dbl("protection.points.fuel_multiplier", 0, 10000),
+            integer("protection.points.radius_upgrade_base_cost", 1, Integer.MAX_VALUE),
+            integer("protection.points.repair_base_cost", 1, Integer.MAX_VALUE),
+            bool("protection.crafting.workbench_allowed"),
+            bool("protection.crafting.crafter_allowed"),
+            bool("protection.admin.give_allowed"),
+            stringList("protection.interact.blocked_materials"),
+            bool("protection.pistons.enabled"),
+
             bool("death_logger.enabled"),
             bool("death_logger.log_to_console"),
 
