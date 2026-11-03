@@ -74,12 +74,98 @@ public class AuthDatabase {
                 st.execute("ALTER TABLE auth ADD COLUMN ip_address TEXT DEFAULT ''");
             } catch (Exception ignored) {}
 
+            // Persistent password lock: one row per account UUID (scope = 'account')
+            // and per source IP (scope = 'ip'). Survives restarts and reconnects,
+            // so the 30-second cooldown after a wrong password cannot be reset by
+            // leaving the server and joining again.
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS auth_lockouts (
+                    scope TEXT NOT NULL,
+                    subject TEXT NOT NULL,
+                    locked_until INTEGER NOT NULL,
+                    PRIMARY KEY (scope, subject)
+                );
+            """);
+
             tableReady = true;
 
         } catch (Exception e) {
             ConsoleLogger.error("[Auth] DB init failed: " + e.getMessage());
             ConsoleLogger.error("[Auth] DB init stack: " + java.util.Arrays.toString(e.getStackTrace()));
             tableReady = false;
+        }
+    }
+
+    // =========================
+    // PASSWORD LOCKOUTS (persistent, per account and per IP)
+    // =========================
+
+    /** Lockout scope for an account UUID. */
+    public static final String SCOPE_ACCOUNT = "account";
+    /** Lockout scope for a source IP address. */
+    public static final String SCOPE_IP = "ip";
+
+    /**
+     * Returns the moment until which the subject stays locked, or {@code 0} when it
+     * is free (no row, or the deadline already passed).
+     *
+     * @param scope   {@link #SCOPE_ACCOUNT} or {@link #SCOPE_IP}
+     * @param subject the UUID string or the IP address
+     */
+    public static long getLockoutUntil(String scope, String subject) {
+        if (!tableReady || subject == null || subject.isEmpty()) return 0L;
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT locked_until FROM auth_lockouts WHERE scope = ? AND subject = ?")) {
+
+            ps.setString(1, scope);
+            ps.setString(2, subject);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return 0L;
+                long until = rs.getLong("locked_until");
+                if (until <= System.currentTimeMillis()) return 0L;
+                return until;
+            }
+
+        } catch (Exception e) {
+            ConsoleLogger.error("[Auth] Lockout read failed: " + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * Upserts the lockout deadline for the subject (account UUID or IP address).
+     */
+    public static void setLockout(String scope, String subject, long lockedUntil) {
+        if (!tableReady || subject == null || subject.isEmpty()) return;
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO auth_lockouts (scope, subject, locked_until) VALUES (?, ?, ?) "
+                             + "ON CONFLICT(scope, subject) DO UPDATE SET locked_until = excluded.locked_until")) {
+
+            ps.setString(1, scope);
+            ps.setString(2, subject);
+            ps.setLong(3, lockedUntil);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            ConsoleLogger.error("[Auth] Lockout write failed: " + e.getMessage());
+        }
+    }
+
+    /** Drops expired lockout rows so the table cannot grow forever. */
+    public static void purgeExpiredLockouts(long now) {
+        if (!tableReady) return;
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "DELETE FROM auth_lockouts WHERE locked_until <= ?")) {
+
+            ps.setLong(1, now);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            ConsoleLogger.error("[Auth] Lockout purge failed: " + e.getMessage());
         }
     }
 

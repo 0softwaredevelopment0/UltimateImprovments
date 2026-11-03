@@ -57,6 +57,8 @@ public class AuthManager {
         }
 
         AuthDatabase.initTable();
+        // Drop lockout rows that expired while the server was offline.
+        AuthDatabase.purgeExpiredLockouts(System.currentTimeMillis());
         ConsoleLogger.info(
                 "[Auth] Initialized. Session: " + AuthConfig.getSessionDurationMinutes() + "min"
                 + ", IP check: " + AuthConfig.isIpCheckEnabled()

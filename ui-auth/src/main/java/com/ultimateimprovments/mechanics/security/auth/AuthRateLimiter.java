@@ -18,9 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * never delayed — the lock is applied only after an error, so a player who types
  * the right password first time in is not punished by the limiter.
  * <p>
- * State is in-memory and is deliberately NOT cleared on quit: dropping the lock
- * in {@code PlayerQuitEvent} would let a brute-forcer reconnect after every guess.
- * Expired IP entries are pruned so a botnet cannot grow the map without bound.
+ * The lock is <b>persistent</b>: every penalty is written to the
+ * {@code auth_lockouts} table (scope {@code account} / {@code ip}), so it survives
+ * a disconnect and a server restart. The in-memory maps are only a cache; when a
+ * subject is not cached as locked, the database is consulted once, which covers
+ * a cold start after a restart. Expired rows are pruned at startup and when the
+ * IP cache grows.
  */
 public class AuthRateLimiter {
 
@@ -48,9 +51,26 @@ public class AuthRateLimiter {
      */
     public boolean checkCooldown(Player player) {
         long now = System.currentTimeMillis();
-        long until = Math.max(
-                accountLockedUntil.getOrDefault(player.getUniqueId(), 0L),
-                ipLockedUntil.getOrDefault(ipOf(player), 0L));
+        UUID uuid = player.getUniqueId();
+        String ip = ipOf(player);
+
+        long until = accountLockedUntil.getOrDefault(uuid, 0L);
+        if (!ip.isEmpty()) {
+            until = Math.max(until, ipLockedUntil.getOrDefault(ip, 0L));
+        }
+
+        // Cold cache (fresh start or a lock written by another login attempt):
+        // read the persisted deadlines once and remember them.
+        if (until <= now) {
+            until = AuthDatabase.getLockoutUntil(AuthDatabase.SCOPE_ACCOUNT, uuid.toString());
+            if (!ip.isEmpty()) {
+                until = Math.max(until, AuthDatabase.getLockoutUntil(AuthDatabase.SCOPE_IP, ip));
+            }
+            if (until > now) {
+                accountLockedUntil.put(uuid, until);
+                if (!ip.isEmpty()) ipLockedUntil.put(ip, until);
+            }
+        }
 
         if (until <= now) return true;
 
@@ -64,25 +84,31 @@ public class AuthRateLimiter {
     }
 
     /**
-     * Locks the account and the player's IP after a wrong password.
-     * The IP lock also covers other accounts sharing that address.
+     * Locks the account and the player's IP after a wrong password, in memory and
+     * in the database (so it outlives the session). The IP lock also covers other
+     * accounts sharing that address.
      */
     public void applyPenalty(Player player) {
-        long until = System.currentTimeMillis() + AuthConfig.getRequestCooldownMs();
-        accountLockedUntil.put(player.getUniqueId(), until);
+        long now = System.currentTimeMillis();
+        long until = now + AuthConfig.getRequestCooldownMs();
+
+        UUID uuid = player.getUniqueId();
+        accountLockedUntil.put(uuid, until);
+        AuthDatabase.setLockout(AuthDatabase.SCOPE_ACCOUNT, uuid.toString(), until);
 
         String ip = ipOf(player);
         if (!ip.isEmpty()) {
             if (ipLockedUntil.size() >= MAX_IP_ENTRIES) {
-                pruneExpired(until);
+                pruneExpired(now);
             }
             ipLockedUntil.put(ip, until);
+            AuthDatabase.setLockout(AuthDatabase.SCOPE_IP, ip, until);
         }
     }
 
     /**
-     * Clears the account lock. Not called on quit — the lock must survive a
-     * reconnect, otherwise the 30-second limit is trivially bypassed.
+     * Clears the cached account lock. Deliberately not called on quit — the
+     * persisted lock is what makes a reconnect useless for a brute-forcer.
      */
     public void removePlayer(UUID uuid) {
         accountLockedUntil.remove(uuid);
@@ -90,6 +116,8 @@ public class AuthRateLimiter {
 
     private void pruneExpired(long now) {
         ipLockedUntil.entrySet().removeIf(entry -> entry.getValue() <= now);
+        accountLockedUntil.entrySet().removeIf(entry -> entry.getValue() <= now);
+        AuthDatabase.purgeExpiredLockouts(now);
     }
 
     private static String ipOf(Player player) {
