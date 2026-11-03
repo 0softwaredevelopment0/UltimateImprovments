@@ -20,9 +20,6 @@ target/
 /nbdist/
 /.nb-gradle/
 **/build/*
-!/build/libs/
-/build/libs/*
-!/build/libs/*.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 .gradle/
