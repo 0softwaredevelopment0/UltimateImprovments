@@ -655,15 +655,16 @@ icon = false
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Chance in percent per roll. 0.1 = 0.1% (≈ once per ~1000 seconds of flight).
+# Chance in percent per roll. The roll happens once per interval_ticks.
 # Default: 0.1
 chance_percent = 0.1
-# Durability the elytra is left with when the roll triggers.
+# Durability left after a tear: the tooltip shows X/N with X = this value,
+# independent of N (vanilla elytra → 2/432).
 # Default: 2
 min_durability = 2
-# Roll interval in ticks. 20 = once per second (the chance is per second).
-# Default: 20
-interval_ticks = 20
+# Roll interval in ticks. 80 ticks = 4 seconds → one roll per 4 seconds.
+# Default: 80
+interval_ticks = 80
 # Skip CREATIVE/SPECTATOR players.
 # Default: true
 ignore_creative = true

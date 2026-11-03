@@ -3,6 +3,22 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.5-beta.7] - 2026-11-03
+
+Elytra wear tuning from the first review of beta.6.
+
+### Changed
+- **The wear check now runs every 80 ticks (4 seconds) instead of 20**, and
+  `chance_percent` is the chance PER ROLL, so the default 0.1% is rolled once per
+  4 seconds of gliding. Both the code default and
+  `elytra_wear.interval_ticks` in `configs/UI-Player.toml` use 80; the config
+  comment states the tick/second equivalent.
+- Durability semantics made explicit in the code, the config and the startup log:
+  the item tooltip `X/N` gets `X = min_durability` (2 by default) **independent of
+  N** — a vanilla elytra shows `2/432`, an item with a different maximum shows
+  `2/<its max>`. Implementation detail documented: vanilla stores the lost
+  points, so the manager writes `damage = N - 2` and the remaining value is 2.
+
 ## [1.8.5-beta.6] - 2026-11-03
 
 The elytra boost on jump is gone; the elytra can now tear during flight instead.

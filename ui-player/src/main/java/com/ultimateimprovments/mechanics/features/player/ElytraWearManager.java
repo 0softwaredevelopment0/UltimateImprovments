@@ -28,13 +28,17 @@ import java.util.concurrent.ThreadLocalRandom;
  * gliding ({@link Player#isGliding()}) and the chest slot holds a glider item
  * ({@link ItemMeta#isGlider()} — a plain elytra or any custom glider).
  * <p>
- * On a successful roll the item's durability is set to
- * {@code elytra_wear.min_durability} (default 2), i.e. the elytra survives but is
- * one hit away from breaking. Both the chance and the end durability are
- * configurable in {@code configs/UI-Player.toml}, section {@code [elytra_wear]}.
+ * On a successful roll the elytra's DURABILITY VALUE is set to
+ * {@code elytra_wear.min_durability} (default 2) — that is the X in the item tooltip
+ * {@code X/N}, and X is 2 no matter what N is (a vanilla elytra shows 2/432, a
+ * modded one with another maximum also shows 2/<its max>). The item survives;
+ * only the remaining durability is clamped.
  * <p>
- * The roll is skipped when the item is already at or below the target
- * durability, so a torn elytra keeps flying instead of re-rolling every second.
+ * The roll happens once per check cycle — {@code elytra_wear.interval_ticks}
+ * (default 80 ticks = 4 seconds), so {@code chance_percent} is the chance PER ROLL.
+ * <p>
+ * The roll is skipped when the item is already at or below 2 durability, so a torn
+ * elytra keeps flying instead of re-rolling every cycle.
  */
 public final class ElytraWearManager {
 
@@ -56,8 +60,8 @@ public final class ElytraWearManager {
         task = Bukkit.getScheduler().runTaskTimer(plugin, ElytraWearManager::tick,
                 interval, interval);
         ConsoleLogger.info("[ElytraWear] ✔ Enabled — " + getChancePercent()
-                + "% per " + interval + " tick(s) while gliding; floor: "
-                + getMinDurability() + " durability.");
+                + "% per roll (every " + interval + " ticks) while gliding; "
+                + "durability after a tear: " + getMinDurability() + "/<max>.");
     }
 
     /** Cancels the repeating task (module shutdown, /ui reload, plugin disable). */
@@ -124,19 +128,21 @@ public final class ElytraWearManager {
         short maxDurability = chest.getType().getMaxDurability();
         if (maxDurability <= 0) return false;
 
-        int floorDurability = Math.min(settings.minDurability(), maxDurability);
-        int targetDamage = maxDurability - floorDurability;
+        // Tooltip X/N: X is ALWAYS min_durability (default 2), independent of N.
+        // Vanilla damage is stored as "lost" points, so damage = N - 2 → shows 2/N.
+        int remainingDurability = (int) Math.min(settings.minDurability(), maxDurability);
+        int targetDamage = maxDurability - remainingDurability;
         if (damageable.getDamage() >= targetDamage) return false; // already torn
 
         if (ThreadLocalRandom.current().nextDouble(100.0) >= settings.chance()) return false;
 
-        // Tear it: durability drops to the configured floor, the item survives.
+        // Tear it: durability drops to the configured value, the item survives.
         damageable.setDamage(targetDamage);
         chest.setItemMeta(meta);
         player.getInventory().setChestplate(chest);
 
-        playTearEffects(player, floorDurability);
-        notifyPlayer(player, floorDurability);
+        playTearEffects(player, remainingDurability);
+        notifyPlayer(player, remainingDurability);
         return true;
     }
 
@@ -180,7 +186,7 @@ public final class ElytraWearManager {
     }
 
     private static long getIntervalTicks() {
-        return Math.max(1, getInt("elytra_wear.interval_ticks", 20));
+        return Math.max(1, getInt("elytra_wear.interval_ticks", 80));
     }
 
     private static boolean getBool(String path, boolean def) {
