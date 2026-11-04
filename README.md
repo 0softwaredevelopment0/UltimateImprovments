@@ -12,6 +12,8 @@
 **Database:** SQLite
 **Build:** Gradle (JDK 26)
 
+> **Commit authorship note:** older commits authored as `minecraft337 <minecraft337@users.noreply.github.com>` were made by the same person as [rizer001](https://github.com/rizer001) (`dan.al.zhu@gmail.com`) — the Git identity in the local config was misconfigured for a long time. Those commits carry no signature simply because they predate commit signing, so GitHub shows them as unverified. The history was intentionally not rewritten.
+
 ---
 
 ### Organization Docs
