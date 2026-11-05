@@ -66,37 +66,37 @@ common_passwords = [
 # gui section.
 
 [messages.auth.gui]
-# Default: Register
-register = "Register"
-# Default: Enter password
-login = "Enter password"
-# Default: Change password
-change_password = "Change password"
-# Default: Account logout
-logout = "Account logout"
+# Default: Регистрация
+register = "Регистрация"
+# Default: Ввод пароля
+login = "Ввод пароля"
+# Default: Смена пароля
+change_password = "Смена пароля"
+# Default: Выход из аккаунта
+logout = "Выход из аккаунта"
 
 # messages section.
 # Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%
 
 [messages.auth.messages]
-# Default: <green>✔ Registration successful!</green>
-success_register = "<green>✔ Registration successful!</green>"
-# Default: <green>✔ You have successfully logged in!</green>
-success_login = "<green>✔ You have successfully logged in!</green>"
-# Default: <red>❌ Incorrect password! Try again.</red>
-wrong_password = "<red>❌ Incorrect password! Try again.</red>"
-# Default: <red>❌ Incorrect password!</red>
-wrong_password_short = "<red>❌ Incorrect password!</red>"
-# Default: <red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>
-wrong_password_remaining = "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>"
-# Default: <red>❌ Password must be at least 4 characters!</red>
-short_password = "<red>❌ Password must be at least 4 characters!</red>"
-# Default: <red>❌ Password must not exceed 32 characters!</red>
-long_password = "<red>❌ Password must not exceed 32 characters!</red>"
-# Default: <red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>
-password_too_short = "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>"
-# Default: <red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>
-password_too_long = "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>"
+# Default: <green>✔ Регистрация успешна!</green>
+success_register = "<green>✔ Регистрация успешна!</green>"
+# Default: <green>✔ Вы успешно вошли!</green>
+success_login = "<green>✔ Вы успешно вошли!</green>"
+# Default: <red>❌ Неверный пароль! Попробуйте ещё раз.</red>
+wrong_password = "<red>❌ Неверный пароль! Попробуйте ещё раз.</red>"
+# Default: <red>❌ Неверный пароль!</red>
+wrong_password_short = "<red>❌ Неверный пароль!</red>"
+# Default: <red>❌ Неверный пароль! Осталось попыток: </red><yellow>%remaining%</yellow>
+wrong_password_remaining = "<red>❌ Неверный пароль! Осталось попыток: </red><yellow>%remaining%</yellow>"
+# Default: <red>❌ Пароль должен содержать минимум 4 символа!</red>
+short_password = "<red>❌ Пароль должен содержать минимум 4 символа!</red>"
+# Default: <red>❌ Пароль не должен превышать 32 символа!</red>
+long_password = "<red>❌ Пароль не должен превышать 32 символа!</red>"
+# Default: <red>❌ Пароль должен содержать минимум </red><yellow>%min%</yellow><red> символов!</red>
+password_too_short = "<red>❌ Пароль должен содержать минимум </red><yellow>%min%</yellow><red> символов!</red>"
+# Default: <red>❌ Пароль не должен превышать </red><yellow>%max%</yellow><red> символов!</red>
+password_too_long = "<red>❌ Пароль не должен превышать </red><yellow>%max%</yellow><red> символов!</red>"
 # Default: <red>❌ Пароль не может быть пустым.</red>
 password_empty = "<red>❌ Пароль не может быть пустым.</red>"
 # Default: <red>❌ Пароль должен содержать хотя бы одну цифру (0-9).</red>
@@ -107,70 +107,70 @@ password_need_case = "<red>❌ Пароль должен содержать ст
 password_need_special = "<red>❌ Пароль должен содержать спецсимвол (!, @, #, $, %, &, *, ...).</red>"
 # Default: <red>❌ Этот пароль слишком простой — выберите другой.</red>
 password_common = "<red>❌ Этот пароль слишком простой — выберите другой.</red>"
-# Default: <red>❌ Please authenticate first! Enter your password in the opened window.</red>
-need_auth = "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
-# Default: <red>❌</red> <white>Your IP address has changed. Please log in again.</white>
-ip_changed = "<red>❌</red> <white>Your IP address has changed. Please log in again.</white>"
+# Default: <red>❌ Сначала авторизуйтесь! Введите пароль в открывшемся окне.</red>
+need_auth = "<red>❌ Сначала авторизуйтесь! Введите пароль в открывшемся окне.</red>"
+# Default: <red>❌</red> <white>Ваш IP-адрес изменился. Войдите заново.</white>
+ip_changed = "<red>❌</red> <white>Ваш IP-адрес изменился. Войдите заново.</white>"
 # Display name (MiniMessage).
-# Default: <yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different nam…
-duplicate_name_kick = "<yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different name.</white>"
+# Default: <yellow>❌ Игрок с таким ником уже на сервере!</yellow>\n<white>Зайдите с другим ником.</white>
+duplicate_name_kick = "<yellow>❌ Игрок с таким ником уже на сервере!</yellow>\n<white>Зайдите с другим ником.</white>"
 # Maximum value.
-# Default: <red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<whit…
-max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>"
-# Default: <yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>
-enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>"
-# Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
-enter_new_password_hint = "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
-# Default: <yellow>✦</yellow> <gray>Enter your password to log out.</gray>
-enter_logout_password_hint = "<yellow>✦</yellow> <gray>/ui auth logout — no password required.</gray>"
-# Default: <red>❌ Enter your password in the item name field!</red>
-enter_password_field = "<red>❌ Enter your password in the item name field!</red>"
-# Default: <red>❌ Enter your current password in the item name field!</red>
-enter_current_password = "<red>❌ Enter your current password in the item name field!</red>"
-# Default: <red>❌ Enter a new password in the item name field!</red>
-enter_new_password_field = "<red>❌ Enter a new password in the item name field!</red>"
-# Default: <red>❌ Enter your password in the item name field!</red>
-enter_password_field_generic = "<red>❌ Enter your password in the item name field!</red>"
-# Default: <red>❌ You are not registered yet! First, create a password.</red>
-not_registered = "<red>❌ You are not registered yet! First, create a password.</red>"
-# Default: <yellow>✦</yellow> <gray>Password change cancelled.</gray>
-password_change_cancelled = "<yellow>✦</yellow> <gray>Password change cancelled.</gray>"
-# Default: <red>❌ You cannot close the password change window!</red>
-cannot_close_change_password = "<red>❌ You cannot close the password change window!</red>"
-# Default: <red>❌ You cannot close the authorization window! Please enter your password.</red>
-cannot_close_auth = "<red>❌ You cannot close the authorization window! Please enter your password.</red>"
-# Default: <yellow>✦</yellow> <gray>Account logout cancelled.</gray>
-logout_cancelled = "<yellow>✦</yellow> <gray>Account logout cancelled.</gray>"
-# Default: <yellow>✦</yellow> <gray>Opening authorization window...</gray>
-opening_auth_window = "<yellow>✦</yellow> <gray>Opening authorization window...</gray>"
-# Default: <red>❌ Error opening authorization window! Report to an administrator.</red>
-auth_window_error = "<red>❌ Error opening authorization window! Report to an administrator.</red>"
-# Default: <red>❌ Error checking password! Please try again.</red>
-auth_check_error = "<red>❌ Error checking password! Please try again.</red>"
-# Default: <red>❌ Password change error! Please try again.</red>
-change_password_error = "<red>❌ Password change error! Please try again.</red>"
-# Default: <green>✔</green> <white>Password successfully changed!</white>
-password_changed = "<green>✔</green> <white>Password successfully changed!</white>"
-# Default: <gray>Enjoy your game! Session active for 1 hour.</gray>
-session_active = "<gray>Enjoy your game! Session active for 1 hour.</gray>"
+# Default: <red>❌</red> <yellow>%count%</yellow> <red>аккаунтов уже зарегистрировано с вашего IP-адреса!</red>\n<white>Максимум:</white> <yellow>%limit%</yellow> <white>аккаунтов на один IP.</white>
+max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>аккаунтов уже зарегистрировано с вашего IP-адреса!</red>\n<white>Максимум:</white> <yellow>%limit%</yellow> <white>аккаунтов на один IP.</white>"
+# Default: <yellow>✦</yellow> <gray>Введите пароль в поле имени и нажмите</gray> <green>✔</green>
+enter_password_hint = "<yellow>✦</yellow> <gray>Введите пароль в поле имени и нажмите</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Введите новый пароль в поле имени и нажмите</gray> <green>✔</green>
+enter_new_password_hint = "<yellow>✦</yellow> <gray>Введите новый пароль в поле имени и нажмите</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>/ui auth logout — пароль не требуется.</gray>
+enter_logout_password_hint = "<yellow>✦</yellow> <gray>/ui auth logout — пароль не требуется.</gray>"
+# Default: <red>❌ Введите пароль в поле имени предмета!</red>
+enter_password_field = "<red>❌ Введите пароль в поле имени предмета!</red>"
+# Default: <red>❌ Введите текущий пароль в поле имени предмета!</red>
+enter_current_password = "<red>❌ Введите текущий пароль в поле имени предмета!</red>"
+# Default: <red>❌ Введите новый пароль в поле имени предмета!</red>
+enter_new_password_field = "<red>❌ Введите новый пароль в поле имени предмета!</red>"
+# Default: <red>❌ Введите пароль в поле имени предмета!</red>
+enter_password_field_generic = "<red>❌ Введите пароль в поле имени предмета!</red>"
+# Default: <red>❌ Вы ещё не зарегистрированы! Сначала создайте пароль.</red>
+not_registered = "<red>❌ Вы ещё не зарегистрированы! Сначала создайте пароль.</red>"
+# Default: <yellow>✦</yellow> <gray>Смена пароля отменена.</gray>
+password_change_cancelled = "<yellow>✦</yellow> <gray>Смена пароля отменена.</gray>"
+# Default: <red>❌ Нельзя закрыть окно смены пароля!</red>
+cannot_close_change_password = "<red>❌ Нельзя закрыть окно смены пароля!</red>"
+# Default: <red>❌ Нельзя закрыть окно авторизации! Введите пароль.</red>
+cannot_close_auth = "<red>❌ Нельзя закрыть окно авторизации! Введите пароль.</red>"
+# Default: <yellow>✦</yellow> <gray>Выход из аккаунта отменён.</gray>
+logout_cancelled = "<yellow>✦</yellow> <gray>Выход из аккаунта отменён.</gray>"
+# Default: <yellow>✦</yellow> <gray>Открываю окно авторизации...</gray>
+opening_auth_window = "<yellow>✦</yellow> <gray>Открываю окно авторизации...</gray>"
+# Default: <red>❌ Ошибка открытия окна авторизации! Сообщите администратору.</red>
+auth_window_error = "<red>❌ Ошибка открытия окна авторизации! Сообщите администратору.</red>"
+# Default: <red>❌ Ошибка проверки пароля! Попробуйте ещё раз.</red>
+auth_check_error = "<red>❌ Ошибка проверки пароля! Попробуйте ещё раз.</red>"
+# Default: <red>❌ Ошибка смены пароля! Попробуйте ещё раз.</red>
+change_password_error = "<red>❌ Ошибка смены пароля! Попробуйте ещё раз.</red>"
+# Default: <green>✔</green> <white>Пароль успешно изменён!</white>
+password_changed = "<green>✔</green> <white>Пароль успешно изменён!</white>"
+# Default: <gray>Приятной игры! Сессия активна 1 час.</gray>
+session_active = "<gray>Приятной игры! Сессия активна 1 час.</gray>"
 # Message text (MiniMessage).
-# Default: <green>✔</green> <white>You have been force authorized by an administrator!</white>
-force_login_message = "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
+# Default: <green>✔</green> <white>Администратор принудительно авторизовал вас!</white>
+force_login_message = "<green>✔</green> <white>Администратор принудительно авторизовал вас!</white>"
 # Limit.
-# Default: <red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>
-rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
-# Default: <gray>Enter your password in the login window that opens on join.</gray>
-try_again_hint = "<gray>Enter your password in the login window that opens on join.</gray>"
-# Default: <gold>✦</gold> <white>You are already logged in!</white>
-already_authenticated = "<gold>✦</gold> <white>You are already logged in!</white>"
+# Default: <red>❌ Подождите </red><yellow>%seconds%</yellow> <red>секунд до следующего запроса!</red>
+rate_limit = "<red>❌ Подождите </red><yellow>%seconds%</yellow> <red>секунд до следующего запроса!</red>"
+# Default: <gray>Введите пароль в окне входа, которое откроется при подключении.</gray>
+try_again_hint = "<gray>Введите пароль в окне входа, которое откроется при подключении.</gray>"
+# Default: <gold>✦</gold> <white>Вы уже вошли!</white>
+already_authenticated = "<gold>✦</gold> <white>Вы уже вошли!</white>"
 # Title text (MiniMessage).
-# Default: <gold>✦</gold> <white>Please log in to continue.</white>
-login_title = "<gold>✦</gold> <white>Please log in to continue.</white>"
+# Default: <gold>✦</gold> <white>Войдите, чтобы продолжить.</white>
+login_title = "<gold>✦</gold> <white>Войдите, чтобы продолжить.</white>"
 # Title text (MiniMessage).
-# Default: <gold>✦</gold> <white>Choose a password to register.</white>
-register_title = "<gold>✦</gold> <white>Choose a password to register.</white>"
-# Default: <gray>Use: </gray><gold>/ui auth logout</gold>
-logout_usage = "<gray>Use: </gray><gold>/ui auth logout</gold>"
+# Default: <gold>✦</gold> <white>Придумайте пароль для регистрации.</white>
+register_title = "<gold>✦</gold> <white>Придумайте пароль для регистрации.</white>"
+# Default: <gray>Используйте: </gray><gold>/ui auth logout</gold>
+logout_usage = "<gray>Используйте: </gray><gold>/ui auth logout</gold>"
 # Default: <gray>Введите пароль в открывшемся окне авторизации.</gray>\n<gray>Если окно не появилось — перезайдите на сервер.</gray>
 dialog_join_hint = "<gray>Введите пароль в открывшемся окне авторизации.</gray>\n<gray>Если окно не появилось — перезайдите на сервер.</gray>"
 # Default: <red>❌ Действие заблокировано — вы ещё не авторизованы.</red>\n<gray>Если окно авторизации не открылось — перезайдите на сервер.</gray>
@@ -185,6 +185,8 @@ no_password_in_chat = "<yellow>⚠ Не пишите пароли в чат — 
 current_password_required = "<red>❌ Введите текущий пароль в окне смены пароля.</red>"
 # Default: <red>❌ Текущий и новый пароль обязательны.</red>
 changepass_fields_required = "<red>❌ Текущий и новый пароль обязательны.</red>"
+# Default: <red>❌ Система авторизации не инициализирована!</red>
+not_initialized = "<red>❌ Система авторизации не инициализирована!</red>"
 
 # admin section.
 # Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
@@ -204,9 +206,140 @@ chgpass_dialog_not_initialized = "<red>❌ Система авторизации
 chgpass_dialog_success = "<green>✔</green> <white>Пароль игрока </white><yellow>%player%</yellow><white> изменён.</white>"
 # Default: <dark_red>❌</dark_red> <red>Не удалось сменить пароль (проверьте длину).</red>
 chgpass_dialog_fail = "<dark_red>❌</dark_red> <red>Не удалось сменить пароль (проверьте длину).</red>"
+# Default: <red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>
+chgpass_not_registered = "<red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>"
+# Default: <red>❌ Система авторизации не инициализирована!</red>
+chgpass_not_initialized = "<red>❌ Система авторизации не инициализирована!</red>"
+# Default: <red>❌ Система авторизации отключена в конфиге!</red>
+system_disabled = "<red>❌ Система авторизации отключена в конфиге!</red>"
+# Default: <red>❌ Неизвестная сабкоманда: </red><white>%subcommand%</white>
+unknown_subcommand = "<red>❌ Неизвестная сабкоманда: </red><white>%subcommand%</white>"
+# Default: <red>❌ Эта команда только для игроков!</red>
+player_only = "<red>❌ Эта команда только для игроков!</red>"
+# Default: <red>❌ Вы не авторизованы!</red>
+not_authenticated = "<red>❌ Вы не авторизованы!</red>"
+# Default: <red>❌ У вас нет прав на принудительный вход!</red>
+forcelogin_no_permission = "<red>❌ У вас нет прав на принудительный вход!</red>"
+# Default: <red>❌ Использование: </red><white>/ui auth forcelogin <ник></white>
+forcelogin_usage = "<red>❌ Использование: </red><white>/ui auth forcelogin <ник></white>"
+# Default: <red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>
+forcelogin_not_registered = "<red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>"
+# Default: <red>❌ Система авторизации не инициализирована!</red>
+forcelogin_not_initialized = "<red>❌ Система авторизации не инициализирована!</red>"
+# Default: <green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>принудительно авторизован.</white>
+forcelogin_success = "<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>принудительно авторизован.</white>"
+# Default: <red>❌ Не удалось авторизовать игрока</red> <yellow>%player%</yellow>
+forcelogin_fail = "<red>❌ Не удалось авторизовать игрока</red> <yellow>%player%</yellow>"
+# Default: <red>❌ У вас нет прав на сброс авторизации!</red>
+resetauth_no_permission = "<red>❌ У вас нет прав на сброс авторизации!</red>"
+# Default: <red>❌ Использование: </red><white>/ui auth resetauth <ник></white>
+resetauth_usage = "<red>❌ Использование: </red><white>/ui auth resetauth <ник></white>"
+# Default: <red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>
+resetauth_not_registered = "<red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>"
+# Default: <red>❌ Система авторизации не инициализирована!</red>
+resetauth_not_initialized = "<red>❌ Система авторизации не инициализирована!</red>"
+# Default: <green>✔</green> <white>Регистрация игрока</white> <yellow>%player%</yellow> <white>полностью удалена.</white>
+resetauth_success = "<green>✔</green> <white>Регистрация игрока</white> <yellow>%player%</yellow> <white>полностью удалена.</white>"
+# Default: <red>❌ Не удалось удалить регистрацию игрока</red> <yellow>%player%</yellow>
+resetauth_fail = "<red>❌ Не удалось удалить регистрацию игрока</red> <yellow>%player%</yellow>"
+# Default: <red>❌ У вас нет прав на сброс сессий!</red>
+delsession_no_permission = "<red>❌ У вас нет прав на сброс сессий!</red>"
+# Default: <red>❌ Использование: </red><white>/ui auth delsession <ник></white>
+delsession_usage = "<red>❌ Использование: </red><white>/ui auth delsession <ник></white>"
+# Default: <red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>
+delsession_not_registered = "<red>❌ Игрок</red> <yellow>%player%</yellow> <red>не зарегистрирован!</red>"
+# Default: <red>❌ Система авторизации не инициализирована!</red>
+delsession_not_initialized = "<red>❌ Система авторизации не инициализирована!</red>"
+# Default: <green>✔</green> <white>Сессия игрока</white> <yellow>%player%</yellow> <white>сброшена (выход).</white>
+delsession_success = "<green>✔</green> <white>Сессия игрока</white> <yellow>%player%</yellow> <white>сброшена (выход).</white>"
+# Default: <gray>При следующем входе ему придётся снова ввести пароль.</gray>
+delsession_info = "<gray>При следующем входе ему придётся снова ввести пароль.</gray>"
+# Default: <red>❌ Не удалось сбросить сессию игрока</red> <yellow>%player%</yellow>
+delsession_fail = "<red>❌ Не удалось сбросить сессию игрока</red> <yellow>%player%</yellow>"
+# Default: <red>❌ У вас нет прав на смену паролей!</red>
+chgpass_no_permission = "<red>❌ У вас нет прав на смену паролей!</red>"
+# Default: <red>❌ Использование: </red><white>/ui auth chgpass <ник> <новый_пароль></white>
+chgpass_usage = "<red>❌ Использование: </red><white>/ui auth chgpass <ник> <новый_пароль></white>"
+# Default: <green>✔</green> <white>Пароль игрока</white> <yellow>%player%</yellow> <white>изменён на</white> <green>%password%</green><white>.</white>
+chgpass_success = "<green>✔</green> <white>Пароль игрока</white> <yellow>%player%</yellow> <white>изменён на</white> <green>%password%</green><white>.</white>"
+# Default: <gray>Сессия сброшена — игроку нужно войти заново.</gray>
+chgpass_session_reset = "<gray>Сессия сброшена — игроку нужно войти заново.</gray>"
+# Default: <red>❌ Не удалось сменить пароль игрока</red> <yellow>%player%</yellow>
+chgpass_fail = "<red>❌ Не удалось сменить пароль игрока</red> <yellow>%player%</yellow>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Ваша регистрация удалена администратором!</red>\n<gray>При следующем входе нужно зарегистрироваться заново.</gray>
+kick_resetauth = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Ваша регистрация удалена администратором!</red>\n<gray>При следующем входе нужно зарегистрироваться заново.</gray>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Ваша сессия сброшена администратором!</red>\n<gray>При следующем входе нужно снова ввести пароль.</gray>
+kick_delsession = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Ваша сессия сброшена администратором!</red>\n<gray>При следующем входе нужно снова ввести пароль.</gray>"
+# Default: <red>⏱ Время входа истекло!</red>\n<gray>Вы не вошли за %seconds% секунд.</gray>
+kick_timeout = "<red>⏱ Время входа истекло!</red>\n<gray>Вы не вошли за %seconds% секунд.</gray>"
+# Default: <red>❌ Слишком много неверных попыток!</red>\n<gray>Вы ввели неверный пароль %attempts% раз.</gray>
+kick_too_many_attempts = "<red>❌ Слишком много неверных попыток!</red>\n<gray>Вы ввели неверный пароль %attempts% раз.</gray>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
+kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n"
 
 # dialog section.
 # Placeholders: %account%, %url%
+
+
+# twofa section (2FA command output and challenge notices).
+
+# Placeholders: %account%
+
+[messages.auth.twofa]
+# Default: <gold>✦ <white>Двухфакторная аутентификация (2FA)
+banner = [
+    "<gold>✦ <white>Двухфакторная аутентификация (2FA)",
+    "<gray>━━━━━━━━━━━━━━━━━━━━━",
+    "<yellow>Закрепить аккаунт через GitHub?",
+    "<white>1. Введите: <yellow>/ui auth 2fa setup <github_username>",
+    "<white>2. При следующем входе придёт ссылка авторизации GitHub.",
+    "<gray>Настроить 2FA можно позже той же командой.",
+    "<gray>━━━━━━━━━━━━━━━━━━━━━",
+]
+# Default: <dark_red>❌</dark_red> <red>Использование: </red><white>/ui auth 2fa setup <github_username></white>
+usage_setup = "<dark_red>❌</dark_red> <red>Использование: </red><white>/ui auth 2fa setup <github_username></white>"
+# Default: <dark_red>❌</dark_red> <red>Сначала войдите, чтобы настроить 2FA!</red>
+login_required_setup = "<dark_red>❌</dark_red> <red>Сначала войдите, чтобы настроить 2FA!</red>"
+# Default: <dark_red>❌</dark_red> <red>Сначала войдите, чтобы отключить 2FA!</red>
+login_required_disable = "<dark_red>❌</dark_red> <red>Сначала войдите, чтобы отключить 2FA!</red>"
+# Default: <dark_red>❌</dark_red> <red>2FA не включена!</red>
+not_enabled = "<dark_red>❌</dark_red> <red>2FA не включена!</red>"
+# Default: <gold>✦ <white>2FA <dark_gray>— <gray>Настройка
+setup_title = "<gold>✦ <white>2FA <dark_gray>— <gray>Настройка"
+# Default: <gray>━━━━━━━━━━━━━━━━━━━━━
+divider = "<gray>━━━━━━━━━━━━━━━━━━━━━"
+# Default: <green>✔ 2FA включена!
+setup_enabled = "<green>✔ 2FA включена!"
+# Default: <gray>Аккаунт GitHub: <white>%account%
+github_account = "<gray>Аккаунт GitHub: <white>%account%"
+# Default: <gray>При следующем входе придёт ссылка авторизации GitHub.
+login_link_hint = "<gray>При следующем входе придёт ссылка авторизации GitHub."
+# Default: <gray>При входе придёт ссылка авторизации GitHub.
+login_link_hint_short = "<gray>При входе придёт ссылка авторизации GitHub."
+# Default: <green>✔ 2FA включена
+status_enabled = "<green>✔ 2FA включена"
+# Default: <red>❌ 2FA отключена
+status_disabled = "<red>❌ 2FA отключена"
+# Default: <red>⚠ GitHub 2FA отключена в конфиге (auth.twofa.github.enabled: false)
+config_disabled = "<red>⚠ GitHub 2FA отключена в конфиге (auth.twofa.github.enabled: false)"
+# Default: <gray>Отключить: <yellow>/ui auth 2fa disable
+disable_hint = "<gray>Отключить: <yellow>/ui auth 2fa disable"
+# Default: <gray>Включить: <yellow>/ui auth 2fa setup <github_username>
+enable_hint = "<gray>Включить: <yellow>/ui auth 2fa setup <github_username>"
+# Default: <green>✅</green> <white>Вход выполнен (GitHub 2FA отключена в конфиге).</white>
+login_2fa_disabled = "<green>✅</green> <white>Вход выполнен (GitHub 2FA отключена в конфиге).</white>"
+# Default: <green>✅</green> <white>Вход выполнен (2FA сброшена — GitHub не привязан).</white>
+login_2fa_reset = "<green>✅</green> <white>Вход выполнен (2FA сброшена — GitHub не привязан).</white>"
+# Default: <red>❌ GitHub 2FA не настроена! Обратитесь к администратору.</red>
+not_configured = "<red>❌ GitHub 2FA не настроена! Обратитесь к администратору.</red>"
+# Default: <red>❌ Время 2FA истекло! Перезайдите, чтобы получить новое окно входа.</red>
+timeout = "<red>❌ Время 2FA истекло! Перезайдите, чтобы получить новое окно входа.</red>"
+# Default: <red>❌ Ошибка 2FA! Перезайдите, чтобы получить новое окно входа.</red>
+error = "<red>❌ Ошибка 2FA! Перезайдите, чтобы получить новое окно входа.</red>"
+# Default: <green>✅</green> <white>Авторизация GitHub подтверждена! Добро пожаловать.</white>
+approved_callback = "<green>✅</green> <white>Авторизация GitHub подтверждена! Добро пожаловать.</white>"
+# Default: <green>✅</green> <white>Авторизация GitHub успешна! Добро пожаловать.</white>
+approved_complete = "<green>✅</green> <white>Авторизация GitHub успешна! Добро пожаловать.</white>"
 
 [messages.auth.dialog]
 # Title text (MiniMessage).
@@ -399,6 +532,14 @@ no_password_in_chat = "<yellow>⚠ Do not type passwords in chat — open the pa
 current_password_required = "<red>❌ Enter your current password in the password change window.</red>"
 # Default: <red>❌ Old and new password are required.</red>
 changepass_fields_required = "<red>❌ Old and new password are required.</red>"
+# Default: <gray>Enter your password in the login window that opens on join.</gray>
+try_again_hint = "<gray>Enter your password in the login window that opens on join.</gray>"
+# Default: <gold>✦</gold> <white>You are already logged in!</white>
+already_authenticated = "<gold>✦</gold> <white>You are already logged in!</white>"
+# Default: <gray>Use: </gray><gold>/ui auth logout</gold>
+logout_usage = "<gray>Use: </gray><gold>/ui auth logout</gold>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+not_initialized = "<red>❌ Authorization system is not initialized!</red>"
 
 # admin section.
 # Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
@@ -491,9 +632,74 @@ kick_logout = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Session rese
 # Display name (MiniMessage).
 # Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
 kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+chgpass_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+chgpass_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
 
 # dialog section.
 # Placeholders: %account%, %url%
+
+
+# twofa section (2FA command output and challenge notices).
+
+# Placeholders: %account%
+
+[messages_en.auth.twofa]
+# Default: <gold>✦ <white>Two-Factor Authentication (2FA)
+banner = [
+    "<gold>✦ <white>Two-Factor Authentication (2FA)",
+    "<gray>━━━━━━━━━━━━━━━━━━━━━",
+    "<yellow>Want to secure your account via GitHub?",
+    "<white>1. Enter: <yellow>/ui auth 2fa setup <github_username>",
+    "<white>2. On next login you will receive a GitHub authorization link.",
+    "<gray>You can set up 2FA later with the same command.",
+    "<gray>━━━━━━━━━━━━━━━━━━━━━",
+]
+# Default: <dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth 2fa setup <github_username></white>
+usage_setup = "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth 2fa setup <github_username></white>"
+# Default: <dark_red>❌</dark_red> <red>You must be logged in to set up 2FA!</red>
+login_required_setup = "<dark_red>❌</dark_red> <red>You must be logged in to set up 2FA!</red>"
+# Default: <dark_red>❌</dark_red> <red>You must be logged in to disable 2FA!</red>
+login_required_disable = "<dark_red>❌</dark_red> <red>You must be logged in to disable 2FA!</red>"
+# Default: <dark_red>❌</dark_red> <red>2FA is not enabled!</red>
+not_enabled = "<dark_red>❌</dark_red> <red>2FA is not enabled!</red>"
+# Default: <gold>✦ <white>2FA <dark_gray>— <gray>Setup
+setup_title = "<gold>✦ <white>2FA <dark_gray>— <gray>Setup"
+# Default: <gray>━━━━━━━━━━━━━━━━━━━━━
+divider = "<gray>━━━━━━━━━━━━━━━━━━━━━"
+# Default: <green>✔ 2FA enabled!
+setup_enabled = "<green>✔ 2FA enabled!"
+# Default: <gray>GitHub account: <white>%account%
+github_account = "<gray>GitHub account: <white>%account%"
+# Default: <gray>On the next login you will receive a GitHub authorization link.
+login_link_hint = "<gray>On the next login you will receive a GitHub authorization link."
+# Default: <gray>On login you will get a GitHub authorization link.
+login_link_hint_short = "<gray>On login you will get a GitHub authorization link."
+# Default: <green>✔ 2FA enabled
+status_enabled = "<green>✔ 2FA enabled"
+# Default: <red>❌ 2FA disabled
+status_disabled = "<red>❌ 2FA disabled"
+# Default: <red>⚠ GitHub 2FA is disabled in the config (auth.twofa.github.enabled: false)
+config_disabled = "<red>⚠ GitHub 2FA is disabled in the config (auth.twofa.github.enabled: false)"
+# Default: <gray>Disable: <yellow>/ui auth 2fa disable
+disable_hint = "<gray>Disable: <yellow>/ui auth 2fa disable"
+# Default: <gray>Enable: <yellow>/ui auth 2fa setup <github_username>
+enable_hint = "<gray>Enable: <yellow>/ui auth 2fa setup <github_username>"
+# Default: <green>✅</green> <white>Logged in (GitHub 2FA is disabled in the config).</white>
+login_2fa_disabled = "<green>✅</green> <white>Logged in (GitHub 2FA is disabled in the config).</white>"
+# Default: <green>✅</green> <white>Logged in (2FA reset — no GitHub account linked).</white>
+login_2fa_reset = "<green>✅</green> <white>Logged in (2FA reset — no GitHub account linked).</white>"
+# Default: <red>❌ GitHub 2FA is not configured! Contact an administrator.</red>
+not_configured = "<red>❌ GitHub 2FA is not configured! Contact an administrator.</red>"
+# Default: <red>❌ 2FA timeout! Reconnect to get a new login window.</red>
+timeout = "<red>❌ 2FA timeout! Reconnect to get a new login window.</red>"
+# Default: <red>❌ 2FA error! Reconnect to get a new login window.</red>
+error = "<red>❌ 2FA error! Reconnect to get a new login window.</red>"
+# Default: <green>✅</green> <white>GitHub authorization confirmed! Welcome.</white>
+approved_callback = "<green>✅</green> <white>GitHub authorization confirmed! Welcome.</white>"
+# Default: <green>✅</green> <white>GitHub authorization successful! Welcome.</white>
+approved_complete = "<green>✅</green> <white>GitHub authorization successful! Welcome.</white>"
 
 [messages_en.auth.dialog]
 # Title text (MiniMessage).

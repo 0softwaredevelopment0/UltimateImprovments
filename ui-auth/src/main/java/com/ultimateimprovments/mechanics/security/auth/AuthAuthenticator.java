@@ -11,6 +11,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +36,16 @@ public class AuthAuthenticator {
     private final AuthPlayerState playerState;
     private final AuthRateLimiter rateLimiter;
     private final AuthTimeoutManager timeoutManager;
+
+    /** Fallback for {@code auth.twofa.banner} when the config has no list. */
+    private static final List<String> DEFAULT_TWOFA_BANNER = List.of(
+            "<gold>✦ <white>Two-Factor Authentication (2FA)",
+            "<gray>━━━━━━━━━━━━━━━━━━━━━",
+            "<yellow>Want to secure your account via GitHub?",
+            "<white>1. Enter: <yellow>/ui auth 2fa setup <github_username>",
+            "<white>2. On next login you will receive a GitHub authorization link.",
+            "<gray>You can set up 2FA later with the same command.",
+            "<gray>━━━━━━━━━━━━━━━━━━━━━");
 
     /**
      * Saves the player's state BEFORE the freeze, to restore it after authentication.
@@ -210,17 +221,14 @@ public class AuthAuthenticator {
                     Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                         if (!player.isOnline()) return;
                         playerState.resetWrongAttempts(uuid);
-                        authenticatePlayer(player, "<green>✅</green> <white>Registration successful!</white>");
+                        authenticatePlayer(player, MessagesManager.getString("auth.messages.success_register",
+                                "<green>✔ Registration successful!</green>"));
 
                         // Suggest 2FA setup
                         player.sendMessage("");
-                        player.sendMessage(MessageUtil.parse("<gold>✦ <white>Two-Factor Authentication (2FA)"));
-                        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
-                        player.sendMessage(MessageUtil.parse("<yellow>Want to secure your account via GitHub?"));
-                        player.sendMessage(MessageUtil.parse("<white>1. Enter: <yellow>/ui auth 2fa setup <github_username>"));
-                        player.sendMessage(MessageUtil.parse("<white>2. On next login you'll receive a clickable GitHub authorization link."));
-                        player.sendMessage(MessageUtil.parse("<gray>You can set up 2FA later with the same command."));
-                        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+                        for (String line : MessagesManager.getStringList("auth.twofa.banner", DEFAULT_TWOFA_BANNER)) {
+                            player.sendMessage(MessageUtil.parse(line));
+                        }
                         player.sendMessage("");
                     });
                 }
@@ -268,7 +276,8 @@ public class AuthAuthenticator {
             return;
         }
 
-        authenticatePlayer(player, "<green>✅</green> <white>You have successfully logged in!</white>");
+        authenticatePlayer(player, MessagesManager.getString("auth.messages.success_login",
+                "<green>✔ You have successfully logged in!</green>"));
     }
 
     // =========================
@@ -278,7 +287,8 @@ public class AuthAuthenticator {
         UUID uuid = player.getUniqueId();
 
         if (!AuthConfig.isGithub2FAEnabled()) {
-            authenticatePlayer(player, "<green>✅</green> <white>Logged in (GitHub 2FA is disabled in config).</white>");
+            authenticatePlayer(player, MessagesManager.getString("auth.twofa.login_2fa_disabled",
+                    "<green>✅</green> <white>Logged in (GitHub 2FA is disabled in the config).</white>"));
             return;
         }
 
@@ -286,7 +296,8 @@ public class AuthAuthenticator {
         if (githubUsername == null || githubUsername.isEmpty()) {
             // No linked GitHub — disable 2FA and let them in without confirmation
             Auth2FA.remove(uuid);
-            authenticatePlayer(player, "<green>✅</green> <white>Logged in (2FA reset — no GitHub account linked).</white>");
+            authenticatePlayer(player, MessagesManager.getString("auth.twofa.login_2fa_reset",
+                    "<green>✅</green> <white>Logged in (2FA reset — no GitHub account linked).</white>"));
             return;
         }
 
@@ -300,7 +311,8 @@ public class AuthAuthenticator {
         String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName);
         String authUrl = Auth2FA.getInstance().getAuthUrl(uuid);
         if (requestId == null || authUrl == null) {
-            player.sendMessage(MessageUtil.parse("<red>❌ GitHub 2FA is not configured! Contact an administrator."));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.twofa.not_configured",
+                    "<red>❌ GitHub 2FA is not configured! Contact an administrator.</red>")));
             // Don't unfreeze the player — they stay pendingAuth (all actions blocked),
             // and re-arm the timeout so the player gets kicked via login_timeout_seconds.
             timeoutManager.startLoginTimeout(player);
@@ -343,7 +355,8 @@ public class AuthAuthenticator {
                     // Timeout: remove the challenge and re-arm the global login timeout
                     // so the player doesn't stay frozen forever (they get kicked).
                     Auth2FA.getInstance().clearPending(uuid);
-                    player.sendMessage(MessageUtil.parse("<red>❌ 2FA timeout! Reconnect to get a new login window."));
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.twofa.timeout",
+                            "<red>❌ 2FA timeout! Reconnect to get a new login window.</red>")));
                     timeoutManager.startLoginTimeout(player);
                     cancel();
                     return;
@@ -359,11 +372,13 @@ public class AuthAuthenticator {
 
                         if ("approved".equals(status)) {
                             Auth2FA.getInstance().clearPending(uuid);
-                            authenticatePlayer(player, "<green>✅</green> <white>GitHub authorization confirmed! Welcome.</white>");
+                            authenticatePlayer(player, MessagesManager.getString("auth.twofa.approved_callback",
+                                    "<green>✅</green> <white>GitHub authorization confirmed! Welcome.</white>"));
                             cancel();
                         } else if ("timeout".equals(status) || "not_found".equals(status)) {
                             Auth2FA.getInstance().clearPending(uuid);
-                            player.sendMessage(MessageUtil.parse("<red>❌ 2FA error! Reconnect to get a new login window."));
+                            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.twofa.error",
+                                    "<red>❌ 2FA error! Reconnect to get a new login window.</red>")));
                             cancel();
                         }
                     });
@@ -385,7 +400,8 @@ public class AuthAuthenticator {
         Auth2FA.getInstance().clearPending(uuid);
         AuthDatabase.updateLastLogin(uuid); // session 1 hour from the confirmation
 
-        authenticatePlayer(player, "<green>✅</green> <white>GitHub authorization successful! Welcome.</white>");
+        authenticatePlayer(player, MessagesManager.getString("auth.twofa.approved_complete",
+                "<green>✅</green> <white>GitHub authorization successful! Welcome.</white>"));
     }
 
     // =========================
