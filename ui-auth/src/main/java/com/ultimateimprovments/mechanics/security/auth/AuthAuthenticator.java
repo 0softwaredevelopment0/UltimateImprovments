@@ -549,8 +549,14 @@ public class AuthAuthenticator {
         playerState.removePendingAuth(uuid);
         AuthDatabase.resetAuth(uuid);
 
+        // Plugin-style kick reason (same shape as the other auth kicks): the player must
+        // see WHY the server closed the connection, not a bare disconnect.
         String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
-                "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
+                "<yellow>✦</yellow> UltimateImprovments\n\n"
+                        + "<red>❌ Сессия сброшена.</red>\n"
+                        + "<gray>Вы вышли из аккаунта — при следующем входе введите пароль заново.</gray>");
+        // Make sure the logout dialog is not left on screen behind the kick screen.
+        AuthDialogScreen.close(player);
         player.kick(MessageUtil.parse(kickLogout));
 
         ConsoleLogger.info("[Auth] Player " + player.getName() + " logged out manually.");

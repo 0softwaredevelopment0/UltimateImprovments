@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.security.auth;
 
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.ConsoleLogger;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.core.Holder;
@@ -65,7 +66,7 @@ public final class AuthDialogs {
     /** Admin password reset → cancel. */
     public static final Identifier CHGPASS_CANCEL = id("auth_chgpass_cancel");
     /** GitHub 2FA challenge → cancel (drop the pending challenge, back to the password window). */
-    public static final Identifier TWOfa_CANCEL = id("auth_2fa_cancel");
+    public static final Identifier TWOFA_CANCEL = id("auth_2fa_cancel");
 
     /** Input keys read back through {@code DialogResponseView}. */
     public static final String KEY_OLD = "auth_old";
@@ -76,6 +77,22 @@ public final class AuthDialogs {
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(NS, path);
+    }
+
+    /**
+     * Compares a click action id reported by {@code PlayerCustomClickEvent} with a dialog
+     * action id.
+     * <p>
+     * ⚠ The event reports an Adventure {@link Key}, while the dialog API takes a
+     * {@code net.minecraft.resources.Identifier}. Those two types are unrelated
+     * ({@code Identifier} does not implement {@link Key}), so {@code key.equals(identifier)}
+     * is <b>always false</b> — matching through this helper is the only reliable way, and
+     * forgetting it silently disables the button (it clicks, nothing happens).
+     */
+    public static boolean matches(Key reported, Identifier actionId) {
+        return reported != null && actionId != null
+                && reported.namespace().equals(actionId.getNamespace())
+                && reported.value().equals(actionId.getPath());
     }
 
     // =========================================================================
@@ -150,7 +167,7 @@ public final class AuthDialogs {
                 Optional.of(openUrlAction(authUrl)));
         ActionButton cancelBtn = new ActionButton(
                 new CommonButtonData(nativeText(cfg("twofa_cancel_button", "<red>❌ Отмена</red>")), 150),
-                Optional.of(new CustomAll(TWOfa_CANCEL, Optional.empty())));
+                Optional.of(new CustomAll(TWOFA_CANCEL, Optional.empty())));
 
         CommonDialogData data = new CommonDialogData(
                 nativeText(cfg("twofa_title", "<gold>✦ Двухфакторная аутентификация</gold>")),
@@ -221,7 +238,7 @@ public final class AuthDialogs {
         } catch (Exception e) {
             ConsoleLogger.warn("[AuthDialog] Invalid 2FA URL, button disabled: " + e.getMessage());
         }
-        return new CustomAll(TWOfa_CANCEL, Optional.empty());
+        return new CustomAll(TWOFA_CANCEL, Optional.empty());
     }
 
     private static int maxPassword() {

@@ -49,7 +49,7 @@ public class AuthDialogHandler implements Listener {
         }
 
         // ─── GitHub 2FA challenge: cancel → back to the password window ───
-        if (identifier.equals(AuthDialogs.TWOfa_CANCEL)) {
+        if (AuthDialogs.matches(identifier, AuthDialogs.TWOFA_CANCEL)) {
             Auth2FA twofa = Auth2FA.getInstance();
             if (twofa != null) twofa.clearPending(player.getUniqueId());
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
@@ -59,19 +59,19 @@ public class AuthDialogHandler implements Listener {
         }
 
         // ─── Logout confirmation ───
-        if (identifier.equals(AuthDialogs.LOGOUT_CONFIRM)) {
+        if (AuthDialogs.matches(identifier, AuthDialogs.LOGOUT_CONFIRM)) {
             AuthManager manager = AuthManager.getInstance();
             if (manager != null) manager.logout(player);
             return;
         }
-        if (identifier.equals(AuthDialogs.LOGOUT_CANCEL)) {
+        if (AuthDialogs.matches(identifier, AuthDialogs.LOGOUT_CANCEL)) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
                     "<gray>Отменено.</gray>")));
             return;
         }
 
         // ─── Self password change (old + new password) ───
-        if (identifier.equals(AuthDialogs.CHANGEPASS_SUBMIT)) {
+        if (AuthDialogs.matches(identifier, AuthDialogs.CHANGEPASS_SUBMIT)) {
             DialogResponseView response = event.getDialogResponseView();
             if (response == null) return;
             String oldPassword = response.getText(AuthDialogs.KEY_OLD);
@@ -86,14 +86,14 @@ public class AuthDialogHandler implements Listener {
             }
             return;
         }
-        if (identifier.equals(AuthDialogs.CHANGEPASS_CANCEL)) {
+        if (AuthDialogs.matches(identifier, AuthDialogs.CHANGEPASS_CANCEL)) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
                     "<gray>Отменено.</gray>")));
             return;
         }
 
         // ─── Admin password reset (nickname + new password) ───
-        if (identifier.equals(AuthDialogs.CHGPASS_SUBMIT)) {
+        if (AuthDialogs.matches(identifier, AuthDialogs.CHGPASS_SUBMIT)) {
             if (!player.hasPermission("ui.command.auth.chgpass")) {
                 CommandErrors.noPermission(player, "ui.command.auth.chgpass");
                 return;
@@ -104,7 +104,7 @@ public class AuthDialogHandler implements Listener {
                     response.getText(AuthDialogs.KEY_NEW));
             return;
         }
-        if (identifier.equals(AuthDialogs.CHGPASS_CANCEL)) {
+        if (AuthDialogs.matches(identifier, AuthDialogs.CHGPASS_CANCEL)) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
                     "<gray>Отменено.</gray>")));
             return;

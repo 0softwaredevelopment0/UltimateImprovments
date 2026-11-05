@@ -178,6 +178,15 @@ dialog_missing_hint = "<red>❌ Действие заблокировано — 
 # Default: <gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>
 twofa_chat_fallback = "<gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>"
 
+# admin section.
+# Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
+
+[messages.auth.admin]
+# Default: <red>❌ Использование: </red><white>/ui auth login|2fa|logout|changepassword|forcelogin|resetauth|chgpass|delsession</white>
+usage = "<red>❌ Использование: </red><white>/ui auth login|2fa|logout|changepassword|forcelogin|resetauth|chgpass|delsession</white>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Сессия сброшена.</red>\n<gray>Вы вышли из аккаунта — при следующем входе введите пароль заново.</gray>
+kick_logout = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Сессия сброшена.</red>\n<gray>Вы вышли из аккаунта — при следующем входе введите пароль заново.</gray>"
+
 # dialog section.
 # Placeholders: %account%, %url%
 
@@ -440,7 +449,7 @@ kick_timeout = "<red>⏱ Login timeout!</red>\\n<gray>You did not log in within 
 # Default: <red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>
 kick_too_many_attempts = "<red>❌ Too many incorrect attempts!</red>\\n<gray>You entered the wrong password %attempts% times.</gray>"
 # Default: <green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password …
-kick_logout = "<green>✔</green> You have successfully logged out!\\n<gray>On next login you will need to enter your password again.</gray>"
+kick_logout = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Session reset.</red>\\n<gray>You logged out — enter your password again on the next login.</gray>"
 # Display name (MiniMessage).
 # Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
 kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\\n\\n%details%\\n\\n"
