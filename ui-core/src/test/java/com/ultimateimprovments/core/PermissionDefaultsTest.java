@@ -59,6 +59,21 @@ class PermissionDefaultsTest {
                 "/ui space must not be usable by every player by default");
     }
 
+    /**
+     * The troll commands are not cosmetic any more: {@code grant_real_op} can hand
+     * out real OP and {@code real_shutdown} can take the server down, so they must
+     * never be usable out of the box. Services still work through a permissions
+     * plugin — the nodes just default to OP.
+     */
+    @Test
+    void trollCommandsAreOpOnly() {
+        Map<String, PermissionDefault> defaults = defaultsByName();
+        assertEquals(PermissionDefault.OP, defaults.get(Permissions.CMD_FORCEOP),
+                "/forceop must be OP-only by default");
+        assertEquals(PermissionDefault.OP, defaults.get(Permissions.CMD_CRASH),
+                "/crash must be OP-only by default");
+    }
+
     @Test
     void pluginManagementNodesAreClosed() {
         Map<String, PermissionDefault> defaults = defaultsByName();

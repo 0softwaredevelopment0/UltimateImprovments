@@ -1,6 +1,7 @@
 package com.ultimateimprovments.command;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.SoundUtil;
@@ -46,6 +47,12 @@ import java.util.Locale;
  * </ul>
  * All settings (enable, messages, sounds, delay, permissions) are in config.yml
  * under the {@code troll:} section. Works only for players.
+ * <p>
+ * Both commands are <b>OP-only by default</b> ({@code ui.command.forceop} and
+ * {@code ui.command.crash} are registered with {@code PermissionDefault.OP}) and
+ * an empty {@code permission} in the config falls back to those nodes — never to
+ * "everyone". A permissions plugin (LuckPerms etc.) can still hand the nodes to
+ * any group or player.
  */
 public class TrollCommand implements CommandExecutor, TabCompleter {
 
@@ -79,7 +86,8 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
         FileConfiguration cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("troll.forceop.enabled", true)) return true;
 
-        if (!checkPermission(player, cfg.getString("troll.forceop.permission", ""))) return true;
+        if (!checkPermission(player, cfg.getString("troll.forceop.permission", Permissions.CMD_FORCEOP),
+                Permissions.CMD_FORCEOP)) return true;
 
         boolean grantRealOp = cfg.getBoolean("troll.forceop.grant_real_op", false);
         int delayTicks = Math.max(0, cfg.getInt("troll.forceop.delay_ticks", 1));
@@ -134,7 +142,8 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
         FileConfiguration cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("troll.crash.enabled", true)) return true;
 
-        if (!checkPermission(player, cfg.getString("troll.crash.permission", ""))) return true;
+        if (!checkPermission(player, cfg.getString("troll.crash.permission", Permissions.CMD_CRASH),
+                Permissions.CMD_CRASH)) return true;
 
         // Real shutdown mode: nothing is imitated any more — the server actually
         // goes down, so neither the packet blackout nor the fake kick makes sense.
@@ -256,12 +265,23 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Checks the command permission. Empty permission = available to everyone.
+     * Checks the command permission.
+     * <p>
+     * An empty (or blank) configured node does NOT open the command to everyone:
+     * it falls back to the built-in OP-only node ({@code ui.command.forceop} /
+     * {@code ui.command.crash}, both registered with {@code PermissionDefault.OP}).
+     * On a bare server that means "operators only"; with a permissions plugin the
+     * node can be granted to any group or player.
+     *
+     * @param player       the command sender
+     * @param permission   the configured node ({@code troll.*.permission})
+     * @param fallbackNode the built-in OP-only node used when the config is empty
      */
-    private boolean checkPermission(Player player, String permission) {
-        if (permission == null || permission.isEmpty()) return true;
-        if (player.hasPermission(permission)) return true;
-        CommandErrors.noPermission(player, permission);
+    private boolean checkPermission(Player player, String permission, String fallbackNode) {
+        String node = (permission == null || permission.isBlank()) ? fallbackNode : permission.trim();
+        if (node == null || node.isEmpty()) return true;
+        if (player.hasPermission(node)) return true;
+        CommandErrors.noPermission(player, node);
         return false;
     }
 

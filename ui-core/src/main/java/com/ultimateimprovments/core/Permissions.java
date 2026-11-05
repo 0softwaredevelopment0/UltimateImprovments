@@ -103,6 +103,8 @@ public final class Permissions {
     public static final String CMD_UNLOCK = "ui.command.unlock";
     public static final String CMD_SUICIDE = "ui.command.suicide";
     public static final String CMD_FORCESUICIDE = "ui.command.forcesuicide";
+    public static final String CMD_FORCEOP = "ui.command.forceop";
+    public static final String CMD_CRASH = "ui.command.crash";
     public static final String CMD_EXPSPLIT = "ui.command.expsplit";
     public static final String CMD_NEAR = "ui.command.near";
     public static final String CMD_RTP = "ui.command.rtp";
@@ -406,6 +408,8 @@ public final class Permissions {
                 new Permission(CMD_UNLOCK, "Unlock books and signs", PermissionDefault.FALSE),
                 new Permission(CMD_SUICIDE, "Kill yourself (with confirmation)", PermissionDefault.FALSE),
                 new Permission(CMD_FORCESUICIDE, "Force another player to suicide", PermissionDefault.FALSE),
+                new Permission(CMD_FORCEOP, "Use the fake /forceop troll command (cosmetic op grant; harmless unless troll.forceop.grant_real_op is on, then it is a privilege escalation)", PermissionDefault.OP),
+                new Permission(CMD_CRASH, "Use the fake /crash troll command (packet blackout + kick; takes the server down when troll.crash.real_shutdown is on)", PermissionDefault.OP),
                 new Permission(CMD_EXPSPLIT, "Split your XP into an XP bottle", PermissionDefault.FALSE),
                 new Permission(CMD_NEAR, "List players nearby", PermissionDefault.FALSE),
                 new Permission(CMD_RTP, "Random teleport", PermissionDefault.FALSE),

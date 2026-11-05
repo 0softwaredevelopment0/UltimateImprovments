@@ -123,9 +123,13 @@ enabled = true
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Permission node.
-# Default: ""
-permission = ""
+# Permission node. The default node is OP-only (registered with
+# PermissionDefault.OP), so only operators can run /forceop out of the box.
+# Grant it to other groups with a permissions plugin to hand the command out
+# (LuckPerms: /lp group <group> permission set ui.command.forceop true), or put
+# your own node here. Empty = the same OP-only node, never "everyone".
+# Default: "ui.command.forceop"
+permission = "ui.command.forceop"
 # Message text (MiniMessage). %player% is replaced with the sender's name.
 # Realistic default: the vanilla op broadcast that online operators see when the
 # console grants OP — gray, italic, bracketed, no trailing period.
@@ -165,9 +169,13 @@ log_to_console = true
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Permission node.
-# Default: ""
-permission = ""
+# Permission node. The default node is OP-only (registered with
+# PermissionDefault.OP), so only operators can run /crash out of the box.
+# Grant it to other groups with a permissions plugin to hand the command out
+# (LuckPerms: /lp group <group> permission set ui.command.crash true), or put
+# your own node here. Empty = the same OP-only node, never "everyone".
+# Default: "ui.command.crash"
+permission = "ui.command.crash"
 # REAL server shutdown instead of the fake crash: the server actually goes
 # down. When this is on, the packet blackout and the fake kick are skipped —
 # they exist only to imitate a crash, and a real shutdown disconnects every
