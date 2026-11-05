@@ -2,16 +2,21 @@ package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.CommandErrors;
 
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.security.auth.AuthDatabase;
 import com.ultimateimprovments.mechanics.security.auth.AuthDialogs;
 import com.ultimateimprovments.mechanics.security.auth.AuthManager;
+import com.ultimateimprovments.mechanics.security.auth.AuthPrompt;
 import com.ultimateimprovments.mechanics.security.auth.PasswordPolicy;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public final class AuthSubcommand {
@@ -24,11 +29,18 @@ public final class AuthSubcommand {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth 2fa|logout|changepassword|forcelogin|resetauth|chgpass|delsession</white>"));
+            // Bare /ui auth: before login it is the "show me the login window again"
+            // shortcut (the only auth command allowed while frozen), otherwise usage.
+            if (sender instanceof Player player && !isAuthenticated(player)) {
+                return handleLogin(player);
+            }
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.usage",
+                    "<red>❌ Usage: </red><white>/ui auth login|2fa|logout|changepassword|forcelogin|resetauth|chgpass|delsession</white>")));
             return true;
         }
 
-        return switch (args[1].toLowerCase()) {
+        return switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "login" -> handleLogin(sender);
             case "2fa" -> handle2FA(sender, args);
             case "forcelogin" -> handleForceLogin(sender, args);
             case "resetauth" -> handleResetAuth(sender, args);
@@ -41,6 +53,86 @@ public final class AuthSubcommand {
                 yield true;
             }
         };
+    }
+
+    /** True when the player passed authentication (or auth is off). */
+    static boolean isAuthenticated(Player player) {
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) return true;
+        return manager.isAuthenticated(player.getUniqueId());
+    }
+
+    /**
+     * {@code /ui auth login} — re-opens the auth dialog (the window is a client-side
+     * Custom Screen, so the player may have lost it; this is the only auth command
+     * allowed before login).
+     */
+    private static boolean handleLogin(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            CommandErrors.playerOnly(sender);
+            return true;
+        }
+        if (AuthManager.getInstance() == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authentication system is not initialized!</red>"));
+            return true;
+        }
+        if (isAuthenticated(player)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.already_authenticated",
+                    "<gold>✦</gold> <white>You are already logged in!</white>")));
+            return true;
+        }
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.opening_auth_window",
+                "<yellow>✦</yellow> <gray>Opening authorization window...</gray>")));
+        AuthPrompt.openNow(player);
+        return true;
+    }
+
+    // =========================================================================
+    // TAB-COMPLETE
+    // Suggestions are per-sender: before login only {@code login} is allowed,
+    // after login the set depends on the permission nodes. An empty-string entry
+    // is the SubCommandRegistry convention for "suggest nothing, do not fall back
+    // to online player names".
+    // =========================================================================
+    public static List<String> tabComplete(CommandSender sender, String[] args) {
+        if (args == null || args.length < 2) return List.of();
+        String sub = args[1].toLowerCase(Locale.ROOT);
+
+        if (args.length == 2) {
+            return subcommandsFor(sender);
+        }
+        switch (sub) {
+            case "2fa" -> {
+                return args.length == 3 ? List.of("setup", "disable") : List.of("");
+            }
+            case "forcelogin", "resetauth", "delsession", "chgpass" -> {
+                if (args.length == 3) return onlinePlayerNames();
+                return List.of(""); // password field — never suggest player names
+            }
+            default -> {
+                return List.of("");
+            }
+        }
+    }
+
+    /** Subcommand names the sender may actually use right now. */
+    private static List<String> subcommandsFor(CommandSender sender) {
+        if (sender instanceof Player player && !isAuthenticated(player)) {
+            // Frozen, unauthenticated player: only the dialog re-open shortcut.
+            return List.of("login");
+        }
+        List<String> names = new ArrayList<>(List.of("2fa", "logout", "changepassword"));
+        if (sender.hasPermission("ui.command.auth.forcelogin")) names.add("forcelogin");
+        if (sender.hasPermission("ui.command.auth.resetauth")) names.add("resetauth");
+        if (sender.hasPermission("ui.command.auth.delsession")) names.add("delsession");
+        if (sender.hasPermission("ui.command.auth.chgpass")) names.add("chgpass");
+        return names;
+    }
+
+    private static List<String> onlinePlayerNames() {
+        List<String> names = new ArrayList<>();
+        for (Player online : Bukkit.getOnlinePlayers()) names.add(online.getName());
+        return names;
     }
 
     @SuppressWarnings("deprecation")

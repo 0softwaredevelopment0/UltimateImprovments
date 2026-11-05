@@ -90,7 +90,7 @@ public class UIAuth extends JavaPlugin implements SoftReloadable {
     private void registerAuthCommand() {
         try {
             SubCommandRegistry.getInstance().register(
-                    LegacySubCommandAdapter.of("auth", AuthSubcommand::execute));
+                    LegacySubCommandAdapter.of("auth", AuthSubcommand::execute, AuthSubcommand::tabComplete));
         } catch (Exception e) {
             ConsoleLogger.warn("[UI-Auth] Failed to register /ui auth: " + e.getMessage());
         }

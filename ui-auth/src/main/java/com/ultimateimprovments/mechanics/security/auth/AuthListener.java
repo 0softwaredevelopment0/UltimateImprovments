@@ -185,8 +185,10 @@ public class AuthListener implements Listener {
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
 
-        // Only /ui auth 2fa and /ui auth logout are useful before login
-        if (msg.startsWith("/ui auth 2fa") || msg.startsWith("/ui auth logout")) {
+        // Before login exactly one auth command is allowed: {@code /ui auth} and
+        // {@code /ui auth login}. Both only re-open the auth dialog — passwords and
+        // every other action stay behind it.
+        if (msg.equals("/ui auth") || msg.equals("/ui auth login") || msg.startsWith("/ui auth login ")) {
             return;
         }
 

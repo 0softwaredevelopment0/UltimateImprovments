@@ -1,6 +1,6 @@
 package com.ultimateimprovments.mechanics.security.auth;
 
-import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -55,27 +55,28 @@ public class AuthDialogScreen {
         // ─── Titles ───
         net.minecraft.network.chat.Component title = toNative(
             MM.deserialize(isRegistered
-                ? Main.getInstance().getConfig().getString("messages.auth.dialog.login_title",
+                ? MessagesManager.getString("auth.dialog.login_title",
                     "<gold>✦ Login Required</gold>")
-                : Main.getInstance().getConfig().getString("messages.auth.dialog.register_title",
+                : MessagesManager.getString("auth.dialog.register_title",
                     "<gold>✦ Registration Required</gold>"))
         );
         net.minecraft.network.chat.Component externalTitle = toNative(
-            MM.deserialize("<gray>Server Authentication</gray>")
+            MM.deserialize(MessagesManager.getString("auth.dialog.external_title",
+                "<gray>Server Authentication</gray>"))
         );
 
         // ─── Body text ───
         net.minecraft.network.chat.Component bodyText = toNative(
             MM.deserialize(isRegistered
-                ? Main.getInstance().getConfig().getString("messages.auth.dialog.body_login",
+                ? MessagesManager.getString("auth.dialog.body_login",
                     "<white>Please enter your password to log in.</white>")
-                : Main.getInstance().getConfig().getString("messages.auth.dialog.body_register",
+                : MessagesManager.getString("auth.dialog.body_register",
                     "<white>Please choose a password to register.</white>"))
         );
 
         // ─── Password input field ───
         net.minecraft.network.chat.Component pwLabel = toNative(
-            MM.deserialize(Main.getInstance().getConfig().getString("messages.auth.dialog.password_label",
+            MM.deserialize(MessagesManager.getString("auth.dialog.password_label",
                 "<gray>Password</gray>"))
         );
         int maxPwLen = AuthConfig.getMaxPasswordLength();
@@ -83,11 +84,11 @@ public class AuthDialogScreen {
 
         // ─── Buttons ───
         net.minecraft.network.chat.Component continueLabel = toNative(
-            MM.deserialize(Main.getInstance().getConfig().getString("messages.auth.dialog.continue_button",
+            MM.deserialize(MessagesManager.getString("auth.dialog.continue_button",
                 "<green>✔ Continue</green>"))
         );
         net.minecraft.network.chat.Component exitLabel = toNative(
-            MM.deserialize(Main.getInstance().getConfig().getString("messages.auth.dialog.exit_button",
+            MM.deserialize(MessagesManager.getString("auth.dialog.exit_button",
                 "<red>❌ Exit Server</red>"))
         );
 

@@ -5,7 +5,6 @@ import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Sound;
@@ -308,21 +307,13 @@ public class AuthAuthenticator {
             return;
         }
 
-        player.sendMessage("");
-        player.sendMessage(MessageUtil.parse("<gold>✦ <white>GitHub 2FA <dark_gray>— <gray>Two-Factor Authentication"));
-        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
-        player.sendMessage(MessageUtil.parse("<yellow>Authorize your GitHub account to enter the server!"));
-        player.sendMessage(MessageUtil.parse("<gray>Click the link to open GitHub:"));
-        try {
-            player.sendMessage(MessageUtil.parse("<blue><u>" + authUrl + "</u></blue>")
-                    .clickEvent(ClickEvent.openUrl(java.net.URI.create(authUrl).toURL())));
-        } catch (Exception e) {
-            player.sendMessage(MessageUtil.parse("<blue><u>" + authUrl + "</u></blue>"));
-        }
-        player.sendMessage(MessageUtil.parse("<gray>Account: <white>" + githubUsername + "<gray>. The link is valid for 5 minutes."));
-        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
-        player.sendMessage(MessageUtil.parse("<gray>Awaiting authorization..."));
-        player.sendMessage("");
+        // Dialog-first: the player gets a window with a button that opens GitHub.
+        // The plain chat line keeps the same link as a fallback — a client that drops
+        // the dialog still has a way to authorize without reconnecting.
+        AuthDialogs.openGithub2FA(player, githubUsername, authUrl);
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.twofa_chat_fallback",
+                "<gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>")
+                .replace("%url%", authUrl)));
 
         ConsoleLogger.info("[Auth2FA] GitHub challenge started for " + playerName
                 + " (github: " + githubUsername + ", state: " + requestId + ")");

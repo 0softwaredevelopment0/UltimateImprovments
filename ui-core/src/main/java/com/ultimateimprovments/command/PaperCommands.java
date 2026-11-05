@@ -120,10 +120,26 @@ public final class PaperCommands {
     /** First level: suggest subcommand names/aliases for the typed prefix. */
     private static CompletableFuture<Suggestions> suggestSub(CommandSourceStack source, SuggestionsBuilder builder) {
         String partial = builder.getRemaining();
+        // A player frozen by the auth system may only use /ui auth (dialog re-open),
+        // so do not advertise the other 50 subcommands to them.
+        if (isPendingAuth(source.getSender())) {
+            if ("auth".startsWith(partial.toLowerCase())) builder.suggest("auth");
+            return builder.buildFuture();
+        }
         for (String name : SubCommandRegistry.getInstance().getAllCommandNames()) {
             if (name.startsWith(partial.toLowerCase())) builder.suggest(name);
         }
         return builder.buildFuture();
+    }
+
+    /** True when the sender is still waiting for authentication (UI-Auth installs the hook). */
+    private static boolean isPendingAuth(CommandSender sender) {
+        if (!(sender instanceof org.bukkit.entity.Player player)) return false;
+        try {
+            return com.ultimateimprovments.core.hooks.CoreHooks.isPendingAuth(player.getUniqueId());
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     /** Tail level: delegate to the subcommand's own tab-complete. */

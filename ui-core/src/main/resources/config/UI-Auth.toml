@@ -171,6 +171,83 @@ login_title = "<gold>✦</gold> <white>Please log in to continue.</white>"
 register_title = "<gold>✦</gold> <white>Choose a password to register.</white>"
 # Default: <gray>Use: </gray><gold>/ui auth logout</gold>
 logout_usage = "<gray>Use: </gray><gold>/ui auth logout</gold>"
+# Default: <gray>Введите пароль в открывшемся окне авторизации.</gray>\n<gray>Если окно не появилось — перезайдите на сервер.</gray>
+dialog_join_hint = "<gray>Введите пароль в открывшемся окне авторизации.</gray>\n<gray>Если окно не появилось — перезайдите на сервер.</gray>"
+# Default: <red>❌ Действие заблокировано — вы ещё не авторизованы.</red>\n<gray>Если окно авторизации не открылось — перезайдите на сервер.</gray>
+dialog_missing_hint = "<red>❌ Действие заблокировано — вы ещё не авторизованы.</red>\n<gray>Если окно авторизации не открылось — перезайдите на сервер.</gray>"
+# Default: <gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>
+twofa_chat_fallback = "<gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>"
+
+# dialog section.
+# Placeholders: %account%, %url%
+
+[messages.auth.dialog]
+# Title text (MiniMessage).
+# Default: <gold>✦ Авторизация</gold>
+title = "<gold>✦ Авторизация</gold>"
+# Title text (MiniMessage).
+# Default: <gray>Авторизация на сервере</gray>
+external_title = "<gray>Авторизация на сервере</gray>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Требуется вход</gold>
+login_title = "<gold>✦ Требуется вход</gold>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Требуется регистрация</gold>
+register_title = "<gold>✦ Требуется регистрация</gold>"
+# Default: <white>Введите пароль, чтобы войти.</white>
+body_login = "<white>Введите пароль, чтобы войти.</white>"
+# Default: <white>Придумайте пароль для регистрации.</white>
+body_register = "<white>Придумайте пароль для регистрации.</white>"
+# Default: <gray>Пароль</gray>
+password_label = "<gray>Пароль</gray>"
+# Default: <green>✔ Продолжить</green>
+continue_button = "<green>✔ Продолжить</green>"
+# Default: <red>❌ Отмена</red>
+cancel_button = "<red>❌ Отмена</red>"
+# Default: <red>❌ Выйти с сервера</red>
+exit_button = "<red>❌ Выйти с сервера</red>"
+# Default: <green>✔ Выйти</green>
+logout_confirm_button = "<green>✔ Выйти</green>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Выход из аккаунта</gold>
+logout_title = "<gold>✦ Выход из аккаунта</gold>"
+# Default: <gray>Текущий пароль</gray>
+old_password_label = "<gray>Текущий пароль</gray>"
+# Default: <gray>Новый пароль</gray>
+new_password_label = "<gray>Новый пароль</gray>"
+# Default: <gray>Ник игрока</gray>
+target_label = "<gray>Ник игрока</gray>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Двухфакторная аутентификация</gold>
+twofa_title = "<gold>✦ Двухфакторная аутентификация</gold>"
+# Default: <green>✔ Открыть GitHub</green>
+twofa_open_button = "<green>✔ Открыть GitHub</green>"
+# Default: <red>❌ Отмена</red>
+twofa_cancel_button = "<red>❌ Отмена</red>"
+
+# logout dialog body.
+
+[messages.auth.dialog.logout]
+# Default: <white>Сбросить сессию и выйти из аккаунта?</white>\n<gray>Следующий вход снова потребует пароль.</gray>
+body = "<white>Сбросить сессию и выйти из аккаунта?</white>\n<gray>Следующий вход снова потребует пароль.</gray>"
+
+# changepassword dialog body.
+
+[messages.auth.dialog.changepassword]
+# Default: <white>Введите текущий пароль и новый пароль:</white>
+body = "<white>Введите текущий пароль и новый пароль:</white>"
+
+# chgpass dialog body.
+
+[messages.auth.dialog.chgpass]
+# Default: <white>Укажите ник игрока и новый пароль:</white>
+body = "<white>Укажите ник игрока и новый пароль:</white>"
+
+# twofa dialog body.
+
+[messages.auth.dialog.twofa]
+# Default: <white>Подтвердите вход через GitHub.</white>\n<gray>Аккаунт: <white>%account%</white>. Ссылка действительна 5 минут.</gray>
+body = "<white>Подтвердите вход через GitHub.</white>\n<gray>Аккаунт: <white>%account%</white>. Ссылка действительна 5 минут.</gray>"
 
 # protection section.
 # Placeholders: %radius%, %value%, %points%, %r%, %cost%, %name%, %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
@@ -279,6 +356,12 @@ force_login_message = "<green>✔</green> <white>You have been force authorized 
 # Limit.
 # Default: <red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>
 rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
+# Default: <gray>Enter your password in the authorization window that has just opened.</gray>\n<gray>If no window appeared, reconnect to the server.</gray>
+dialog_join_hint = "<gray>Enter your password in the authorization window that has just opened.</gray>\n<gray>If no window appeared, reconnect to the server.</gray>"
+# Default: <red>❌ Action blocked — you are not authorized yet.</red>\n<gray>If the authorization window did not open, reconnect to the server.</gray>
+dialog_missing_hint = "<red>❌ Action blocked — you are not authorized yet.</red>\n<gray>If the authorization window did not open, reconnect to the server.</gray>"
+# Default: <gray>No 2FA window? Open the link:</gray> <blue><u>%url%</u></blue>
+twofa_chat_fallback = "<gray>No 2FA window? Open the link:</gray> <blue><u>%url%</u></blue>"
 
 # admin section.
 # Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
@@ -361,6 +444,77 @@ kick_logout = "<green>✔</green> You have successfully logged out!\\n<gray>On n
 # Display name (MiniMessage).
 # Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
 kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\\n\\n%details%\\n\\n"
+
+# dialog section.
+# Placeholders: %account%, %url%
+
+[messages_en.auth.dialog]
+# Title text (MiniMessage).
+# Default: <gold>✦ Authentication</gold>
+title = "<gold>✦ Authentication</gold>"
+# Title text (MiniMessage).
+# Default: <gray>Server Authentication</gray>
+external_title = "<gray>Server Authentication</gray>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Login Required</gold>
+login_title = "<gold>✦ Login Required</gold>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Registration Required</gold>
+register_title = "<gold>✦ Registration Required</gold>"
+# Default: <white>Enter your password to log in.</white>
+body_login = "<white>Enter your password to log in.</white>"
+# Default: <white>Choose a password to register.</white>
+body_register = "<white>Choose a password to register.</white>"
+# Default: <gray>Password</gray>
+password_label = "<gray>Password</gray>"
+# Default: <green>✔ Continue</green>
+continue_button = "<green>✔ Continue</green>"
+# Default: <red>❌ Cancel</red>
+cancel_button = "<red>❌ Cancel</red>"
+# Default: <red>❌ Exit Server</red>
+exit_button = "<red>❌ Exit Server</red>"
+# Default: <green>✔ Log out</green>
+logout_confirm_button = "<green>✔ Log out</green>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Account logout</gold>
+logout_title = "<gold>✦ Account logout</gold>"
+# Default: <gray>Current password</gray>
+old_password_label = "<gray>Current password</gray>"
+# Default: <gray>New password</gray>
+new_password_label = "<gray>New password</gray>"
+# Default: <gray>Player nickname</gray>
+target_label = "<gray>Player nickname</gray>"
+# Title text (MiniMessage).
+# Default: <gold>✦ Two-Factor Authentication</gold>
+twofa_title = "<gold>✦ Two-Factor Authentication</gold>"
+# Default: <green>✔ Open GitHub</green>
+twofa_open_button = "<green>✔ Open GitHub</green>"
+# Default: <red>❌ Cancel</red>
+twofa_cancel_button = "<red>❌ Cancel</red>"
+
+# logout dialog body.
+
+[messages_en.auth.dialog.logout]
+# Default: <white>Reset the session and log out of the account?</white>\n<gray>The next login will ask for the password again.</gray>
+body = "<white>Reset the session and log out of the account?</white>\n<gray>The next login will ask for the password again.</gray>"
+
+# changepassword dialog body.
+
+[messages_en.auth.dialog.changepassword]
+# Default: <white>Enter your current password and the new password:</white>
+body = "<white>Enter your current password and the new password:</white>"
+
+# chgpass dialog body.
+
+[messages_en.auth.dialog.chgpass]
+# Default: <white>Enter the player nickname and the new password:</white>
+body = "<white>Enter the player nickname and the new password:</white>"
+
+# twofa dialog body.
+
+[messages_en.auth.dialog.twofa]
+# Default: <white>Confirm the login through GitHub.</white>\n<gray>Account: <white>%account%</white>. The link is valid for 5 minutes.</gray>
+body = "<white>Confirm the login through GitHub.</white>\n<gray>Account: <white>%account%</white>. The link is valid for 5 minutes.</gray>"
 
 # codepanel section.
 # Placeholders: %seconds%, %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%, %entity%

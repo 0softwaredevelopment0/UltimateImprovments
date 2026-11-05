@@ -48,6 +48,16 @@ public class AuthDialogHandler implements Listener {
             AuthPrompt.markClosed(player);
         }
 
+        // ─── GitHub 2FA challenge: cancel → back to the password window ───
+        if (identifier.equals(AuthDialogs.TWOfa_CANCEL)) {
+            Auth2FA twofa = Auth2FA.getInstance();
+            if (twofa != null) twofa.clearPending(player.getUniqueId());
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
+                    "<gray>Отменено.</gray>")));
+            AuthPrompt.openLater(player, 500L);
+            return;
+        }
+
         // ─── Logout confirmation ───
         if (identifier.equals(AuthDialogs.LOGOUT_CONFIRM)) {
             AuthManager manager = AuthManager.getInstance();
