@@ -17,6 +17,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Fake commands to troll hackers.
@@ -30,13 +31,18 @@ import java.util.List;
  *       genuine grant, which is off by default on purpose.
  *       {@code troll.forceop.delay_ticks} postpones the fake answer (default
  *       1 tick, 0 = immediately) so the command looks like it is doing work.</li>
- *   <li><b>/crash</b> — stops ALL server→client packets for the player
- *       ({@code troll.crash.freeze_client}: a discarding netty handler in their
- *       pipeline), so their world freezes exactly like during a real server crash,
- *       then after {@code troll.crash.delay_seconds} kicks them with the
- *       {@code troll.crash.kick_message} text (multi-line list, default
- *       {@code <white>Server closed}). No chat text is sent: during the blackout
- *       nothing reaches the client, so the kick is the only thing it ever sees.</li>
+ *   <li><b>/crash</b> — by default the fake crash only: stops ALL server→client
+ *       packets for the player ({@code troll.crash.freeze_client}: a discarding
+ *       netty handler in their pipeline), so their world freezes exactly like
+ *       during a real server crash, then after {@code troll.crash.delay_seconds}
+ *       kicks them with the {@code troll.crash.kick_message} text (multi-line
+ *       list, default {@code <white>Server closed}). No chat text is sent: during
+ *       the blackout nothing reaches the client, so the kick is the only thing it
+ *       ever sees.
+ *       <b>DANGEROUS</b>: {@code troll.crash.real_shutdown = true} turns the fake
+ *       into a REAL shutdown — the server actually stops or restarts
+ *       ({@code troll.crash.shutdown_mode}), the blackout and the fake kick are
+ *       skipped, and every player is disconnected by the server itself.</li>
  * </ul>
  * All settings (enable, messages, sounds, delay, permissions) are in config.yml
  * under the {@code troll:} section. Works only for players.
@@ -130,6 +136,12 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
 
         if (!checkPermission(player, cfg.getString("troll.crash.permission", ""))) return true;
 
+        // Real shutdown mode: nothing is imitated any more — the server actually
+        // goes down, so neither the packet blackout nor the fake kick makes sense.
+        if (cfg.getBoolean("troll.crash.real_shutdown", false)) {
+            return handleRealShutdown(player, cfg);
+        }
+
         // Blackout FIRST: the server stops sending ANY packets to this client
         // (their pipeline gets a discarding outbound handler), so everything on
         // their screen freezes exactly like during a real server crash — no
@@ -172,6 +184,58 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
             }
         }.runTaskLater(Main.getInstance(), delaySeconds * 20L);
 
+        return true;
+    }
+
+    // =========================
+    // /crash with real_shutdown = true — take the server down for real
+    // =========================
+    /**
+     * Real shutdown branch ({@code troll.crash.real_shutdown = true}).
+     * <p>
+     * Nothing is imitated: no packet blackout, no fake kick — the server itself
+     * disconnects every player when it stops/restarts. The actual power action
+     * goes through {@link PowerManager#executeDirect(boolean)}, the same pipeline
+     * {@code /ui power} uses (broadcast, one-tick delay, save + shutdown or
+     * restart), so launch scripts and {@code spigot.yml restart-script} keep
+     * working exactly as they do for a normal restart.
+     */
+    private boolean handleRealShutdown(Player player, FileConfiguration cfg) {
+        String rawMode = cfg.getString("troll.crash.shutdown_mode", "stop");
+        String mode = rawMode == null ? "stop" : rawMode.trim().toLowerCase(Locale.ROOT);
+
+        boolean restart;
+        if ("restart".equals(mode)) {
+            restart = true;
+        } else {
+            if (!"stop".equals(mode)) {
+                ConsoleLogger.warn("[Troll] Unknown troll.crash.shutdown_mode '" + rawMode
+                        + "' — falling back to 'stop'.");
+            }
+            restart = false;
+        }
+
+        if (cfg.getBoolean("troll.crash.log_to_console", true)) {
+            ConsoleLogger.warn("[Troll] " + player.getName()
+                    + " used /crash with troll.crash.real_shutdown = true — the server will "
+                    + (restart ? "restart" : "stop") + " for real.");
+        }
+
+        PowerManager power = PowerManager.getInstance();
+        if (power != null) {
+            power.executeDirect(restart);
+        } else {
+            // Should not happen (PowerManager is initialised on enable), but a
+            // troll command must never silently do nothing when asked for this.
+            ConsoleLogger.warn("[Troll] PowerManager is not initialised — shutting the server down directly.");
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                if (restart) {
+                    Bukkit.getServer().restart();
+                } else {
+                    Bukkit.getServer().shutdown();
+                }
+            }, 20L);
+        }
         return true;
     }
 

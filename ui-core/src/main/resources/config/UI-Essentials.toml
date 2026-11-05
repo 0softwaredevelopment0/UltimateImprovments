@@ -168,6 +168,24 @@ enabled = true
 # Permission node.
 # Default: ""
 permission = ""
+# REAL server shutdown instead of the fake crash: the server actually goes
+# down. When this is on, the packet blackout and the fake kick are skipped —
+# they exist only to imitate a crash, and a real shutdown disconnects every
+# player by itself (freeze_client, delay_seconds and kick_message are unused).
+# Off by default: this is a destructive command, not a cosmetic troll.
+# Default: false
+real_shutdown = false
+# What the server does when real_shutdown = true. Two values:
+#   "stop"    — a normal stop (Bukkit.shutdown): the world and the plugins save,
+#               then the process exits. Launch scripts and process managers
+#               often start the server again on their own after a stop, so
+#               "stop" does not always mean the server stays down.
+#   "restart" — a restart (Bukkit.restart): the same save, but the server is
+#               brought back up by its launch script / spigot.yml
+#               restart-script instead of exiting for good.
+# Any other value falls back to "stop" (a warning is printed to the console).
+# Default: "stop"
+shutdown_mode = "stop"
 # Blackout the troller's client: the server stops sending ANY packets to them
 # (a discarding handler in their netty pipeline), so everything on their screen
 # freezes exactly like during a real server crash. No packets are modified or
