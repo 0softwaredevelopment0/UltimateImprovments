@@ -41,6 +41,13 @@ public class AuthDialogHandler implements Listener {
         if (player == null) return;
         if (identifier == null) return;
 
+        // The client closes a dialog the moment any button is pressed and never tells
+        // the server — remember it, otherwise AuthPrompt would assume the auth screen
+        // is still on the player's display.
+        if (identifier.equals(AUTH_SUBMIT_KEY) || identifier.equals(AUTH_CANCEL_KEY)) {
+            AuthPrompt.markClosed(player);
+        }
+
         // ─── Logout confirmation ───
         if (identifier.equals(AuthDialogs.LOGOUT_CONFIRM)) {
             AuthManager manager = AuthManager.getInstance();
@@ -184,12 +191,7 @@ public class AuthDialogHandler implements Listener {
      * Shows an error and re-opens the dialog.
      */
     private void showErrorAndReopen(Player player) {
-        boolean registered = AuthDatabase.isRegistered(player.getUniqueId());
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-            if (player.isOnline()) {
-                AuthDialogScreen.open(player, registered);
-            }
-        }, 10L);
+        AuthPrompt.openLater(player, 500L);
     }
 
 

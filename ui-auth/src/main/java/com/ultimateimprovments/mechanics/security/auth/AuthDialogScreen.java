@@ -121,6 +121,9 @@ public class AuthDialogScreen {
         );
 
         serverPlayer.openDialog(Holder.direct(dialog));
+        // Remember that the screen is (probably) on the client's display — AuthPrompt
+        // uses this to decide whether a cancelled action must re-send the dialog.
+        AuthPrompt.markOpened(player);
         ConsoleLogger.info("[AuthDialog] Opened auth screen for " + player.getName()
             + " (registered=" + isRegistered + ")");
     }
@@ -129,6 +132,7 @@ public class AuthDialogScreen {
      * Closes the open dialog for the player (after successful/failed login).
      */
     public static void close(Player player) {
+        AuthPrompt.markClosed(player);
         if (!(player instanceof CraftPlayer craftPlayer)) return;
         if (craftPlayer.getHandle().connection == null) return;
         craftPlayer.getHandle().connection.send(

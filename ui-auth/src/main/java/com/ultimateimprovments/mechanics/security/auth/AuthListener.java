@@ -81,6 +81,8 @@ public class AuthListener implements Listener {
         if (auth != null) {
             auth.handleQuit(event.getPlayer());
         }
+        // Drop the dialog-prompt bookkeeping (throttle timestamps) for a clean rejoin.
+        AuthPrompt.removePlayer(uuid);
     }
 
     // =========================
@@ -90,6 +92,16 @@ public class AuthListener implements Listener {
         return AuthPlayerState.getInstance() != null && AuthPlayerState.getInstance().needsAuth(player);
     }
 
+    /**
+     * Blocks an action of a not-yet-authorized player and re-sends the auth screen.
+     * The client owns the dialog: it closes it on submit and never reports the close,
+     * so without this the player can end up frozen with no window and no way to log in.
+     */
+    private void blockAndPrompt(org.bukkit.event.Cancellable event, Player player) {
+        event.setCancelled(true);
+        AuthPrompt.onBlockedAction(player);
+    }
+
     // =========================
     // BLOCK DAMAGE TO ENTITIES if not authed
     // =========================
@@ -97,7 +109,7 @@ public class AuthListener implements Listener {
     public void onEntityDamageByEntity(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player player)) return;
         if (!needsAuth(player)) return;
-        event.setCancelled(true);
+        blockAndPrompt(event, player);
     }
 
     // =========================
@@ -107,14 +119,14 @@ public class AuthListener implements Listener {
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
-        event.setCancelled(true);
+        blockAndPrompt(event, player);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerBucketFill(PlayerBucketFillEvent event) {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
-        event.setCancelled(true);
+        blockAndPrompt(event, player);
     }
 
     // =========================
@@ -127,7 +139,7 @@ public class AuthListener implements Listener {
         if (event.getFrom().getBlockX() != event.getTo().getBlockX()
                 || event.getFrom().getBlockY() != event.getTo().getBlockY()
                 || event.getFrom().getBlockZ() != event.getTo().getBlockZ()) {
-            event.setCancelled(true);
+            blockAndPrompt(event, player);
         }
     }
 
@@ -138,7 +150,7 @@ public class AuthListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
-        event.setCancelled(true);
+        blockAndPrompt(event, player);
     }
 
     // =========================
@@ -148,7 +160,7 @@ public class AuthListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
-        event.setCancelled(true);
+        blockAndPrompt(event, player);
     }
 
     // =========================
@@ -158,7 +170,7 @@ public class AuthListener implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
-        event.setCancelled(true);
+        blockAndPrompt(event, player);
     }
 
     // =========================
@@ -179,10 +191,9 @@ public class AuthListener implements Listener {
         }
 
         event.setCancelled(true);
-        player.sendMessage("");
-        player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ <white>Пожалуйста, авторизуйтесь!"));
-        player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>Введите пароль в окне авторизации, которое открывается при входе.</gray>"));
-        player.sendMessage("");
+        // Not authorized → re-send the auth screen (throttled) and remind the player
+        // that a reconnect is the way out when the window never appears.
+        AuthPrompt.onBlockedAction(player);
     }
 
     // =========================
@@ -192,7 +203,7 @@ public class AuthListener implements Listener {
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
-        event.setCancelled(true);
+        blockAndPrompt(event, player);
     }
 
     // =========================

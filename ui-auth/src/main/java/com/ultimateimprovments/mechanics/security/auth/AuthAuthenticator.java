@@ -117,6 +117,10 @@ public class AuthAuthenticator {
                 if (playerState.isAuthenticated(uuid)) return;
                 // Open a Custom Screen instead of chat
                 AuthDialogScreen.open(player, isRegistered);
+                // The client owns the dialog: if it never shows up (or the player closes
+                // it), AuthListener re-sends it on the next blocked action — tell the
+                // player right away what to do in that case.
+                AuthPrompt.sendJoinHint(player);
             }
         }.runTaskLater(Main.getInstance(), 5L);
     }
@@ -136,7 +140,14 @@ public class AuthAuthenticator {
                     "<gold>✦</gold> <white>You are already logged in!</white>")));
             return;
         }
-        if (!rateLimiter.checkCooldown(player)) return;
+        if (!rateLimiter.checkCooldown(player)) {
+            // The client already closed the dialog on submit, and the attempt was
+            // rejected — nothing would ever re-open the screen, leaving the player
+            // frozen with every action blocked. Re-open it when the lock expires.
+            AuthPrompt.openLater(player, rateLimiter.getRemainingMs(player) + 500L);
+            AuthPrompt.sendMissingHint(player);
+            return;
+        }
 
         String playerIp = getPlayerIp(player);
 
@@ -164,7 +175,7 @@ public class AuthAuthenticator {
                             if (!player.isOnline()) return;
                             player.sendMessage(MessageUtil.parse(policyError));
                             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-                            sendChatPromptAfterError(player, registered);
+                            sendChatPromptAfterError(player);
                         });
                         return;
                     }
@@ -187,7 +198,7 @@ public class AuthAuthenticator {
                                     player.sendMessage(MessageUtil.parse(finalMsg));
                                     player.sendMessage("");
                                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-                                    sendChatPromptAfterError(player, registered);
+                                    sendChatPromptAfterError(player);
                                 });
                                 return;
                             }
@@ -228,18 +239,12 @@ public class AuthAuthenticator {
     }
 
     /**
-     * Sends the player a repeat prompt after a wrong password or other error.
+     * Sends the player a repeat prompt after a wrong password or other error:
+     * re-opens the auth screen once the client has finished closing the old one.
      */
-    private void sendChatPromptAfterError(Player player, boolean isRegistered) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) return;
-                if (playerState.isAuthenticated(player.getUniqueId())) return;
-                // Re-open the Custom Screen after an error
-                AuthDialogScreen.open(player, isRegistered);
-            }
-        }.runTaskLater(Main.getInstance(), 20L);
+    private void sendChatPromptAfterError(Player player) {
+        AuthPrompt.openLater(player, 1000L);
+        AuthPrompt.sendMissingHint(player);
     }
 
     // =========================
@@ -418,7 +423,7 @@ public class AuthAuthenticator {
                 "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>")
                 .replace("%remaining%", String.valueOf(remaining))));
         // Re-open dialog with delay so player can read error
-        sendChatPromptAfterError(player, true);
+        sendChatPromptAfterError(player);
     }
 
     // =========================
@@ -432,6 +437,8 @@ public class AuthAuthenticator {
 
         timeoutManager.cancelLoginTimeout(uuid);
         playerState.resetWrongAttempts(uuid);
+        // The auth screen is gone for good — drop the prompt bookkeeping.
+        AuthPrompt.removePlayer(uuid);
 
         unfreezePlayer(player);
 

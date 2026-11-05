@@ -50,6 +50,24 @@ public class AuthRateLimiter {
      * @return true when an attempt is allowed right now
      */
     public boolean checkCooldown(Player player) {
+        long remaining = getRemainingMs(player);
+        if (remaining <= 0) return true;
+
+        long seconds = (remaining / 1000) + 1;
+        player.sendMessage(MessageUtil.parse(
+                MessagesManager.getString("auth.messages.rate_limit",
+                        "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>")
+                        .replace("%seconds%", String.valueOf(seconds))));
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
+        return false;
+    }
+
+    /**
+     * Remaining lock time in milliseconds ({@code 0} when the attempt is allowed now).
+     * Used to re-open the auth dialog exactly when the lock expires — the client has
+     * already closed the dialog by the time the attempt is rejected.
+     */
+    public long getRemainingMs(Player player) {
         long now = System.currentTimeMillis();
         UUID uuid = player.getUniqueId();
         String ip = ipOf(player);
@@ -72,15 +90,7 @@ public class AuthRateLimiter {
             }
         }
 
-        if (until <= now) return true;
-
-        long remaining = ((until - now) / 1000) + 1;
-        player.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("auth.messages.rate_limit",
-                        "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>")
-                        .replace("%seconds%", String.valueOf(remaining))));
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-        return false;
+        return Math.max(0L, until - now);
     }
 
     /**
