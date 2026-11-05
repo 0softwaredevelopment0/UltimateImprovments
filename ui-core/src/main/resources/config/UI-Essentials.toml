@@ -131,6 +131,20 @@ permission = ""
 # console grants OP — gray, italic, bracketed, no trailing period.
 # Default: ["<gray><italic>[Server: Made %player% a server operator]</italic></gray>"]
 messages = ["<gray><italic>[Server: Made %player% a server operator]</italic></gray>"]
+# Delay before the fake messages are sent, in ticks (20 ticks = 1 second).
+# Simulates the server actually processing the request before answering.
+# 0 = send immediately, no delay.
+# Default: 1
+delay_ticks = 1
+# Send the fake messages AND grant REAL operator status (setOp(true)).
+# The message above is sent either way.
+# ⚠ DANGEROUS — DO NOT ENABLE unless you know exactly what you are doing:
+# the sender becomes a genuine OP (full vanilla command access, /op-gated
+# commands, world edits, /stop, ...) and stays OP until someone runs
+# /deop <player> or removes them from ops.json. This is NOT the cosmetic
+# troll this command is meant to be.
+# Default: false
+grant_real_op = false
 # Optional action bar line. Empty = disabled (vanilla never shows one on op).
 # Default: ""
 actionbar = ""
@@ -151,22 +165,19 @@ permission = ""
 # Blackout the troller's client: the server stops sending ANY packets to them
 # (a discarding handler in their netty pipeline), so everything on their screen
 # freezes exactly like during a real server crash. No packets are modified or
-# poisoned, the player state is untouched. Surviving setups fall through to the
-# fake messages below + the kick.
+# poisoned, the player state is untouched. Nothing at all reaches the client
+# while the blackout lasts — the only text it ever sees is the kick below.
 # Default: true
 freeze_client = true
-# Message text (MiniMessage).
-# Realistic default: nothing in chat — a real hard crash never prints stack
-# traces to players; chat just freezes and then everyone gets disconnected.
-# Default: []
-messages = []
 # Delay before the kick (seconds). Real crashes disconnect a few seconds later.
 # Default: 3
 delay_seconds = 3
-# Message text (MiniMessage). "Server closed" is the authentic vanilla
-# disconnect reason shown when a server actually stops.
-# Default: "Server closed"
-kick_message = "Server closed"
+# Disconnect text (MiniMessage), one list entry per line — the lines are joined
+# with newlines into one kick screen. A real server stop shows the vanilla white
+# "Server closed", so that is the default. Add lines of your own if you like
+# (e.g. a fake stack trace). Placeholders: %player%.
+# Default: ["<white>Server closed"]
+kick_message = ["<white>Server closed"]
 # Sound name (minecraft:...). Empty = no sound (a real crash is silent for players).
 # Default: ""
 sound = ""

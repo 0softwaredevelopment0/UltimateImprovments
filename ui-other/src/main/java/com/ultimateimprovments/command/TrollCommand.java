@@ -5,6 +5,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.SoundUtil;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -24,17 +25,26 @@ import java.util.List;
  * (without the /ui prefix) and do NOTHING real:
  * <ul>
  *   <li><b>/forceop</b> — sends the player fake messages as if the server
- *       granted them OP. Real OP is NOT granted (setOp is never called).</li>
+ *       granted them OP. By default real OP is NOT granted (setOp is never
+ *       called); {@code troll.forceop.grant_real_op} can turn the fake into a
+ *       genuine grant, which is off by default on purpose.
+ *       {@code troll.forceop.delay_ticks} postpones the fake answer (default
+ *       1 tick, 0 = immediately) so the command looks like it is doing work.</li>
  *   <li><b>/crash</b> — stops ALL server→client packets for the player
  *       ({@code troll.crash.freeze_client}: a discarding netty handler in their
  *       pipeline), so their world freezes exactly like during a real server crash,
  *       then after {@code troll.crash.delay_seconds} kicks them with the
- *       {@code troll.crash.kick_message} text (default "Server closed").</li>
+ *       {@code troll.crash.kick_message} text (multi-line list, default
+ *       {@code <white>Server closed}). No chat text is sent: during the blackout
+ *       nothing reaches the client, so the kick is the only thing it ever sees.</li>
  * </ul>
  * All settings (enable, messages, sounds, delay, permissions) are in config.yml
  * under the {@code troll:} section. Works only for players.
  */
 public class TrollCommand implements CommandExecutor, TabCompleter {
+
+    /** Fallback kick text when {@code troll.crash.kick_message} is empty. */
+    private static final String DEFAULT_KICK_MESSAGE = "<white>Server closed";
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -65,24 +75,48 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
 
         if (!checkPermission(player, cfg.getString("troll.forceop.permission", ""))) return true;
 
-        // Fake messages — look like the server granted OP
-        for (String msg : getMessageList(cfg, "troll.forceop.messages")) {
-            if (msg == null || msg.isEmpty()) continue;
-            player.sendMessage(MessageUtil.parse(msg.replace("%player%", player.getName()), player));
-        }
-
-        // ActionBar (optional)
-        String actionbar = cfg.getString("troll.forceop.actionbar", "");
-        if (actionbar != null && !actionbar.isEmpty()) {
-            player.sendActionBar(MessageUtil.parse(actionbar.replace("%player%", player.getName()), player));
-        }
-
-        // Sound (optional)
-        Sound sound = SoundUtil.getSound(cfg.getString("troll.forceop.sound", ""));
-        SoundUtil.playSound(player, sound, 1.0f, 1.0f);
+        boolean grantRealOp = cfg.getBoolean("troll.forceop.grant_real_op", false);
+        int delayTicks = Math.max(0, cfg.getInt("troll.forceop.delay_ticks", 1));
 
         if (cfg.getBoolean("troll.forceop.log_to_console", true)) {
-            ConsoleLogger.info("[Troll] " + player.getName() + " used /forceop (fake OP — no OP granted).");
+            ConsoleLogger.info("[Troll] " + player.getName() + " used /forceop ("
+                    + (grantRealOp ? "REAL OP GRANTED — grant_real_op is enabled" : "fake OP — no OP granted")
+                    + ", delay " + delayTicks + " ticks).");
+        }
+
+        // The fake grant runs after a short delay so the command looks like it is
+        // doing some work server-side (default 1 tick, 0 = no delay at all).
+        Runnable fakeGrant = () -> {
+            if (!player.isOnline()) return;
+
+            // Fake messages — look like the server granted OP
+            for (String msg : getMessageList(cfg, "troll.forceop.messages")) {
+                if (msg == null || msg.isEmpty()) continue;
+                player.sendMessage(MessageUtil.parse(msg.replace("%player%", player.getName()), player));
+            }
+
+            // ActionBar (optional)
+            String actionbar = cfg.getString("troll.forceop.actionbar", "");
+            if (actionbar != null && !actionbar.isEmpty()) {
+                player.sendActionBar(MessageUtil.parse(actionbar.replace("%player%", player.getName()), player));
+            }
+
+            // Sound (optional)
+            Sound sound = SoundUtil.getSound(cfg.getString("troll.forceop.sound", ""));
+            SoundUtil.playSound(player, sound, 1.0f, 1.0f);
+
+            // Opt-in real grant (off by default — this is the dangerous branch).
+            if (grantRealOp) {
+                player.setOp(true);
+                ConsoleLogger.warn("[Troll] " + player.getName()
+                        + " was granted REAL operator status by /forceop (troll.forceop.grant_real_op = true).");
+            }
+        };
+
+        if (delayTicks == 0) {
+            fakeGrant.run();
+        } else {
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), fakeGrant, delayTicks);
         }
         return true;
     }
@@ -99,26 +133,21 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
         // Blackout FIRST: the server stops sending ANY packets to this client
         // (their pipeline gets a discarding outbound handler), so everything on
         // their screen freezes exactly like during a real server crash — no
-        // poisoned packets, no camera tricks. The fakes below are a fallback for
-        // configs that disable the blackout.
+        // poisoned packets, no camera tricks. While the blackout lasts nothing
+        // reaches the client, so chat text would be pointless: the kick below is
+        // the only thing the player ever sees.
         boolean blackout = cfg.getBoolean("troll.crash.freeze_client", true);
         if (blackout) {
             TrollFreeze.startBlackout(player);
         }
 
-        // Fake server-crash messages
-        for (String msg : getMessageList(cfg, "troll.crash.messages")) {
-            if (msg == null || msg.isEmpty()) continue;
-            player.sendMessage(MessageUtil.parse(msg, player));
-        }
-
-        // Sound (optional)
+        // Sound (optional — player.sendSound would also be swallowed by the
+        // blackout, but the sound packet may already be queued)
         Sound sound = SoundUtil.getSound(cfg.getString("troll.crash.sound", ""));
         SoundUtil.playSound(player, sound, 1.0f, 1.0f);
 
         int delaySeconds = Math.max(0, cfg.getInt("troll.crash.delay_seconds", 3));
-        String rawKick = cfg.getString("troll.crash.kick_message", "Server closed");
-        final String kickMessage = (rawKick == null || rawKick.isEmpty()) ? "Server closed" : rawKick;
+        final String kickMessage = kickMessageRaw(cfg);
 
         if (cfg.getBoolean("troll.crash.log_to_console", true)) {
             ConsoleLogger.info("[Troll] " + player.getName()
@@ -136,12 +165,30 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
                     if (blackout) {
                         TrollFreeze.stopBlackout(player);
                     }
-                    player.kick(MessageUtil.parse(kickMessage));
+                    // The kick is the only text the client sees — placeholders
+                    // such as %player% still resolve against the player object.
+                    player.kick(MessageUtil.parse(kickMessage, player));
                 }
             }
         }.runTaskLater(Main.getInstance(), delaySeconds * 20L);
 
         return true;
+    }
+
+    /**
+     * Reads the multi-line kick text: either a list of lines (joined with
+     * newlines) or a single string. Falls back to the vanilla
+     * {@code <white>Server closed} when the result is empty.
+     */
+    private static String kickMessageRaw(FileConfiguration cfg) {
+        List<String> lines = getMessageList(cfg, "troll.crash.kick_message");
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            if (line == null) continue;
+            if (!sb.isEmpty()) sb.append('\n');
+            sb.append(line);
+        }
+        return sb.toString().isBlank() ? DEFAULT_KICK_MESSAGE : sb.toString();
     }
 
     /**
