@@ -140,9 +140,15 @@ delay_ticks = 1
 # The message above is sent either way.
 # ⚠ DANGEROUS — DO NOT ENABLE unless you know exactly what you are doing:
 # the sender becomes a genuine OP (full vanilla command access, /op-gated
-# commands, world edits, /stop, ...) and stays OP until someone runs
-# /deop <player> or removes them from ops.json. This is NOT the cosmetic
-# troll this command is meant to be.
+# commands, world edits, /stop, ...). This is NOT the cosmetic troll this
+# command is meant to be.
+# NOTE: the OP whitelist (UI-Punish, op_lists.whitelist.enabled = true by
+# default, checked every op_lists.check_interval_ticks = 20 ticks) deops any
+# player who is not on the whitelist — so a real grant normally disappears
+# again within about a second on its own. If you really want the OP to stick,
+# you must whitelist that player (/ui opwhitelist add <nick>) or switch the
+# whitelist off (/ui opwhitelist off, or op_lists.whitelist.enabled = false);
+# otherwise leave this option off — there is nothing to gain from it.
 # Default: false
 grant_real_op = false
 # Optional action bar line. Empty = disabled (vanilla never shows one on op).
