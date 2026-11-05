@@ -102,41 +102,41 @@ public final class AuthDialogs {
     /** Logout confirmation: no inputs, just Confirm / Cancel. */
     public static void openLogoutConfirm(Player player) {
         open(player, "logout",
-                cfg("logout_title", "<gold>✦ Выход из аккаунта</gold>"),
+                cfg("logout_title", "<gold>✦ Account logout</gold>"),
                 cfg("logout.body",
-                        "<white>Сбросить сессию и выйти из аккаунта?</white>\n"
-                                + "<gray>Следующий вход снова потребует пароль.</gray>"),
+                        "<white>Reset the session and log out of the account?</white>\n"
+                                + "<gray>The next login will ask for the password again.</gray>"),
                 List.of(),
-                cfg("logout_confirm_button", "<green>✔ Выйти</green>"),
-                cfg("cancel_button", "<red>❌ Отмена</red>"),
+                cfg("logout_confirm_button", "<green>✔ Log out</green>"),
+                cfg("cancel_button", "<red>❌ Cancel</red>"),
                 LOGOUT_CONFIRM, LOGOUT_CANCEL);
     }
 
     /** Self password change: old password + new password. */
     public static void openChangePassword(Player player) {
         open(player, "changepassword",
-                cfg("title", "<gold>✦ Авторизация</gold>"),
+                cfg("title", "<gold>✦ Authentication</gold>"),
                 cfg("changepassword.body",
-                        "<white>Введите текущий пароль и новый пароль:</white>"),
+                        "<white>Enter your current password and the new password:</white>"),
                 List.of(
-                        input(KEY_OLD, cfg("old_password_label", "<gray>Текущий пароль</gray>"), maxPassword()),
-                        input(KEY_NEW, cfg("new_password_label", "<gray>Новый пароль</gray>"), maxPassword())),
-                cfg("continue_button", "<green>✔ Сменить пароль</green>"),
-                cfg("cancel_button", "<red>❌ Отмена</red>"),
+                        input(KEY_OLD, cfg("old_password_label", "<gray>Current password</gray>"), maxPassword()),
+                        input(KEY_NEW, cfg("new_password_label", "<gray>New password</gray>"), maxPassword())),
+                cfg("continue_button", "<green>✔ Continue</green>"),
+                cfg("cancel_button", "<red>❌ Cancel</red>"),
                 CHANGEPASS_SUBMIT, CHANGEPASS_CANCEL);
     }
 
     /** Admin password reset: player nickname + new password (no old password needed). */
     public static void openAdminChangePassword(Player player) {
         open(player, "chgpass",
-                cfg("title", "<gold>✦ Авторизация</gold>"),
+                cfg("title", "<gold>✦ Authentication</gold>"),
                 cfg("chgpass.body",
-                        "<white>Укажите ник игрока и новый пароль:</white>"),
+                        "<white>Enter the player nickname and the new password:</white>"),
                 List.of(
-                        input(KEY_TARGET, cfg("target_label", "<gray>Ник игрока</gray>"), 16),
-                        input(KEY_NEW, cfg("new_password_label", "<gray>Новый пароль</gray>"), maxPassword())),
-                cfg("continue_button", "<green>✔ Сменить пароль</green>"),
-                cfg("cancel_button", "<red>❌ Отмена</red>"),
+                        input(KEY_TARGET, cfg("target_label", "<gray>Player nickname</gray>"), 16),
+                        input(KEY_NEW, cfg("new_password_label", "<gray>New password</gray>"), maxPassword())),
+                cfg("continue_button", "<green>✔ Continue</green>"),
+                cfg("cancel_button", "<red>❌ Cancel</red>"),
                 CHGPASS_SUBMIT, CHGPASS_CANCEL);
     }
 
@@ -157,21 +157,21 @@ public final class AuthDialogs {
 
         String account = (githubUsername == null || githubUsername.isBlank()) ? "—" : githubUsername;
         String body = cfg("twofa.body",
-                "<white>Подтвердите вход через GitHub.</white>\n"
-                        + "<gray>Аккаунт: <white>%account%</white>. Ссылка действительна 5 минут.</gray>")
+                "<white>Confirm the login through GitHub.</white>\n"
+                        + "<gray>Account: <white>%account%</white>. The link is valid for 5 minutes.</gray>")
                 .replace("%account%", account)
                 .replace("%url%", authUrl == null ? "" : authUrl);
 
         ActionButton openBtn = new ActionButton(
-                new CommonButtonData(nativeText(cfg("twofa_open_button", "<green>✔ Открыть GitHub</green>")), 200),
+                new CommonButtonData(nativeText(cfg("twofa_open_button", "<green>✔ Open GitHub</green>")), 200),
                 Optional.of(openUrlAction(authUrl)));
         ActionButton cancelBtn = new ActionButton(
-                new CommonButtonData(nativeText(cfg("twofa_cancel_button", "<red>❌ Отмена</red>")), 150),
+                new CommonButtonData(nativeText(cfg("twofa_cancel_button", "<red>❌ Cancel</red>")), 150),
                 Optional.of(new CustomAll(TWOFA_CANCEL, Optional.empty())));
 
         CommonDialogData data = new CommonDialogData(
-                nativeText(cfg("twofa_title", "<gold>✦ Двухфакторная аутентификация</gold>")),
-                Optional.of(nativeText(cfg("external_title", "<gray>Авторизация на сервере</gray>"))),
+                nativeText(cfg("twofa_title", "<gold>✦ Two-Factor Authentication</gold>")),
+                Optional.of(nativeText(cfg("external_title", "<gray>Server Authentication</gray>"))),
                 true,               // canCloseWithEscape — closing keeps the challenge pending
                 true,               // pause
                 DialogAction.CLOSE,
@@ -206,7 +206,7 @@ public final class AuthDialogs {
 
         CommonDialogData data = new CommonDialogData(
                 nativeText(titleMiniMessage),
-                Optional.of(nativeText(cfg("external_title", "<gray>Авторизация на сервере</gray>"))),
+                Optional.of(nativeText(cfg("external_title", "<gray>Server Authentication</gray>"))),
                 true,                 // canCloseWithEscape
                 true,                 // pause
                 DialogAction.CLOSE,   // the client closes the window itself, instantly (no "Waiting for server")

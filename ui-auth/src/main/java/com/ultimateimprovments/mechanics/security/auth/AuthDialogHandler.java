@@ -52,8 +52,7 @@ public class AuthDialogHandler implements Listener {
         if (AuthDialogs.matches(identifier, AuthDialogs.TWOFA_CANCEL)) {
             Auth2FA twofa = Auth2FA.getInstance();
             if (twofa != null) twofa.clearPending(player.getUniqueId());
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
-                    "<gray>Отменено.</gray>")));
+            sendCancelled(player);
             AuthPrompt.openLater(player, 500L);
             return;
         }
@@ -65,8 +64,7 @@ public class AuthDialogHandler implements Listener {
             return;
         }
         if (AuthDialogs.matches(identifier, AuthDialogs.LOGOUT_CANCEL)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
-                    "<gray>Отменено.</gray>")));
+            sendCancelled(player);
             return;
         }
 
@@ -77,7 +75,9 @@ public class AuthDialogHandler implements Listener {
             String oldPassword = response.getText(AuthDialogs.KEY_OLD);
             String newPassword = response.getText(AuthDialogs.KEY_NEW);
             if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
-                player.sendMessage(MessageUtil.parse("<red>❌ Текущий и новый пароль обязательны.</red>"));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                        "auth.messages.changepass_fields_required",
+                        "<red>❌ Old and new password are required.</red>")));
                 return;
             }
             AuthAuthenticator authenticator = AuthAuthenticator.getInstance();
@@ -87,8 +87,7 @@ public class AuthDialogHandler implements Listener {
             return;
         }
         if (AuthDialogs.matches(identifier, AuthDialogs.CHANGEPASS_CANCEL)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
-                    "<gray>Отменено.</gray>")));
+            sendCancelled(player);
             return;
         }
 
@@ -105,16 +104,14 @@ public class AuthDialogHandler implements Listener {
             return;
         }
         if (AuthDialogs.matches(identifier, AuthDialogs.CHGPASS_CANCEL)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
-                    "<gray>Отменено.</gray>")));
+            sendCancelled(player);
             return;
         }
 
         // ─── Cancel (Exit Server) ───
         if (identifier.equals(AUTH_CANCEL_KEY)) {
-            String kickMsg = Main.getInstance().getConfig()
-                .getString("messages.auth.dialog.kick_cancelled",
-                    "<red>❌ Authentication cancelled.\n<gray>You cancelled the authentication process.");
+            String kickMsg = MessagesManager.getString("auth.dialog.kick_cancelled",
+                    "<red>❌ Authentication cancelled.\n<gray>You cancelled the authentication process.</red>");
             // Small delay so the client has time to close the dialog
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline()) {
@@ -158,7 +155,9 @@ public class AuthDialogHandler implements Listener {
     @SuppressWarnings("deprecation")
     private static void changePasswordFor(Player actor, String targetName, String newPassword) {
         if (targetName == null || targetName.isBlank() || newPassword == null || newPassword.isEmpty()) {
-            actor.sendMessage(MessageUtil.parse("<red>❌ Ник игрока и новый пароль обязательны.</red>"));
+            actor.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_dialog_fields",
+                    "<red>❌ Player nickname and new password are required.</red>")));
             return;
         }
         String policyError = PasswordPolicy.validate(newPassword);
@@ -168,20 +167,28 @@ public class AuthDialogHandler implements Listener {
         }
         UUID targetUuid = org.bukkit.Bukkit.getOfflinePlayer(targetName.trim()).getUniqueId();
         if (!AuthDatabase.isRegistered(targetUuid)) {
-            actor.sendMessage(MessageUtil.parse("<red>❌ Игрок </red><yellow>" + targetName.trim()
-                    + "</yellow><red> не зарегистрирован!</red>"));
+            actor.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_dialog_not_registered",
+                    "<red>❌ Player </red><yellow>%player%</yellow><red> is not registered!</red>")
+                    .replace("%player%", targetName.trim())));
             return;
         }
         AuthManager manager = AuthManager.getInstance();
         if (manager == null) {
-            actor.sendMessage(MessageUtil.parse("<red>❌ Система авторизации не инициализирована!</red>"));
+            actor.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_dialog_not_initialized",
+                    "<red>❌ Authorization system is not initialized!</red>")));
             return;
         }
         boolean changed = manager.changePassword(targetUuid, newPassword);
         actor.sendMessage(changed
-                ? MessageUtil.parse("<green>✔</green> <white>Пароль игрока </white><yellow>" + targetName.trim()
-                        + "</yellow><white> изменён.</white>")
-                : MessageUtil.parse("<dark_red>❌</dark_red> <red>Не удалось сменить пароль (проверьте длину).</red>"));
+                ? MessageUtil.parse(MessagesManager.getString(
+                        "auth.admin.chgpass_dialog_success",
+                        "<green>✔</green> <white>Password of player </white><yellow>%player%</yellow><white> changed.</white>")
+                        .replace("%player%", targetName.trim()))
+                : MessageUtil.parse(MessagesManager.getString(
+                        "auth.admin.chgpass_dialog_fail",
+                        "<dark_red>❌</dark_red> <red>Failed to change the password (check the length).</red>")));
         ConsoleLogger.info("[Auth] Password reset by " + actor.getName() + " for " + targetName.trim()
                 + " (" + targetUuid + "), success=" + changed);
     }
@@ -195,6 +202,14 @@ public class AuthDialogHandler implements Listener {
         }
         ConsoleLogger.warn("[AuthDialog] Could not get Player from event connection");
         return null;
+    }
+
+    /**
+     * Sends the shared "action cancelled" notice — config key {@code auth.messages.cancelled}.
+     */
+    private static void sendCancelled(Player player) {
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cancelled",
+                "<gray>Cancelled.</gray>")));
     }
 
     /**

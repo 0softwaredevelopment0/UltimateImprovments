@@ -140,8 +140,8 @@ public final class AuthPrompt {
         if (player == null || !player.isOnline()) return;
         player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + MessagesManager.getString(
                 "auth.messages.dialog_join_hint",
-                "<gray>Введите пароль в открывшемся окне авторизации.</gray>\n"
-                        + "<gray>Если окно не появилось — перезайдите на сервер.</gray>")));
+                "<gray>Enter your password in the authorization window that has just opened.</gray>\n"
+                        + "<gray>If no window appeared, reconnect to the server.</gray>"))); 
     }
 
     /**
@@ -157,8 +157,8 @@ public final class AuthPrompt {
 
         player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + MessagesManager.getString(
                 "auth.messages.dialog_missing_hint",
-                "<red>❌ Действие заблокировано — вы ещё не авторизованы.</red>\n"
-                        + "<gray>Если окно авторизации не открылось — перезайдите на сервер.</gray>")));
+                "<red>❌ Action blocked — you are not authorized yet.</red>\n"
+                        + "<gray>If the authorization window did not open, reconnect to the server.</gray>")));
     }
 
     /** Drops all prompt bookkeeping for a player (quit / login success). */

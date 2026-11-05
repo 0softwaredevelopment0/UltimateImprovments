@@ -177,6 +177,14 @@ dialog_join_hint = "<gray>Введите пароль в открывшемся 
 dialog_missing_hint = "<red>❌ Действие заблокировано — вы ещё не авторизованы.</red>\n<gray>Если окно авторизации не открылось — перезайдите на сервер.</gray>"
 # Default: <gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>
 twofa_chat_fallback = "<gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>"
+# Default: <gray>Отменено.</gray>
+cancelled = "<gray>Отменено.</gray>"
+# Default: <yellow>⚠ Не пишите пароли в чат — откройте окно смены пароля.</yellow>
+no_password_in_chat = "<yellow>⚠ Не пишите пароли в чат — откройте окно смены пароля.</yellow>"
+# Default: <red>❌ Введите текущий пароль в окне смены пароля.</red>
+current_password_required = "<red>❌ Введите текущий пароль в окне смены пароля.</red>"
+# Default: <red>❌ Текущий и новый пароль обязательны.</red>
+changepass_fields_required = "<red>❌ Текущий и новый пароль обязательны.</red>"
 
 # admin section.
 # Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
@@ -186,6 +194,16 @@ twofa_chat_fallback = "<gray>Окно 2FA не появилось? Открой�
 usage = "<red>❌ Использование: </red><white>/ui auth login|2fa|logout|changepassword|forcelogin|resetauth|chgpass|delsession</white>"
 # Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Сессия сброшена.</red>\n<gray>Вы вышли из аккаунта — при следующем входе введите пароль заново.</gray>
 kick_logout = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Сессия сброшена.</red>\n<gray>Вы вышли из аккаунта — при следующем входе введите пароль заново.</gray>"
+# Default: <red>❌ Ник игрока и новый пароль обязательны.</red>
+chgpass_dialog_fields = "<red>❌ Ник игрока и новый пароль обязательны.</red>"
+# Default: <red>❌ Игрок </red><yellow>%player%</yellow><red> не зарегистрирован!</red>
+chgpass_dialog_not_registered = "<red>❌ Игрок </red><yellow>%player%</yellow><red> не зарегистрирован!</red>"
+# Default: <red>❌ Система авторизации не инициализирована!</red>
+chgpass_dialog_not_initialized = "<red>❌ Система авторизации не инициализирована!</red>"
+# Default: <green>✔</green> <white>Пароль игрока </white><yellow>%player%</yellow><white> изменён.</white>
+chgpass_dialog_success = "<green>✔</green> <white>Пароль игрока </white><yellow>%player%</yellow><white> изменён.</white>"
+# Default: <dark_red>❌</dark_red> <red>Не удалось сменить пароль (проверьте длину).</red>
+chgpass_dialog_fail = "<dark_red>❌</dark_red> <red>Не удалось сменить пароль (проверьте длину).</red>"
 
 # dialog section.
 # Placeholders: %account%, %url%
@@ -233,6 +251,8 @@ twofa_title = "<gold>✦ Двухфакторная аутентификация
 twofa_open_button = "<green>✔ Открыть GitHub</green>"
 # Default: <red>❌ Отмена</red>
 twofa_cancel_button = "<red>❌ Отмена</red>"
+# Default: <red>❌ Вход отменён.</red>\n<gray>Вы отменили процесс авторизации.</gray>
+kick_cancelled = "<red>❌ Вход отменён.</red>\n<gray>Вы отменили процесс авторизации.</gray>"
 
 # logout dialog body.
 
@@ -319,10 +339,10 @@ need_auth = "<red>❌ Please authenticate first! Enter your password in the open
 ip_changed = "<red>❌</red> <white>Your IP address has changed. Please log in again.</white>"
 # Display name (MiniMessage).
 # Default: <yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different nam…
-duplicate_name_kick = "<yellow>❌ A player with this name is already on the server!</yellow>\\n<white>Please join with a different name.</white>"
+duplicate_name_kick = "<yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different name.</white>"
 # Maximum value.
 # Default: <red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<whit…
-max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\\n<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>"
+max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>"
 # Default: <yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>
 enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>"
 # Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
@@ -371,6 +391,14 @@ dialog_join_hint = "<gray>Enter your password in the authorization window that h
 dialog_missing_hint = "<red>❌ Action blocked — you are not authorized yet.</red>\n<gray>If the authorization window did not open, reconnect to the server.</gray>"
 # Default: <gray>No 2FA window? Open the link:</gray> <blue><u>%url%</u></blue>
 twofa_chat_fallback = "<gray>No 2FA window? Open the link:</gray> <blue><u>%url%</u></blue>"
+# Default: <gray>Cancelled.</gray>
+cancelled = "<gray>Cancelled.</gray>"
+# Default: <yellow>⚠ Do not type passwords in chat — open the password change window.</yellow>
+no_password_in_chat = "<yellow>⚠ Do not type passwords in chat — open the password change window.</yellow>"
+# Default: <red>❌ Enter your current password in the password change window.</red>
+current_password_required = "<red>❌ Enter your current password in the password change window.</red>"
+# Default: <red>❌ Old and new password are required.</red>
+changepass_fields_required = "<red>❌ Old and new password are required.</red>"
 
 # admin section.
 # Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
@@ -439,20 +467,30 @@ chgpass_success = "<green>✔</green> <white>Password of player</white> <yellow>
 chgpass_session_reset = "<gray>Session reset — player must log in again.</gray>"
 # Default: <red>❌ Failed to change password of player</red> <yellow>%player%</yellow>
 chgpass_fail = "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
+# Default: <red>❌ Player nickname and new password are required.</red>
+chgpass_dialog_fields = "<red>❌ Player nickname and new password are required.</red>"
+# Default: <red>❌ Player </red><yellow>%player%</yellow><red> is not registered!</red>
+chgpass_dialog_not_registered = "<red>❌ Player </red><yellow>%player%</yellow><red> is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+chgpass_dialog_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Password of player </white><yellow>%player%</yellow><white> changed.</white>
+chgpass_dialog_success = "<green>✔</green> <white>Password of player </white><yellow>%player%</yellow><white> changed.</white>"
+# Default: <dark_red>❌</dark_red> <red>Failed to change the password (check the length).</red>
+chgpass_dialog_fail = "<dark_red>❌</dark_red> <red>Failed to change the password (check the length).</red>"
 # Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red…
-kick_resetauth = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Your registration has been deleted by an administrator!</red>\\n<gray>On next login you will need to register again.</gray>"
+kick_resetauth = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
 # Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gra…
-kick_delsession = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Your session has been reset by an administrator!</red>\\n<gray>On next login you will need to enter your password again.</gray>"
+kick_delsession = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
 # Timeout.
 # Default: <red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>
-kick_timeout = "<red>⏱ Login timeout!</red>\\n<gray>You did not log in within %seconds% seconds.</gray>"
+kick_timeout = "<red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>"
 # Default: <red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>
-kick_too_many_attempts = "<red>❌ Too many incorrect attempts!</red>\\n<gray>You entered the wrong password %attempts% times.</gray>"
+kick_too_many_attempts = "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>"
 # Default: <green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password …
-kick_logout = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Session reset.</red>\\n<gray>You logged out — enter your password again on the next login.</gray>"
+kick_logout = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Session reset.</red>\n<gray>You logged out — enter your password again on the next login.</gray>"
 # Display name (MiniMessage).
 # Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
-kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\\n\\n%details%\\n\\n"
+kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n"
 
 # dialog section.
 # Placeholders: %account%, %url%
@@ -500,6 +538,8 @@ twofa_title = "<gold>✦ Two-Factor Authentication</gold>"
 twofa_open_button = "<green>✔ Open GitHub</green>"
 # Default: <red>❌ Cancel</red>
 twofa_cancel_button = "<red>❌ Cancel</red>"
+# Default: <red>❌ Authentication cancelled.</red>\n<gray>You cancelled the authentication process.</gray>
+kick_cancelled = "<red>❌ Authentication cancelled.</red>\n<gray>You cancelled the authentication process.</gray>"
 
 # logout dialog body.
 

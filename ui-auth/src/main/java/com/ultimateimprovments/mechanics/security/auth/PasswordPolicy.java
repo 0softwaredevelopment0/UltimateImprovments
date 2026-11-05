@@ -38,7 +38,7 @@ public final class PasswordPolicy {
     public static String validate(String password) {
         if (password == null || password.isEmpty()) {
             return msg("auth.messages.password_empty",
-                    "<red>❌ Пароль не может быть пустым.</red>");
+                    "<red>❌ The password must not be empty.</red>");
         }
 
         int min = AuthConfig.getMinPasswordLength();
@@ -56,19 +56,19 @@ public final class PasswordPolicy {
         }
         if (AuthConfig.isRequireDigit() && !hasDigit(password)) {
             return msg("auth.messages.password_need_digit",
-                    "<red>❌ Пароль должен содержать хотя бы одну цифру (0-9).</red>");
+                    "<red>❌ The password must contain at least one digit (0-9).</red>");
         }
         if (AuthConfig.isRequireMixedCase() && !(hasLower(password) && hasUpper(password))) {
             return msg("auth.messages.password_need_case",
-                    "<red>❌ Пароль должен содержать строчную и заглавную английскую букву (a-z, A-Z).</red>");
+                    "<red>❌ The password must contain a lowercase and an uppercase English letter (a-z, A-Z).</red>");
         }
         if (AuthConfig.isRequireSpecialChar() && !hasSpecial(password)) {
             return msg("auth.messages.password_need_special",
-                    "<red>❌ Пароль должен содержать спецсимвол (!, @, #, $, %, &, *, ...).</red>");
+                    "<red>❌ The password must contain a special character (!, @, #, $, %, &, *, ...).</red>");
         }
         if (AuthConfig.isBlockCommonPasswords() && isCommon(password)) {
             return msg("auth.messages.password_common",
-                    "<red>❌ Этот пароль слишком простой — выберите другой.</red>");
+                    "<red>❌ This password is too common — choose another one.</red>");
         }
         return null;
     }

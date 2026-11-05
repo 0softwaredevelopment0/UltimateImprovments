@@ -186,8 +186,8 @@ public class AuthAuthenticator {
                             int currentCount = AuthDatabase.countAccountsByIp(playerIp);
                             if (currentCount >= maxAccounts) {
                                 String msg = AuthConfig.getMessage("max_accounts_per_ip",
-                                        "<red>❌</red> <red>С вашего IP-адреса уже зарегистрировано <yellow>%count%</yellow> аккаунтов!</red>\n" +
-                                        "<white>Максимум: <yellow>%limit%</yellow> аккаунтов на один IP.</white>")
+                                        "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n" +
+                                        "<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>")
                                         .replace("%count%", String.valueOf(currentCount))
                                         .replace("%limit%", String.valueOf(maxAccounts));
                                 final String finalMsg = msg;
@@ -312,7 +312,7 @@ public class AuthAuthenticator {
         // the dialog still has a way to authorize without reconnecting.
         AuthDialogs.openGithub2FA(player, githubUsername, authUrl);
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.twofa_chat_fallback",
-                "<gray>Окно 2FA не появилось? Откройте ссылку:</gray> <blue><u>%url%</u></blue>")
+                "<gray>No 2FA window? Open the link:</gray> <blue><u>%url%</u></blue>")
                 .replace("%url%", authUrl)));
 
         ConsoleLogger.info("[Auth2FA] GitHub challenge started for " + playerName
@@ -509,7 +509,9 @@ public class AuthAuthenticator {
             return;
         }
         if (oldPassword == null || oldPassword.isEmpty()) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Введите текущий пароль в окне смены пароля.</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.current_password_required",
+                    "<red>❌ Enter your current password in the password change window.</red>")));
             return;
         }
 
@@ -553,8 +555,8 @@ public class AuthAuthenticator {
         // see WHY the server closed the connection, not a bare disconnect.
         String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
                 "<yellow>✦</yellow> UltimateImprovments\n\n"
-                        + "<red>❌ Сессия сброшена.</red>\n"
-                        + "<gray>Вы вышли из аккаунта — при следующем входе введите пароль заново.</gray>");
+                        + "<red>❌ Session reset.</red>\n"
+                        + "<gray>You logged out — enter your password again on the next login.</gray>");
         // Make sure the logout dialog is not left on screen behind the kick screen.
         AuthDialogScreen.close(player);
         player.kick(MessageUtil.parse(kickLogout));

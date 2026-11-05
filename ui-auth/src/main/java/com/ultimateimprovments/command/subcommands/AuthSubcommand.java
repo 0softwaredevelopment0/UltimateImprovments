@@ -315,8 +315,8 @@ public final class AuthSubcommand {
             return true;
         }
         if (args.length > 2) {
-            player.sendMessage(MessageUtil.parse(
-                    "<yellow>⚠ Не пишите пароли в чат — откройте окно смены пароля.</yellow>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.no_password_in_chat",
+                    "<yellow>⚠ Do not type passwords in chat — open the password change window.</yellow>")));
         }
         AuthDialogs.openChangePassword(player);
         return true;
@@ -334,8 +334,8 @@ public final class AuthSubcommand {
         }
         if (sender instanceof Player player) {
             if (args.length > 2) {
-                player.sendMessage(MessageUtil.parse(
-                        "<yellow>⚠ Не пишите пароли в чат — откройте окно смены пароля.</yellow>"));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.no_password_in_chat",
+                        "<yellow>⚠ Do not type passwords in chat — open the password change window.</yellow>")));
             }
             AuthDialogs.openAdminChangePassword(player);
             return true;
